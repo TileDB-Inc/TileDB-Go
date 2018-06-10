@@ -1,0 +1,51 @@
+# TileDB Go Bindings
+
+[![GoDoc](https://godoc.org/github.com/TileDB-Inc/TileDB-Go?status.svg)](http://godoc.org/github.com/TileDB-Inc/TileDB-Go)
+[![Build Status](https://travis-ci.org/TileDB-Inc/TileDB-Go.svg?branch=master)](https://travis-ci.org/TileDB-Inc/TileDB-Go)
+
+This package provides tiledb golang bindings via cgo. The bindings have been
+designed to be idomatic go. `runtime.set_finalizer` is used to ensure proper
+free'ing of c heap allocated structures
+
+## Installation
+
+### Prerequisites
+This package requires the tiledb shared library be install. See the
+[official tiledb installation instructions](https://docs.tiledb.io/en/stable/installation.html)
+for installation methods.
+
+### Go Installation
+
+To install these bindings you can use go get:
+
+```bash
+ go get -v github.com/TileDB-Inc/TileDB-Go
+```
+
+## Example Usage
+
+Below is a small example using vfs functionality. Additionale examples are
+provided in the GoDoc documentation.
+
+```golang
+
+// Create a new config
+config, err := tiledb.NewConfig()
+if err != nil {
+  return err
+}
+// Optionally set config settings here
+// config.Set("key", "value")
+
+// Create a context
+context, err := tiledb.NewContext(config)
+if err != nil {
+  return err
+}
+
+// Create a VFS instance
+vfs, err := tiledb.NewVFS(context, config)
+if err != nil {
+  return err
+}
+```
