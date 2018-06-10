@@ -1,0 +1,34 @@
+language: go
+
+go:
+  - master
+
+dist: trusty
+sudo: required
+
+matrix:
+  include:
+    - os: linux
+    - os: osx
+
+install:
+    # Set up arguments for install-deps.sh and bootstrap.
+    - deps_args="";
+      bootstrap_args="--enable=verbose,static-tiledb";
+    - mkdir -p $TRAVIS_BUILD_DIR/build && cd $TRAVIS_BUILD_DIR/build
+
+    # Configure and build TileDB
+    - ../bootstrap $bootstrap_args
+
+    - make -j4
+    - make examples -j4
+    - make -C tiledb install
+
+script:
+    - |
+      if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+        export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/dist/lib:/usr/local/lib:$LD_LIBRARY_PATH
+      else
+        export DYLD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/dist/lib:/usr/local/lib:$DYLD_LIBRARY_PATH
+      fi
+      go test -v ./...
