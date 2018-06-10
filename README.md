@@ -22,6 +22,18 @@ To install these bindings you can use go get:
  go get -v github.com/TileDB-Inc/TileDB-Go
 ```
 
+To install package test dependencies:
+
+```bash
+go get -vt github.com/TileDB-Inc/TileDB-Go
+```
+
+Package tests can be run with:
+
+```bash
+go test github.com/TileDB-Inc/TileDB-Go
+```
+
 ## Example Usage
 
 Below is a small example using vfs functionality. Additionale examples are
