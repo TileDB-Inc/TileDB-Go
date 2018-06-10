@@ -10,7 +10,7 @@ free'ing of c heap allocated structures
 ## Installation
 
 ### Prerequisites
-This package requires the tiledb shared library be install. See the
+This package requires the tiledb shared library be installed and on the system path. See the
 [official tiledb installation instructions](https://docs.tiledb.io/en/stable/installation.html)
 for installation methods.
 
