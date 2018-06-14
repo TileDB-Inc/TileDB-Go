@@ -80,7 +80,7 @@ func (c *Context) GetLastError() error {
 }
 
 // IsFSSupported checks if a given filesystem is supported
-func (c *Context) IsFSSupported(fs TiledbFS) (bool, error) {
+func (c *Context) IsFSSupported(fs FS) (bool, error) {
 	var isSupported C.int
 	ret := C.tiledb_ctx_is_supported_fs(c.tiledbContext, C.tiledb_filesystem_t(fs), &isSupported)
 

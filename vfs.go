@@ -275,7 +275,7 @@ func (v *VFS) MoveDir(context *Context, oldURI string, newURI string) error {
 }
 
 // Open a file
-func (v *VFS) Open(context *Context, uri string, mode TiledbVFSMode) (*VFSfh, error) {
+func (v *VFS) Open(context *Context, uri string, mode VFSMode) (*VFSfh, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
 	fh := &VFSfh{}
