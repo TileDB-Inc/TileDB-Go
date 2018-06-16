@@ -24,43 +24,43 @@ func TestVFS(t *testing.T) {
 		os.Remove(tmpPath)
 	}
 
-	isFile, err := vfs.IsFile(context, tmpPath)
+	isFile, err := vfs.IsFile(tmpPath)
 	assert.Nil(t, err)
 	assert.False(t, isFile)
 
-	isDir, err := vfs.IsDir(context, tmpPath)
+	isDir, err := vfs.IsDir(tmpPath)
 	assert.Nil(t, err)
 	assert.False(t, isDir)
 
 	// Create directory
-	err = vfs.CreateDir(context, tmpPath)
+	err = vfs.CreateDir(tmpPath)
 	assert.Nil(t, err)
 
-	isDir, err = vfs.IsDir(context, tmpPath)
+	isDir, err = vfs.IsDir(tmpPath)
 	assert.Nil(t, err)
 	assert.True(t, isDir)
 
 	// Remove directory
-	err = vfs.RemoveDir(context, tmpPath)
+	err = vfs.RemoveDir(tmpPath)
 	assert.Nil(t, err)
 
 	// Create File
-	err = vfs.Touch(context, tmpPath)
+	err = vfs.Touch(tmpPath)
 	assert.Nil(t, err)
 
-	fh, err := vfs.Open(context, tmpPath, TILEDB_VFS_WRITE)
+	fh, err := vfs.Open(tmpPath, TILEDB_VFS_WRITE)
 	assert.Nil(t, err)
 
 	bytes := []byte{0, 1, 2}
-	err = vfs.Write(context, fh, bytes)
+	err = vfs.Write(fh, bytes)
 	assert.Nil(t, err)
 
-	bytes2, err := vfs.Read(context, fh, 0, uint64(len(bytes)))
+	bytes2, err := vfs.Read(fh, 0, uint64(len(bytes)))
 
 	assert.EqualValues(t, bytes, bytes2)
 
 	// Remove File
-	err = vfs.RemoveFile(context, tmpPath)
+	err = vfs.RemoveFile(tmpPath)
 	assert.Nil(t, err)
 }
 
@@ -88,7 +88,7 @@ func ExampleNewVFS() {
 
 	uri := "file:///tmp/tiledb_example_folder"
 	// Check if directory exists
-	if isDir, err := vfs.IsDir(context, uri); err != nil {
+	if isDir, err := vfs.IsDir(uri); err != nil {
 		fmt.Println(err)
 	} else {
 		// Directory exists
