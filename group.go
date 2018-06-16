@@ -18,7 +18,7 @@ func GroupCreate(context *Context, group string) error {
 	defer C.free(unsafe.Pointer(cgroup))
 
 	ret := C.tiledb_group_create(context.tiledbContext, cgroup)
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error in creating group %s: %s", group, context.GetLastError())
 	}
 	return nil

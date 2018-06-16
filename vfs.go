@@ -33,7 +33,7 @@ func (v *VFSfh) IsClosed() (bool, error) {
 
 	ret := C.tiledb_vfs_fh_is_closed(v.context.tiledbContext, v.tiledbVFSfh, &isClosed)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("Error in checking if vfs file handler is closed")
 	}
 
@@ -86,7 +86,7 @@ func (v *VFS) CreateBucket(uri string) error {
 	defer C.free(unsafe.Pointer(curi))
 	ret := C.tiledb_vfs_create_bucket(v.context.tiledbContext, v.tiledbVFS, curi)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error in creating s3 bucket %s: %s", uri, v.context.GetLastError())
 	}
 
@@ -99,7 +99,7 @@ func (v *VFS) RemoveBucket(uri string) error {
 	defer C.free(unsafe.Pointer(curi))
 	ret := C.tiledb_vfs_remove_bucket(v.context.tiledbContext, v.tiledbVFS, curi)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error in removing s3 bucket %s: %s", uri, v.context.GetLastError())
 	}
 
@@ -112,7 +112,7 @@ func (v *VFS) EmptyBucket(uri string) error {
 	defer C.free(unsafe.Pointer(curi))
 	ret := C.tiledb_vfs_empty_bucket(v.context.tiledbContext, v.tiledbVFS, curi)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error in emptying s3 bucket %s: %s", uri, v.context.GetLastError())
 	}
 
@@ -126,7 +126,7 @@ func (v *VFS) IsEmptyBucket(uri string) (bool, error) {
 	var isEmpty C.int
 	ret := C.tiledb_vfs_is_empty_bucket(v.context.tiledbContext, v.tiledbVFS, curi, &isEmpty)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("Error in checking if s3 bucket %s is empty: %s", uri, v.context.GetLastError())
 	}
 
@@ -144,7 +144,7 @@ func (v *VFS) IsBucket(uri string) (bool, error) {
 	var isBucket C.int
 	ret := C.tiledb_vfs_is_bucket(v.context.tiledbContext, v.tiledbVFS, curi, &isBucket)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("Error in checking if %s is a s3 bucket: %s", uri, v.context.GetLastError())
 	}
 
@@ -161,7 +161,7 @@ func (v *VFS) CreateDir(uri string) error {
 	defer C.free(unsafe.Pointer(curi))
 	ret := C.tiledb_vfs_create_dir(v.context.tiledbContext, v.tiledbVFS, curi)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error in creating directory %s: %s", uri, v.context.GetLastError())
 	}
 
@@ -175,7 +175,7 @@ func (v *VFS) IsDir(uri string) (bool, error) {
 	var isDir C.int
 	ret := C.tiledb_vfs_is_dir(v.context.tiledbContext, v.tiledbVFS, curi, &isDir)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("Error in checking if %s is a directory: %s", uri, v.context.GetLastError())
 	}
 
@@ -192,7 +192,7 @@ func (v *VFS) RemoveDir(uri string) error {
 	defer C.free(unsafe.Pointer(curi))
 	ret := C.tiledb_vfs_remove_dir(v.context.tiledbContext, v.tiledbVFS, curi)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error in removing directory %s: %s", uri, v.context.GetLastError())
 	}
 
@@ -206,7 +206,7 @@ func (v *VFS) IsFile(uri string) (bool, error) {
 	var isFile C.int
 	ret := C.tiledb_vfs_is_file(v.context.tiledbContext, v.tiledbVFS, curi, &isFile)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("Error in checking if %s is a file: %s", uri, v.context.GetLastError())
 	}
 
@@ -223,7 +223,7 @@ func (v *VFS) RemoveFile(uri string) error {
 	defer C.free(unsafe.Pointer(curi))
 	ret := C.tiledb_vfs_remove_file(v.context.tiledbContext, v.tiledbVFS, curi)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error in removing file %s: %s", uri, v.context.GetLastError())
 	}
 
@@ -237,7 +237,7 @@ func (v *VFS) FileSize(uri string) (uint64, error) {
 	var cfsize C.uint64_t
 	ret := C.tiledb_vfs_file_size(v.context.tiledbContext, v.tiledbVFS, curi, &cfsize)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("Error in removing file %s: %s", uri, v.context.GetLastError())
 	}
 
@@ -253,7 +253,7 @@ func (v *VFS) MoveFile(oldURI string, newURI string) error {
 
 	ret := C.tiledb_vfs_move_file(v.context.tiledbContext, v.tiledbVFS, cOldURI, cNewURI)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error in moving file %s to %s: %s", oldURI, newURI, v.context.GetLastError())
 	}
 
@@ -269,7 +269,7 @@ func (v *VFS) MoveDir(oldURI string, newURI string) error {
 
 	ret := C.tiledb_vfs_move_dir(v.context.tiledbContext, v.tiledbVFS, cOldURI, cNewURI)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error in moving directory %s to %s: %s", oldURI, newURI, v.context.GetLastError())
 	}
 
@@ -290,7 +290,7 @@ func (v *VFS) Open(uri string, mode VFSMode) (*VFSfh, error) {
 
 	if ret == C.TILEDB_OOM {
 		return nil, fmt.Errorf("Out of Memory error in VFS.Open: %s", v.context.GetLastError())
-	} else if ret == C.TILEDB_ERR {
+	} else if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Unknown error in VFS.Open: %s", v.context.GetLastError())
 	}
 
@@ -302,7 +302,7 @@ func (v *VFS) Close(fh *VFSfh) error {
 
 	ret := C.tiledb_vfs_close(v.context.tiledbContext, fh.tiledbVFSfh)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Unknown error in VFS.Close: %s", v.context.GetLastError())
 	}
 
@@ -316,7 +316,7 @@ func (v *VFS) Read(fh *VFSfh, offset uint64, nbytes uint64) ([]byte, error) {
 	cbuffer := C.CBytes(bytes)
 	ret := C.tiledb_vfs_read(v.context.tiledbContext, fh.tiledbVFSfh, C.uint64_t(offset), cbuffer, C.uint64_t(nbytes))
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return []byte{}, fmt.Errorf("Unknown error in VFS.Read: %s", v.context.GetLastError())
 	}
 
@@ -330,7 +330,7 @@ func (v *VFS) Write(fh *VFSfh, bytes []byte) error {
 	cbuffer := C.CBytes(bytes)
 	ret := C.tiledb_vfs_write(v.context.tiledbContext, fh.tiledbVFSfh, cbuffer, C.uint64_t(len(bytes)))
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Unknown error in VFS.Write: %s", v.context.GetLastError())
 	}
 
@@ -341,7 +341,7 @@ func (v *VFS) Write(fh *VFSfh, bytes []byte) error {
 func (v *VFS) Sync(fh *VFSfh) error {
 	ret := C.tiledb_vfs_sync(v.context.tiledbContext, fh.tiledbVFSfh)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Unknown error in VFS.Sync: %s", v.context.GetLastError())
 	}
 
@@ -354,7 +354,7 @@ func (v *VFS) Touch(uri string) error {
 	defer C.free(unsafe.Pointer(curi))
 	ret := C.tiledb_vfs_touch(v.context.tiledbContext, v.tiledbVFS, curi)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error in touching %s: %s", uri, v.context.GetLastError())
 	}
 

@@ -148,7 +148,7 @@ func NewDimension(context *Context, name string, domain interface{}, extent inte
 
 	ret = C.tiledb_dimension_alloc(context.tiledbContext, cname, C.tiledb_datatype_t(datatype), cdomain, cextent, &dimension.tiledbDimension)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb dimension: %s", context.GetLastError())
 	}
 
@@ -172,7 +172,7 @@ func (d *Dimension) Name() (string, error) {
 	var cName *C.char
 	defer C.free(unsafe.Pointer(cName))
 	ret := C.tiledb_dimension_get_name(d.context.tiledbContext, d.tiledbDimension, &cName)
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("Error getting tiledb dimension name: %s", d.context.GetLastError())
 	}
 
@@ -183,7 +183,7 @@ func (d *Dimension) Name() (string, error) {
 func (d *Dimension) Type() (Datatype, error) {
 	var cType C.tiledb_datatype_t
 	ret := C.tiledb_dimension_get_type(d.context.tiledbContext, d.tiledbDimension, &cType)
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("Error getting tiledb dimension type: %s", d.context.GetLastError())
 	}
 
@@ -303,7 +303,7 @@ func (d *Dimension) Domain() (interface{}, error) {
 	default:
 		return nil, fmt.Errorf("Unrecognized domain type: %d", datatype)
 	}
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting tiledb dimension's domain: %s", d.context.GetLastError())
 	}
 
@@ -373,7 +373,7 @@ func (d *Dimension) Extent() (interface{}, error) {
 	default:
 		return nil, fmt.Errorf("Unrecognized extent type: %d", datatype)
 	}
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting tiledb dimension's extent: %s", d.context.GetLastError())
 	}
 

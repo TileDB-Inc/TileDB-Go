@@ -26,7 +26,7 @@ func NewArray(ctx *Context, uri string) (*Array, error) {
 	defer C.free(unsafe.Pointer(curi))
 	array := Array{context: ctx, uri: uri}
 	ret := C.tiledb_array_alloc(array.context.tiledbContext, curi, &array.tiledbArray)
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb array: %s", array.context.GetLastError())
 	}
 
