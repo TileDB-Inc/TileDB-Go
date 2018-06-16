@@ -103,6 +103,7 @@ const (
 	TILEDB_S3 FS = C.TILEDB_S3
 )
 
+// Layout cell/tile layout
 type Layout int8
 
 const (
@@ -114,6 +115,15 @@ const (
 	TILEDB_GLOBAL_ORDER Layout = C.TILEDB_GLOBAL_ORDER
 	// TILEDB_UNORDERED Unordered layout
 	TILEDB_UNORDERED Layout = C.TILEDB_UNORDERED
+)
+
+type QueryType int8
+
+const (
+	// TILEDB_READ Read query
+	TILEDB_READ QueryType = C.TILEDB_READ
+	// TILEDB_WRITE Write query
+	TILEDB_WRITE QueryType = C.TILEDB_WRITE
 )
 
 // VFSMode is virtual file system file open mode
@@ -131,4 +141,4 @@ const (
 )
 
 // TIELDB_VAR_NUM indicates variable sized attributes for cell values
-var TILEDB_VAR_NUM = C.TILEDB_VAR_NUM
+var TILEDB_VAR_NUM = uint(C.TILEDB_VAR_NUM)
