@@ -8,6 +8,16 @@ package tiledb
 */
 import "C"
 
+// ArrayType enum for tiledb arrays
+type ArrayType int8
+
+const (
+	// TILEDB_DENSE dense array
+	TILEDB_DENSE ArrayType = C.TILEDB_DENSE
+	// TILEDB_SPARSE dense array
+	TILEDB_SPARSE ArrayType = C.TILEDB_SPARSE
+)
+
 // CompressorType enum in tiledb for compressors
 type CompressorType int8
 
@@ -82,7 +92,7 @@ const (
 	TILEDB_ANY Datatype = C.TILEDB_ANY
 )
 
-// FS
+// FS represents support fs types
 type FS int8
 
 const (
@@ -93,6 +103,20 @@ const (
 	TILEDB_S3 FS = C.TILEDB_S3
 )
 
+type Layout int8
+
+const (
+	// TILEDB_ROW_MAJOR Row-major layout
+	TILEDB_ROW_MAJOR Layout = C.TILEDB_ROW_MAJOR
+	// TILEDB_COL_MAJOR Column-major layout
+	TILEDB_COL_MAJOR Layout = C.TILEDB_COL_MAJOR
+	// TILEDB_GLOBAL_ORDER Global-order layout
+	TILEDB_GLOBAL_ORDER Layout = C.TILEDB_GLOBAL_ORDER
+	// TILEDB_UNORDERED Unordered layout
+	TILEDB_UNORDERED Layout = C.TILEDB_UNORDERED
+)
+
+// VFSMode is virtual file system file open mode
 type VFSMode int8
 
 const (
