@@ -1,8 +1,9 @@
 package tiledb
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func ExampleNewArraySchema() {
@@ -99,6 +100,26 @@ func TestArraySchema(t *testing.T) {
 	// Add Attribute
 	err = arraySchema.AddAttributes(*attribute)
 	assert.Nil(t, err)
+
+	attrNum, err := arraySchema.AttributeNum()
+	assert.Nil(t, err)
+	assert.Equal(t, uint(1), attrNum)
+
+	attrFromIndex, err := arraySchema.AttributeFromIndex(0)
+	assert.Nil(t, err)
+	assert.NotNil(t, attrFromIndex)
+
+	attrName, err := attrFromIndex.Name()
+	assert.Nil(t, err)
+	assert.Equal(t, "a1", attrName)
+
+	attrFromName, err := arraySchema.AttributeFromName(attrName)
+	assert.Nil(t, err)
+	assert.NotNil(t, attrFromName)
+
+	attrName2, err := attrFromName.Name()
+	assert.Nil(t, err)
+	assert.Equal(t, "a1", attrName2)
 
 	// Set Capacity
 	err = arraySchema.SetCapacity(100)

@@ -53,6 +53,38 @@ func (a *ArraySchema) AddAttributes(attributes ...Attribute) error {
 	return nil
 }
 
+// AttributeNum returns the number of attributes
+func (a *ArraySchema) AttributeNum() (uint, error) {
+	var attrNum C.uint
+	ret := C.tiledb_array_schema_get_attribute_num(a.context.tiledbContext, a.tiledbArraySchema, &attrNum)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("Error getting attribute number for tiledb arraySchema: %s", a.context.GetLastError())
+	}
+	return uint(attrNum), nil
+}
+
+// AttributeFromIndex returns the attribute at a given index
+func (a *ArraySchema) AttributeFromIndex(index uint) (*Attribute, error) {
+	attr := Attribute{context: a.context}
+	ret := C.tiledb_array_schema_get_attribute_from_index(a.context.tiledbContext, a.tiledbArraySchema, C.uint(index), &attr.tiledbAttribute)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error getting attribute %d for tiledb arraySchema: %s", index, a.context.GetLastError())
+	}
+	return &attr, nil
+}
+
+// AttributeFromName returns the attribute at a given index
+func (a *ArraySchema) AttributeFromName(attrName string) (*Attribute, error) {
+	cAttrName := C.CString(attrName)
+	defer C.free(unsafe.Pointer(cAttrName))
+	attr := Attribute{context: a.context}
+	ret := C.tiledb_array_schema_get_attribute_from_name(a.context.tiledbContext, a.tiledbArraySchema, cAttrName, &attr.tiledbAttribute)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error getting attribute %s for tiledb arraySchema: %s", attrName, a.context.GetLastError())
+	}
+	return &attr, nil
+}
+
 // SetDomain sets a ArraySchema's domain
 func (a *ArraySchema) SetDomain(domain *Domain) error {
 	ret := C.tiledb_array_schema_set_domain(a.context.tiledbContext, a.tiledbArraySchema, domain.tiledbDomain)
