@@ -2,9 +2,10 @@ package tiledb
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func ExampleConfig_Set() {
@@ -100,6 +101,7 @@ func TestUnSettingConfig(t *testing.T) {
 func TestFileConfig(t *testing.T) {
 	config, err := NewConfig()
 	assert.Nil(t, err)
+	assert.NotNil(t, config)
 	err = config.Set("sm.tile_cache_size", "10")
 	assert.Nil(t, err)
 
@@ -116,13 +118,9 @@ func TestFileConfig(t *testing.T) {
 
 	config.SaveToFile(tmpPath)
 
-	config2, err := NewConfig()
-
-	val, err = config2.Get("sm.tile_cache_size")
+	config2, err := LoadConfig(tmpPath)
 	assert.Nil(t, err)
-	assert.Equal(t, "10000000", val)
-
-	config2.LoadFromFile(tmpPath)
+	assert.NotNil(t, config2)
 
 	val, err = config2.Get("sm.tile_cache_size")
 	assert.Nil(t, err)
