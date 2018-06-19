@@ -1,9 +1,10 @@
 package tiledb
 
 import (
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func ExampleNewArray() {
@@ -186,6 +187,10 @@ func TestArray(t *testing.T) {
 	// Close the array
 	err = array.Close()
 	assert.Nil(t, err)
+
+	arraySchemaLoaded, err := LoadArraySchema(context, tmpArrayPath)
+	assert.Nil(t, err)
+	assert.NotNil(t, arraySchemaLoaded)
 
 	array.Free()
 }

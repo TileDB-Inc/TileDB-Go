@@ -180,14 +180,14 @@ func (a *ArraySchema) Check() error {
 	return nil
 }
 
-// Load reads a directory for a ArraySchema
-func (a *ArraySchema) Load(path string) error {
+// LoadArraySchema reads a directory for a ArraySchema
+func LoadArraySchema(context *Context, path string) (*ArraySchema, error) {
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
-
+	a := ArraySchema{context: context}
 	ret := C.tiledb_array_schema_load(a.context.tiledbContext, cpath, &a.tiledbArraySchema)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error in loading arraySchema from %s: %s", path, a.context.GetLastError())
+		return nil, fmt.Errorf("Error in loading arraySchema from %s: %s", path, a.context.GetLastError())
 	}
-	return nil
+	return &a, nil
 }
