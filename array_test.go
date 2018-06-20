@@ -87,7 +87,7 @@ func TestArray(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Test create dimension
-	dimension, err := NewDimension(context, "dim1", []int8{1, 10}, 5)
+	dimension, err := NewDimension(context, "dim1", []int8{1, 10}, int8(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 

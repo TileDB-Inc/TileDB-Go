@@ -1,8 +1,9 @@
 package tiledb
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func ExampleNewDimension() {
@@ -21,7 +22,7 @@ func ExampleNewDimension() {
 	}
 
 	// Create Dimension
-	_, err = NewDimension(context, "test", []int32{1, 10}, 5)
+	_, err = NewDimension(context, "test", []int32{1, 10}, int32(5))
 	if err != nil {
 		// Handle error
 		return
@@ -39,7 +40,13 @@ func TestDimension(t *testing.T) {
 	context, err := NewContext(config)
 	assert.Nil(t, err)
 
+	// Dimension will error due to extent and domain having different datatypes
 	dimension, err := NewDimension(context, "test", []int32{1, 10}, 5)
+	assert.NotNil(t, err)
+	assert.Nil(t, dimension)
+
+	// Create dimension
+	dimension, err = NewDimension(context, "test", []int32{1, 10}, int32(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 

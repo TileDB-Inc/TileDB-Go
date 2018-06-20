@@ -36,36 +36,66 @@ func NewDimension(context *Context, name string, domain interface{}, extent inte
 		return nil, fmt.Errorf("Domain passed must be a slice of two integers or two floats, size of slice is: %d", domainInterfaceVal.Len())
 	}
 
+	domainType := reflect.TypeOf(domain).Elem().Kind()
+	extentType := reflect.TypeOf(extent).Kind()
+	if extentType != domainType {
+		return nil, fmt.Errorf("Domaing and extent do not have the same data types. Domain: %s, Extent: %s", domainType.String(), extentType.String())
+	}
+
 	var datatype Datatype
 	var ret C.int
-	var cdomain unsafe.Pointer
 	// Convert domain to type then to void*
-	switch domainInterfaceVal.Index(0).Kind() {
+	var cdomain unsafe.Pointer
+	// Convert extent to type then to void*
+	var cextent unsafe.Pointer
+	// Switch on domain type to create void* for domain and extent.
+	// Extent has already checked to be same type as domain so this is safe
+	switch domainType {
 	case reflect.Int:
-		// Check size of uint on platform
+		// Check size of int on platform
 		if strconv.IntSize == 32 {
 			datatype = TILEDB_INT32
 		} else {
 			datatype = TILEDB_INT64
 		}
+		// Create domain void*
 		tmpDomain := domain.([]int)
 		cdomain = unsafe.Pointer(&tmpDomain[0])
+		// Create extent void*
+		tmpExtent := (extent.(int))
+		cextent = unsafe.Pointer(&tmpExtent)
 	case reflect.Int8:
 		datatype = TILEDB_INT8
+		// Create domain void*
 		tmpDomain := domain.([]int8)
 		cdomain = unsafe.Pointer(&tmpDomain[0])
+		// Create extent void*
+		tmpExtent := (extent.(int8))
+		cextent = unsafe.Pointer(&tmpExtent)
 	case reflect.Int16:
 		datatype = TILEDB_INT16
+		// Create domain void*
 		tmpDomain := domain.([]int16)
 		cdomain = unsafe.Pointer(&tmpDomain[0])
+		// Create extent void*
+		tmpExtent := (extent.(int16))
+		cextent = unsafe.Pointer(&tmpExtent)
 	case reflect.Int32:
 		datatype = TILEDB_INT32
+		// Create domain void*
 		tmpDomain := domain.([]int32)
 		cdomain = unsafe.Pointer(&tmpDomain[0])
+		// Create extent void*
+		tmpExtent := (extent.(int32))
+		cextent = unsafe.Pointer(&tmpExtent)
 	case reflect.Int64:
 		datatype = TILEDB_INT64
+		// Create domain void*
 		tmpDomain := domain.([]int64)
 		cdomain = unsafe.Pointer(&tmpDomain[0])
+		// Create extent void*
+		tmpExtent := (extent.(int64))
+		cextent = unsafe.Pointer(&tmpExtent)
 	case reflect.Uint:
 		// Check size of uint on platform
 		if strconv.IntSize == 32 {
@@ -73,77 +103,62 @@ func NewDimension(context *Context, name string, domain interface{}, extent inte
 		} else {
 			datatype = TILEDB_UINT64
 		}
+		// Create domain void*
 		tmpDomain := domain.([]uint)
 		cdomain = unsafe.Pointer(&tmpDomain[0])
-	case reflect.Uint8:
-		datatype = TILEDB_UINT8
-		tmpDomain := domain.([]uint8)
-		cdomain = unsafe.Pointer(&tmpDomain[0])
-	case reflect.Uint16:
-		datatype = TILEDB_UINT16
-		tmpDomain := domain.([]uint16)
-		cdomain = unsafe.Pointer(&tmpDomain[0])
-	case reflect.Uint32:
-		datatype = TILEDB_UINT32
-		tmpDomain := domain.([]uint32)
-		cdomain = unsafe.Pointer(&tmpDomain[0])
-	case reflect.Uint64:
-		datatype = TILEDB_UINT64
-		tmpDomain := domain.([]uint64)
-		cdomain = unsafe.Pointer(&tmpDomain[0])
-	case reflect.Float32:
-		datatype = TILEDB_FLOAT32
-		tmpDomain := domain.([]float32)
-		cdomain = unsafe.Pointer(&tmpDomain[0])
-	case reflect.Float64:
-		datatype = TILEDB_FLOAT64
-		tmpDomain := domain.([]float64)
-		cdomain = unsafe.Pointer(&tmpDomain[0])
-	default:
-		return nil, fmt.Errorf("Unrecognized domain type passed: %s", domainInterfaceVal.Index(0).Kind().String())
-	}
-
-	// Convert extent to type then to void*
-	var cextent unsafe.Pointer
-	switch reflect.ValueOf(extent).Kind() {
-	case reflect.Int:
-		tmpExtent := (extent.(int))
-		cextent = unsafe.Pointer(&tmpExtent)
-	case reflect.Int8:
-		tmpExtent := (extent.(int8))
-		cextent = unsafe.Pointer(&tmpExtent)
-	case reflect.Int16:
-		tmpExtent := (extent.(int16))
-		cextent = unsafe.Pointer(&tmpExtent)
-	case reflect.Int32:
-		tmpExtent := (extent.(int32))
-		cextent = unsafe.Pointer(&tmpExtent)
-	case reflect.Int64:
-		tmpExtent := (extent.(int64))
-		cextent = unsafe.Pointer(&tmpExtent)
-	case reflect.Uint:
+		// Create extent void*
 		tmpExtent := (extent.(uint))
 		cextent = unsafe.Pointer(&tmpExtent)
 	case reflect.Uint8:
+		datatype = TILEDB_UINT8
+		// Create domain void*
+		tmpDomain := domain.([]uint8)
+		cdomain = unsafe.Pointer(&tmpDomain[0])
+		// Create extent void*
 		tmpExtent := (extent.(uint8))
 		cextent = unsafe.Pointer(&tmpExtent)
 	case reflect.Uint16:
+		datatype = TILEDB_UINT16
+		// Create domain void*
+		tmpDomain := domain.([]uint16)
+		cdomain = unsafe.Pointer(&tmpDomain[0])
+		// Create extent void*
 		tmpExtent := (extent.(uint16))
 		cextent = unsafe.Pointer(&tmpExtent)
 	case reflect.Uint32:
+		datatype = TILEDB_UINT32
+		// Create domain void*
+		tmpDomain := domain.([]uint32)
+		cdomain = unsafe.Pointer(&tmpDomain[0])
+		// Create extent void*
 		tmpExtent := (extent.(uint32))
 		cextent = unsafe.Pointer(&tmpExtent)
 	case reflect.Uint64:
+		datatype = TILEDB_UINT64
+		// Create domain void*
+		tmpDomain := domain.([]uint64)
+		cdomain = unsafe.Pointer(&tmpDomain[0])
+		// Create extent void*
 		tmpExtent := (extent.(uint64))
 		cextent = unsafe.Pointer(&tmpExtent)
 	case reflect.Float32:
+		datatype = TILEDB_FLOAT32
+		// Create domain void*
+		tmpDomain := domain.([]float32)
+		cdomain = unsafe.Pointer(&tmpDomain[0])
+		// Create extent void*
 		tmpExtent := (extent.(float32))
 		cextent = unsafe.Pointer(&tmpExtent)
 	case reflect.Float64:
+		datatype = TILEDB_FLOAT64
+		// Create domain void*
+		tmpDomain := domain.([]float64)
+		cdomain = unsafe.Pointer(&tmpDomain[0])
+		// Create extent void*
 		tmpExtent := (extent.(float64))
 		cextent = unsafe.Pointer(&tmpExtent)
 	default:
-		return nil, fmt.Errorf("Unrecognized extent type passed: %s", reflect.ValueOf(extent).Kind().String())
+		return nil, fmt.Errorf("Unrecognized domain type passed: %s", domainInterfaceVal.Index(0).Kind().String())
 	}
 
 	ret = C.tiledb_dimension_alloc(context.tiledbContext, cname, C.tiledb_datatype_t(datatype), cdomain, cextent, &dimension.tiledbDimension)

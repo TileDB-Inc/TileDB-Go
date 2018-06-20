@@ -74,7 +74,7 @@ func TestArraySchema(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Test create dimension
-	dimension, err := NewDimension(context, "dim1", []int32{1, 10}, 5)
+	dimension, err := NewDimension(context, "dim1", []int32{1, 10}, int32(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 
