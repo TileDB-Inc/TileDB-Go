@@ -57,7 +57,7 @@ func (c *Context) GetConfig() (*Config, error) {
 
 	if ret == C.TILEDB_OOM {
 		return nil, fmt.Errorf("Out of Memory error in GetConfig")
-	} else if ret == C.TILEDB_ERR {
+	} else if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Unknown error in GetConfig")
 	}
 
@@ -80,11 +80,11 @@ func (c *Context) GetLastError() error {
 }
 
 // IsFSSupported checks if a given filesystem is supported
-func (c *Context) IsFSSupported(fs TiledbFS) (bool, error) {
+func (c *Context) IsFSSupported(fs FS) (bool, error) {
 	var isSupported C.int
 	ret := C.tiledb_ctx_is_supported_fs(c.tiledbContext, C.tiledb_filesystem_t(fs), &isSupported)
 
-	if ret == C.TILEDB_ERR {
+	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("Error in checking FS support")
 	}
 
