@@ -8,6 +8,8 @@ package tiledb
 */
 import "C"
 
+import "reflect"
+
 // ArrayType enum for tiledb arrays
 type ArrayType int8
 
@@ -92,6 +94,48 @@ const (
 	TILEDB_ANY Datatype = C.TILEDB_ANY
 )
 
+// ReflectKind returns the reflect kind given a datatype
+func (d Datatype) ReflectKind() reflect.Kind {
+	switch d {
+	case TILEDB_INT8:
+		return reflect.Int8
+	case TILEDB_INT16:
+		return reflect.Int16
+	case TILEDB_INT32:
+		return reflect.Int32
+	case TILEDB_INT64:
+		return reflect.Int64
+	case TILEDB_UINT8:
+		return reflect.Uint8
+	case TILEDB_UINT16:
+		return reflect.Uint16
+	case TILEDB_UINT32:
+		return reflect.Uint32
+	case TILEDB_UINT64:
+		return reflect.Uint64
+	case TILEDB_FLOAT32:
+		return reflect.Float32
+	case TILEDB_FLOAT64:
+		return reflect.Float64
+	case TILEDB_STRING_ASCII:
+		return reflect.Uint8
+	case TILEDB_STRING_UTF8:
+		return reflect.Uint8
+	case TILEDB_STRING_UTF16:
+		return reflect.Uint16
+	case TILEDB_STRING_UTF32:
+		return reflect.Uint32
+	case TILEDB_STRING_UCS2:
+		return reflect.Uint16
+	case TILEDB_STRING_UCS4:
+		return reflect.Uint32
+	case TILEDB_ANY:
+		return reflect.Interface
+	default:
+		return reflect.Interface
+	}
+}
+
 // FS represents support fs types
 type FS int8
 
@@ -117,6 +161,23 @@ const (
 	TILEDB_UNORDERED Layout = C.TILEDB_UNORDERED
 )
 
+// QueryStatus status of a query
+type QueryStatus int8
+
+const (
+	// TILEDB_FAILED Query failed
+	TILEDB_FAILED QueryStatus = C.TILEDB_FAILED
+	// TILEDB_COMPLETED Query completed (all data has been read)
+	TILEDB_COMPLETED QueryStatus = C.TILEDB_COMPLETED
+	// TILEDB_INPROGRESS Query is in progress
+	TILEDB_INPROGRESS QueryStatus = C.TILEDB_INPROGRESS
+	//TILEDB_INCOMPLETE Query completed (but not all data has been read)
+	TILEDB_INCOMPLETE QueryStatus = C.TILEDB_INCOMPLETE
+	// TILEDB_UNINITIALIZED Query not initialized.
+	TILEDB_UNINITIALIZED QueryStatus = C.TILEDB_UNINITIALIZED
+)
+
+// QueryType read or write query
 type QueryType int8
 
 const (
