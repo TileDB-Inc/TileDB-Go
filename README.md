@@ -36,7 +36,7 @@ go test github.com/TileDB-Inc/TileDB-Go
 
 ## Example Usage
 
-Below is a small example using vfs functionality. Additionale examples are
+Below is a small example using vfs functionality. Additional examples are
 provided in the GoDoc documentation.
 
 ```golang
