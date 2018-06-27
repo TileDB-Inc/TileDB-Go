@@ -29,6 +29,36 @@ type ArraySchema struct {
 	context           *Context
 }
 
+// Validate function for go-swagger json validation
+func (a *ArraySchema) Validate() error {
+	if a == nil {
+		return fmt.Errorf("ArraySchema validation failed: nil")
+	}
+	return a.Check()
+}
+
+// MarshalJSON marshal arraySchema struct to json using tiledb
+func (a *ArraySchema) MarshalJSON() ([]byte, error) {
+	var jsonString *C.char
+	defer C.free(unsafe.Pointer(jsonString))
+	ret := C.tiledb_array_schema_to_json(a.context.tiledbContext, a.tiledbArraySchema, &jsonString)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error marshaling json for array schema: %s", a.context.LastError())
+	}
+	return []byte(C.GoString(jsonString)), nil
+}
+
+// UnmarshalJSON marshal arraySchema struct to json using tiledb
+func (a *ArraySchema) UnmarshalJSON(b []byte) error {
+	jsonString := C.CString(string(b))
+	defer C.free(unsafe.Pointer(jsonString))
+	ret := C.tiledb_array_schema_from_json(a.context.tiledbContext, &a.tiledbArraySchema, jsonString)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error unmarshaling json for array schema: %s", a.context.LastError())
+	}
+	return nil
+}
+
 // NewArraySchema alloc a new ArraySchema
 func NewArraySchema(ctx *Context, arrayType ArrayType) (*ArraySchema, error) {
 	arraySchema := ArraySchema{context: ctx}
