@@ -35,7 +35,7 @@ func NewArraySchema(ctx *Context, arrayType ArrayType) (*ArraySchema, error) {
 	return &arraySchema, nil
 }
 
-// Free tiledb_domain_t that was allocated on heap in c
+// Free tiledb_array_schema_t that was allocated on heap in c
 func (a *ArraySchema) Free() {
 	if a.tiledbArraySchema != nil {
 		C.tiledb_array_schema_free(&a.tiledbArraySchema)

@@ -38,7 +38,7 @@ func NewArray(ctx *Context, uri string) (*Array, error) {
 	return &array, nil
 }
 
-// Free tiledb_domain_t that was allocated on heap in c
+// Free tiledb_array_t that was allocated on heap in c
 func (a *Array) Free() {
 	if a.tiledbArray != nil {
 		C.tiledb_array_free(&a.tiledbArray)
