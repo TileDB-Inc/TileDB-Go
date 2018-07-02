@@ -9,6 +9,7 @@ import "C"
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"unsafe"
 )
@@ -222,4 +223,40 @@ func LoadArraySchema(context *Context, path string) (*ArraySchema, error) {
 		return nil, fmt.Errorf("Error in loading arraySchema from %s: %s", path, a.context.GetLastError())
 	}
 	return &a, nil
+}
+
+// DumpSTDOUT Dumps the array schema in ASCII format to stdout
+func (a *ArraySchema) DumpSTDOUT() error {
+	ret := C.tiledb_array_schema_dump(a.context.tiledbContext, a.tiledbArraySchema, C.stdout)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error dumping array schema to stdout: %s", a.context.GetLastError())
+	}
+	return nil
+}
+
+// Dump Dumps the array schema in ASCII format in the selected output.
+func (a *ArraySchema) Dump(path string) error {
+
+	if _, err := os.Stat(path); err == nil {
+		return fmt.Errorf("Error path already %s exists", path)
+	}
+
+	// Convert to char *
+	cPath := C.CString(path)
+	defer C.free(unsafe.Pointer(cPath))
+
+	// Set mode as char*
+	cMode := C.CString("w")
+	defer C.free(unsafe.Pointer(cMode))
+
+	// Open file to get FILE*
+	cFile := C.fopen(cPath, cMode)
+	defer C.fclose(cFile)
+
+	// Dump array schema to file
+	ret := C.tiledb_array_schema_dump(a.context.tiledbContext, a.tiledbArraySchema, cFile)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error dumping array schema to file %s: %s", path, a.context.GetLastError())
+	}
+	return nil
 }

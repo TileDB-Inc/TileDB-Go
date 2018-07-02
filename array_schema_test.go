@@ -1,6 +1,7 @@
 package tiledb
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -184,6 +185,25 @@ func TestArraySchema(t *testing.T) {
 	assert.EqualValues(t, c, *compressor)
 
 	err = arraySchema.Check()
+	assert.Nil(t, err)
+
+	// Temp path froo+= testing dump
+	tmpPathDump := os.TempDir() + string(os.PathSeparator) + "tiledb_array_schema_dump_test"
+	// Cleanup tmp file when test ends
+	defer os.RemoveAll(tmpPathDump)
+	if _, err = os.Stat(tmpPathDump); err == nil {
+		os.RemoveAll(tmpPathDump)
+	}
+
+	// Test dumping to file
+	err = arraySchema.Dump(tmpPathDump)
+	assert.Nil(t, err)
+	// Validate dumped file is non-empty
+	fileInfo, err := os.Stat(tmpPathDump)
+	assert.Nil(t, err)
+	assert.NotZero(t, fileInfo.Size())
+
+	err = arraySchema.DumpSTDOUT()
 	assert.Nil(t, err)
 
 	arraySchema.Free()

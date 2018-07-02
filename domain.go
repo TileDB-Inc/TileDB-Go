@@ -9,6 +9,7 @@ import "C"
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"unsafe"
 )
@@ -91,6 +92,42 @@ func (d *Domain) AddDimension(dimensions ...Dimension) error {
 		if ret != C.TILEDB_OK {
 			return fmt.Errorf("Error adding dimension to domain: %s", d.context.GetLastError())
 		}
+	}
+	return nil
+}
+
+// DumpSTDOUT Dumps the domain in ASCII format to stdout
+func (d *Domain) DumpSTDOUT() error {
+	ret := C.tiledb_domain_dump(d.context.tiledbContext, d.tiledbDomain, C.stdout)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error dumping domain to stdout: %s", d.context.GetLastError())
+	}
+	return nil
+}
+
+// Dump Dumps the domain in ASCII format in the selected output.
+func (d *Domain) Dump(path string) error {
+
+	if _, err := os.Stat(path); err == nil {
+		return fmt.Errorf("Error path already %s exists", path)
+	}
+
+	// Convert to char *
+	cPath := C.CString(path)
+	defer C.free(unsafe.Pointer(cPath))
+
+	// Set mode as char*
+	cMode := C.CString("w")
+	defer C.free(unsafe.Pointer(cMode))
+
+	// Open file to get FILE*
+	cFile := C.fopen(cPath, cMode)
+	defer C.fclose(cFile)
+
+	// Dump domain to file
+	ret := C.tiledb_domain_dump(d.context.tiledbContext, d.tiledbDomain, cFile)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error dumping domain to file %s: %s", path, d.context.GetLastError())
 	}
 	return nil
 }

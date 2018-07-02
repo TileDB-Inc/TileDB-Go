@@ -9,6 +9,7 @@ import "C"
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"unsafe"
 )
@@ -105,4 +106,40 @@ func (a *Attribute) Type() (Datatype, error) {
 		return 0, fmt.Errorf("Error getting tiledb attribute type: %s", a.context.GetLastError())
 	}
 	return Datatype(attrType), nil
+}
+
+// DumpSTDOUT Dumps the attribute in ASCII format to stdout
+func (a *Attribute) DumpSTDOUT() error {
+	ret := C.tiledb_attribute_dump(a.context.tiledbContext, a.tiledbAttribute, C.stdout)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error dumping attribute to stdout: %s", a.context.GetLastError())
+	}
+	return nil
+}
+
+// Dump Dumps the attribute in ASCII format in the selected output.
+func (a *Attribute) Dump(path string) error {
+
+	if _, err := os.Stat(path); err == nil {
+		return fmt.Errorf("Error path already %s exists", path)
+	}
+
+	// Convert to char *
+	cPath := C.CString(path)
+	defer C.free(unsafe.Pointer(cPath))
+
+	// Set mode as char*
+	cMode := C.CString("w")
+	defer C.free(unsafe.Pointer(cMode))
+
+	// Open file to get FILE*
+	cFile := C.fopen(cPath, cMode)
+	defer C.fclose(cFile)
+
+	// Dump attribute to file
+	ret := C.tiledb_attribute_dump(a.context.tiledbContext, a.tiledbAttribute, cFile)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error dumping attribute to file %s: %s", path, a.context.GetLastError())
+	}
+	return nil
 }
