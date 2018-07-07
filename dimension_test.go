@@ -1,6 +1,7 @@
 package tiledb
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -218,4 +219,23 @@ func TestDimensionDomainTypes(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, extent)
 	assert.EqualValues(t, float64(5), extent)
+
+	// Temp path for testing dump
+	tmpPathDump := os.TempDir() + string(os.PathSeparator) + "tiledb_dimension_dump_test"
+	// Cleanup tmp file when test ends
+	defer os.RemoveAll(tmpPathDump)
+	if _, err = os.Stat(tmpPathDump); err == nil {
+		os.RemoveAll(tmpPathDump)
+	}
+
+	// Test dumping to file
+	err = dimension.Dump(tmpPathDump)
+	assert.Nil(t, err)
+	// Validate dumped file is non-empty
+	fileInfo, err := os.Stat(tmpPathDump)
+	assert.Nil(t, err)
+	assert.NotZero(t, fileInfo.Size())
+
+	err = dimension.DumpSTDOUT()
+	assert.Nil(t, err)
 }

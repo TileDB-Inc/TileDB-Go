@@ -9,6 +9,7 @@ import "C"
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -393,4 +394,40 @@ func (d *Dimension) Extent() (interface{}, error) {
 	}
 
 	return extent, nil
+}
+
+// DumpSTDOUT Dumps the dimension in ASCII format to stdout
+func (d *Dimension) DumpSTDOUT() error {
+	ret := C.tiledb_dimension_dump(d.context.tiledbContext, d.tiledbDimension, C.stdout)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error dumping dimension to stdout: %s", d.context.GetLastError())
+	}
+	return nil
+}
+
+// Dump Dumps the dimension in ASCII format in the selected output.
+func (d *Dimension) Dump(path string) error {
+
+	if _, err := os.Stat(path); err == nil {
+		return fmt.Errorf("Error path already %s exists", path)
+	}
+
+	// Convert to char *
+	cPath := C.CString(path)
+	defer C.free(unsafe.Pointer(cPath))
+
+	// Set mode as char*
+	cMode := C.CString("w")
+	defer C.free(unsafe.Pointer(cMode))
+
+	// Open file to get FILE*
+	cFile := C.fopen(cPath, cMode)
+	defer C.fclose(cFile)
+
+	// Dump dimension to file
+	ret := C.tiledb_dimension_dump(d.context.tiledbContext, d.tiledbDimension, cFile)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error dumping dimension to file %s: %s", path, d.context.GetLastError())
+	}
+	return nil
 }
