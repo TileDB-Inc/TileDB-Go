@@ -13,7 +13,7 @@ import (
 	"unsafe"
 )
 
-// Config is tiledb config
+// Config Carries configuration parameters for a context.
 type Config struct {
 	tiledbConfig *C.tiledb_config_t
 }
@@ -38,7 +38,7 @@ func NewConfig() (*Config, error) {
 	return &config, nil
 }
 
-// Set configuration parameter
+// Set Sets a config parameter-value pair.
 func (c *Config) Set(param string, value string) error {
 	var err *C.tiledb_error_t
 	cparam := C.CString(param)
@@ -58,7 +58,7 @@ func (c *Config) Set(param string, value string) error {
 	return nil
 }
 
-// Get configuration parameter
+// Get Get a parameter from the configuration by key.
 func (c *Config) Get(param string) (string, error) {
 	var err *C.tiledb_error_t
 	var val *C.char
@@ -80,7 +80,7 @@ func (c *Config) Get(param string) (string, error) {
 	return value, nil
 }
 
-// Unset sets a parameter back to default value
+// Unset Resets a config parameter to its default value.
 func (c *Config) Unset(param string) error {
 	var err *C.tiledb_error_t
 	cparam := C.CString(param)
@@ -98,7 +98,7 @@ func (c *Config) Unset(param string) error {
 	return nil
 }
 
-// SaveToFile reads a configuration text file
+// SaveToFile Saves the config parameters to a (local) text file.
 func (c *Config) SaveToFile(file string) error {
 	var err *C.tiledb_error_t
 	cfile := C.CString(file)

@@ -1,7 +1,3 @@
-// Package tiledb is a idomatic go binding to tiledb's c_api. Go structs are
-// used for object style access to tiledb types, such as Config and VFS.
-// Tiledb c objects that are alloced are set to be freeded on garbage collection
-// using `runtime.SetFinalizer`.
 package tiledb
 
 /*

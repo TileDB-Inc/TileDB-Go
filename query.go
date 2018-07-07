@@ -15,7 +15,7 @@ import (
 	"unsafe"
 )
 
-// Query is tiledb query
+// Query construct and exeute read/write queries on a tiledb Array
 type Query struct {
 	tiledbQuery *C.tiledb_query_t
 	array       *Array
@@ -25,7 +25,17 @@ type Query struct {
 	bufferMutex sync.Mutex
 }
 
-// NewQuery alloc a new query
+/*
+NewQuery Creates a TileDB query object.
+
+The query type (read or write) must be the same as the type used
+to open the array object.
+
+The storage manager also acquires a shared lock on the array.
+This means multiple read and write queries to the same array can be made
+concurrently (in TileDB, only consolidation requires an exclusive lock for
+a short period of time).
+*/
 func NewQuery(ctx *Context, array *Array) (*Query, error) {
 	if array == nil {
 		return nil, fmt.Errorf("Error creating tiledb query: passed array is nil")
@@ -57,7 +67,9 @@ func (q *Query) Free() {
 	}
 }
 
-// SetSubArray indicates that the query will write or read a subarray, and provides the appropriate information.
+// SetSubArray Sets a subarray, defined in the order dimensions were added.
+// Coordinates are inclusive. For the case of writes, this is meaningful only
+// for dense arrays, and specifically dense writes.
 func (q *Query) SetSubArray(subArray interface{}) error {
 
 	if reflect.TypeOf(subArray).Kind() != reflect.Slice {
@@ -147,7 +159,7 @@ func (q *Query) SetSubArray(subArray interface{}) error {
 }
 
 // SetBuffer Sets the buffer for a fixed-sized attribute to a query
-// The buffer must be an array and not a slice
+// The buffer must be an initialized slice
 func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 	bufferReflectType := reflect.TypeOf(buffer)
 	bufferReflectValue := reflect.ValueOf(buffer)
@@ -299,7 +311,7 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 }
 
 // SetBufferVar Sets the buffer for a fixed-sized attribute to a query
-// The buffer must be an array and not a slice
+// The buffer must be an initialized slice
 func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface{}) error {
 	bufferReflectType := reflect.TypeOf(buffer)
 	bufferReflectValue := reflect.ValueOf(buffer)
@@ -481,7 +493,9 @@ func (q *Query) SetLayout(layout Layout) error {
 	return nil
 }
 
-// Finalize flushes a query
+// Finalize Flushes all internal state of a query object and finalizes the
+// query. This is applicable only to global layout writes. It has no effect
+// for any other query type.
 func (q *Query) Finalize() error {
 	ret := C.tiledb_query_finalize(q.context.tiledbContext, q.tiledbQuery)
 	if ret != C.TILEDB_OK {
@@ -493,8 +507,25 @@ func (q *Query) Finalize() error {
 	return nil
 }
 
-// Submit a TileDB query
-// This will block until query is completed
+/*
+Submit a TileDB query
+This will block until query is completed
+
+Note:
+Finalize() must be invoked after finish writing in global layout
+(via repeated invocations of Submit()), in order to flush any internal state.
+For the case of reads, if the returned status is TILEDB_INCOMPLETE, TileDB
+could not fit the entire result in the user’s buffers. In this case, the user
+should consume the read results (if any), optionally reset the buffers with
+SetBuffer(), and then resubmit the query until the status becomes
+TILEDB_COMPLETED. If all buffer sizes after the termination of this
+function become 0, then this means that no useful data was read into
+the buffers, implying that the larger buffers are needed for the query
+to proceed. In this case, the users must reallocate their buffers
+(increasing their size), reset the buffers with set_buffer(),
+and resubmit the query.
+
+*/
 func (q *Query) Submit() error {
 	ret := C.tiledb_query_submit(q.context.tiledbContext, q.tiledbQuery)
 	if ret != C.TILEDB_OK {
@@ -503,8 +534,23 @@ func (q *Query) Submit() error {
 	return nil
 }
 
-// SubmitAsync a TileDB query
-// Async does not currently support the callback function parameter
+/*
+SubmitAsync a TileDB query
+
+Async does not currently support the callback function parameter
+To monitor progress of a query in a non blocking manner the status can be
+polled:
+
+ // Start goroutine for background monitoring
+ go func(query Query) {
+  var status QueryStatus
+  var err error
+   for status, err = query.Status(); status == TILEDB_INPROGRESS && err == nil; status, err = query.Status() {
+     // Do something while query is running
+   }
+   // Do something when query is finished
+ }(query)
+*/
 func (q *Query) SubmitAsync() error {
 	ret := C.tiledb_query_submit_async(q.context.tiledbContext, q.tiledbQuery, nil, nil)
 	if ret != C.TILEDB_OK {
@@ -533,7 +579,8 @@ func (q *Query) Type() (QueryType, error) {
 	return QueryType(queryType), nil
 }
 
-// HasResults Checks if the query has returned any results.
+// HasResults Returns true if the query has results
+// Applicable only to read queries (it returns false for write queries)
 func (q *Query) HasResults() (bool, error) {
 	var hasResults C.int
 	ret := C.tiledb_query_has_results(q.context.tiledbContext, q.tiledbQuery, &hasResults)

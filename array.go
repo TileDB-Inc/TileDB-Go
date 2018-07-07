@@ -13,7 +13,13 @@ import (
 	"unsafe"
 )
 
-// Array is tiledb array
+/*
+Array struct representing a TileDB array object.
+
+An Array object represents array data in TileDB at some persisted location,
+e.g. on disk, in an S3 bucket, etc. Once an array has been opened for reading
+or writing, interact with the data through Query objects.
+*/
 type Array struct {
 	tiledbArray *C.tiledb_array_t
 	context     *Context
@@ -41,11 +47,21 @@ func NewArray(ctx *Context, uri string) (*Array, error) {
 // Free tiledb_array_t that was allocated on heap in c
 func (a *Array) Free() {
 	if a.tiledbArray != nil {
+		a.Close()
 		C.tiledb_array_free(&a.tiledbArray)
 	}
 }
 
-// Open a tiledb array
+/*
+Open the array. The array is opened using a query type as input.
+This is to indicate that queries created for this Array object will inherit
+the query type. In other words, Array objects are opened to receive only one
+type of queries. They can always be closed and be re-opened with another query
+type. Also there may be many different Array objects created and opened with
+different query types. For instance, one may create and open an array object
+array_read for reads and another one array_write for writes, and interleave
+creation and submission of queries for both these array objects.
+*/
 func (a *Array) Open(queryType QueryType) error {
 	ret := C.tiledb_array_open(a.context.tiledbContext, a.tiledbArray, C.tiledb_query_type_t(queryType))
 	if ret != C.TILEDB_OK {
@@ -54,7 +70,13 @@ func (a *Array) Open(queryType QueryType) error {
 	return nil
 }
 
-// Reopen a tiledb array, useful when an array is updated
+/*
+Reopen the array (the array must be already open). This is useful when the
+array got updated after it got opened and the Array object got created.
+To sync-up with the updates, the user must either close the array and open
+with open(), or just use reopen() without closing. This function will be
+generally faster than the former alternative.
+*/
 func (a *Array) Reopen() error {
 	ret := C.tiledb_array_reopen(a.context.tiledbContext, a.tiledbArray)
 	if ret != C.TILEDB_OK {
@@ -63,7 +85,7 @@ func (a *Array) Reopen() error {
 	return nil
 }
 
-// Close a tiledb array
+// Close a tiledb array, this is called on garbage collection automatically
 func (a *Array) Close() error {
 	ret := C.tiledb_array_close(a.context.tiledbContext, a.tiledbArray)
 	if ret != C.TILEDB_OK {
@@ -72,7 +94,7 @@ func (a *Array) Close() error {
 	return nil
 }
 
-// Create a tiledb array
+// Create a new TileDB array given an input schema.
 func (a *Array) Create(arraySchema *ArraySchema) error {
 	curi := C.CString(a.uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -83,7 +105,9 @@ func (a *Array) Create(arraySchema *ArraySchema) error {
 	return nil
 }
 
-// Consolidate the fragements of an array into a single fragement
+// Consolidate Consolidates the fragments of an array into a single fragment.
+// You must first finalize all queries to the array before consolidation can
+// begin (as consolidation temporarily acquires an exclusive lock on the array).
 func (a *Array) Consolidate() error {
 	curi := C.CString(a.uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -94,7 +118,7 @@ func (a *Array) Consolidate() error {
 	return nil
 }
 
-// Schema returns the ArraySchema
+// Schema returns the ArraySchema for the array
 func (a *Array) Schema() (*ArraySchema, error) {
 	arraySchema := ArraySchema{context: a.context}
 	ret := C.tiledb_array_get_schema(a.context.tiledbContext, a.tiledbArray, &arraySchema.tiledbArraySchema)
@@ -356,7 +380,8 @@ func (a *Array) NonEmptyDomain() ([]map[string]interface{}, bool, error) {
 	return nonEmptyDomains, isEmpty == 1, nil
 }
 
-// MaxBufferSize computes the upper bound on the buffer size (inbyte) required for a read query for a given fixed attribute and subarray
+// MaxBufferSize computes the upper bound on the buffer size (in bytes)
+// required for a read query for a given fixed attribute and subarray
 func (a *Array) MaxBufferSize(attributeName string, subarray interface{}) (uint64, error) {
 	// Get Schema
 	schema, err := a.Schema()
@@ -421,7 +446,8 @@ func (a *Array) MaxBufferSize(attributeName string, subarray interface{}) (uint6
 	return uint64(bufferSize), nil
 }
 
-// MaxBufferSizeVar computes the upper bound on the buffer size (inbyte) required for a read query for a given variable sized attribute and subarray
+// MaxBufferSizeVar computes the upper bound on the buffer size (in bytes)
+// required for a read query for a given variable sized attribute and subarray
 func (a *Array) MaxBufferSizeVar(attributeName string, subarray interface{}) (uint64, uint64, error) {
 	// Get Schema
 	schema, err := a.Schema()

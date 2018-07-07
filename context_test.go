@@ -1,11 +1,48 @@
 package tiledb
 
 import (
-	"github.com/stretchr/testify/assert"
+	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-//TestNewContext tests setting a new context
+// ExampleNewContext example of creating a new context
+func ExampleNewContext() {
+
+	// Create Context with default configuration
+	context, err := NewContext(nil)
+
+	if err != nil {
+		// handle error
+		return
+	}
+
+	// Create a config
+	config, err := NewConfig()
+	if err != nil {
+		// handle error
+		return
+	}
+
+	// Use created config to create a new Context
+	context, err = NewContext(config)
+	if err != nil {
+		// handle error
+		return
+	}
+
+	// Check if S3 is supported
+	isS3Supported, err := context.IsFSSupported(TILEDB_S3)
+	if err != nil {
+		// handle error
+		return
+	}
+	// Output: false
+	fmt.Println(isS3Supported)
+}
+
+// TestNewContext tests setting a new context
 func TestNewContext(t *testing.T) {
 	context, err := NewContext(nil)
 
@@ -21,7 +58,7 @@ func TestNewContext(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-//TestGetContextConfig tests setting a new context
+// TestGetContextConfig tests setting a new context
 func TestGetContextConfig(t *testing.T) {
 	// Create config and modify a default value
 	config, err := NewConfig()
@@ -47,7 +84,7 @@ func TestGetContextConfig(t *testing.T) {
 	assert.Equal(t, "10", val)
 }
 
-//TestContextLastError tests retrieving the last error
+// TestContextLastError tests retrieving the last error
 func TestContextLastError(t *testing.T) {
 	context, err := NewContext(nil)
 	assert.Nil(t, err)
@@ -55,7 +92,7 @@ func TestContextLastError(t *testing.T) {
 	assert.Nil(t, ctxErr)
 }
 
-//TestContextIsFSSupported tests if we can detect filesystem support properly
+// TestContextIsFSSupported tests if we can detect filesystem support properly
 func TestContextIsFSSupported(t *testing.T) {
 	context, err := NewContext(nil)
 	assert.Nil(t, err)

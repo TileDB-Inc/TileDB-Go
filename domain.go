@@ -14,7 +14,10 @@ import (
 	"unsafe"
 )
 
-// Domain is tiledb domain
+// Domain Represents the domain of an array.
+// A Domain defines the set of Dimension objects for a given array.
+// The properties of a Domain derive from the underlying dimensions.
+// A Domain is a component of an ArraySchema.
 type Domain struct {
 	tiledbDomain *C.tiledb_domain_t
 	context      *Context
@@ -53,7 +56,7 @@ func (d *Domain) Type() (Datatype, error) {
 	return Datatype(datatype), nil
 }
 
-// NDim returns a domains type deduced from dimensions
+// NDim returns the number of dimensions
 func (d *Domain) NDim() (uint, error) {
 	var ndim C.uint
 	ret := C.tiledb_domain_get_ndim(d.context.tiledbContext, d.tiledbDomain, &ndim)
@@ -63,7 +66,7 @@ func (d *Domain) NDim() (uint, error) {
 	return uint(ndim), nil
 }
 
-// DimensionFromIndex returns a dimension given index
+// DimensionFromIndex retrieves a dimension object from a domain by index.
 func (d *Domain) DimensionFromIndex(index uint) (*Dimension, error) {
 	var dim *C.tiledb_dimension_t
 	ret := C.tiledb_domain_get_dimension_from_index(d.context.tiledbContext, d.tiledbDomain, C.uint(index), &dim)
@@ -73,7 +76,7 @@ func (d *Domain) DimensionFromIndex(index uint) (*Dimension, error) {
 	return &Dimension{tiledbDimension: dim, context: d.context}, nil
 }
 
-// DimensionFromName returns a dimension given index
+// DimensionFromName retrieves a dimension object from a domain by name (key)
 func (d *Domain) DimensionFromName(name string) (*Dimension, error) {
 	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))

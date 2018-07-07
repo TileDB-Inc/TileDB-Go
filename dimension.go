@@ -16,7 +16,9 @@ import (
 	"unsafe"
 )
 
-// Dimension is tiledb dimension
+// Dimension Describes one dimension of an Array.
+// The dimension consists of a type, lower and upper bound, and tile-extent
+// describing the memory ordering. Dimensions are added to a Domain.
 type Dimension struct {
 	tiledbDimension *C.tiledb_dimension_t
 	context         *Context
