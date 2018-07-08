@@ -34,6 +34,15 @@ Package tests can be run with:
 go test github.com/TileDB-Inc/TileDB-Go
 ```
 
+## Compatibility
+
+TileDB-Go follows semantic versioning. Currently tiledb core library does not,
+as such the below table reference which versions are compatible.
+
+| TileDB-Go Version | TileDB Version |
+| ----------------- | -------------- |
+| 1.X.Y             | 1.3.0          |
+
 ## Example Usage
 
 Below is a small example using vfs functionality. Additional examples are
