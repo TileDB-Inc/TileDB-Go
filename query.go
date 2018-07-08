@@ -589,3 +589,8 @@ func (q *Query) HasResults() (bool, error) {
 	}
 	return int(hasResults) == 1, nil
 }
+
+// SetCoordinates sets the coordinate buffer
+func (q *Query) SetCoordinates(coordinates interface{}) error {
+	return q.SetBuffer(TILEDB_COORDS, coordinates)
+}
