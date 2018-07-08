@@ -37,7 +37,7 @@ func ExampleNewArray() {
 	}
 
 	// Add dimension to domain
-	err = domain.AddDimension(*dimension)
+	err = domain.AddDimensions(dimension)
 	if err != nil {
 		// Handle error
 		return
@@ -57,7 +57,7 @@ func ExampleNewArray() {
 		return
 	}
 
-	err = arraySchema.AddAttributes(*attribute)
+	err = arraySchema.AddAttributes(attribute)
 	if err != nil {
 		// Handle error
 		return
@@ -97,7 +97,7 @@ func TestArray(t *testing.T) {
 	assert.NotNil(t, domain)
 
 	// Add dimension
-	err = domain.AddDimension(*dimension)
+	err = domain.AddDimensions(dimension)
 	assert.Nil(t, err)
 
 	// Create array schema
@@ -119,7 +119,7 @@ func TestArray(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Add Attribute
-	err = arraySchema.AddAttributes(*attribute, *attribute2)
+	err = arraySchema.AddAttributes(attribute, attribute2)
 	assert.Nil(t, err)
 
 	err = arraySchema.SetDomain(domain)

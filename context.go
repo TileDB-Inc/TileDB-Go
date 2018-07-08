@@ -54,8 +54,8 @@ func (c *Context) Free() {
 	}
 }
 
-// GetConfig retrieves a copy of the config from context
-func (c *Context) GetConfig() (*Config, error) {
+// Config retrieves a copy of the config from context
+func (c *Context) Config() (*Config, error) {
 	config := &Config{}
 	ret := C.tiledb_ctx_get_config(c.tiledbContext, &config.tiledbConfig)
 
@@ -68,8 +68,8 @@ func (c *Context) GetConfig() (*Config, error) {
 	return config, nil
 }
 
-// GetLastError returns the last error from this context
-func (c *Context) GetLastError() error {
+// LastError returns the last error from this context
+func (c *Context) LastError() error {
 	var err *C.tiledb_error_t
 	C.tiledb_ctx_get_last_error(c.tiledbContext, &err)
 
@@ -83,8 +83,8 @@ func (c *Context) GetLastError() error {
 	return nil
 }
 
-// IsFSSupported Return true if the given filesystem backend is supported.
-func (c *Context) IsFSSupported(fs FS) (bool, error) {
+// IsSupportedFS Return true if the given filesystem backend is supported.
+func (c *Context) IsSupportedFS(fs FS) (bool, error) {
 	var isSupported C.int
 	ret := C.tiledb_ctx_is_supported_fs(c.tiledbContext, C.tiledb_filesystem_t(fs), &isSupported)
 

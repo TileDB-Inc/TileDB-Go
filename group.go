@@ -20,7 +20,7 @@ func GroupCreate(context *Context, group string) error {
 
 	ret := C.tiledb_group_create(context.tiledbContext, cgroup)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error in creating group %s: %s", group, context.GetLastError())
+		return fmt.Errorf("Error in creating group %s: %s", group, context.LastError())
 	}
 	return nil
 }

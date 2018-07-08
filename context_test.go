@@ -33,7 +33,7 @@ func ExampleNewContext() {
 	}
 
 	// Check if S3 is supported
-	isS3Supported, err := context.IsFSSupported(TILEDB_S3)
+	isS3Supported, err := context.IsSupportedFS(TILEDB_S3)
 	if err != nil {
 		// handle error
 		return
@@ -75,7 +75,7 @@ func TestGetContextConfig(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Get config
-	config2, err := context.GetConfig()
+	config2, err := context.Config()
 	assert.Nil(t, err)
 
 	// Validate config has setting changed
@@ -88,7 +88,7 @@ func TestGetContextConfig(t *testing.T) {
 func TestContextLastError(t *testing.T) {
 	context, err := NewContext(nil)
 	assert.Nil(t, err)
-	ctxErr := context.GetLastError()
+	ctxErr := context.LastError()
 	assert.Nil(t, ctxErr)
 }
 
@@ -96,6 +96,6 @@ func TestContextLastError(t *testing.T) {
 func TestContextIsFSSupported(t *testing.T) {
 	context, err := NewContext(nil)
 	assert.Nil(t, err)
-	_, ctxErr := context.IsFSSupported(TILEDB_S3)
+	_, ctxErr := context.IsSupportedFS(TILEDB_S3)
 	assert.Nil(t, ctxErr)
 }
