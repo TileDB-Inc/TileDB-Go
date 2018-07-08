@@ -173,14 +173,29 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 		return fmt.Errorf("Could not get array schema for SetBuffer: %s", err)
 	}
 
-	schemaAttribute, err := schema.AttributeFromName(attribute)
-	if err != nil {
-		return fmt.Errorf("Could not get attribute for SetBuffer: %s", attribute)
-	}
+	var attributeType Datatype
+	// If we are setting tiledb coordinates for a sparse array we want to check
+	// the domain type. The TILEDB_COORDS attribute is only materialized after
+	// the first write
+	if attribute == TILEDB_COORDS {
+		domain, err := schema.Domain()
+		if err != nil {
+			return fmt.Errorf("Could not get domain for SetBuffer: %s", attribute)
+		}
+		attributeType, err = domain.Type()
+		if err != nil {
+			return fmt.Errorf("Could not get domainType for SetBuffer: %s", attribute)
+		}
+	} else {
+		schemaAttribute, err := schema.AttributeFromName(attribute)
+		if err != nil {
+			return fmt.Errorf("Could not get attribute for SetBuffer: %s", attribute)
+		}
 
-	attributeType, err := schemaAttribute.Type()
-	if err != nil {
-		return fmt.Errorf("Could not get attributeType for SetBuffer: %s", attribute)
+		attributeType, err = schemaAttribute.Type()
+		if err != nil {
+			return fmt.Errorf("Could not get attributeType for SetBuffer: %s", attribute)
+		}
 	}
 
 	bufferType := bufferReflectType.Elem().Kind()
