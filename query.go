@@ -49,7 +49,7 @@ func NewQuery(ctx *Context, array *Array) (*Query, error) {
 	query := Query{context: ctx, array: array}
 	ret := C.tiledb_query_alloc(query.context.tiledbContext, array.tiledbArray, C.tiledb_query_type_t(queryType), &query.tiledbQuery)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error creating tiledb query: %s", query.context.GetLastError())
+		return nil, fmt.Errorf("Error creating tiledb query: %s", query.context.LastError())
 	}
 
 	// Set finalizer for free C pointer on gc
@@ -153,7 +153,7 @@ func (q *Query) SetSubArray(subArray interface{}) error {
 
 	ret := C.tiledb_query_set_subarray(q.context.tiledbContext, q.tiledbQuery, csubArray)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting query subarray: %s", q.context.GetLastError())
+		return fmt.Errorf("Error setting query subarray: %s", q.context.LastError())
 	}
 	return nil
 }
@@ -305,7 +305,7 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 	defer C.free(unsafe.Pointer(cAttribute))
 	ret := C.tiledb_query_set_buffer(q.context.tiledbContext, q.tiledbQuery, cAttribute, cbuffer, &cbufferSize)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting query buffer: %s", q.context.GetLastError())
+		return fmt.Errorf("Error setting query buffer: %s", q.context.LastError())
 	}
 	return nil
 }
@@ -479,7 +479,7 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 	defer C.free(unsafe.Pointer(cAttribute))
 	ret := C.tiledb_query_set_buffer_var(q.context.tiledbContext, q.tiledbQuery, cAttribute, (*C.uint64_t)(coffset), &coffsetSize, cbuffer, &cbufferSize)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting query var buffer: %s", q.context.GetLastError())
+		return fmt.Errorf("Error setting query var buffer: %s", q.context.LastError())
 	}
 	return nil
 }
@@ -488,7 +488,7 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 func (q *Query) SetLayout(layout Layout) error {
 	ret := C.tiledb_query_set_layout(q.context.tiledbContext, q.tiledbQuery, C.tiledb_layout_t(layout))
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting query layout: %s", q.context.GetLastError())
+		return fmt.Errorf("Error setting query layout: %s", q.context.LastError())
 	}
 	return nil
 }
@@ -499,7 +499,7 @@ func (q *Query) SetLayout(layout Layout) error {
 func (q *Query) Finalize() error {
 	ret := C.tiledb_query_finalize(q.context.tiledbContext, q.tiledbQuery)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error finalizing query: %s", q.context.GetLastError())
+		return fmt.Errorf("Error finalizing query: %s", q.context.LastError())
 	}
 	q.bufferMutex.Lock()
 	defer q.bufferMutex.Unlock()
@@ -529,7 +529,7 @@ and resubmit the query.
 func (q *Query) Submit() error {
 	ret := C.tiledb_query_submit(q.context.tiledbContext, q.tiledbQuery)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error submitting query: %s", q.context.GetLastError())
+		return fmt.Errorf("Error submitting query: %s", q.context.LastError())
 	}
 	return nil
 }
@@ -554,7 +554,7 @@ polled:
 func (q *Query) SubmitAsync() error {
 	ret := C.tiledb_query_submit_async(q.context.tiledbContext, q.tiledbQuery, nil, nil)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error submitting query: %s", q.context.GetLastError())
+		return fmt.Errorf("Error submitting query: %s", q.context.LastError())
 	}
 	return nil
 }
@@ -564,7 +564,7 @@ func (q *Query) Status() (QueryStatus, error) {
 	var status C.tiledb_query_status_t
 	ret := C.tiledb_query_get_status(q.context.tiledbContext, q.tiledbQuery, &status)
 	if ret != C.TILEDB_OK {
-		return -1, fmt.Errorf("Error getting query status: %s", q.context.GetLastError())
+		return -1, fmt.Errorf("Error getting query status: %s", q.context.LastError())
 	}
 	return QueryStatus(status), nil
 }
@@ -574,7 +574,7 @@ func (q *Query) Type() (QueryType, error) {
 	var queryType C.tiledb_query_type_t
 	ret := C.tiledb_query_get_type(q.context.tiledbContext, q.tiledbQuery, &queryType)
 	if ret != C.TILEDB_OK {
-		return -1, fmt.Errorf("Error getting query type: %s", q.context.GetLastError())
+		return -1, fmt.Errorf("Error getting query type: %s", q.context.LastError())
 	}
 	return QueryType(queryType), nil
 }
@@ -585,7 +585,7 @@ func (q *Query) HasResults() (bool, error) {
 	var hasResults C.int
 	ret := C.tiledb_query_has_results(q.context.tiledbContext, q.tiledbQuery, &hasResults)
 	if ret != C.TILEDB_OK {
-		return false, fmt.Errorf("Error checking if query has results: %s", q.context.GetLastError())
+		return false, fmt.Errorf("Error checking if query has results: %s", q.context.LastError())
 	}
 	return int(hasResults) == 1, nil
 }

@@ -36,7 +36,7 @@ func NewAttribute(context *Context, name string, datatype Datatype) (*Attribute,
 
 	ret := C.tiledb_attribute_alloc(context.tiledbContext, cname, C.tiledb_datatype_t(datatype), &attribute.tiledbAttribute)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error creating tiledb attribute: %s", context.GetLastError())
+		return nil, fmt.Errorf("Error creating tiledb attribute: %s", context.LastError())
 	}
 
 	// Set finalizer for free C pointer on gc
@@ -58,7 +58,7 @@ func (a *Attribute) Free() {
 func (a *Attribute) SetCompressor(compressor Compressor) error {
 	ret := C.tiledb_attribute_set_compressor(a.context.tiledbContext, a.tiledbAttribute, C.tiledb_compressor_t(compressor.Compressor), C.int(compressor.Level))
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting tiledb attribute compressor: %s", a.context.GetLastError())
+		return fmt.Errorf("Error setting tiledb attribute compressor: %s", a.context.LastError())
 	}
 	return nil
 }
@@ -69,7 +69,7 @@ func (a *Attribute) Compressor() (*Compressor, error) {
 	var clevel C.int
 	ret := C.tiledb_attribute_get_compressor(a.context.tiledbContext, a.tiledbAttribute, &compressorT, &clevel)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting tiledb attribute compressor: %s", a.context.GetLastError())
+		return nil, fmt.Errorf("Error getting tiledb attribute compressor: %s", a.context.LastError())
 	}
 
 	return &Compressor{Compressor: CompressorType(compressorT), Level: int(clevel)}, nil
@@ -81,7 +81,7 @@ func (a *Attribute) Compressor() (*Compressor, error) {
 func (a *Attribute) SetCellValNum(val uint) error {
 	ret := C.tiledb_attribute_set_cell_val_num(a.context.tiledbContext, a.tiledbAttribute, C.uint(val))
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting tiledb attribute cell val num: %s", a.context.GetLastError())
+		return fmt.Errorf("Error setting tiledb attribute cell val num: %s", a.context.LastError())
 	}
 	return nil
 }
@@ -92,7 +92,7 @@ func (a *Attribute) CellValNum() (uint, error) {
 	var cellValNum C.uint
 	ret := C.tiledb_attribute_get_cell_val_num(a.context.tiledbContext, a.tiledbAttribute, &cellValNum)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting tiledb attribute cell val num: %s", a.context.GetLastError())
+		return 0, fmt.Errorf("Error getting tiledb attribute cell val num: %s", a.context.LastError())
 	}
 
 	return uint(cellValNum), nil
@@ -104,7 +104,7 @@ func (a *Attribute) Name() (string, error) {
 	defer C.free(unsafe.Pointer(cName))
 	ret := C.tiledb_attribute_get_name(a.context.tiledbContext, a.tiledbAttribute, &cName)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error getting tiledb attribute name: %s", a.context.GetLastError())
+		return "", fmt.Errorf("Error getting tiledb attribute name: %s", a.context.LastError())
 	}
 
 	return C.GoString(cName), nil
@@ -115,7 +115,7 @@ func (a *Attribute) Type() (Datatype, error) {
 	var attrType C.tiledb_datatype_t
 	ret := C.tiledb_attribute_get_type(a.context.tiledbContext, a.tiledbAttribute, &attrType)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting tiledb attribute type: %s", a.context.GetLastError())
+		return 0, fmt.Errorf("Error getting tiledb attribute type: %s", a.context.LastError())
 	}
 	return Datatype(attrType), nil
 }
@@ -124,7 +124,7 @@ func (a *Attribute) Type() (Datatype, error) {
 func (a *Attribute) DumpSTDOUT() error {
 	ret := C.tiledb_attribute_dump(a.context.tiledbContext, a.tiledbAttribute, C.stdout)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error dumping attribute to stdout: %s", a.context.GetLastError())
+		return fmt.Errorf("Error dumping attribute to stdout: %s", a.context.LastError())
 	}
 	return nil
 }
@@ -151,7 +151,7 @@ func (a *Attribute) Dump(path string) error {
 	// Dump attribute to file
 	ret := C.tiledb_attribute_dump(a.context.tiledbContext, a.tiledbAttribute, cFile)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error dumping attribute to file %s: %s", path, a.context.GetLastError())
+		return fmt.Errorf("Error dumping attribute to file %s: %s", path, a.context.LastError())
 	}
 	return nil
 }
