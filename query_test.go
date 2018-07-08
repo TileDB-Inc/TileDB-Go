@@ -611,8 +611,20 @@ func TestQueryWrite(t *testing.T) {
 	assert.NotNil(t, query)
 
 	// Set read subarray to only data that was written
-	err = query.SetSubArray([]int8{0, 1})
+	subArray := []int8{0, 1}
+	err = query.SetSubArray(subArray)
 	assert.Nil(t, err)
+
+	maxElements, err := array.MaxBufferElements(subArray)
+	assert.Nil(t, err)
+	assert.Equal(t, uint64(0), maxElements["a1"][0])
+	assert.Equal(t, uint64(2), maxElements["a1"][1])
+	assert.Equal(t, uint64(0), maxElements["a2"][0])
+	assert.Equal(t, uint64(2), maxElements["a2"][1])
+	assert.Equal(t, uint64(2), maxElements["a3"][0])
+	assert.Equal(t, uint64(15), maxElements["a3"][1])
+	assert.Equal(t, uint64(2), maxElements["a4"][0])
+	assert.Equal(t, uint64(20), maxElements["a4"][1])
 
 	// Set empty buffers for reading
 	readBufferA1 := make([]int32, 2)
