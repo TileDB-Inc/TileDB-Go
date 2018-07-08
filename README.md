@@ -43,6 +43,14 @@ as such the below table reference which versions are compatible.
 | ----------------- | -------------- |
 | 1.X.Y             | 1.3.0          |
 
+## Quickstart
+
+TileDB core documentation has a good
+[quickstart guide](https://docs.tiledb.io/en/latest/quickstart.html) .
+The two complete examples in the guide are
+[quickstart_dense_test.go](quickstart_dense_test.go) and
+[quickstart_sparse_test.go](quickstart_sparse_test.go).
+
 ## Example Usage
 
 Below is a small example using vfs functionality. Additional examples are
