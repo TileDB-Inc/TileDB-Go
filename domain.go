@@ -88,8 +88,8 @@ func (d *Domain) DimensionFromName(name string) (*Dimension, error) {
 	return &Dimension{tiledbDimension: dim, context: d.context}, nil
 }
 
-// AddDimension adds one or more dimensions to a domain
-func (d *Domain) AddDimension(dimensions ...Dimension) error {
+// AddDimensions adds one or more dimensions to a domain
+func (d *Domain) AddDimensions(dimensions ...*Dimension) error {
 	for _, dimension := range dimensions {
 		ret := C.tiledb_domain_add_dimension(d.context.tiledbContext, d.tiledbDomain, dimension.tiledbDimension)
 		if ret != C.TILEDB_OK {

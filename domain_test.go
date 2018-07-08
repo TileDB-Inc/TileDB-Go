@@ -37,7 +37,7 @@ func ExampleNewDomain() {
 	}
 
 	// Add dimension to domain
-	err = domain.AddDimension(*dimension)
+	err = domain.AddDimensions(dimension)
 	if err != nil {
 		// Handle error
 		return
@@ -65,7 +65,7 @@ func TestDomain(t *testing.T) {
 	assert.NotNil(t, domain)
 
 	// Add dimension
-	err = domain.AddDimension(*dimension)
+	err = domain.AddDimensions(dimension)
 	assert.Nil(t, err)
 
 	// Test getting type

@@ -38,7 +38,7 @@ func ExampleNewQuery() {
 	}
 
 	// Add dimension
-	err = domain.AddDimension(*dimension)
+	err = domain.AddDimensions(dimension)
 	if err != nil {
 		// Handle error
 		return
@@ -94,7 +94,7 @@ func ExampleNewQuery() {
 	}
 
 	// Add Attribute
-	err = arraySchema.AddAttributes(*attribute, *attribute2, *attribute3, *attribute4)
+	err = arraySchema.AddAttributes(attribute, attribute2, attribute3, attribute4)
 	if err != nil {
 		// Handle error
 		return
@@ -334,7 +334,7 @@ func TestQueryReadEmpty(t *testing.T) {
 	assert.NotNil(t, domain)
 
 	// Add dimension
-	err = domain.AddDimension(*dimension)
+	err = domain.AddDimensions(dimension)
 	assert.Nil(t, err)
 
 	// Create array schema
@@ -371,7 +371,7 @@ func TestQueryReadEmpty(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Add Attribute
-	err = arraySchema.AddAttributes(*attribute, *attribute2, *attribute3, *attribute4)
+	err = arraySchema.AddAttributes(attribute, attribute2, attribute3, attribute4)
 	assert.Nil(t, err)
 
 	// Set Domain
@@ -475,7 +475,7 @@ func TestQueryWrite(t *testing.T) {
 	assert.NotNil(t, domain)
 
 	// Add dimension
-	err = domain.AddDimension(*dimension)
+	err = domain.AddDimensions(dimension)
 	assert.Nil(t, err)
 
 	// Create array schema
@@ -512,7 +512,7 @@ func TestQueryWrite(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Add Attribute
-	err = arraySchema.AddAttributes(*attribute, *attribute2, *attribute3, *attribute4)
+	err = arraySchema.AddAttributes(attribute, attribute2, attribute3, attribute4)
 	assert.Nil(t, err)
 
 	// Set Domain

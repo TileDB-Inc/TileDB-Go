@@ -53,7 +53,7 @@ func (a *ArraySchema) Free() {
 }
 
 // AddAttributes add one or more attributes to the array
-func (a *ArraySchema) AddAttributes(attributes ...Attribute) error {
+func (a *ArraySchema) AddAttributes(attributes ...*Attribute) error {
 	for _, attribute := range attributes {
 		ret := C.tiledb_array_schema_add_attribute(a.context.tiledbContext, a.tiledbArraySchema, attribute.tiledbAttribute)
 		if ret != C.TILEDB_OK {
