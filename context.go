@@ -13,12 +13,16 @@ import (
 	"unsafe"
 )
 
-// Context is tiledb context
+// Context A TileDB context wraps a TileDB storage manager “instance.” Most
+// objects and functions will require a Context.
+// Internal error handling is also defined by the Context;
+// the default error handler throws a TileDBError with a specific message.
 type Context struct {
 	tiledbContext *C.tiledb_ctx_t
 }
 
-// NewContext alloc a new context
+// NewContext creates a TileDB context with the given configuration
+// If the configuration passed is null it is created with default config
 func NewContext(config *Config) (*Context, error) {
 	var context Context
 	var err *C.tiledb_error_t
@@ -50,7 +54,7 @@ func (c *Context) Free() {
 	}
 }
 
-// GetConfig retrieves config from context
+// GetConfig retrieves a copy of the config from context
 func (c *Context) GetConfig() (*Config, error) {
 	config := &Config{}
 	ret := C.tiledb_ctx_get_config(c.tiledbContext, &config.tiledbConfig)
@@ -79,7 +83,7 @@ func (c *Context) GetLastError() error {
 	return nil
 }
 
-// IsFSSupported checks if a given filesystem is supported
+// IsFSSupported Return true if the given filesystem backend is supported.
 func (c *Context) IsFSSupported(fs FS) (bool, error) {
 	var isSupported C.int
 	ret := C.tiledb_ctx_is_supported_fs(c.tiledbContext, C.tiledb_filesystem_t(fs), &isSupported)

@@ -14,13 +14,22 @@ import (
 	"unsafe"
 )
 
-// ArraySchema is tiledb array_schema
+/*
+ArraySchema Schema describing an array.
+
+The schema is an independent description of an array. A schema can be used to create multiple array’s, and stores information about its domain, cell types, and compression details. An array schema is composed of:
+
+    A Domain
+    A set of Attributes
+    Memory layout definitions: tile and cell
+    Compression details for Array level factors like offsets and coordinates
+*/
 type ArraySchema struct {
 	tiledbArraySchema *C.tiledb_array_schema_t
 	context           *Context
 }
 
-// NewArraySchema alloc a new array_schema
+// NewArraySchema alloc a new ArraySchema
 func NewArraySchema(ctx *Context, arrayType ArrayType) (*ArraySchema, error) {
 	arraySchema := ArraySchema{context: ctx}
 	ret := C.tiledb_array_schema_alloc(arraySchema.context.tiledbContext, C.tiledb_array_type_t(arrayType), &arraySchema.tiledbArraySchema)
@@ -43,7 +52,7 @@ func (a *ArraySchema) Free() {
 	}
 }
 
-// AddAttributes add one or more attributes
+// AddAttributes add one or more attributes to the array
 func (a *ArraySchema) AddAttributes(attributes ...Attribute) error {
 	for _, attribute := range attributes {
 		ret := C.tiledb_array_schema_add_attribute(a.context.tiledbContext, a.tiledbArraySchema, attribute.tiledbAttribute)
@@ -64,7 +73,7 @@ func (a *ArraySchema) AttributeNum() (uint, error) {
 	return uint(attrNum), nil
 }
 
-// AttributeFromIndex returns the attribute at a given index
+// AttributeFromIndex get a copy of an Attribute in the schema by name.
 func (a *ArraySchema) AttributeFromIndex(index uint) (*Attribute, error) {
 	attr := Attribute{context: a.context}
 	ret := C.tiledb_array_schema_get_attribute_from_index(a.context.tiledbContext, a.tiledbArraySchema, C.uint(index), &attr.tiledbAttribute)
@@ -74,7 +83,9 @@ func (a *ArraySchema) AttributeFromIndex(index uint) (*Attribute, error) {
 	return &attr, nil
 }
 
-// AttributeFromName returns the attribute at a given index
+// AttributeFromName Get a copy of an Attribute in the schema by index.
+// Attributes are ordered the same way they were defined when
+// constructing the array schema.
 func (a *ArraySchema) AttributeFromName(attrName string) (*Attribute, error) {
 	cAttrName := C.CString(attrName)
 	defer C.free(unsafe.Pointer(cAttrName))
@@ -86,7 +97,7 @@ func (a *ArraySchema) AttributeFromName(attrName string) (*Attribute, error) {
 	return &attr, nil
 }
 
-// SetDomain sets a ArraySchema's domain
+// SetDomain sets the array domain
 func (a *ArraySchema) SetDomain(domain *Domain) error {
 	ret := C.tiledb_array_schema_set_domain(a.context.tiledbContext, a.tiledbArraySchema, domain.tiledbDomain)
 	if ret != C.TILEDB_OK {
@@ -95,7 +106,7 @@ func (a *ArraySchema) SetDomain(domain *Domain) error {
 	return nil
 }
 
-// Domain returns an ArraySchema's domain
+// Domain returns the array's domain
 func (a *ArraySchema) Domain() (*Domain, error) {
 	domain := Domain{context: a.context}
 	ret := C.tiledb_array_schema_get_domain(a.context.tiledbContext, a.tiledbArraySchema, &domain.tiledbDomain)
@@ -105,7 +116,7 @@ func (a *ArraySchema) Domain() (*Domain, error) {
 	return &domain, nil
 }
 
-// SetCapacity sets an array's capacity
+// SetCapacity sets the tile capacity.
 func (a *ArraySchema) SetCapacity(capacity uint64) error {
 	ret := C.tiledb_array_schema_set_capacity(a.context.tiledbContext, a.tiledbArraySchema, C.uint64_t(capacity))
 	if ret != C.TILEDB_OK {
@@ -114,7 +125,7 @@ func (a *ArraySchema) SetCapacity(capacity uint64) error {
 	return nil
 }
 
-// Capacity gets an array's capacity
+// Capacity returns the tile capacity.
 func (a *ArraySchema) Capacity() (uint64, error) {
 	var capacity C.uint64_t
 	ret := C.tiledb_array_schema_get_capacity(a.context.tiledbContext, a.tiledbArraySchema, &capacity)
@@ -124,7 +135,7 @@ func (a *ArraySchema) Capacity() (uint64, error) {
 	return uint64(capacity), nil
 }
 
-// SetCellOrder sets an array's cell order
+// SetCellOrder set the cell order
 func (a *ArraySchema) SetCellOrder(cellOrder Layout) error {
 	ret := C.tiledb_array_schema_set_cell_order(a.context.tiledbContext, a.tiledbArraySchema, C.tiledb_layout_t(cellOrder))
 	if ret != C.TILEDB_OK {
@@ -133,7 +144,7 @@ func (a *ArraySchema) SetCellOrder(cellOrder Layout) error {
 	return nil
 }
 
-// CellOrder gets an array's capacity
+// CellOrder return the cell order
 func (a *ArraySchema) CellOrder() (Layout, error) {
 	var cellOrder C.tiledb_layout_t
 	ret := C.tiledb_array_schema_get_cell_order(a.context.tiledbContext, a.tiledbArraySchema, &cellOrder)
@@ -143,7 +154,7 @@ func (a *ArraySchema) CellOrder() (Layout, error) {
 	return Layout(cellOrder), nil
 }
 
-// SetTileOrder sets an array's cell order
+// SetTileOrder set the tile order
 func (a *ArraySchema) SetTileOrder(tileOrder Layout) error {
 	ret := C.tiledb_array_schema_set_tile_order(a.context.tiledbContext, a.tiledbArraySchema, C.tiledb_layout_t(tileOrder))
 	if ret != C.TILEDB_OK {
@@ -152,7 +163,7 @@ func (a *ArraySchema) SetTileOrder(tileOrder Layout) error {
 	return nil
 }
 
-// TileOrder gets an array's capacity
+// TileOrder return the tile order
 func (a *ArraySchema) TileOrder() (Layout, error) {
 	var cellOrder C.tiledb_layout_t
 	ret := C.tiledb_array_schema_get_tile_order(a.context.tiledbContext, a.tiledbArraySchema, &cellOrder)
@@ -171,7 +182,7 @@ func (a *ArraySchema) SetCoordsCompressor(compressor Compressor) error {
 	return nil
 }
 
-// CoordsCompressor gets the compressor used for coordinates
+// CoordsCompressor Returns a copy of the Compressor of the coordinates.
 func (a *ArraySchema) CoordsCompressor() (*Compressor, error) {
 	var compressorT C.tiledb_compressor_t
 	var level C.int
@@ -183,7 +194,8 @@ func (a *ArraySchema) CoordsCompressor() (*Compressor, error) {
 	return &compressor, nil
 }
 
-// SetOffsetsCompressor sets the compressor used for coordinates
+// SetOffsetsCompressor sets the compressor for the offsets of
+// variable-length attributes
 func (a *ArraySchema) SetOffsetsCompressor(compressor Compressor) error {
 	ret := C.tiledb_array_schema_set_offsets_compressor(a.context.tiledbContext, a.tiledbArraySchema, C.tiledb_compressor_t(compressor.Compressor), C.int(compressor.Level))
 	if ret != C.TILEDB_OK {
@@ -192,7 +204,8 @@ func (a *ArraySchema) SetOffsetsCompressor(compressor Compressor) error {
 	return nil
 }
 
-// OffsetsCompressor gets the compressor used for coordinates
+// OffsetsCompressor returns a copy of the Compressor of the offsets for
+// variable-length attributes.
 func (a *ArraySchema) OffsetsCompressor() (*Compressor, error) {
 	var compressorT C.tiledb_compressor_t
 	var level C.int
@@ -204,7 +217,7 @@ func (a *ArraySchema) OffsetsCompressor() (*Compressor, error) {
 	return &compressor, nil
 }
 
-// Check validates an array schema
+// Check validates the schema
 func (a *ArraySchema) Check() error {
 	ret := C.tiledb_array_schema_check(a.context.tiledbContext, a.tiledbArraySchema)
 	if ret != C.TILEDB_OK {

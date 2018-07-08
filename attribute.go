@@ -14,7 +14,15 @@ import (
 	"unsafe"
 )
 
-// Attribute is tiledb attribute
+/*
+Attribute describes an attribute of an Array cell.
+
+An attribute specifies a name and datatype for a particular value in each array cell. There are 3 supported attribute types:
+
+    Fundamental types, such as char, int, double, uint64, etc..
+    Fixed sized arrays: [N]T or make([]T, N), where T is a fundamental type
+    Variable length data: string, []T, where T is a fundamental type
+*/
 type Attribute struct {
 	tiledbAttribute *C.tiledb_attribute_t
 	context         *Context
@@ -46,7 +54,7 @@ func (a *Attribute) Free() {
 	}
 }
 
-// SetCompressor for attribute
+// SetCompressor sets the attribute compressor
 func (a *Attribute) SetCompressor(compressor Compressor) error {
 	ret := C.tiledb_attribute_set_compressor(a.context.tiledbContext, a.tiledbAttribute, C.tiledb_compressor_t(compressor.Compressor), C.int(compressor.Level))
 	if ret != C.TILEDB_OK {
@@ -55,18 +63,21 @@ func (a *Attribute) SetCompressor(compressor Compressor) error {
 	return nil
 }
 
-// Compressor returns compressor for attribute
+// Compressor returns a copy of the compressor for attribute
 func (a *Attribute) Compressor() (*Compressor, error) {
-	var compressor_t C.tiledb_compressor_t
+	var compressorT C.tiledb_compressor_t
 	var clevel C.int
-	ret := C.tiledb_attribute_get_compressor(a.context.tiledbContext, a.tiledbAttribute, &compressor_t, &clevel)
+	ret := C.tiledb_attribute_get_compressor(a.context.tiledbContext, a.tiledbAttribute, &compressorT, &clevel)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting tiledb attribute compressor: %s", a.context.GetLastError())
 	}
 
-	return &Compressor{Compressor: CompressorType(compressor_t), Level: int(clevel)}, nil
+	return &Compressor{Compressor: CompressorType(compressorT), Level: int(clevel)}, nil
 }
 
+// SetCellValNum Sets the number of attribute values per cell.
+// This is inferred from the type parameter of the NewAttribute
+// function, but can also be set manually.
 func (a *Attribute) SetCellValNum(val uint) error {
 	ret := C.tiledb_attribute_set_cell_val_num(a.context.tiledbContext, a.tiledbAttribute, C.uint(val))
 	if ret != C.TILEDB_OK {
@@ -75,7 +86,8 @@ func (a *Attribute) SetCellValNum(val uint) error {
 	return nil
 }
 
-// CellValNum returns compressor for attribute
+// CellValNum returns number of values of one cell on this attribute.
+// For variable-sized attributes returns TILEDB_VAR_NUM.
 func (a *Attribute) CellValNum() (uint, error) {
 	var cellValNum C.uint
 	ret := C.tiledb_attribute_get_cell_val_num(a.context.tiledbContext, a.tiledbAttribute, &cellValNum)

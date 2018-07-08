@@ -12,7 +12,8 @@ import (
 	"unsafe"
 )
 
-// GroupCreate creates a new tiledb group
+// GroupCreate creates a new tiledb group. A Group is a logical grouping
+// of Objects on the storage system (a directory).
 func GroupCreate(context *Context, group string) error {
 	cgroup := C.CString(group)
 	defer C.free(unsafe.Pointer(cgroup))

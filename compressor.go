@@ -1,11 +1,14 @@
 package tiledb
 
-// Compressor represents a tiledb compression method
+// Compressor represents a compression scheme.
+// Composed of a compression algorithm + a compression level.
+// A compression level of -1 indicates the default level.
 type Compressor struct {
 	Compressor CompressorType
 	Level      int
 }
 
+// Str converts the input compressor type to a string.
 func (c *Compressor) Str() string {
 	switch c.Compressor {
 	case TILEDB_NO_COMPRESSION:

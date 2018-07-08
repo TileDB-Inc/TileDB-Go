@@ -44,7 +44,9 @@ func (v *VFSfh) IsClosed() (bool, error) {
 	return false, nil
 }
 
-// VFS is tiledb virtual file system structure
+// VFS Implements a virtual filesystem that enables performing directory/file
+// operations with a unified API on different filesystems, such as local
+// posix/windows, HDFS, AWS S3, etc.
 type VFS struct {
 	tiledbVFS *C.tiledb_vfs_t
 	context   *Context
@@ -80,7 +82,7 @@ func (v *VFS) Free() {
 	}
 }
 
-// CreateBucket creates a s3 bucket
+// CreateBucket creates an object-store bucket with the input URI.
 func (v *VFS) CreateBucket(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -93,7 +95,7 @@ func (v *VFS) CreateBucket(uri string) error {
 	return nil
 }
 
-// RemoveBucket removes a s3 bucket
+// RemoveBucket deletes an object-store bucket with the input URI.
 func (v *VFS) RemoveBucket(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -106,7 +108,7 @@ func (v *VFS) RemoveBucket(uri string) error {
 	return nil
 }
 
-// EmptyBucket empties a s3 bucket
+// EmptyBucket empty a bucket
 func (v *VFS) EmptyBucket(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -119,7 +121,7 @@ func (v *VFS) EmptyBucket(uri string) error {
 	return nil
 }
 
-// IsEmptyBucket checks if a s3 bucket is empty
+// IsEmptyBucket check if a bucket is empty
 func (v *VFS) IsEmptyBucket(uri string) (bool, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -137,7 +139,7 @@ func (v *VFS) IsEmptyBucket(uri string) (bool, error) {
 	return false, nil
 }
 
-// IsBucket checks if a uri is a s3 bucket
+// IsBucket checks if an object-store bucket with the input URI exists.
 func (v *VFS) IsBucket(uri string) (bool, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -155,7 +157,7 @@ func (v *VFS) IsBucket(uri string) (bool, error) {
 	return false, nil
 }
 
-// CreateDir creates a directory
+// CreateDir creates a directory with the input URI.
 func (v *VFS) CreateDir(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -168,7 +170,7 @@ func (v *VFS) CreateDir(uri string) error {
 	return nil
 }
 
-// IsDir checks if a uri is a exists directory
+// IsDir checks if a directory with the input URI exists.
 func (v *VFS) IsDir(uri string) (bool, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -186,7 +188,7 @@ func (v *VFS) IsDir(uri string) (bool, error) {
 	return false, nil
 }
 
-// RemoveDir creates a directory
+// RemoveDir removes a directory (recursively) with the input URI.
 func (v *VFS) RemoveDir(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -199,7 +201,7 @@ func (v *VFS) RemoveDir(uri string) error {
 	return nil
 }
 
-// IsFile checks if a uri is a exists file
+// IsFile checks if a file with the input URI exists.
 func (v *VFS) IsFile(uri string) (bool, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -217,7 +219,7 @@ func (v *VFS) IsFile(uri string) (bool, error) {
 	return false, nil
 }
 
-// RemoveFile creates a file
+// RemoveFile deletes a file with the input URI.
 func (v *VFS) RemoveFile(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -230,7 +232,7 @@ func (v *VFS) RemoveFile(uri string) error {
 	return nil
 }
 
-// FileSize creates a file
+// FileSize retrieves the size of a file.
 func (v *VFS) FileSize(uri string) (uint64, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -244,7 +246,7 @@ func (v *VFS) FileSize(uri string) (uint64, error) {
 	return uint64(cfsize), nil
 }
 
-// MoveFile moves a file
+// MoveFile renames a TileDB file from an old URI to a new URI.
 func (v *VFS) MoveFile(oldURI string, newURI string) error {
 	cOldURI := C.CString(oldURI)
 	defer C.free(unsafe.Pointer(cOldURI))
@@ -260,7 +262,7 @@ func (v *VFS) MoveFile(oldURI string, newURI string) error {
 	return nil
 }
 
-// MoveDir moves a directory
+// MoveDir menames a TileDB directory from an old URI to a new URI.
 func (v *VFS) MoveDir(oldURI string, newURI string) error {
 	cOldURI := C.CString(oldURI)
 	defer C.free(unsafe.Pointer(cOldURI))
@@ -276,7 +278,7 @@ func (v *VFS) MoveDir(oldURI string, newURI string) error {
 	return nil
 }
 
-// Open a file
+// Open prepares a file for reading/writing.
 func (v *VFS) Open(uri string, mode VFSMode) (*VFSfh, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -297,7 +299,9 @@ func (v *VFS) Open(uri string, mode VFSMode) (*VFSfh, error) {
 	return fh, nil
 }
 
-// Close a file
+// Close a file. This is flushes the buffered data into the file when the file
+// was opened in write (or append) mode. It is particularly important to be
+// called after S3 writes, as otherwise the writes will not take effect.
 func (v *VFS) Close(fh *VFSfh) error {
 
 	ret := C.tiledb_vfs_close(v.context.tiledbContext, fh.tiledbVFSfh)
@@ -325,7 +329,9 @@ func (v *VFS) Read(fh *VFSfh, offset uint64, nbytes uint64) ([]byte, error) {
 	return bytes, nil
 }
 
-// Write bytes to a file
+// Write the contents of a buffer into a file. Note that this function only
+// appends data at the end of the file. If the file does not exist,
+// it will be created
 func (v *VFS) Write(fh *VFSfh, bytes []byte) error {
 	cbuffer := C.CBytes(bytes)
 	ret := C.tiledb_vfs_write(v.context.tiledbContext, fh.tiledbVFSfh, cbuffer, C.uint64_t(len(bytes)))
@@ -337,7 +343,7 @@ func (v *VFS) Write(fh *VFSfh, bytes []byte) error {
 	return nil
 }
 
-// Sync a file handler
+// Sync (flushes) a file.
 func (v *VFS) Sync(fh *VFSfh) error {
 	ret := C.tiledb_vfs_sync(v.context.tiledbContext, fh.tiledbVFSfh)
 
@@ -348,7 +354,7 @@ func (v *VFS) Sync(fh *VFSfh) error {
 	return nil
 }
 
-// Touch creates an empty file
+// Touch a file, i.e., creates a new empty file.
 func (v *VFS) Touch(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
