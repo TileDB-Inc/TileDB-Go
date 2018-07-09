@@ -20,6 +20,8 @@ https://github.com/TileDB-Inc/TileDB-Go/blob/master/README.md#installation .
 
 Quickstart
 
-See quickstart example
+See quickstart_dense_test.go and quickstart_sparse_test.go for examples. Also
+checkout the official tiledb quickstart docs
+https://docs.tiledb.io/en/latest/quickstart.html
 */
 package tiledb
