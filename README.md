@@ -9,6 +9,13 @@ free'ing of c heap allocated structures
 
 ## Installation
 
+### Supported Platforms
+
+Currently the following platforms are supported:
+
+- Linux
+- macOS (OSX)
+
 ### Prerequisites
 This package requires the tiledb shared library be installed and on the system path. See the
 [official tiledb installation instructions](https://docs.tiledb.io/en/stable/installation.html)
@@ -41,7 +48,7 @@ as such the below table reference which versions are compatible.
 
 | TileDB-Go Version | TileDB Version |
 | ----------------- | -------------- |
-| 1.X.Y             | 1.3.0          |
+| 0.1.X             | 1.3.0          |
 
 ## Quickstart
 
@@ -78,3 +85,9 @@ if err != nil {
   return err
 }
 ```
+
+## Missing Functionality
+
+The following TileDB core library features are missing from the go api:
+
+- Key-Value store
