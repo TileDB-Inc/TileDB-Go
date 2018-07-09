@@ -97,6 +97,25 @@ func (a *ArraySchema) AttributeFromName(attrName string) (*Attribute, error) {
 	return &attr, nil
 }
 
+// Attributes gets all attributes in the array.
+func (a *ArraySchema) Attributes() ([]*Attribute, error) {
+	attributes := make([]*Attribute, 0)
+
+	attrNum, err := a.AttributeNum()
+	if err != nil {
+		return nil, fmt.Errorf("Error getting AttributeNum: %s", err)
+	}
+
+	for i := uint(0); i < attrNum; i++ {
+		attribute, err := a.AttributeFromIndex(i)
+		if err != nil {
+			return nil, fmt.Errorf("Error getting Attribute: %s", err)
+		}
+		attributes = append(attributes, attribute)
+	}
+	return attributes, nil
+}
+
 // SetDomain sets the array domain
 func (a *ArraySchema) SetDomain(domain *Domain) error {
 	ret := C.tiledb_array_schema_set_domain(a.context.tiledbContext, a.tiledbArraySchema, domain.tiledbDomain)

@@ -532,18 +532,13 @@ func (a *Array) MaxBufferElements(subarray interface{}) (map[string][2]uint64, e
 		return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
 	}
 
-	// Get the attribute number
-	attrNum, err := schema.AttributeNum()
+	attributes, err := schema.Attributes()
 	if err != nil {
 		return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
 	}
-
 	// Loop through each attribute
-	for i := uint(0); i < attrNum; i++ {
-		attribute, err := schema.AttributeFromIndex(i)
-		if err != nil {
-			return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
-		}
+	for _, attribute := range attributes {
+
 		// Check if attribute is variable attribute or not
 		cellValNum, err := attribute.CellValNum()
 		if err != nil {
