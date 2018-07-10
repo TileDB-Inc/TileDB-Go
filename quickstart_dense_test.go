@@ -116,8 +116,6 @@ func Example_denseArray() {
 	createDenseArray()
 	writeDenseArray()
 	readDenseArray()
-
-	fmt.Println("test")
 	// Output: [2 3 4 6 7 8]
 
 	// Cleanup example so unit tests are clean
