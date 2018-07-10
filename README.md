@@ -60,29 +60,95 @@ The two complete examples in the guide are
 
 ## Example Usage
 
-Below is a small example using vfs functionality. Additional examples are
-provided in the GoDoc documentation.
+Below is a small example for writing and reading  a dense 1 dimensional
+array. For simplicity error handling is ignored in the example.
+Additional examples are provided in the GoDoc documentation.
 
 ```golang
+package main
 
-// Create a new config
-config, err := tiledb.NewConfig()
-if err != nil {
-  return err
+import (
+	"fmt"
+	"os"
+
+	tiledb "github.com/TileDB-Inc/TileDB-Go"
+)
+
+// Name of array.
+var denseArrayName = "quickstart_dense"
+
+func createDenseArray() {
+	// Create a TileDB context.
+	ctx, _ := tiledb.NewContext(nil)
+
+	// The array will be 4x4 with dimensions "rows" and "cols", with domain [1,4].
+	domain, _ := tiledb.NewDomain(ctx)
+	rowDim, _ := tiledb.NewDimension(ctx, "rows", []int32{1, 3}, int32(3))
+	domain.AddDimensions(rowDim)
+
+	// The array will be dense.
+	schema, _ := tiledb.NewArraySchema(ctx, tiledb.TILEDB_DENSE)
+	schema.SetDomain(domain)
+	schema.SetCellOrder(tiledb.TILEDB_ROW_MAJOR)
+	schema.SetTileOrder(tiledb.TILEDB_ROW_MAJOR)
+
+	// Add a single attribute "a" so each (i,j) cell can store an integer.
+	a, _ := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_INT32)
+	schema.AddAttributes(a)
+
+	// Create the (empty) array on disk.
+	array, _ := tiledb.NewArray(ctx, denseArrayName)
+	array.Create(schema)
 }
-// Optionally set config settings here
-// config.Set("key", "value")
 
-// Create a context
-context, err := tiledb.NewContext(config)
-if err != nil {
-  return err
+func writeDenseArray() {
+	ctx, _ := tiledb.NewContext(nil)
+
+	// Prepare some data for the array
+	data := []int32{1, 2, 3}
+
+	// Open the array for writing and create the query.
+	array, _ := tiledb.NewArray(ctx, denseArrayName)
+	array.Open(tiledb.TILEDB_WRITE)
+	query, _ := tiledb.NewQuery(ctx, array)
+	query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
+	query.SetBuffer("a", data)
+
+	// Perform the write and close the array.
+	query.Submit()
+	array.Close()
 }
 
-// Create a VFS instance
-vfs, err := tiledb.NewVFS(context, config)
-if err != nil {
-  return err
+func readDenseArray() {
+	ctx, _ := tiledb.NewContext(nil)
+
+	// Prepare the array for reading
+	array, _ := tiledb.NewArray(ctx, denseArrayName)
+	array.Open(tiledb.TILEDB_READ)
+
+	// Prepare the vector that will hold the result (of size 6 elements)
+	data := make([]int32, 3)
+
+	// Prepare the query
+	query, _ := tiledb.NewQuery(ctx, array)
+	query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
+	query.SetBuffer("a", data)
+
+	// Submit the query and close the array.
+	query.Submit()
+	array.Close()
+
+	// Print out the results.
+	fmt.Println(data)
+}
+
+// ExampleDenseArray shows and example creation, writing and reading of a dense
+// array
+func main() {
+	createDenseArray()
+	writeDenseArray()
+	readDenseArray()
+	// Output: [2 3 4 6 7 8]
 }
 ```
 
