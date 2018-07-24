@@ -27,6 +27,41 @@ type Query struct {
 	resultBufferElements map[string][2]*uint64
 }
 
+// MarshalJSON marshal arraySchema struct to json using tiledb
+func (q *Query) MarshalJSON() ([]byte, error) {
+	var jsonString *C.char
+	defer C.free(unsafe.Pointer(jsonString))
+	ret := C.tiledb_query_to_json(q.context.tiledbContext, q.tiledbQuery, &jsonString)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error marshaling json for array schema: %s", q.context.LastError())
+	}
+	return []byte(C.GoString(jsonString)), nil
+}
+
+// UnmarshalJSON marshal arraySchema struct to json using tiledb
+func (q *Query) UnmarshalJSON(b []byte) error {
+	var err error
+	if q.context == nil {
+		q.context, err = NewContext(nil)
+		if err != nil {
+			return err
+		}
+	}
+	if q.array == nil {
+		q.array, err = NewArray(q.context, "")
+		if err != nil {
+			return err
+		}
+	}
+	jsonString := C.CString(string(b))
+	defer C.free(unsafe.Pointer(jsonString))
+	ret := C.tiledb_query_from_json(q.context.tiledbContext, q.array.tiledbArray, &q.tiledbQuery, jsonString)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error unmarshaling json for array schema: %s", q.context.LastError())
+	}
+	return nil
+}
+
 /*
 NewQuery Creates a TileDB query object.
 
