@@ -213,6 +213,17 @@ const (
 	TILEDB_WRITE QueryType = C.TILEDB_WRITE
 )
 
+// SerializationType how data is serialized
+type SerializationType int8
+
+const (
+	// TILEDB_JSON Serialization to/from json
+	TILEDB_JSON SerializationType = C.TILEDB_JSON
+
+	// TILEDB_JSON Serialization to/from capnp
+	TILEDB_CAPNP SerializationType = C.TILEDB_CAPNP
+)
+
 // VFSMode is virtual file system file open mode
 type VFSMode int8
 
