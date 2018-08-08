@@ -31,7 +31,8 @@ type Query struct {
 func (q *Query) MarshalJSON() ([]byte, error) {
 	var jsonString *C.char
 	defer C.free(unsafe.Pointer(jsonString))
-	ret := C.tiledb_query_to_json(q.context.tiledbContext, q.tiledbQuery, &jsonString)
+	var jsonStringLength C.uint64_t
+	ret := C.tiledb_query_serialize(q.context.tiledbContext, q.tiledbQuery, C.tiledb_serialization_type_t(TILEDB_JSON), &jsonString, &jsonStringLength)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error marshaling json for array schema: %s", q.context.LastError())
 	}
@@ -55,7 +56,8 @@ func (q *Query) UnmarshalJSON(b []byte) error {
 	}
 	jsonString := C.CString(string(b))
 	defer C.free(unsafe.Pointer(jsonString))
-	ret := C.tiledb_query_from_json(q.context.tiledbContext, q.array.tiledbArray, &q.tiledbQuery, jsonString)
+	var jsonStringLength = C.uint64_t(len(b))
+	ret := C.tiledb_query_deserialize(q.context.tiledbContext, q.tiledbQuery, C.tiledb_serialization_type_t(TILEDB_JSON), jsonString, jsonStringLength)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error unmarshaling json for array schema: %s", q.context.LastError())
 	}
