@@ -1090,3 +1090,30 @@ func (q *Query) HasResults() (bool, error) {
 func (q *Query) SetCoordinates(coordinates interface{}) (*uint64, error) {
 	return q.SetBuffer(TILEDB_COORDS, coordinates)
 }
+
+// Serialize arraySchema struct to sbyte using passed format
+func (q *Query) Serialize(serializationType SerializationType) ([]byte, error) {
+	var dataString *C.char
+	defer C.free(unsafe.Pointer(dataString))
+	var dataStringLength C.uint64_t
+	ret := C.tiledb_query_serialize(q.context.tiledbContext, q.tiledbQuery, C.tiledb_serialization_type_t(serializationType), &dataString, &dataStringLength)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error serializing query: %s", q.context.LastError())
+	}
+	return C.GoBytes(unsafe.Pointer(dataString), C.int(dataStringLength)), nil
+}
+
+// Deserialize arraySchema struct from given format
+func (q *Query) Deserialize(serializationType SerializationType, b []byte) error {
+	if q.context == nil {
+		return fmt.Errorf("Query must be created before calling deserialize in order to have a valid context")
+	}
+	dataString := C.CString(string(b))
+	defer C.free(unsafe.Pointer(dataString))
+	var dataStringLength = C.uint64_t(len(b))
+	ret := C.tiledb_query_deserialize(q.context.tiledbContext, q.tiledbQuery, C.tiledb_serialization_type_t(serializationType), dataString, dataStringLength)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deserializing query : %s", q.context.LastError())
+	}
+	return nil
+}
