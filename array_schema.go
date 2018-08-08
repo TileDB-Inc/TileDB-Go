@@ -349,12 +349,38 @@ func (a *ArraySchema) Dump(path string) error {
 
 // Type fetch the tiledb array type
 func (a *ArraySchema) Type() (ArrayType, error) {
-
-	var array_type C.tiledb_array_type_t
-	ret := C.tiledb_array_schema_get_array_type(a.context.tiledbContext, a.tiledbArraySchema, &array_type)
+	var arrayType C.tiledb_array_type_t
+	ret := C.tiledb_array_schema_get_array_type(a.context.tiledbContext, a.tiledbArraySchema, &arrayType)
 	if ret != C.TILEDB_OK {
 		return TILEDB_DENSE, fmt.Errorf("Error fetching array schema type: %s", a.context.LastError())
 	}
 
-	return ArrayType(array_type), nil
+	return ArrayType(arrayType), nil
+}
+
+// Serialize arraySchema struct to sbyte using passed format
+func (a *ArraySchema) Serialize(serializationType SerializationType) ([]byte, error) {
+	var dataString *C.char
+	defer C.free(unsafe.Pointer(dataString))
+	var dataStringLength C.uint64_t
+	ret := C.tiledb_array_schema_serialize(a.context.tiledbContext, a.tiledbArraySchema, C.tiledb_serialization_type_t(serializationType), &dataString, &dataStringLength)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error serializing array schema: %s", a.context.LastError())
+	}
+	return C.GoBytes(unsafe.Pointer(dataString), C.int(dataStringLength)), nil
+}
+
+// Deserialize arraySchema struct from given format
+func (a *ArraySchema) Deserialize(serializationType SerializationType, b []byte) error {
+	if a.context == nil {
+		return fmt.Errorf("ArraySchema must be created before calling deserialize in order to have a valid context")
+	}
+	dataString := C.CString(string(b))
+	defer C.free(unsafe.Pointer(dataString))
+	var dataStringLength = C.uint64_t(len(b))
+	ret := C.tiledb_array_schema_deserialize(a.context.tiledbContext, &a.tiledbArraySchema, C.tiledb_serialization_type_t(serializationType), dataString, dataStringLength)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deserializing array schema: %s", a.context.LastError())
+	}
+	return nil
 }
