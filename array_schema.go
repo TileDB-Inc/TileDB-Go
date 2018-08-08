@@ -34,7 +34,8 @@ type ArraySchema struct {
 func (a *ArraySchema) MarshalJSON() ([]byte, error) {
 	var jsonString *C.char
 	defer C.free(unsafe.Pointer(jsonString))
-	ret := C.tiledb_array_schema_to_json(a.context.tiledbContext, a.tiledbArraySchema, &jsonString)
+	var jsonStringLength C.uint64_t
+	ret := C.tiledb_array_schema_serialize(a.context.tiledbContext, a.tiledbArraySchema, C.tiledb_serialization_type_t(TILEDB_JSON), &jsonString, &jsonStringLength)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error marshaling json for array schema: %s", a.context.LastError())
 	}
@@ -52,7 +53,8 @@ func (a *ArraySchema) UnmarshalJSON(b []byte) error {
 	}
 	jsonString := C.CString(string(b))
 	defer C.free(unsafe.Pointer(jsonString))
-	ret := C.tiledb_array_schema_from_json(a.context.tiledbContext, &a.tiledbArraySchema, jsonString)
+	var jsonStringLength = C.uint64_t(len(b))
+	ret := C.tiledb_array_schema_deserialize(a.context.tiledbContext, &a.tiledbArraySchema, C.tiledb_serialization_type_t(TILEDB_JSON), jsonString, jsonStringLength)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error unmarshaling json for array schema: %s", a.context.LastError())
 	}
