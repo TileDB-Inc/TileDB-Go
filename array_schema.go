@@ -192,48 +192,44 @@ func (a *ArraySchema) TileOrder() (Layout, error) {
 	return Layout(cellOrder), nil
 }
 
-// SetCoordsCompressor sets the compressor used for coordinates
-func (a *ArraySchema) SetCoordsCompressor(compressor Compressor) error {
-	ret := C.tiledb_array_schema_set_coords_compressor(a.context.tiledbContext, a.tiledbArraySchema, C.tiledb_compressor_t(compressor.Compressor), C.int(compressor.Level))
+// SetCoordsFilterList sets the filter list used for coordinates
+func (a *ArraySchema) SetCoordsFilterList(filterList *FilterList) error {
+	ret := C.tiledb_array_schema_set_coords_filter_list(a.context.tiledbContext, a.tiledbArraySchema, filterList.tiledbFilterList)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting coordinates compressor for tiledb arraySchema: %s", a.context.LastError())
+		return fmt.Errorf("Error setting coordinates filter list for tiledb arraySchema: %s", a.context.LastError())
 	}
 	return nil
 }
 
-// CoordsCompressor Returns a copy of the Compressor of the coordinates.
-func (a *ArraySchema) CoordsCompressor() (*Compressor, error) {
-	var compressorT C.tiledb_compressor_t
-	var level C.int
-	ret := C.tiledb_array_schema_get_coords_compressor(a.context.tiledbContext, a.tiledbArraySchema, &compressorT, &level)
+// CoordsFilterList Returns a copy of the filter list of the coordinates.
+func (a *ArraySchema) CoordsFilterList() (*FilterList, error) {
+	filterList := FilterList{context: a.context}
+	ret := C.tiledb_array_schema_get_coords_filter_list(a.context.tiledbContext, a.tiledbArraySchema, &filterList.tiledbFilterList)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting coordinates compressor for tiledb arraySchema: %s", a.context.LastError())
+		return nil, fmt.Errorf("Error getting coordinates filter list for tiledb arraySchema: %s", a.context.LastError())
 	}
-	compressor := Compressor{Compressor: CompressorType(compressorT), Level: int(level)}
-	return &compressor, nil
+	return &filterList, nil
 }
 
-// SetOffsetsCompressor sets the compressor for the offsets of
+// SetOffsetsFilterList sets the filter list for the offsets of
 // variable-length attributes
-func (a *ArraySchema) SetOffsetsCompressor(compressor Compressor) error {
-	ret := C.tiledb_array_schema_set_offsets_compressor(a.context.tiledbContext, a.tiledbArraySchema, C.tiledb_compressor_t(compressor.Compressor), C.int(compressor.Level))
+func (a *ArraySchema) SetOffsetsFilterList(filterList *FilterList) error {
+	ret := C.tiledb_array_schema_set_offsets_filter_list(a.context.tiledbContext, a.tiledbArraySchema, filterList.tiledbFilterList)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting offsets compressor for tiledb arraySchema: %s", a.context.LastError())
+		return fmt.Errorf("Error setting offsets filter list for tiledb arraySchema: %s", a.context.LastError())
 	}
 	return nil
 }
 
-// OffsetsCompressor returns a copy of the Compressor of the offsets for
+// OffsetsFilterList returns a copy of the FilterList of the offsets for
 // variable-length attributes.
-func (a *ArraySchema) OffsetsCompressor() (*Compressor, error) {
-	var compressorT C.tiledb_compressor_t
-	var level C.int
-	ret := C.tiledb_array_schema_get_offsets_compressor(a.context.tiledbContext, a.tiledbArraySchema, &compressorT, &level)
+func (a *ArraySchema) OffsetsFilterList() (*FilterList, error) {
+	filterList := FilterList{context: a.context}
+	ret := C.tiledb_array_schema_get_offsets_filter_list(a.context.tiledbContext, a.tiledbArraySchema, &filterList.tiledbFilterList)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting offsets compressor for tiledb arraySchema: %s", a.context.LastError())
+		return nil, fmt.Errorf("Error getting offsets filter list for tiledb arraySchema: %s", a.context.LastError())
 	}
-	compressor := Compressor{Compressor: CompressorType(compressorT), Level: int(level)}
-	return &compressor, nil
+	return &filterList, nil
 }
 
 // Check validates the schema

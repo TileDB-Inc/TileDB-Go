@@ -20,38 +20,6 @@ const (
 	TILEDB_SPARSE ArrayType = C.TILEDB_SPARSE
 )
 
-// CompressorType enum in tiledb for compressors
-type CompressorType int8
-
-const (
-	// TILEDB_NO_COMPRESSION No compressor
-	TILEDB_NO_COMPRESSION CompressorType = C.TILEDB_NO_COMPRESSION
-	// TILEDB_GZIP Gzip compressor
-	TILEDB_GZIP CompressorType = C.TILEDB_GZIP
-	// TILEDB_ZSTD Zstandard compressor
-	TILEDB_ZSTD CompressorType = C.TILEDB_ZSTD
-	// TILEDB_LZ4 LZ4 compressor
-	TILEDB_LZ4 CompressorType = C.TILEDB_LZ4
-	// TILEDB_BLOSC_LZ Blosc compressor using LZ
-	TILEDB_BLOSC_LZ CompressorType = C.TILEDB_BLOSC_LZ
-	// TILEDB_BLOSC_LZ4 Blosc compressor using LZ4
-	TILEDB_BLOSC_LZ4 CompressorType = C.TILEDB_BLOSC_LZ4
-	// TILEDB_BLOSC_LZ4HC Blosc compressor using LZ4HC
-	TILEDB_BLOSC_LZ4HC CompressorType = C.TILEDB_BLOSC_LZ4HC
-	// TILEDB_BLOSC_SNAPPY Blosc compressor using Snappy
-	TILEDB_BLOSC_SNAPPY CompressorType = C.TILEDB_BLOSC_SNAPPY
-	// TILEDB_BLOSC_ZLIB Blosc compressor using zlib
-	TILEDB_BLOSC_ZLIB CompressorType = C.TILEDB_BLOSC_ZLIB
-	// TILEDB_BLOSC_ZSTD Blosc compressor using Zstandard
-	TILEDB_BLOSC_ZSTD CompressorType = C.TILEDB_BLOSC_ZSTD
-	// TILEDB_RLE Run-length encoding compressor
-	TILEDB_RLE CompressorType = C.TILEDB_RLE
-	// TILEDB_BZIP2 Bzip2 compressor
-	TILEDB_BZIP2 CompressorType = C.TILEDB_BZIP2
-	// TILEDB_DOUBLE_DELTA Double-delta compressor
-	TILEDB_DOUBLE_DELTA CompressorType = C.TILEDB_DOUBLE_DELTA
-)
-
 // Datatype
 type Datatype int8
 
@@ -135,6 +103,44 @@ func (d Datatype) ReflectKind() reflect.Kind {
 		return reflect.Interface
 	}
 }
+
+type FilterType uint8
+
+const (
+	// TILEDB_FILTER_NONE No-op filter
+	TILEDB_FILTER_NONE FilterType = C.TILEDB_FILTER_NONE
+	// TILEDB_FILTER_GZIP Gzip compressor
+	TILEDB_FILTER_GZIP FilterType = C.TILEDB_FILTER_GZIP
+	// TILEDB_FILTER_ZSTD Zstandard compressor
+	TILEDB_FILTER_ZSTD FilterType = C.TILEDB_FILTER_ZSTD
+	// TILEDB_FILTER_LZ4 LZ4 compressor
+	TILEDB_FILTER_LZ4 FilterType = C.TILEDB_FILTER_LZ4
+	// TILEDB_FILTER_RLE Run-length encoding compressor
+	TILEDB_FILTER_RLE FilterType = C.TILEDB_FILTER_RLE
+	// TILEDB_FILTER_BZIP2 Bzip2 compressor
+	TILEDB_FILTER_BZIP2 FilterType = C.TILEDB_FILTER_BZIP2
+	// TILEDB_FILTER_DOUBLE_DELTA Double-delta compressor
+	TILEDB_FILTER_DOUBLE_DELTA FilterType = C.TILEDB_FILTER_DOUBLE_DELTA
+	// TILEDB_FILTER_BIT_WIDTH_REDUCTION Bit width reduction filter.
+	TILEDB_FILTER_BIT_WIDTH_REDUCTION FilterType = C.TILEDB_FILTER_BIT_WIDTH_REDUCTION
+	// TILEDB_FILTER_BITSHUFFLE Bitshuffle filter.
+	TILEDB_FILTER_BITSHUFFLE FilterType = C.TILEDB_FILTER_BITSHUFFLE
+	// TILEDB_FILTER_BYTESHUFFLE Byteshuffle filter.
+	TILEDB_FILTER_BYTESHUFFLE FilterType = C.TILEDB_FILTER_BYTESHUFFLE
+	// TILEDB_FILTER_POSITIVE_DELTA Positive-delta encoding filter.
+	TILEDB_FILTER_POSITIVE_DELTA FilterType = C.TILEDB_FILTER_POSITIVE_DELTA
+)
+
+type FilterOption uint8
+
+const (
+	// TILEDB_COMPRESSION_LEVEL Compression level. Type: `int32_t`.
+	TILEDB_COMPRESSION_LEVEL FilterOption = C.TILEDB_COMPRESSION_LEVEL
+	// TILEDB_BIT_WIDTH_MAX_WINDOW Max window length for bit width reduction. Type: `uint32_t`.
+	TILEDB_BIT_WIDTH_MAX_WINDOW FilterOption = C.TILEDB_BIT_WIDTH_MAX_WINDOW
+	// TILEDB_POSITIVE_DELTA_MAX_WINDOW Max window length for positive-delta encoding. Type: `uint32_t`.
+	TILEDB_POSITIVE_DELTA_MAX_WINDOW FilterOption = C.TILEDB_POSITIVE_DELTA_MAX_WINDOW
+)
 
 // FS represents support fs types
 type FS int8
