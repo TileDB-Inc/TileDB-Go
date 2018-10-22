@@ -104,6 +104,17 @@ func (d Datatype) ReflectKind() reflect.Kind {
 	}
 }
 
+// EncryptionType represents different encryption algorithms
+type EncryptionType uint8
+
+const (
+	// TILEDB_NO_ENCRYPTION No encryption
+	TILEDB_NO_ENCRYPTION EncryptionType = C.TILEDB_NO_ENCRYPTION
+	// TILEDB_AES_256_GCM AES-256-GCM encryption
+	TILEDB_AES_256_GCM EncryptionType = C.TILEDB_AES_256_GCM
+)
+
+// FilterType for attribute/coordinates/offsets filters
 type FilterType uint8
 
 const (
@@ -131,6 +142,7 @@ const (
 	TILEDB_FILTER_POSITIVE_DELTA FilterType = C.TILEDB_FILTER_POSITIVE_DELTA
 )
 
+// FilterOption for a given filter
 type FilterOption uint8
 
 const (

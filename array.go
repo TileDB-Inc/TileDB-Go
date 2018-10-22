@@ -71,6 +71,60 @@ func (a *Array) Open(queryType QueryType) error {
 }
 
 /*
+OpenWithKey Opens an encrypted array using the given encryption key.
+This function has the same semantics as tiledb_array_open() but is used
+for encrypted arrays.
+
+An encrypted array must be opened with this function before queries can
+be issued to it.
+*/
+func (a *Array) OpenWithKey(queryType QueryType, encryptionType EncryptionType, key string) error {
+	ckey := unsafe.Pointer(C.CString(key))
+	defer C.free(ckey)
+	ret := C.tiledb_array_open_with_key(a.context.tiledbContext, a.tiledbArray, C.tiledb_query_type_t(queryType), C.tiledb_encryption_type_t(encryptionType), ckey, C.uint32_t(len(key)))
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error opening tiledb array with key for querying: %s", a.context.LastError())
+	}
+	return nil
+}
+
+/*
+OpenAt Similar to tiledb_array_open, but this function takes as input
+a timestamp, representing time in milliseconds ellapsed since
+1970-01-01 00:00:00 +0000 (UTC). Opening the array at a timestamp provides
+a view of the array with all writes/updates that happened at or before
+timestamp (i.e., excluding those that occurred after timestamp). This
+function is useful to ensure consistency at a potential distributed
+setting, where machines need to operate on the same view of the array.
+*/
+func (a *Array) OpenAt(queryType QueryType, timestamp uint64) error {
+	ret := C.tiledb_array_open_at(a.context.tiledbContext, a.tiledbArray, C.tiledb_query_type_t(queryType), C.uint64_t(timestamp))
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error opening tiledb array at %d for querying: %s", timestamp, a.context.LastError())
+	}
+	return nil
+}
+
+/*
+OpenAtWithKey Similar to tiledb_array_open_with_key, but this function
+takes as input a timestamp, representing time in milliseconds ellapsed
+since 1970-01-01 00:00:00 +0000 (UTC). Opening the array at a timestamp
+provides a view of the array with all writes/updates that happened at or
+before timestamp (i.e., excluding those that occurred after timestamp).
+This function is useful to ensure consistency at a potential distributed
+setting, where machines need to operate on the same view of the array.
+*/
+func (a *Array) OpenAtWithKey(queryType QueryType, encryptionType EncryptionType, key string, timestamp uint64) error {
+	ckey := unsafe.Pointer(C.CString(key))
+	defer C.free(ckey)
+	ret := C.tiledb_array_open_at_with_key(a.context.tiledbContext, a.tiledbArray, C.tiledb_query_type_t(queryType), C.tiledb_encryption_type_t(encryptionType), ckey, C.uint32_t(len(key)), C.uint64_t(timestamp))
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error opening tiledb array with key at %d for querying: %s", timestamp, a.context.LastError())
+	}
+	return nil
+}
+
+/*
 Reopen the array (the array must be already open). This is useful when the
 array got updated after it got opened and the Array object got created.
 To sync-up with the updates, the user must either close the array and open
@@ -105,6 +159,19 @@ func (a *Array) Create(arraySchema *ArraySchema) error {
 	return nil
 }
 
+// CreateWithKey a new TileDB array given an input schema.
+func (a *Array) CreateWithKey(arraySchema *ArraySchema, encryptionType EncryptionType, key string) error {
+	ckey := unsafe.Pointer(C.CString(key))
+	defer C.free(ckey)
+	curi := C.CString(a.uri)
+	defer C.free(unsafe.Pointer(curi))
+	ret := C.tiledb_array_create_with_key(a.context.tiledbContext, curi, arraySchema.tiledbArraySchema, C.tiledb_encryption_type_t(encryptionType), ckey, C.uint32_t(len(key)))
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error creating tiledb array with key: %s", a.context.LastError())
+	}
+	return nil
+}
+
 // Consolidate Consolidates the fragments of an array into a single fragment.
 // You must first finalize all queries to the array before consolidation can
 // begin (as consolidation temporarily acquires an exclusive lock on the array).
@@ -114,6 +181,22 @@ func (a *Array) Consolidate() error {
 	ret := C.tiledb_array_consolidate(a.context.tiledbContext, curi)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error consolidating tiledb array: %s", a.context.LastError())
+	}
+	return nil
+}
+
+// ConsolidateWithKey Consolidates the fragments of an encrypted array
+// into a single fragment.
+// You must first finalize all queries to the array before consolidation can
+// begin (as consolidation temporarily acquires an exclusive lock on the array).
+func (a *Array) ConsolidateWithKey(encryptionType EncryptionType, key string) error {
+	ckey := unsafe.Pointer(C.CString(key))
+	defer C.free(ckey)
+	curi := C.CString(a.uri)
+	defer C.free(unsafe.Pointer(curi))
+	ret := C.tiledb_array_consolidate_with_key(a.context.tiledbContext, curi, C.tiledb_encryption_type_t(encryptionType), ckey, C.uint32_t(len(key)))
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error consolidating tiledb with key array: %s", a.context.LastError())
 	}
 	return nil
 }
