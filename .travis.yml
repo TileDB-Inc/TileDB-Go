@@ -21,7 +21,7 @@ script:
       if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
         export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/build_deps/TileDB/dist/lib:/usr/local/lib:$LD_LIBRARY_PATH
       else
-        export DYLD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/build_deps/TileDB/dist/lib:/usr/local/lib:$DYLD_LIBRARY_PATH
+        export DYLD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/build_deps/TileDB/dist/lib:$DYLD_LIBRARY_PATH
       fi
     -  export CGO_CFLAGS="${CGO_CFLAGS} -I${TRAVIS_BUILD_DIR}/build_deps/TileDB/dist/include"
     -  export CGO_LDFLAGS="${CGO_LDFLAGS} -L${TRAVIS_BUILD_DIR}/build_deps/TileDB/dist/lib"

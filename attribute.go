@@ -54,25 +54,24 @@ func (a *Attribute) Free() {
 	}
 }
 
-// SetCompressor sets the attribute compressor
-func (a *Attribute) SetCompressor(compressor Compressor) error {
-	ret := C.tiledb_attribute_set_compressor(a.context.tiledbContext, a.tiledbAttribute, C.tiledb_compressor_t(compressor.Compressor), C.int(compressor.Level))
+// SetFilterList sets the attribute filterList
+func (a *Attribute) SetFilterList(filterlist *FilterList) error {
+	ret := C.tiledb_attribute_set_filter_list(a.context.tiledbContext, a.tiledbAttribute, filterlist.tiledbFilterList)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting tiledb attribute compressor: %s", a.context.LastError())
+		return fmt.Errorf("Error setting tiledb attribute filter list: %s", a.context.LastError())
 	}
 	return nil
 }
 
-// Compressor returns a copy of the compressor for attribute
-func (a *Attribute) Compressor() (*Compressor, error) {
-	var compressorT C.tiledb_compressor_t
-	var clevel C.int
-	ret := C.tiledb_attribute_get_compressor(a.context.tiledbContext, a.tiledbAttribute, &compressorT, &clevel)
+// FilterList returns a copy of the filter list for attribute
+func (a *Attribute) FilterList() (*FilterList, error) {
+	filterList := FilterList{context: a.context}
+	ret := C.tiledb_attribute_get_filter_list(a.context.tiledbContext, a.tiledbAttribute, &filterList.tiledbFilterList)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting tiledb attribute compressor: %s", a.context.LastError())
+		return nil, fmt.Errorf("Error getting tiledb attribute filter list: %s", a.context.LastError())
 	}
 
-	return &Compressor{Compressor: CompressorType(compressorT), Level: int(clevel)}, nil
+	return &filterList, nil
 }
 
 // SetCellValNum Sets the number of attribute values per cell.

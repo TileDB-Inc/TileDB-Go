@@ -165,24 +165,39 @@ func TestArraySchema(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, TILEDB_COL_MAJOR, tileOrder)
 
-	// Set Coordinates Compressor
-	c := Compressor{Compressor: TILEDB_BZIP2, Level: -1}
-	err = arraySchema.SetCoordsCompressor(c)
+	// Set Coordinates Filter List
+	filter, err := NewFilter(context, TILEDB_FILTER_BZIP2)
+	assert.Nil(t, err)
+	filterList, err := NewFilterList(context)
+	assert.Nil(t, err)
+	err = filterList.AddFilter(filter)
+	assert.Nil(t, err)
+	err = arraySchema.SetCoordsFilterList(filterList)
 	assert.Nil(t, err)
 
-	compressor, err := arraySchema.CoordsCompressor()
+	filterListReturn, err := arraySchema.CoordsFilterList()
 	assert.Nil(t, err)
-	assert.NotNil(t, compressor)
-	assert.EqualValues(t, c, *compressor)
+	assert.NotNil(t, filterListReturn)
+	filterReturn, err := filterListReturn.FilterFromIndex(0)
+	assert.Nil(t, err)
+	assert.NotNil(t, filterListReturn)
+	filterTypeReturn, err := filterReturn.Type()
+	assert.Nil(t, err)
+	assert.EqualValues(t, TILEDB_FILTER_BZIP2, filterTypeReturn)
 
 	// Set Offsets Compressor
-	err = arraySchema.SetOffsetsCompressor(c)
+	err = arraySchema.SetOffsetsFilterList(filterList)
 	assert.Nil(t, err)
 
-	compressor, err = arraySchema.OffsetsCompressor()
+	filterListReturn, err = arraySchema.OffsetsFilterList()
 	assert.Nil(t, err)
-	assert.NotNil(t, compressor)
-	assert.EqualValues(t, c, *compressor)
+	assert.NotNil(t, filterListReturn)
+	filterReturn, err = filterListReturn.FilterFromIndex(0)
+	assert.Nil(t, err)
+	assert.NotNil(t, filterListReturn)
+	filterTypeReturn, err = filterReturn.Type()
+	assert.Nil(t, err)
+	assert.EqualValues(t, TILEDB_FILTER_BZIP2, filterTypeReturn)
 
 	err = arraySchema.Check()
 	assert.Nil(t, err)
