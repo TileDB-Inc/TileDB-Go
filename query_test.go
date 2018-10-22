@@ -678,6 +678,15 @@ func TestQueryWrite(t *testing.T) {
 	assert.EqualValues(t, bufferA3, readBufferA3)
 	assert.EqualValues(t, bufferA4Comparison, readBufferA4)
 
+	bufferA1InterfaceGet, err := query.Buffer("a1")
+	assert.Nil(t, err)
+	assert.EqualValues(t, bufferA1, bufferA1InterfaceGet.([]int32))
+
+	offsetsBufferA4Get, bufferA4InterfaceGet, err := query.BufferVar("a4")
+	assert.Nil(t, err)
+	assert.EqualValues(t, bufferA4Comparison, bufferA4InterfaceGet.([]byte))
+	assert.EqualValues(t, offsetBufferA4, offsetsBufferA4Get)
+
 	query.Free()
 }
 

@@ -325,6 +325,142 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 	return nil
 }
 
+// Buffer returns a slice backed by the underlying c buffer from tiledb
+func (q *Query) Buffer(attributeName string) (interface{}, error) {
+	var datatype Datatype
+	schema, err := q.array.Schema()
+	if err != nil {
+		return nil, err
+	}
+
+	if attributeName == TILEDB_COORDS {
+		domain, err := schema.Domain()
+		if err != nil {
+			return nil, err
+		}
+		datatype, err = domain.Type()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		attribute, err := schema.AttributeFromName(attributeName)
+		if err != nil {
+			return nil, err
+		}
+		datatype, err = attribute.Type()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	cattributeName := C.CString(attributeName)
+	defer C.free(unsafe.Pointer(cattributeName))
+
+	var ret C.int
+	var cbufferSize *C.uint64_t
+	var cbuffer unsafe.Pointer
+	var buffer interface{}
+	switch datatype {
+	case TILEDB_INT8:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_int8_t
+		buffer = (*[1 << 30]int8)(cbuffer)[:length:length]
+
+	case TILEDB_INT16:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_int16_t
+		buffer = (*[1 << 30]int16)(cbuffer)[:length:length]
+
+	case TILEDB_INT32:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_int32_t
+		buffer = (*[1 << 30]int32)(cbuffer)[:length:length]
+
+	case TILEDB_INT64:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_int64_t
+		buffer = (*[1 << 30]int64)(cbuffer)[:length:length]
+
+	case TILEDB_UINT8:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint8_t
+		buffer = (*[1 << 30]uint8)(cbuffer)[:length:length]
+
+	case TILEDB_UINT16:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint16_t
+		buffer = (*[1 << 30]uint16)(cbuffer)[:length:length]
+
+	case TILEDB_UINT32:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint32_t
+		buffer = (*[1 << 30]uint32)(cbuffer)[:length:length]
+
+	case TILEDB_UINT64:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint64_t
+		buffer = (*[1 << 30]uint64)(cbuffer)[:length:length]
+
+	case TILEDB_FLOAT32:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_float
+		buffer = (*[1 << 30]float32)(cbuffer)[:length:length]
+
+	case TILEDB_FLOAT64:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_double
+		buffer = (*[1 << 30]float64)(cbuffer)[:length:length]
+
+	case TILEDB_CHAR:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_char
+		buffer = (*[1 << 30]byte)(cbuffer)[:length:length]
+
+	case TILEDB_STRING_ASCII:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint8_t
+		buffer = (*[1 << 30]uint8)(cbuffer)[:length:length]
+
+	case TILEDB_STRING_UTF8:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint8_t
+		buffer = (*[1 << 30]uint8)(cbuffer)[:length:length]
+
+	case TILEDB_STRING_UTF16:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint16_t
+		buffer = (*[1 << 30]uint16)(cbuffer)[:length:length]
+
+	case TILEDB_STRING_UTF32:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint32_t
+		buffer = (*[1 << 30]uint32)(cbuffer)[:length:length]
+
+	case TILEDB_STRING_UCS2:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint16_t
+		buffer = (*[1 << 30]uint16)(cbuffer)[:length:length]
+
+	case TILEDB_STRING_UCS4:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint32_t
+		buffer = (*[1 << 30]uint32)(cbuffer)[:length:length]
+
+	case TILEDB_ANY:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_int32_t
+		buffer = (*[1 << 30]C.int8_t)(cbuffer)[:length:length]
+
+	default:
+		return nil, fmt.Errorf("Unrecognized attribute type: %d", datatype)
+	}
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeName, q.context.LastError())
+	}
+
+	return buffer, nil
+}
+
 // SetBufferVar Sets the buffer for a fixed-sized attribute to a query
 // The buffer must be an initialized slice
 func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface{}) error {
@@ -497,6 +633,182 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 		return fmt.Errorf("Error setting query var buffer: %s", q.context.LastError())
 	}
 	return nil
+}
+
+// BufferVar returns a slice backed by the underlying c buffer from tiledb for
+// offets and values
+func (q *Query) BufferVar(attributeName string) ([]uint64, interface{}, error) {
+	var datatype Datatype
+	schema, err := q.array.Schema()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if attributeName == TILEDB_COORDS {
+		domain, err := schema.Domain()
+		if err != nil {
+			return nil, nil, err
+		}
+		datatype, err = domain.Type()
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		attribute, err := schema.AttributeFromName(attributeName)
+		if err != nil {
+			return nil, nil, err
+		}
+		datatype, err = attribute.Type()
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	cattributeName := C.CString(attributeName)
+	defer C.free(unsafe.Pointer(cattributeName))
+
+	var ret C.int
+	var cbufferSize *C.uint64_t
+	var cbuffer unsafe.Pointer
+	var buffer interface{}
+	var coffsetsSize *C.uint64_t
+	var coffsets *C.uint64_t
+	var offsets []uint64
+	switch datatype {
+	case TILEDB_INT8:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_int8_t
+		buffer = (*[1 << 30]int8)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	case TILEDB_INT16:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_int16_t
+		buffer = (*[1 << 30]int16)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	case TILEDB_INT32:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_int32_t
+		buffer = (*[1 << 30]int32)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	case TILEDB_INT64:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_int64_t
+		buffer = (*[1 << 30]int64)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	case TILEDB_UINT8:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint8_t
+		buffer = (*[1 << 30]uint8)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	case TILEDB_UINT16:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint16_t
+		buffer = (*[1 << 30]uint16)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	case TILEDB_UINT32:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint32_t
+		buffer = (*[1 << 30]uint32)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	case TILEDB_UINT64:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint64_t
+		buffer = (*[1 << 30]uint64)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	case TILEDB_FLOAT32:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_float
+		buffer = (*[1 << 30]float32)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	case TILEDB_FLOAT64:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_double
+		buffer = (*[1 << 30]float64)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	case TILEDB_CHAR:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_char
+		buffer = (*[1 << 30]byte)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	case TILEDB_STRING_ASCII:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint8_t
+		buffer = (*[1 << 30]uint8)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	case TILEDB_STRING_UTF8:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint8_t
+		buffer = (*[1 << 30]uint8)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	case TILEDB_STRING_UTF16:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint16_t
+		buffer = (*[1 << 30]uint16)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	case TILEDB_STRING_UTF32:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint32_t
+		buffer = (*[1 << 30]uint32)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	case TILEDB_STRING_UCS2:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint16_t
+		buffer = (*[1 << 30]uint16)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	case TILEDB_STRING_UCS4:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_uint32_t
+		buffer = (*[1 << 30]uint32)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	case TILEDB_ANY:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_int32_t
+		buffer = (*[1 << 30]C.int8_t)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	default:
+		return nil, nil, fmt.Errorf("Unrecognized attribute type: %d", datatype)
+	}
+	if ret != C.TILEDB_OK {
+		return nil, nil, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeName, q.context.LastError())
+	}
+
+	return offsets, buffer, nil
 }
 
 // SetLayout sets the layout of the cells to be written or read
