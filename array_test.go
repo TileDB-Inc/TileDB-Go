@@ -2,6 +2,7 @@ package tiledb
 
 import (
 	"os"
+	"path"
 	"testing"
 	"time"
 
@@ -131,7 +132,7 @@ func TestArray(t *testing.T) {
 	assert.Nil(t, err)
 
 	// create temp group name
-	tmpArrayPath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_array"
+	tmpArrayPath := path.Join(os.TempDir(), "tiledb_test_array")
 	// Cleanup group when test ends
 	defer os.RemoveAll(tmpArrayPath)
 	if _, err = os.Stat(tmpArrayPath); err == nil {
@@ -147,6 +148,11 @@ func TestArray(t *testing.T) {
 	// Create array on disk
 	err = array.Create(arraySchema)
 	assert.Nil(t, err)
+
+	// Get array URI
+	uri, err := array.URI()
+	assert.Nil(t, err)
+	assert.Equal(t, "file://"+tmpArrayPath, uri)
 
 	//err = array.Consolidate()
 	//assert.Nil(t, err)
@@ -221,7 +227,7 @@ func TestArrayEncryption(t *testing.T) {
 	assert.Nil(t, err)
 
 	// create temp group name
-	tmpArrayPath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_array"
+	tmpArrayPath := path.Join(os.TempDir(), "tiledb_test_array")
 	// Cleanup group when test ends
 	defer os.RemoveAll(tmpArrayPath)
 	if _, err = os.Stat(tmpArrayPath); err == nil {

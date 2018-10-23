@@ -661,3 +661,15 @@ func (a *Array) MaxBufferElements(subarray interface{}) (map[string][2]uint64, e
 
 	return ret, nil
 }
+
+// URI returns the array's uri
+func (a *Array) URI() (string, error) {
+	var curi *C.char
+	defer C.free(unsafe.Pointer(curi))
+	C.tiledb_array_get_uri(a.context.tiledbContext, a.tiledbArray, &curi)
+	uri := C.GoString(curi)
+	if uri == "" {
+		return uri, fmt.Errorf("Error getting URI for array: uri is empty")
+	}
+	return uri, nil
+}
