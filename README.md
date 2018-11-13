@@ -157,6 +157,5 @@ func main() {
 
 The following TileDB core library features are missing from the go api:
 
--   Key-Value store
 -   TileDB generic object management
 -   TileDB group creation
