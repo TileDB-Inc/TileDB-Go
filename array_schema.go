@@ -250,6 +250,10 @@ func LoadArraySchema(context *Context, path string) (*ArraySchema, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error in loading arraySchema from %s: %s", path, a.context.LastError())
 	}
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&a, func(arraySchema *ArraySchema) {
+		arraySchema.Free()
+	})
 	return &a, nil
 }
 
@@ -264,6 +268,10 @@ func LoadArraySchemaWithKey(context *Context, path string, encryptionType Encryp
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error in loading arraySchema with key from %s: %s", path, a.context.LastError())
 	}
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&a, func(arraySchema *ArraySchema) {
+		arraySchema.Free()
+	})
 	return &a, nil
 }
 
