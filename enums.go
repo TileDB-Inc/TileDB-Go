@@ -85,6 +85,8 @@ func (d Datatype) ReflectKind() reflect.Kind {
 		return reflect.Float32
 	case TILEDB_FLOAT64:
 		return reflect.Float64
+	case TILEDB_CHAR:
+		return reflect.Uint8
 	case TILEDB_STRING_ASCII:
 		return reflect.Uint8
 	case TILEDB_STRING_UTF8:
