@@ -503,6 +503,11 @@ func TestQueryWrite(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, attribute4)
 
+	// Crete attribute to add to schema
+	attribute5, err := NewAttribute(context, "a5", TILEDB_CHAR)
+	assert.Nil(t, err)
+	assert.NotNil(t, attribute5)
+
 	// Set a3 to be variable length
 	err = attribute3.SetCellValNum(TILEDB_VAR_NUM)
 	assert.Nil(t, err)
@@ -511,8 +516,12 @@ func TestQueryWrite(t *testing.T) {
 	err = attribute4.SetCellValNum(TILEDB_VAR_NUM)
 	assert.Nil(t, err)
 
+	// Set a5 to be variable length
+	err = attribute5.SetCellValNum(TILEDB_VAR_NUM)
+	assert.Nil(t, err)
+
 	// Add Attribute
-	err = arraySchema.AddAttributes(attribute, attribute2, attribute3, attribute4)
+	err = arraySchema.AddAttributes(attribute, attribute2, attribute3, attribute4, attribute5)
 	assert.Nil(t, err)
 
 	// Set Domain
@@ -581,6 +590,20 @@ func TestQueryWrite(t *testing.T) {
 	bufferA4 = nil
 	assert.Nil(t, err)
 
+	bufferA5 := "hello" + "world"
+	offsetBufferA5 := []uint64{0, 5}
+	// Second string array so we can compare reads
+	bufferA5Comparison := make([]byte, len(bufferA5)) //new(string, len(bufferA5))
+	elementsCopied = copy(bufferA5Comparison, bufferA5)
+	assert.Equal(t, len(bufferA5), elementsCopied)
+	assert.EqualValues(t, bufferA5, bufferA5Comparison)
+	bufferA5Bytes := []byte(bufferA5)
+
+	err = query.SetBufferVar("a5", offsetBufferA5, bufferA5Bytes)
+	// Immediately set bufferA5 to nil to validate underlying array is not GC'ed
+	//bufferA5 = nil
+	assert.Nil(t, err)
+
 	// Submit write query
 	err = query.Submit()
 	assert.Nil(t, err)
@@ -625,6 +648,8 @@ func TestQueryWrite(t *testing.T) {
 	assert.Equal(t, uint64(15), maxElements["a3"][1])
 	assert.Equal(t, uint64(2), maxElements["a4"][0])
 	assert.Equal(t, uint64(20), maxElements["a4"][1])
+	assert.Equal(t, uint64(2), maxElements["a5"][0])
+	assert.Equal(t, uint64(20), maxElements["a5"][1])
 
 	// Set empty buffers for reading
 	readBufferA1 := make([]int32, 2)
@@ -643,6 +668,11 @@ func TestQueryWrite(t *testing.T) {
 	readBufferA4 := make([]byte, 10)
 	readOffsetBufferA4 := make([]uint64, 2)
 	err = query.SetBufferVar("a4", readOffsetBufferA4, readBufferA4)
+	assert.Nil(t, err)
+
+	readBufferA5 := make([]byte, 10) //make(string, 10)
+	readOffsetBufferA5 := make([]uint64, 2)
+	err = query.SetBufferVar("a5", readOffsetBufferA5, readBufferA5)
 	assert.Nil(t, err)
 
 	// Set read layout
@@ -677,6 +707,7 @@ func TestQueryWrite(t *testing.T) {
 	assert.EqualValues(t, bufferA2, readBufferA2)
 	assert.EqualValues(t, bufferA3, readBufferA3)
 	assert.EqualValues(t, bufferA4Comparison, readBufferA4)
+	assert.EqualValues(t, bufferA5Comparison, readBufferA5)
 
 	bufferA1InterfaceGet, err := query.Buffer("a1")
 	assert.Nil(t, err)
@@ -686,6 +717,11 @@ func TestQueryWrite(t *testing.T) {
 	assert.Nil(t, err)
 	assert.EqualValues(t, bufferA4Comparison, bufferA4InterfaceGet.([]byte))
 	assert.EqualValues(t, offsetBufferA4, offsetsBufferA4Get)
+
+	offsetsBufferA5Get, bufferA5InterfaceGet, err := query.BufferVar("a5")
+	assert.Nil(t, err)
+	assert.EqualValues(t, bufferA5Comparison, bufferA5InterfaceGet.([]byte))
+	assert.EqualValues(t, offsetBufferA5, offsetsBufferA5Get)
 
 	query.Free()
 }

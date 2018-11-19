@@ -94,8 +94,13 @@ func createDenseArray() {
 	schema.SetTileOrder(tiledb.TILEDB_ROW_MAJOR)
 
 	// Add a single attribute "a" so each (i,j) cell can store an integer.
-	a, _ := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_INT32)
+	a, _ := tiledb.NewAttribute(ctx, "a1", tiledb.TILEDB_INT32)
 	schema.AddAttributes(a)
+
+	// Add a single attribute "a" so each (i,j) cell can store an integer.
+	a2, _ := tiledb.NewAttribute(ctx, "a2", tiledb.TILEDB_CHAR)
+	a2.SetCellValNum(TILEDB_VAR_NUM)
+	schema.AddAttributes(a, a2)
 
 	// Create the (empty) array on disk.
 	array, _ := tiledb.NewArray(ctx, denseArrayName)
@@ -106,14 +111,20 @@ func writeDenseArray() {
 	ctx, _ := tiledb.NewContext(nil)
 
 	// Prepare some data for the array
-	data := []int32{1, 2, 3}
+	a1Data := []int32{1, 2, 3}
+
+	// String attributes are handled as byte arrays
+	// The user must pass a byte array to query.SetBuffer/SetBufferVar
+	a2Data := []byte("val1" + "val2" + "val3")
+	a2DataOffsets := []uint64{0,4,8}
 
 	// Open the array for writing and create the query.
 	array, _ := tiledb.NewArray(ctx, denseArrayName)
 	array.Open(tiledb.TILEDB_WRITE)
 	query, _ := tiledb.NewQuery(ctx, array)
 	query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
-	query.SetBuffer("a", data)
+	query.SetBuffer("a1", a1Data)
+	query.SetBufferVar("a2", a2Offsets, a2Data)
 
 	// Perform the write and close the array.
 	query.Submit()
@@ -127,20 +138,40 @@ func readDenseArray() {
 	array, _ := tiledb.NewArray(ctx, denseArrayName)
 	array.Open(tiledb.TILEDB_READ)
 
-	// Prepare the vector that will hold the result (of size 6 elements)
-	data := make([]int32, 3)
+	// Prepare the vector that will hold the result (of size 3 elements)
+	// You can use Array.MaxBufferSize(subarray) to get estimate buffer sizes
+	// The sizes are set here for simplicity of the example
+	a1Data := make([]int32, 3)
+	a2Offsets:= make([]uint64, 3)
+	a2Data := make([]byte, 12)
 
 	// Prepare the query
 	query, _ := tiledb.NewQuery(ctx, array)
 	query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
-	query.SetBuffer("a", data)
+	query.SetBuffer("a1", a1Data)
+	query.SetVarBuffer("a2", a2Offsets, a2Data)
 
 	// Submit the query and close the array.
 	query.Submit()
 	array.Close()
 
 	// Print out the results.
-	fmt.Println(data)
+	fmt.Println(a1Data)
+	fmt.Println(a2Data)
+	fmt.Println(a2Offsets)
+
+	// Produce slice of strings based on the offsets for a2
+	// This also converts from a byte array to strings
+	var a2Strings []string
+	for int i := 0; i < len(a2Offsets); i++ {
+		stringEndPosition := len(a2Data)
+		if i < len(a2Offsets) - 1 {
+			stringEndPosition = a2Offsets[i+1]
+		}
+		a2Strings = append(a2String, string(a2Data[a2Offsets[i]:stringEndPosition]))
+		}
+
+	fmt.Println(a2Strings)
 }
 
 // ExampleDenseArray shows and example creation, writing and reading of a dense
