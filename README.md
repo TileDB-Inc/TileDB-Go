@@ -50,6 +50,7 @@ as such the below table reference which versions are compatible.
 | ----------------- | -------------- |
 | 0.1.X             | 1.3.0          |
 | 0.2.X             | 1.4.0          |
+| 0.3.X             | 1.4.0          |
 
 ## Quickstart
 
