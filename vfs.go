@@ -240,7 +240,7 @@ func (v *VFS) FileSize(uri string) (uint64, error) {
 	ret := C.tiledb_vfs_file_size(v.context.tiledbContext, v.tiledbVFS, curi, &cfsize)
 
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error in removing file %s: %s", uri, v.context.LastError())
+		return 0, fmt.Errorf("Error in getting file size %s: %s", uri, v.context.LastError())
 	}
 
 	return uint64(cfsize), nil
@@ -365,4 +365,18 @@ func (v *VFS) Touch(uri string) error {
 	}
 
 	return nil
+}
+
+// DirSize retrieves the size of a directory.
+func (v *VFS) DirSize(uri string) (uint64, error) {
+	curi := C.CString(uri)
+	defer C.free(unsafe.Pointer(curi))
+	var cfsize C.uint64_t
+	ret := C.tiledb_vfs_dir_size(v.context.tiledbContext, v.tiledbVFS, curi, &cfsize)
+
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("Error in getting dir size %s: %s", uri, v.context.LastError())
+	}
+
+	return uint64(cfsize), nil
 }
