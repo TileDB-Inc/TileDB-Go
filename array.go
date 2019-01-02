@@ -175,10 +175,13 @@ func (a *Array) CreateWithKey(arraySchema *ArraySchema, encryptionType Encryptio
 // Consolidate Consolidates the fragments of an array into a single fragment.
 // You must first finalize all queries to the array before consolidation can
 // begin (as consolidation temporarily acquires an exclusive lock on the array).
-func (a *Array) Consolidate() error {
+func (a *Array) Consolidate(config *Config) error {
+	if config == nil {
+		return fmt.Errorf("Config must not be nil for Consolidate")
+	}
 	curi := C.CString(a.uri)
 	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_array_consolidate(a.context.tiledbContext, curi)
+	ret := C.tiledb_array_consolidate(a.context.tiledbContext, curi, config.tiledbConfig)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error consolidating tiledb array: %s", a.context.LastError())
 	}
@@ -189,12 +192,16 @@ func (a *Array) Consolidate() error {
 // into a single fragment.
 // You must first finalize all queries to the array before consolidation can
 // begin (as consolidation temporarily acquires an exclusive lock on the array).
-func (a *Array) ConsolidateWithKey(encryptionType EncryptionType, key string) error {
+func (a *Array) ConsolidateWithKey(encryptionType EncryptionType, key string, config *Config) error {
+	if config == nil {
+		return fmt.Errorf("Config must not be nil for ConsolidateWithKey")
+	}
 	ckey := unsafe.Pointer(C.CString(key))
 	defer C.free(ckey)
 	curi := C.CString(a.uri)
 	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_array_consolidate_with_key(a.context.tiledbContext, curi, C.tiledb_encryption_type_t(encryptionType), ckey, C.uint32_t(len(key)))
+
+	ret := C.tiledb_array_consolidate_with_key(a.context.tiledbContext, curi, C.tiledb_encryption_type_t(encryptionType), ckey, C.uint32_t(len(key)), config.tiledbConfig)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error consolidating tiledb with key array: %s", a.context.LastError())
 	}
