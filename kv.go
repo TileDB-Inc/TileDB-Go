@@ -199,6 +199,7 @@ func (k *KV) Consolidate(config *Config) error {
 	if config == nil {
 		return fmt.Errorf("Config must not be nil for Consolidate")
 	}
+
 	curi := C.CString(k.uri)
 	defer C.free(unsafe.Pointer(curi))
 
@@ -214,6 +215,7 @@ func (k *KV) ConsolidateWithKey(encryptionType EncryptionType, key string, confi
 	if config == nil {
 		return fmt.Errorf("Config must not be nil for ConsolidateWithKey")
 	}
+
 	ckey := unsafe.Pointer(C.CString(key))
 	defer C.free(ckey)
 	curi := C.CString(k.uri)
