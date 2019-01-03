@@ -2,9 +2,10 @@ package tiledb
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // TestVFS validates vfs file operations are successful
@@ -19,6 +20,12 @@ func TestVFS(t *testing.T) {
 	assert.Nil(t, err)
 
 	tmpPath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_vfs"
+	defer os.Remove(tmpPath)
+	if _, err = os.Stat(tmpPath); err == nil {
+		os.Remove(tmpPath)
+	}
+
+	tmpFilePath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_vfs" + string(os.PathSeparator) + "file_test"
 	defer os.Remove(tmpPath)
 	if _, err = os.Stat(tmpPath); err == nil {
 		os.Remove(tmpPath)
@@ -40,15 +47,11 @@ func TestVFS(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, isDir)
 
-	// Remove directory
-	err = vfs.RemoveDir(tmpPath)
-	assert.Nil(t, err)
-
 	// Create File
-	err = vfs.Touch(tmpPath)
+	err = vfs.Touch(tmpFilePath)
 	assert.Nil(t, err)
 
-	fh, err := vfs.Open(tmpPath, TILEDB_VFS_WRITE)
+	fh, err := vfs.Open(tmpFilePath, TILEDB_VFS_WRITE)
 	assert.Nil(t, err)
 
 	bytes := []byte{0, 1, 2}
@@ -56,11 +59,19 @@ func TestVFS(t *testing.T) {
 	assert.Nil(t, err)
 
 	bytes2, err := vfs.Read(fh, 0, uint64(len(bytes)))
-
+	assert.Nil(t, err)
 	assert.EqualValues(t, bytes, bytes2)
 
+	dirSize, err := vfs.DirSize(tmpPath)
+	assert.Nil(t, err)
+	assert.EqualValues(t, 3, dirSize)
+
 	// Remove File
-	err = vfs.RemoveFile(tmpPath)
+	err = vfs.RemoveFile(tmpFilePath)
+	assert.Nil(t, err)
+
+	// Remove directory
+	err = vfs.RemoveDir(tmpPath)
 	assert.Nil(t, err)
 }
 
