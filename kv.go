@@ -190,10 +190,14 @@ func (k *KV) CreateWithKey(kvSchema *KVSchema, encryptionType EncryptionType, ke
 }
 
 // Consolidate Consolidates the fragments of a key-value store into a single fragment.
-func (k *KV) Consolidate() error {
+func (k *KV) Consolidate(config *Config) error {
+	if config == nil {
+		return fmt.Errorf("Config must not be nil for Consolidate")
+	}
 	curi := C.CString(k.uri)
 	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_kv_consolidate(k.context.tiledbContext, curi)
+
+	ret := C.tiledb_kv_consolidate(k.context.tiledbContext, curi, config.tiledbConfig)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error consolidating tiledb kv: %s", k.context.LastError())
 	}
@@ -201,12 +205,16 @@ func (k *KV) Consolidate() error {
 }
 
 // ConsolidateWithKey Consolidates the fragments of an encrypted key-value store into a single fragment.
-func (k *KV) ConsolidateWithKey(encryptionType EncryptionType, key string) error {
+func (k *KV) ConsolidateWithKey(encryptionType EncryptionType, key string, config *Config) error {
+	if config == nil {
+		return fmt.Errorf("Config must not be nil for ConsolidateWithKey")
+	}
 	ckey := unsafe.Pointer(C.CString(key))
 	defer C.free(ckey)
 	curi := C.CString(k.uri)
 	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_kv_consolidate_with_key(k.context.tiledbContext, curi, C.tiledb_encryption_type_t(encryptionType), ckey, C.uint32_t(len(key)))
+
+	ret := C.tiledb_kv_consolidate_with_key(k.context.tiledbContext, curi, C.tiledb_encryption_type_t(encryptionType), ckey, C.uint32_t(len(key)), config.tiledbConfig)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error consolidating tiledb with key kv: %s", k.context.LastError())
 	}
