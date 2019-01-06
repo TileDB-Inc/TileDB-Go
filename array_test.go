@@ -192,7 +192,6 @@ func TestArray(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, nonEmptyDomain)
 	assert.True(t, isEmpty)
-	//assert.EqualValues(t, []map[string]interface{}{{"dim1": []int8{1, 10}}}, nonEmptyDomain)
 
 	// Get MaxBufferSize, which is 0 because array is empty
 	maxBufferSize, err := array.MaxBufferSize("a1", []int8{1, 6})
@@ -282,7 +281,6 @@ func TestArrayEncryption(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, nonEmptyDomain)
 	assert.True(t, isEmpty)
-	//assert.EqualValues(t, []map[string]interface{}{{"dim1": []int8{1, 10}}}, nonEmptyDomain)
 
 	// Get MaxBufferSize, which is 0 because array is empty
 	maxBufferSize, err := array.MaxBufferSize("a1", []int8{1, 6})

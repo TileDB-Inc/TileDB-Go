@@ -26,6 +26,12 @@ type Array struct {
 	uri         string
 }
 
+// NonEmptyDomain contains the non empty dimension bounds and dimension name
+type NonEmptyDomain struct {
+	DimensionName string
+	Bounds        interface{}
+}
+
 // NewArray alloc a new array
 func NewArray(ctx *Context, uri string) (*Array, error) {
 	curi := C.CString(uri)
@@ -230,8 +236,8 @@ func (a *Array) QueryType() (QueryType, error) {
 
 // NonEmptyDomain retrieves the non-empty domain from an array
 // This returns the bounding coordinates for each dimension
-func (a *Array) NonEmptyDomain() ([]map[string]interface{}, bool, error) {
-	nonEmptyDomains := make([]map[string]interface{}, 1)
+func (a *Array) NonEmptyDomain() ([]NonEmptyDomain, bool, error) {
+	nonEmptyDomains := make([]NonEmptyDomain, 0)
 	schema, err := a.Schema()
 	if err != nil {
 		return nil, false, err
@@ -273,8 +279,7 @@ func (a *Array) NonEmptyDomain() ([]map[string]interface{}, bool, error) {
 				if err != nil {
 					return nil, false, err
 				}
-				tmpMap := map[string]interface{}{name: []int8{tmpDomain[i*2], tmpDomain[(i*2)+1]}}
-				nonEmptyDomains = append(nonEmptyDomains, tmpMap)
+				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []int8{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
 			}
 		}
 	case TILEDB_INT16:
@@ -294,8 +299,7 @@ func (a *Array) NonEmptyDomain() ([]map[string]interface{}, bool, error) {
 				if err != nil {
 					return nil, false, err
 				}
-				tmpMap := map[string]interface{}{name: []int16{tmpDomain[i*2], tmpDomain[(i*2)+1]}}
-				nonEmptyDomains = append(nonEmptyDomains, tmpMap)
+				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []int16{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
 			}
 		}
 	case TILEDB_INT32:
@@ -315,8 +319,7 @@ func (a *Array) NonEmptyDomain() ([]map[string]interface{}, bool, error) {
 				if err != nil {
 					return nil, false, err
 				}
-				tmpMap := map[string]interface{}{name: []int32{tmpDomain[i*2], tmpDomain[(i*2)+1]}}
-				nonEmptyDomains = append(nonEmptyDomains, tmpMap)
+				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []int32{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
 			}
 		}
 	case TILEDB_INT64:
@@ -336,8 +339,7 @@ func (a *Array) NonEmptyDomain() ([]map[string]interface{}, bool, error) {
 				if err != nil {
 					return nil, false, err
 				}
-				tmpMap := map[string]interface{}{name: []int64{tmpDomain[i*2], tmpDomain[(i*2)+1]}}
-				nonEmptyDomains = append(nonEmptyDomains, tmpMap)
+				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []int64{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
 			}
 		}
 	case TILEDB_UINT8:
@@ -357,8 +359,7 @@ func (a *Array) NonEmptyDomain() ([]map[string]interface{}, bool, error) {
 				if err != nil {
 					return nil, false, err
 				}
-				tmpMap := map[string]interface{}{name: []uint8{tmpDomain[i*2], tmpDomain[(i*2)+1]}}
-				nonEmptyDomains = append(nonEmptyDomains, tmpMap)
+				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []uint8{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
 			}
 		}
 	case TILEDB_UINT16:
@@ -378,8 +379,7 @@ func (a *Array) NonEmptyDomain() ([]map[string]interface{}, bool, error) {
 				if err != nil {
 					return nil, false, err
 				}
-				tmpMap := map[string]interface{}{name: []uint16{tmpDomain[i*2], tmpDomain[(i*2)+1]}}
-				nonEmptyDomains = append(nonEmptyDomains, tmpMap)
+				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []uint16{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
 			}
 		}
 	case TILEDB_UINT32:
@@ -399,8 +399,7 @@ func (a *Array) NonEmptyDomain() ([]map[string]interface{}, bool, error) {
 				if err != nil {
 					return nil, false, err
 				}
-				tmpMap := map[string]interface{}{name: []uint32{tmpDomain[i*2], tmpDomain[(i*2)+1]}}
-				nonEmptyDomains = append(nonEmptyDomains, tmpMap)
+				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []uint32{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
 			}
 		}
 	case TILEDB_UINT64:
@@ -420,8 +419,7 @@ func (a *Array) NonEmptyDomain() ([]map[string]interface{}, bool, error) {
 				if err != nil {
 					return nil, false, err
 				}
-				tmpMap := map[string]interface{}{name: []uint64{tmpDomain[i*2], tmpDomain[(i*2)+1]}}
-				nonEmptyDomains = append(nonEmptyDomains, tmpMap)
+				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []uint64{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
 			}
 		}
 	case TILEDB_FLOAT32:
@@ -441,8 +439,7 @@ func (a *Array) NonEmptyDomain() ([]map[string]interface{}, bool, error) {
 				if err != nil {
 					return nil, false, err
 				}
-				tmpMap := map[string]interface{}{name: []float32{tmpDomain[i*2], tmpDomain[(i*2)+1]}}
-				nonEmptyDomains = append(nonEmptyDomains, tmpMap)
+				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []float32{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
 			}
 		}
 	case TILEDB_FLOAT64:
@@ -462,8 +459,7 @@ func (a *Array) NonEmptyDomain() ([]map[string]interface{}, bool, error) {
 				if err != nil {
 					return nil, false, err
 				}
-				tmpMap := map[string]interface{}{name: []float64{tmpDomain[i*2], tmpDomain[(i*2)+1]}}
-				nonEmptyDomains = append(nonEmptyDomains, tmpMap)
+				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []float64{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
 			}
 		}
 	}

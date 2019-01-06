@@ -629,6 +629,13 @@ func TestQueryWrite(t *testing.T) {
 	err = array.Open(TILEDB_READ)
 	assert.Nil(t, err)
 
+	// Get non empty domain, which should not be empty
+	nonEmptyDomain, isEmpty, err := array.NonEmptyDomain()
+	assert.Nil(t, err)
+	assert.NotNil(t, nonEmptyDomain)
+	assert.False(t, isEmpty)
+	assert.EqualValues(t, []NonEmptyDomain{{DimensionName: "dim1", Bounds: []int8{0, 1}}}, nonEmptyDomain)
+
 	query, err = NewQuery(context, array)
 	assert.Nil(t, err)
 	assert.NotNil(t, query)
