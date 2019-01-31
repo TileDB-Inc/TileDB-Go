@@ -662,6 +662,22 @@ func (a *Array) MaxBufferElements(subarray interface{}) (map[string][2]uint64, e
 		}
 	}
 
+	// Handle coordinates
+	domain, err := schema.Domain()
+	if err != nil {
+		return nil, fmt.Errorf("Could not get domain for MaxBufferElements: %s", err)
+	}
+	domainType, err := domain.Type()
+	if err != nil {
+		return nil, fmt.Errorf("Could not get domainType for MaxBufferElements: %s", err)
+	}
+	domainTypeSize := uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(domainType)))
+	bufferValSize, err := a.MaxBufferSize(TILEDB_COORDS, subarray)
+	if err != nil {
+		return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+	}
+	ret[TILEDB_COORDS] = [2]uint64{0, bufferValSize / domainTypeSize}
+
 	return ret, nil
 }
 
