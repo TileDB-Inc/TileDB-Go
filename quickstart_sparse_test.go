@@ -75,7 +75,7 @@ func writeSparseArray() {
 	array, _ := tiledb.NewArray(ctx, sparseArrayName)
 	array.Open(tiledb.TILEDB_WRITE)
 	query, _ := tiledb.NewQuery(ctx, array)
-	query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
+	query.SetLayout(tiledb.TILEDB_UNORDERED)
 	query.SetBuffer("a", data)
 	query.SetCoordinates(coords)
 
