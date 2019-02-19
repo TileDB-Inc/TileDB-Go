@@ -27,13 +27,13 @@ When run, this program will create a simple 2D dense array, write some data
 to it, and read a slice of the data back, then clean up.
 For simplicity this program does not handle errors
 */
-package tiledb_test
+package tiledb
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"os"
-
-	tiledb "github.com/TileDB-Inc/TileDB-Go"
+	"testing"
 )
 
 // Name of array.
@@ -41,41 +41,41 @@ var denseArrayName = "quickstart_dense"
 
 func createDenseArray() {
 	// Create a TileDB context.
-	ctx, _ := tiledb.NewContext(nil)
+	ctx, _ := NewContext(nil)
 
 	// The array will be 4x4 with dimensions "rows" and "cols", with domain [1,4].
-	domain, _ := tiledb.NewDomain(ctx)
-	rowDim, _ := tiledb.NewDimension(ctx, "rows", []int32{1, 4}, int32(4))
-	colDim, _ := tiledb.NewDimension(ctx, "cols", []int32{1, 4}, int32(4))
+	domain, _ := NewDomain(ctx)
+	rowDim, _ := NewDimension(ctx, "rows", []int32{1, 4}, int32(4))
+	colDim, _ := NewDimension(ctx, "cols", []int32{1, 4}, int32(4))
 	domain.AddDimensions(rowDim, colDim)
 
 	// The array will be dense.
-	schema, _ := tiledb.NewArraySchema(ctx, tiledb.TILEDB_DENSE)
+	schema, _ := NewArraySchema(ctx, TILEDB_DENSE)
 	schema.SetDomain(domain)
-	schema.SetCellOrder(tiledb.TILEDB_ROW_MAJOR)
-	schema.SetTileOrder(tiledb.TILEDB_ROW_MAJOR)
+	schema.SetCellOrder(TILEDB_ROW_MAJOR)
+	schema.SetTileOrder(TILEDB_ROW_MAJOR)
 
 	// Add a single attribute "a" so each (i,j) cell can store an integer.
-	a, _ := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_INT32)
+	a, _ := NewAttribute(ctx, "a", TILEDB_INT32)
 	schema.AddAttributes(a)
 
 	// Create the (empty) array on disk.
-	array, _ := tiledb.NewArray(ctx, denseArrayName)
+	array, _ := NewArray(ctx, denseArrayName)
 	array.Create(schema)
 }
 
 func writeDenseArray() {
-	ctx, _ := tiledb.NewContext(nil)
+	ctx, _ := NewContext(nil)
 
 	// Prepare some data for the array
 	data := []int32{
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
 	// Open the array for writing and create the query.
-	array, _ := tiledb.NewArray(ctx, denseArrayName)
-	array.Open(tiledb.TILEDB_WRITE)
-	query, _ := tiledb.NewQuery(ctx, array)
-	query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
+	array, _ := NewArray(ctx, denseArrayName)
+	array.Open(TILEDB_WRITE)
+	query, _ := NewQuery(ctx, array)
+	query.SetLayout(TILEDB_ROW_MAJOR)
 	query.SetBuffer("a", data)
 
 	// Perform the write and close the array.
@@ -83,12 +83,12 @@ func writeDenseArray() {
 	array.Close()
 }
 
-func readDenseArray() {
-	ctx, _ := tiledb.NewContext(nil)
+func readDenseArray() []int32 {
+	ctx, _ := NewContext(nil)
 
 	// Prepare the array for reading
-	array, _ := tiledb.NewArray(ctx, denseArrayName)
-	array.Open(tiledb.TILEDB_READ)
+	array, _ := NewArray(ctx, denseArrayName)
+	array.Open(TILEDB_READ)
 
 	// Slice only rows 1, 2 and cols 2, 3, 4
 	subArray := []int32{1, 2, 2, 4}
@@ -97,9 +97,9 @@ func readDenseArray() {
 	data := make([]int32, 6)
 
 	// Prepare the query
-	query, _ := tiledb.NewQuery(ctx, array)
+	query, _ := NewQuery(ctx, array)
 	query.SetSubArray(subArray)
-	query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
+	query.SetLayout(TILEDB_ROW_MAJOR)
 	query.SetBuffer("a", data)
 
 	// Submit the query and close the array.
@@ -108,15 +108,19 @@ func readDenseArray() {
 
 	// Print out the results.
 	fmt.Println(data)
+
+	return data
 }
 
 // ExampleDenseArray shows and example creation, writing and reading of a dense
 // array
-func Example_denseArray() {
+func TestDenseArray(t *testing.T) {
 	createDenseArray()
 	writeDenseArray()
-	readDenseArray()
-	// Output: [2 3 4 6 7 8]
+
+	data := readDenseArray()
+	expectedData := []int32{2, 3, 4, 6, 7, 8}
+	assert.EqualValues(t, data, expectedData)
 
 	// Cleanup example so unit tests are clean
 	if _, err := os.Stat(denseArrayName); err == nil {
