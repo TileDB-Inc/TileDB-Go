@@ -23,23 +23,23 @@ THE SOFTWARE.
 This is a part of the TileDB quickstart tutorial:
 https://docs.tiledb.io/en/latest/quickstart.html
 
-When run, this program will create a simple 2D dense array, write some data
+When run, this program will create a simple 2D sparse array, write some data
 to it, and read a slice of the data back, then clean up.
 For simplicity this program does not handle errors
 */
-package tiledb_test
+package examples_test
 
 import (
 	"fmt"
 	"os"
 
-	tiledb "github.com/TileDB-Inc/TileDB-Go"
+	"github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
-var denseArrayName = "quickstart_dense"
+var sparseArrayName = "quickstart_sparse"
 
-func createDenseArray() {
+func createSparseArray() {
 	// Create a TileDB context.
 	ctx, _ := tiledb.NewContext(nil)
 
@@ -50,7 +50,7 @@ func createDenseArray() {
 	domain.AddDimensions(rowDim, colDim)
 
 	// The array will be dense.
-	schema, _ := tiledb.NewArraySchema(ctx, tiledb.TILEDB_DENSE)
+	schema, _ := tiledb.NewArraySchema(ctx, tiledb.TILEDB_SPARSE)
 	schema.SetDomain(domain)
 	schema.SetCellOrder(tiledb.TILEDB_ROW_MAJOR)
 	schema.SetTileOrder(tiledb.TILEDB_ROW_MAJOR)
@@ -60,66 +60,79 @@ func createDenseArray() {
 	schema.AddAttributes(a)
 
 	// Create the (empty) array on disk.
-	array, _ := tiledb.NewArray(ctx, denseArrayName)
+	array, _ := tiledb.NewArray(ctx, sparseArrayName)
 	array.Create(schema)
 }
 
-func writeDenseArray() {
+func writeSparseArray() {
 	ctx, _ := tiledb.NewContext(nil)
 
-	// Prepare some data for the array
-	data := []int32{
-		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+	// Write some simple data to cells (1, 1), (2, 4) and (2, 3).
+	coords := []int32{1, 1, 2, 4, 2, 3}
+	data := []int32{1, 2, 3}
 
 	// Open the array for writing and create the query.
-	array, _ := tiledb.NewArray(ctx, denseArrayName)
+	array, _ := tiledb.NewArray(ctx, sparseArrayName)
 	array.Open(tiledb.TILEDB_WRITE)
 	query, _ := tiledb.NewQuery(ctx, array)
-	query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
+	query.SetLayout(tiledb.TILEDB_UNORDERED)
 	query.SetBuffer("a", data)
+	query.SetCoordinates(coords)
 
 	// Perform the write and close the array.
 	query.Submit()
 	array.Close()
 }
 
-func readDenseArray() {
+func readSparseArray() {
 	ctx, _ := tiledb.NewContext(nil)
 
 	// Prepare the array for reading
-	array, _ := tiledb.NewArray(ctx, denseArrayName)
+	array, _ := tiledb.NewArray(ctx, sparseArrayName)
 	array.Open(tiledb.TILEDB_READ)
 
 	// Slice only rows 1, 2 and cols 2, 3, 4
 	subArray := []int32{1, 2, 2, 4}
 
-	// Prepare the vector that will hold the result (of size 6 elements)
-	data := make([]int32, 6)
+	// Prepare the vector that will hold the results
+	// We take the upper bound on the result size as we do not know how large
+	// a buffer is needed since the array is sparse
+	maxElements, _ := array.MaxBufferElements(subArray)
+	data := make([]int32, maxElements["a"][1])
+	coords := make([]int32, maxElements[tiledb.TILEDB_COORDS][1])
 
 	// Prepare the query
 	query, _ := tiledb.NewQuery(ctx, array)
 	query.SetSubArray(subArray)
 	query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	query.SetBuffer("a", data)
+	query.SetCoordinates(coords)
 
 	// Submit the query and close the array.
 	query.Submit()
 	array.Close()
 
 	// Print out the results.
-	fmt.Println(data)
+	for r := 0; r < len(data); r++ {
+		i := coords[2*r]
+		j := coords[2*r+1]
+		fmt.Printf("Cell (%d, %d) has data %d\n", i, j, data[r])
+	}
 }
 
-// ExampleDenseArray shows and example creation, writing and reading of a dense
-// array
-func Example_denseArray() {
-	createDenseArray()
-	writeDenseArray()
-	readDenseArray()
-	// Output: [2 3 4 6 7 8]
+// ExampleSparseArray shows and example creation, writing and reading of a
+// sparse array
+func ExampleSparseArray() {
+	createSparseArray()
+	writeSparseArray()
+	readSparseArray()
 
 	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(denseArrayName); err == nil {
-		os.RemoveAll(denseArrayName)
+	if _, err := os.Stat(sparseArrayName); err == nil {
+		os.RemoveAll(sparseArrayName)
 	}
+
+	// Output: Cell (2, 3) has data 3
+	// Cell (2, 4) has data 2
+	// Cell (0, 0) has data 0
 }

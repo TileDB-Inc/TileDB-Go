@@ -23,23 +23,23 @@ THE SOFTWARE.
 This is a part of the TileDB quickstart tutorial:
 https://docs.tiledb.io/en/latest/quickstart.html
 
-When run, this program will create a simple 2D sparse array, write some data
+When run, this program will create a simple 2D dense array, write some data
 to it, and read a slice of the data back, then clean up.
 For simplicity this program does not handle errors
 */
-package tiledb_test
+package examples_test
 
 import (
 	"fmt"
 	"os"
 
-	tiledb "github.com/TileDB-Inc/TileDB-Go"
+	"github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
-var sparseArrayName = "quickstart_sparse"
+var denseArrayName = "quickstart_dense"
 
-func createSparseArray() {
+func createDenseArray() {
 	// Create a TileDB context.
 	ctx, _ := tiledb.NewContext(nil)
 
@@ -50,7 +50,7 @@ func createSparseArray() {
 	domain.AddDimensions(rowDim, colDim)
 
 	// The array will be dense.
-	schema, _ := tiledb.NewArraySchema(ctx, tiledb.TILEDB_SPARSE)
+	schema, _ := tiledb.NewArraySchema(ctx, tiledb.TILEDB_DENSE)
 	schema.SetDomain(domain)
 	schema.SetCellOrder(tiledb.TILEDB_ROW_MAJOR)
 	schema.SetTileOrder(tiledb.TILEDB_ROW_MAJOR)
@@ -60,78 +60,67 @@ func createSparseArray() {
 	schema.AddAttributes(a)
 
 	// Create the (empty) array on disk.
-	array, _ := tiledb.NewArray(ctx, sparseArrayName)
+	array, _ := tiledb.NewArray(ctx, denseArrayName)
 	array.Create(schema)
 }
 
-func writeSparseArray() {
+func writeDenseArray() {
 	ctx, _ := tiledb.NewContext(nil)
 
-	// Write some simple data to cells (1, 1), (2, 4) and (2, 3).
-	coords := []int32{1, 1, 2, 4, 2, 3}
-	data := []int32{1, 2, 3}
+	// Prepare some data for the array
+	data := []int32{
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
 	// Open the array for writing and create the query.
-	array, _ := tiledb.NewArray(ctx, sparseArrayName)
+	array, _ := tiledb.NewArray(ctx, denseArrayName)
 	array.Open(tiledb.TILEDB_WRITE)
 	query, _ := tiledb.NewQuery(ctx, array)
-	query.SetLayout(tiledb.TILEDB_UNORDERED)
+	query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	query.SetBuffer("a", data)
-	query.SetCoordinates(coords)
 
 	// Perform the write and close the array.
 	query.Submit()
 	array.Close()
 }
 
-func readSparseArray() {
+func readDenseArray() {
 	ctx, _ := tiledb.NewContext(nil)
 
 	// Prepare the array for reading
-	array, _ := tiledb.NewArray(ctx, sparseArrayName)
+	array, _ := tiledb.NewArray(ctx, denseArrayName)
 	array.Open(tiledb.TILEDB_READ)
 
 	// Slice only rows 1, 2 and cols 2, 3, 4
 	subArray := []int32{1, 2, 2, 4}
 
-	// Prepare the vector that will hold the results
-	// We take the upper bound on the result size as we do not know how large
-	// a buffer is needed since the array is sparse
-	maxElements, _ := array.MaxBufferElements(subArray)
-	data := make([]int32, maxElements["a"][1])
-	coords := make([]int32, maxElements[tiledb.TILEDB_COORDS][1])
+	// Prepare the vector that will hold the result (of size 6 elements)
+	data := make([]int32, 6)
 
 	// Prepare the query
 	query, _ := tiledb.NewQuery(ctx, array)
 	query.SetSubArray(subArray)
 	query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	query.SetBuffer("a", data)
-	query.SetCoordinates(coords)
 
 	// Submit the query and close the array.
 	query.Submit()
 	array.Close()
 
 	// Print out the results.
-	for r := 0; r < len(data); r++ {
-		i := coords[2*r]
-		j := coords[2*r+1]
-		fmt.Printf("Cell (%d, %d) has data %d\n", i, j, data[r])
-	}
+	fmt.Println(data)
 }
 
-// ExampleSparseArray shows and example creation, writing and reading of a
-// sparse array
-func Example_sparseArray() {
-	createSparseArray()
-	writeSparseArray()
-	readSparseArray()
-
-	// Output: Cell (2, 3) has data 3
-	// Cell (2, 4) has data 2
+// ExampleDenseArray shows and example creation, writing and reading of a dense
+// array
+func ExampleDenseArray() {
+	createDenseArray()
+	writeDenseArray()
+	readDenseArray()
 
 	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(sparseArrayName); err == nil {
-		os.RemoveAll(sparseArrayName)
+	if _, err := os.Stat(denseArrayName); err == nil {
+		os.RemoveAll(denseArrayName)
 	}
+
+	// Output: [2 3 4 6 7 8]
 }
