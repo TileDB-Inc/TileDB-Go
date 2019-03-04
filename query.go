@@ -15,7 +15,7 @@ import (
 	"unsafe"
 )
 
-// Query construct and exeute read/write queries on a tiledb Array
+// Query construct and execute read/write queries on a tiledb Array
 type Query struct {
 	tiledbQuery *C.tiledb_query_t
 	array       *Array
@@ -160,17 +160,23 @@ func (q *Query) SetSubArray(subArray interface{}) error {
 
 // SetBuffer Sets the buffer for a fixed-sized attribute to a query
 // The buffer must be an initialized slice
-func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
+func (q *Query) SetBuffer(attribute string, buffer interface{}) (*uint64,
+	error) {
 	bufferReflectType := reflect.TypeOf(buffer)
 	bufferReflectValue := reflect.ValueOf(buffer)
 	if bufferReflectValue.Kind() != reflect.Slice {
-		return fmt.Errorf("Buffer passed must be a slice that is pre-allocated, type passed was: %s", bufferReflectValue.Kind().String())
+		return nil, fmt.Errorf(
+			"Buffer passed must be a slice that is pre"+
+				"-allocated, type passed was: %s",
+			bufferReflectValue.Kind().String())
 	}
 
 	// Next get the attribute to validate the buffer type is the same as the attribute
 	schema, err := q.array.Schema()
 	if err != nil {
-		return fmt.Errorf("Could not get array schema for SetBuffer: %s", err)
+		return nil, fmt.Errorf(
+			"Could not get array schema for SetBuffer: %s",
+			err)
 	}
 
 	var attributeType Datatype
@@ -180,35 +186,48 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 	if attribute == TILEDB_COORDS {
 		domain, err := schema.Domain()
 		if err != nil {
-			return fmt.Errorf("Could not get domain for SetBuffer: %s", attribute)
+			return nil, fmt.Errorf(
+				"Could not get domain for SetBuffer: %s",
+				attribute)
 		}
 		attributeType, err = domain.Type()
 		if err != nil {
-			return fmt.Errorf("Could not get domainType for SetBuffer: %s", attribute)
+			return nil, fmt.Errorf(
+				"Could not get domainType for SetBuffer: %s",
+				attribute)
 		}
 	} else {
 		schemaAttribute, err := schema.AttributeFromName(attribute)
 		if err != nil {
-			return fmt.Errorf("Could not get attribute for SetBuffer: %s", attribute)
+			return nil, fmt.Errorf(
+				"Could not get attribute for SetBuffer: %s",
+				attribute)
 		}
 
 		attributeType, err = schemaAttribute.Type()
 		if err != nil {
-			return fmt.Errorf("Could not get attributeType for SetBuffer: %s", attribute)
+			return nil, fmt.Errorf(
+				"Could not get attributeType for SetBuffer: %s",
+				attribute)
 		}
 	}
 
 	bufferType := bufferReflectType.Elem().Kind()
 	if attributeType.ReflectKind() != bufferType {
-		return fmt.Errorf("Buffer and Attribute do not have the same data types. Buffer: %s, Attribute: %s", bufferType.String(), attributeType.ReflectKind().String())
+		return nil, fmt.Errorf("Buffer and Attribute do not have the same"+
+			" data types. Buffer: %s, Attribute: %s",
+			bufferType.String(),
+			attributeType.ReflectKind().String())
 	}
 
 	var cbuffer unsafe.Pointer
 	// Get length of slice, this will be multiplied by size of datatype below
-	cbufferSize := C.uint64_t(uint64(bufferReflectValue.Len()))
+	bufferSize := uint64(bufferReflectValue.Len())
 
-	if cbufferSize == C.uint64_t(0) {
-		return fmt.Errorf("Buffer has no length, buffers are required to be initialized before reading or writting")
+	if bufferSize == uint64(0) {
+		return nil, fmt.Errorf(
+			"Buffer has no length, vbuffers are required to be " +
+				"initialized before reading or writting")
 	}
 
 	// Acquire a lock to make appending to buffer slice thread safe
@@ -218,7 +237,7 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 	switch bufferType {
 	case reflect.Int:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(int(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(int(0)))
 		// Create buffer void*
 		tmpBuffer := buffer.([]int)
 		// Store slice so underlying array is not gc'ed
@@ -226,7 +245,7 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int8:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(int8(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(int8(0)))
 		// Create buffer void*
 		tmpBuffer := buffer.([]int8)
 		// Store slice so underlying array is not gc'ed
@@ -234,7 +253,7 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int16:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(int16(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(int16(0)))
 		// Create buffer void*
 		tmpBuffer := buffer.([]int16)
 		// Store slice so underlying array is not gc'ed
@@ -242,7 +261,7 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int32:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(int32(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(int32(0)))
 		// Create buffer void*
 		tmpBuffer := buffer.([]int32)
 		// Store slice so underlying array is not gc'ed
@@ -250,7 +269,7 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int64:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(int64(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(int64(0)))
 		// Create buffer void*
 		tmpBuffer := buffer.([]int64)
 		// Store slice so underlying array is not gc'ed
@@ -258,7 +277,7 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(uint(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint(0)))
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint)
 		// Store slice so underlying array is not gc'ed
@@ -266,7 +285,7 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint8:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(uint8(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint8(0)))
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint8)
 		// Store slice so underlying array is not gc'ed
@@ -274,7 +293,7 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint16:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(uint16(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint16(0)))
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint16)
 		// Store slice so underlying array is not gc'ed
@@ -282,7 +301,7 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint32:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(uint32(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint32(0)))
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint32)
 		// Store slice so underlying array is not gc'ed
@@ -290,7 +309,7 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint64:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(uint64(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint64(0)))
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint64)
 		// Store slice so underlying array is not gc'ed
@@ -298,7 +317,7 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Float32:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(float32(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(float32(0)))
 		// Create buffer void*
 		tmpBuffer := buffer.([]float32)
 		// Store slice so underlying array is not gc'ed
@@ -306,23 +325,34 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) error {
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Float64:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(float64(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(float64(0)))
 		// Create buffer void*
 		tmpBuffer := buffer.([]float64)
 		// Store slice so underlying array is not gc'ed
 		q.buffers = append(q.buffers, tmpBuffer)
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	default:
-		return fmt.Errorf("Unrecognized buffer type passed: %s", bufferType.String())
+		return nil,
+			fmt.Errorf("Unrecognized buffer type passed: %s",
+				bufferType.String())
 	}
 
 	cAttribute := C.CString(attribute)
 	defer C.free(unsafe.Pointer(cAttribute))
-	ret := C.tiledb_query_set_buffer(q.context.tiledbContext, q.tiledbQuery, cAttribute, cbuffer, &cbufferSize)
+
+	ret := C.tiledb_query_set_buffer(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		cAttribute,
+		cbuffer,
+		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
+
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting query buffer: %s", q.context.LastError())
+		return nil, fmt.Errorf(
+			"Error setting query buffer: %s", q.context.LastError())
 	}
-	return nil
+
+	return &bufferSize, nil
 }
 
 // Buffer returns a slice backed by the underlying c buffer from tiledb
@@ -463,44 +493,52 @@ func (q *Query) Buffer(attributeName string) (interface{}, error) {
 
 // SetBufferVar Sets the buffer for a fixed-sized attribute to a query
 // The buffer must be an initialized slice
-func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface{}) error {
+func (q *Query) SetBufferVar(attribute string, offset []uint64,
+	buffer interface{}) (*uint64, error) {
 	bufferReflectType := reflect.TypeOf(buffer)
 	bufferReflectValue := reflect.ValueOf(buffer)
 	if bufferReflectValue.Kind() != reflect.Slice {
-		return fmt.Errorf("Buffer passed must be a slice that is pre-allocated, type passed was: %s", bufferReflectValue.Kind().String())
+		return nil, fmt.Errorf("Buffer passed must be a slice that is pre"+
+			"-allocated, type passed was: %s", bufferReflectValue.Kind().String())
 	}
 
 	// Next get the attribute to validate the buffer type is the same as the attribute
 	schema, err := q.array.Schema()
 	if err != nil {
-		return fmt.Errorf("Could not get array schema for SetBuffer: %s", err)
+		return nil, fmt.Errorf("Could not get array schema for SetBuffer: %s",
+			err)
 	}
 
 	schemaAttribute, err := schema.AttributeFromName(attribute)
 	if err != nil {
-		return fmt.Errorf("Could not get attribute for SetBuffer: %s", attribute)
+		return nil, fmt.Errorf("Could not get attribute for SetBuffer: %s",
+			attribute)
 	}
 
 	attributeType, err := schemaAttribute.Type()
 	if err != nil {
-		return fmt.Errorf("Could not get attributeType for SetBuffer: %s", attribute)
+		return nil, fmt.Errorf("Could not get attributeType for SetBuffer: %s",
+			attribute)
 	}
 
 	bufferType := bufferReflectType.Elem().Kind()
 	if attributeType.ReflectKind() != bufferType {
-		return fmt.Errorf("Buffer and Attribute do not have the same data types. Buffer: %s, Attribute: %s", bufferType.String(), attributeType.ReflectKind().String())
+		return nil, fmt.Errorf("Buffer and Attribute do not have the same"+
+			" data types. Buffer: %s, Attribute: %s", bufferType.String(), attributeType.ReflectKind().String())
 	}
 
-	cbufferSize := C.uint64_t(uint64(bufferReflectValue.Len()))
+	bufferSize := uint64(bufferReflectValue.Len())
 
-	if cbufferSize == C.uint64_t(0) {
-		return fmt.Errorf("Buffer has no length, buffers are required to be initialized before reading or writting")
+	if bufferSize == uint64(0) {
+		return nil, fmt.Errorf("Buffer has no length, " +
+			"buffers are required to be initialized before reading or writting")
 	}
 
 	coffsetSize := C.uint64_t(uint64(len(offset)) * uint64(unsafe.Sizeof(uint64(0))))
 
 	if coffsetSize == C.uint64_t(0) {
-		return fmt.Errorf("Offset slice has no length, offset slices are required to be initialized before reading or writting")
+		return nil, fmt.Errorf("Offset slice has no length, " +
+			"offset slices are required to be initialized before reading or writting")
 	}
 
 	// Acquire a lock to make appending to buffer slice thread safe
@@ -516,7 +554,7 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 	switch bufferType {
 	case reflect.Int:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(int(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(int(0)))
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]int)
@@ -525,7 +563,7 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int8:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(int8(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(int8(0)))
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]int8)
@@ -534,7 +572,7 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int16:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(int16(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(int16(0)))
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]int16)
@@ -543,7 +581,7 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int32:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(int32(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(int32(0)))
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]int32)
@@ -552,7 +590,7 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int64:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(int64(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(int64(0)))
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]int64)
@@ -561,7 +599,7 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(uint(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint(0)))
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint)
@@ -570,7 +608,7 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint8:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(uint8(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint8(0)))
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint8)
@@ -579,7 +617,7 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint16:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(uint16(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint16(0)))
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint16)
@@ -588,7 +626,7 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint32:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(uint32(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint32(0)))
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint32)
@@ -597,7 +635,7 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint64:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(uint64(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint64(0)))
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint64)
@@ -606,7 +644,7 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Float32:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(float32(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(float32(0)))
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]float32)
@@ -615,7 +653,7 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Float64:
 		// Set buffersize
-		cbufferSize = cbufferSize * C.uint64_t(unsafe.Sizeof(float64(0)))
+		bufferSize = bufferSize * uint64(unsafe.Sizeof(float64(0)))
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]float64)
@@ -623,16 +661,27 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 		q.buffers = append(q.buffers, tmpBuffer)
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	default:
-		return fmt.Errorf("Unrecognized buffer type passed: %s", bufferType.String())
+		return nil, fmt.Errorf("Unrecognized buffer type passed: %s",
+			bufferType.String())
 	}
 
 	cAttribute := C.CString(attribute)
 	defer C.free(unsafe.Pointer(cAttribute))
-	ret := C.tiledb_query_set_buffer_var(q.context.tiledbContext, q.tiledbQuery, cAttribute, (*C.uint64_t)(coffset), &coffsetSize, cbuffer, &cbufferSize)
+
+	ret := C.tiledb_query_set_buffer_var(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		cAttribute,
+		(*C.uint64_t)(coffset),
+		&coffsetSize,
+		cbuffer,
+		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
+
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting query var buffer: %s", q.context.LastError())
+		return nil, fmt.Errorf("Error setting query var buffer: %s",
+			q.context.LastError())
 	}
-	return nil
+	return &bufferSize, nil
 }
 
 // BufferVar returns a slice backed by the underlying c buffer from tiledb for
@@ -858,6 +907,7 @@ func (q *Query) Submit() error {
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error submitting query: %s", q.context.LastError())
 	}
+
 	return nil
 }
 
@@ -918,6 +968,6 @@ func (q *Query) HasResults() (bool, error) {
 }
 
 // SetCoordinates sets the coordinate buffer
-func (q *Query) SetCoordinates(coordinates interface{}) error {
+func (q *Query) SetCoordinates(coordinates interface{}) (*uint64, error) {
 	return q.SetBuffer(TILEDB_COORDS, coordinates)
 }
