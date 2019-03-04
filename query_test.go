@@ -167,14 +167,14 @@ func ExampleNewQuery() {
 
 	// Create write buffers
 	bufferA1 := []int32{1, 2}
-	err = query.SetBuffer("a1", bufferA1)
+	_, err = query.SetBuffer("a1", bufferA1)
 	if err != nil {
 		// Handle error
 		return
 	}
 
 	bufferA2 := []byte("ab")
-	err = query.SetBuffer("a2", bufferA2)
+	_, err = query.SetBuffer("a2", bufferA2)
 	if err != nil {
 		// Handle error
 		return
@@ -182,7 +182,7 @@ func ExampleNewQuery() {
 
 	bufferA3 := []float32{1.0, 2.0, 3.0, 4.0, 5.0}
 	offsetBufferA3 := []uint64{0, 3}
-	err = query.SetBufferVar("a3", offsetBufferA3, bufferA3)
+	_, err = query.SetBufferVar("a3", offsetBufferA3, bufferA3)
 	if err != nil {
 		// Handle error
 		return
@@ -190,7 +190,7 @@ func ExampleNewQuery() {
 
 	bufferA4 := []byte("hello" + "world")
 	offsetBufferA4 := []uint64{0, 5}
-	err = query.SetBufferVar("a4", offsetBufferA4, bufferA4)
+	_, err = query.SetBufferVar("a4", offsetBufferA4, bufferA4)
 	if err != nil {
 		// Handle error
 		return
@@ -251,14 +251,14 @@ func ExampleNewQuery() {
 
 	// Set empty buffers for reading
 	readBufferA1 := make([]int32, 2)
-	err = query.SetBuffer("a1", readBufferA1)
+	_, err = query.SetBuffer("a1", readBufferA1)
 	if err != nil {
 		// Handle error
 		return
 	}
 
 	readBufferA2 := make([]byte, 2)
-	err = query.SetBuffer("a2", readBufferA2)
+	_, err = query.SetBuffer("a2", readBufferA2)
 	if err != nil {
 		// Handle error
 		return
@@ -266,14 +266,14 @@ func ExampleNewQuery() {
 
 	readBufferA3 := make([]float32, 5)
 	readOffsetBufferA3 := make([]uint64, 2)
-	err = query.SetBufferVar("a3", readOffsetBufferA3, readBufferA3)
+	_, err = query.SetBufferVar("a3", readOffsetBufferA3, readBufferA3)
 	if err != nil {
 		// Handle error
 		return
 	}
 	readBufferA4 := make([]byte, 10)
 	readOffsetBufferA4 := make([]uint64, 2)
-	err = query.SetBufferVar("a4", readOffsetBufferA4, readBufferA4)
+	_, err = query.SetBufferVar("a4", readOffsetBufferA4, readBufferA4)
 	if err != nil {
 		// Handle error
 		return
@@ -313,6 +313,147 @@ func ExampleNewQuery() {
 
 }
 
+func TestQueryEffectiveBuffeSize(t *testing.T) {
+	// Create configuration
+	config, err := NewConfig()
+	assert.Nil(t, err)
+
+	// Test context with config
+	context, err := NewContext(config)
+	assert.Nil(t, err)
+
+	// Test create row dimension
+	rowDim, err := NewDimension(context, "rows", []int32{1, 4}, int32(2))
+	assert.Nil(t, err)
+	assert.NotNil(t, rowDim)
+
+	// Test create row dimension
+	colDim, err := NewDimension(context, "cols", []int32{1, 4}, int32(2))
+	assert.Nil(t, err)
+	assert.NotNil(t, colDim)
+
+	// Test creating domain
+	domain, err := NewDomain(context)
+	assert.Nil(t, err)
+	assert.NotNil(t, domain)
+
+	// Add dimensions
+	err = domain.AddDimensions(rowDim, colDim)
+	assert.Nil(t, err)
+
+	// Create array schema
+	arraySchema, err := NewArraySchema(context, TILEDB_SPARSE)
+	assert.Nil(t, err)
+	assert.NotNil(t, arraySchema)
+
+	err = arraySchema.SetCellOrder(TILEDB_ROW_MAJOR)
+	assert.Nil(t, err)
+	err = arraySchema.SetTileOrder(TILEDB_ROW_MAJOR)
+	assert.Nil(t, err)
+
+	// Create attribute to add to schema
+	attribute, err := NewAttribute(context, "a1", TILEDB_STRING_ASCII)
+	assert.Nil(t, err)
+	assert.NotNil(t, attribute)
+
+	// Set a1 to be variable length
+	err = attribute.SetCellValNum(TILEDB_VAR_NUM)
+	assert.Nil(t, err)
+
+	// Add Attribute
+	err = arraySchema.AddAttributes(attribute)
+	assert.Nil(t, err)
+
+	// Set Domain
+	err = arraySchema.SetDomain(domain)
+	assert.Nil(t, err)
+
+	// Validate Schema
+	err = arraySchema.Check()
+	assert.Nil(t, err)
+
+	// create temp group name
+	tmpArrayPath := os.TempDir() + string(os.PathSeparator) +
+		"tiledb_effective_buffer_size_array"
+	// Cleanup group when test ends
+	defer os.RemoveAll(tmpArrayPath)
+	if _, err = os.Stat(tmpArrayPath); err == nil {
+		os.RemoveAll(tmpArrayPath)
+	}
+	// Create new array struct
+	array, err := NewArray(context, tmpArrayPath)
+	assert.Nil(t, err)
+	assert.NotNil(t, array)
+
+	// Prepare some data for the array
+	coordsWrite := []int32{1, 1, 2, 1, 2, 2}
+	a1DataWrite := []byte("abbccc")
+	a1OffWrite := []uint64{0, 1, 3}
+
+	// Create array on disk
+	err = array.Create(arraySchema)
+	assert.Nil(t, err)
+
+	err = array.Open(TILEDB_WRITE)
+	assert.Nil(t, err)
+	query, err := NewQuery(context, array)
+	assert.Nil(t, err)
+	assert.NotNil(t, query)
+	err = query.SetLayout(TILEDB_GLOBAL_ORDER)
+	assert.Nil(t, err)
+	_, err = query.SetBufferVar("a1", a1OffWrite, a1DataWrite)
+	assert.Nil(t, err)
+	_, err = query.SetCoordinates(coordsWrite)
+	assert.Nil(t, err)
+
+	// Perform the write, finalize and close the array.
+	err = query.Submit()
+	assert.Nil(t, err)
+	err = query.Finalize()
+	assert.Nil(t, err)
+	err = array.Close()
+	assert.Nil(t, err)
+
+	err = array.Open(TILEDB_READ)
+	assert.Nil(t, err)
+
+	// Read value at cell 2, 2
+	subArray := []int32{2, 2, 2, 2}
+
+	// Prepare buffers
+	coordsRead := make([]int32, 2)
+	// Allocate 4 bytes to store the read result
+	a1DataRead := make([]byte, 4)
+	a1OffRead := make([]uint64, 1)
+
+	// Prepare the query
+	query, err = NewQuery(context, array)
+	assert.Nil(t, err)
+	assert.NotNil(t, query)
+
+	err = query.SetSubArray(subArray)
+	assert.Nil(t, err)
+	err = query.SetLayout(TILEDB_ROW_MAJOR)
+	assert.Nil(t, err)
+	effectiveBufferSize, err := query.SetBufferVar("a1", a1OffRead, a1DataRead)
+	assert.Nil(t, err)
+	assert.NotNil(t, query)
+	_, err = query.SetCoordinates(coordsRead)
+	assert.Nil(t, err)
+
+	// Submit the query
+	err = query.Submit()
+	assert.Nil(t, err)
+
+	// Data buffer contains "ccc", has size of 4
+	assert.EqualValues(t, len(a1DataRead), 4)
+	// Only after submit is the *effectiveBufferSize available
+	// "ccc" indeed has effective buffer size of 3
+	assert.EqualValues(t, *effectiveBufferSize, 3)
+
+	query.Free()
+}
+
 // TestQueryReadEmpty validates an empty array can be read from without error
 func TestQueryReadEmpty(t *testing.T) {
 	// Create configuration
@@ -342,17 +483,17 @@ func TestQueryReadEmpty(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, arraySchema)
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute, err := NewAttribute(context, "a1", TILEDB_INT32)
 	assert.Nil(t, err)
 	assert.NotNil(t, attribute)
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute2, err := NewAttribute(context, "a2", TILEDB_STRING_ASCII)
 	assert.Nil(t, err)
 	assert.NotNil(t, attribute2)
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute3, err := NewAttribute(context, "a3", TILEDB_FLOAT32)
 	assert.Nil(t, err)
 	assert.NotNil(t, attribute3)
@@ -409,26 +550,26 @@ func TestQueryReadEmpty(t *testing.T) {
 
 	// Set buffer to incorrect type, should err
 	bufferA1Bad := make([]int8, 2)
-	err = query.SetBuffer("a1", bufferA1Bad)
+	_, err = query.SetBuffer("a1", bufferA1Bad)
 	assert.NotNil(t, err)
 
 	// Create read buffers
 	bufferA1 := make([]int32, 2)
-	err = query.SetBuffer("a1", bufferA1)
+	_, err = query.SetBuffer("a1", bufferA1)
 	assert.Nil(t, err)
 
 	bufferA2 := make([]byte, 2)
-	err = query.SetBuffer("a2", bufferA2)
+	_, err = query.SetBuffer("a2", bufferA2)
 	assert.Nil(t, err)
 
 	bufferA3 := make([]float32, 5)
 	offsetBufferA3 := make([]uint64, 3)
-	err = query.SetBufferVar("a3", offsetBufferA3, bufferA3)
+	_, err = query.SetBufferVar("a3", offsetBufferA3, bufferA3)
 	assert.Nil(t, err)
 
 	bufferA4 := make([]byte, 4)
 	offsetBufferA4 := make([]uint64, 4)
-	err = query.SetBufferVar("a4", offsetBufferA4, bufferA4)
+	_, err = query.SetBufferVar("a4", offsetBufferA4, bufferA4)
 	assert.Nil(t, err)
 
 	// Set read layout
@@ -566,16 +707,16 @@ func TestQueryWrite(t *testing.T) {
 
 	// Create write buffers
 	bufferA1 := []int32{1, 2}
-	err = query.SetBuffer("a1", bufferA1)
+	_, err = query.SetBuffer("a1", bufferA1)
 	assert.Nil(t, err)
 
 	bufferA2 := []byte("ab")
-	err = query.SetBuffer("a2", bufferA2)
+	_, err = query.SetBuffer("a2", bufferA2)
 	assert.Nil(t, err)
 
 	bufferA3 := []float32{1.0, 2.0, 3.0, 4.0, 5.0}
 	offsetBufferA3 := []uint64{0, 3}
-	err = query.SetBufferVar("a3", offsetBufferA3, bufferA3)
+	_, err = query.SetBufferVar("a3", offsetBufferA3, bufferA3)
 	assert.Nil(t, err)
 
 	bufferA4 := []byte("hello" + "world")
@@ -585,7 +726,7 @@ func TestQueryWrite(t *testing.T) {
 	elementsCopied := copy(bufferA4Comparison, bufferA4)
 	assert.Equal(t, len(bufferA4), elementsCopied)
 
-	err = query.SetBufferVar("a4", offsetBufferA4, bufferA4)
+	_, err = query.SetBufferVar("a4", offsetBufferA4, bufferA4)
 	// Immediately set bufferA4 to nil to validate underlying array is not GC'ed
 	bufferA4 = nil
 	assert.Nil(t, err)
@@ -599,7 +740,7 @@ func TestQueryWrite(t *testing.T) {
 	assert.EqualValues(t, bufferA5, bufferA5Comparison)
 	bufferA5Bytes := []byte(bufferA5)
 
-	err = query.SetBufferVar("a5", offsetBufferA5, bufferA5Bytes)
+	_, err = query.SetBufferVar("a5", offsetBufferA5, bufferA5Bytes)
 	// Immediately set bufferA5 to nil to validate underlying array is not GC'ed
 	//bufferA5 = nil
 	assert.Nil(t, err)
@@ -660,26 +801,26 @@ func TestQueryWrite(t *testing.T) {
 
 	// Set empty buffers for reading
 	readBufferA1 := make([]int32, 2)
-	err = query.SetBuffer("a1", readBufferA1)
+	_, err = query.SetBuffer("a1", readBufferA1)
 	assert.Nil(t, err)
 
 	readBufferA2 := make([]byte, 2)
-	err = query.SetBuffer("a2", readBufferA2)
+	_, err = query.SetBuffer("a2", readBufferA2)
 	assert.Nil(t, err)
 
 	readBufferA3 := make([]float32, 5)
 	readOffsetBufferA3 := make([]uint64, 2)
-	err = query.SetBufferVar("a3", readOffsetBufferA3, readBufferA3)
+	_, err = query.SetBufferVar("a3", readOffsetBufferA3, readBufferA3)
 	assert.Nil(t, err)
 
 	readBufferA4 := make([]byte, 10)
 	readOffsetBufferA4 := make([]uint64, 2)
-	err = query.SetBufferVar("a4", readOffsetBufferA4, readBufferA4)
+	_, err = query.SetBufferVar("a4", readOffsetBufferA4, readBufferA4)
 	assert.Nil(t, err)
 
 	readBufferA5 := make([]byte, 10) //make(string, 10)
 	readOffsetBufferA5 := make([]uint64, 2)
-	err = query.SetBufferVar("a5", readOffsetBufferA5, readBufferA5)
+	_, err = query.SetBufferVar("a5", readOffsetBufferA5, readBufferA5)
 	assert.Nil(t, err)
 
 	// Set read layout
@@ -816,12 +957,12 @@ func TestSparseQueryWrite(t *testing.T) {
 
 	// Create write buffers
 	bufferA1 := []int32{1, 2}
-	err = query.SetBuffer("a1", bufferA1)
+	_, err = query.SetBuffer("a1", bufferA1)
 	assert.Nil(t, err)
 
 	// Set coordinates, since test is 1d, this is subarray
 	subArray := []int8{0, 1}
-	err = query.SetCoordinates(subArray)
+	_, err = query.SetCoordinates(subArray)
 	assert.Nil(t, err)
 
 	// Submit write query
@@ -858,7 +999,7 @@ func TestSparseQueryWrite(t *testing.T) {
 	//assert.Nil(t, err)
 
 	// Set coordinates, since test is 1d, this is subarray
-	err = query.SetCoordinates(subArray)
+	_, err = query.SetCoordinates(subArray)
 	assert.Nil(t, err)
 
 	maxElements, err := array.MaxBufferElements(subArray)
@@ -868,7 +1009,7 @@ func TestSparseQueryWrite(t *testing.T) {
 
 	// Set empty buffers for reading
 	readBufferA1 := make([]int32, 2)
-	err = query.SetBuffer("a1", readBufferA1)
+	_, err = query.SetBuffer("a1", readBufferA1)
 	assert.Nil(t, err)
 
 	// Set read layout
