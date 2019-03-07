@@ -27,7 +27,7 @@ When run, this program will create a simple 2D dense array, write some data
 to it, and read a slice of the data back, then clean up.
 For simplicity this program does not handle errors
 */
-package examples_test
+package examples
 
 import (
 	"fmt"

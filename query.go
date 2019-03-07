@@ -17,12 +17,13 @@ import (
 
 // Query construct and execute read/write queries on a tiledb Array
 type Query struct {
-	tiledbQuery *C.tiledb_query_t
-	array       *Array
-	context     *Context
-	uri         string
-	buffers     []interface{}
-	bufferMutex sync.Mutex
+	tiledbQuery          *C.tiledb_query_t
+	array                *Array
+	context              *Context
+	uri                  string
+	buffers              []interface{}
+	bufferMutex          sync.Mutex
+	resultBufferElements map[string][2]*uint64
 }
 
 /*
@@ -56,6 +57,8 @@ func NewQuery(ctx *Context, array *Array) (*Query, error) {
 	runtime.SetFinalizer(&query, func(query *Query) {
 		query.Free()
 	})
+
+	query.resultBufferElements = make(map[string][2]*uint64, 0)
 
 	return &query, nil
 }
@@ -352,6 +355,9 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) (*uint64,
 			"Error setting query buffer: %s", q.context.LastError())
 	}
 
+	q.resultBufferElements[attribute] =
+		[2]*uint64{nil, &bufferSize}
+
 	return &bufferSize, nil
 }
 
@@ -494,50 +500,51 @@ func (q *Query) Buffer(attributeName string) (interface{}, error) {
 // SetBufferVar Sets the buffer for a fixed-sized attribute to a query
 // The buffer must be an initialized slice
 func (q *Query) SetBufferVar(attribute string, offset []uint64,
-	buffer interface{}) (*uint64, error) {
+	buffer interface{}) (*uint64, *uint64, error) {
 	bufferReflectType := reflect.TypeOf(buffer)
 	bufferReflectValue := reflect.ValueOf(buffer)
 	if bufferReflectValue.Kind() != reflect.Slice {
-		return nil, fmt.Errorf("Buffer passed must be a slice that is pre"+
+		return nil, nil, fmt.Errorf("Buffer passed must be a slice that is pre"+
 			"-allocated, type passed was: %s", bufferReflectValue.Kind().String())
 	}
 
 	// Next get the attribute to validate the buffer type is the same as the attribute
 	schema, err := q.array.Schema()
 	if err != nil {
-		return nil, fmt.Errorf("Could not get array schema for SetBuffer: %s",
+		return nil, nil, fmt.Errorf(
+			"Could not get array schema for SetBuffer: %s",
 			err)
 	}
 
 	schemaAttribute, err := schema.AttributeFromName(attribute)
 	if err != nil {
-		return nil, fmt.Errorf("Could not get attribute for SetBuffer: %s",
+		return nil, nil, fmt.Errorf("Could not get attribute for SetBuffer: %s",
 			attribute)
 	}
 
 	attributeType, err := schemaAttribute.Type()
 	if err != nil {
-		return nil, fmt.Errorf("Could not get attributeType for SetBuffer: %s",
+		return nil, nil, fmt.Errorf("Could not get attributeType for SetBuffer: %s",
 			attribute)
 	}
 
 	bufferType := bufferReflectType.Elem().Kind()
 	if attributeType.ReflectKind() != bufferType {
-		return nil, fmt.Errorf("Buffer and Attribute do not have the same"+
+		return nil, nil, fmt.Errorf("Buffer and Attribute do not have the same"+
 			" data types. Buffer: %s, Attribute: %s", bufferType.String(), attributeType.ReflectKind().String())
 	}
 
 	bufferSize := uint64(bufferReflectValue.Len())
 
 	if bufferSize == uint64(0) {
-		return nil, fmt.Errorf("Buffer has no length, " +
+		return nil, nil, fmt.Errorf("Buffer has no length, " +
 			"buffers are required to be initialized before reading or writting")
 	}
 
-	coffsetSize := C.uint64_t(uint64(len(offset)) * uint64(unsafe.Sizeof(uint64(0))))
+	offsetSize := uint64(len(offset)) * uint64(unsafe.Sizeof(uint64(0)))
 
-	if coffsetSize == C.uint64_t(0) {
-		return nil, fmt.Errorf("Offset slice has no length, " +
+	if offsetSize == uint64(0) {
+		return nil, nil, fmt.Errorf("Offset slice has no length, " +
 			"offset slices are required to be initialized before reading or writting")
 	}
 
@@ -661,7 +668,7 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64,
 		q.buffers = append(q.buffers, tmpBuffer)
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	default:
-		return nil, fmt.Errorf("Unrecognized buffer type passed: %s",
+		return nil, nil, fmt.Errorf("Unrecognized buffer type passed: %s",
 			bufferType.String())
 	}
 
@@ -673,15 +680,85 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64,
 		q.tiledbQuery,
 		cAttribute,
 		(*C.uint64_t)(coffset),
-		&coffsetSize,
+		(*C.uint64_t)(unsafe.Pointer(&offsetSize)),
 		cbuffer,
 		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
 
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error setting query var buffer: %s",
+		return nil, nil, fmt.Errorf("Error setting query var buffer: %s",
 			q.context.LastError())
 	}
-	return &bufferSize, nil
+
+	q.resultBufferElements[attribute] =
+		[2]*uint64{&offsetSize, &bufferSize}
+
+	return &offsetSize, &bufferSize, nil
+}
+
+// ResultBufferElements returns the number of elements in the result buffers
+// from a read query.
+// This is a map from the attribute name to a pair of values.
+// The first is number of elements (offsets) for var size attributes, and the
+// second is number of elements in the data buffer. For fixed sized attributes
+// (and coordinates), the first is always 0.
+func (q *Query) ResultBufferElements() (map[string][2]uint64, error) {
+	elements := make(map[string][2]uint64, 0)
+
+	// Will need the schema to infer data type size for attributes
+	schema, err := q.array.Schema()
+
+	if err != nil {
+		return nil, fmt.Errorf("Could not get schema for ResultBufferElements: %s", err)
+	}
+
+	for attributeName, v := range q.resultBufferElements {
+		// Handle coordinates
+		if attributeName == TILEDB_COORDS {
+			// For fixed length attributes offset elements are always zero
+			offsetElements := uint64(0)
+
+			domain, err := schema.Domain()
+			if err != nil {
+				return nil, fmt.Errorf("Could not get domain for ResultBufferElements: %s", err)
+			}
+			domainType, err := domain.Type()
+			if err != nil {
+				return nil, fmt.Errorf("Could not get domainType for ResultBufferElements: %s", err)
+			}
+			domainTypeSize := uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(domainType)))
+
+			// Number of buffer elements is calculated
+			bufferElements := (*v[1]) / domainTypeSize
+			elements[attributeName] = [2]uint64{offsetElements, bufferElements}
+		} else {
+			// For fixed length attributes offset elements are always zero
+			offsetElements := uint64(0)
+			if v[0] != nil {
+				// The attribute is variable lenght
+				offsetElements = (*v[0]) / uint64(unsafe.Sizeof(uint64(0)))
+			}
+
+			// Get the attribute
+			attribute, err := schema.AttributeFromName(attributeName)
+
+			if err != nil {
+				return nil, fmt.Errorf("Could not get attribute for ResultBufferElements: %s", err)
+			}
+
+			// Get datatype size to convert byte lengths to needed buffer sizes
+			dataType, err := attribute.Type()
+			if err != nil {
+				return nil, fmt.Errorf("Could not get dataType for ResultBufferElements: %s", err)
+			}
+			dataTypeSize := uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(dataType)))
+
+			// Number of buffer elements is calculated
+			bufferElements := (*v[1]) / dataTypeSize
+			elements[attributeName] = [2]uint64{offsetElements, bufferElements}
+		}
+	}
+
+	return elements, nil
 }
 
 // BufferVar returns a slice backed by the underlying c buffer from tiledb for
