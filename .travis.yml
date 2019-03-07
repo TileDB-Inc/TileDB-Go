@@ -23,6 +23,7 @@ script:
       else
         export DYLD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/build_deps/TileDB/dist/lib:$DYLD_LIBRARY_PATH
       fi
-    -  export CGO_CFLAGS="${CGO_CFLAGS} -I${TRAVIS_BUILD_DIR}/build_deps/TileDB/dist/include"
-    -  export CGO_LDFLAGS="${CGO_LDFLAGS} -L${TRAVIS_BUILD_DIR}/build_deps/TileDB/dist/lib"
-    -  go test -v ./...
+    - export CGO_CFLAGS="${CGO_CFLAGS} -I${TRAVIS_BUILD_DIR}/build_deps/TileDB/dist/include"
+    - export CGO_LDFLAGS="${CGO_LDFLAGS} -L${TRAVIS_BUILD_DIR}/build_deps/TileDB/dist/lib"
+    - scripts/travis.gofmt.sh
+    - go test -v ./...
