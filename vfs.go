@@ -82,6 +82,21 @@ func (v *VFS) Free() {
 	}
 }
 
+// Config retrieves a copy of the config from vfs
+func (v *VFS) Config() (*Config, error) {
+	config := &Config{}
+	ret := C.tiledb_vfs_get_config(v.context.tiledbContext, v.tiledbVFS,
+		&config.tiledbConfig)
+
+	if ret == C.TILEDB_OOM {
+		return nil, fmt.Errorf("Out of Memory error in GetConfig")
+	} else if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Unknown error in GetConfig")
+	}
+
+	return config, nil
+}
+
 // CreateBucket creates an object-store bucket with the input URI.
 func (v *VFS) CreateBucket(uri string) error {
 	curi := C.CString(uri)

@@ -1,5 +1,5 @@
 /**
- * @file   quickstart_sparse_test.go
+ * @file   writing_dense_sparse_test.go
  *
  * @section LICENSE
  *
@@ -27,27 +27,26 @@
  *
  * @section DESCRIPTION
  *
- * This is a part of the TileDB quickstart tutorial:
- * 	 https://docs.tiledb.io/en/latest/quickstart.html
+ * This is a part of the TileDB tutorial:
+ *   https://docs.tiledb.io/en/latest/tutorials/writing-dense.html
  *
- * When run, this program will create a simple 2D dense array, write some data
- * to it, and read a slice of the data back in the layout of the user's choice
- * (passed as an argument to the program: "row", "col", or "global").
- *
+ * When run, this program will create a simple 2D dense array, write some sparse
+ * cells to it in a way that some space is empty, and read the entire array data
+ * back.
  */
 
 package examples
 
 import (
 	"fmt"
-	tiledb "github.com/TileDB-Inc/TileDB-Go"
+	"github.com/TileDB-Inc/TileDB-Go"
 	"os"
 )
 
 // Name of array.
-var sparseArrayName = "quickstart_sparse"
+var denseSparseArrayName = "writing_dense_sparse_array"
 
-func createSparseArray() {
+func createDenseSparseArray() {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -56,9 +55,9 @@ func createSparseArray() {
 	// with domain [1,4].
 	domain, err := tiledb.NewDomain(ctx)
 	checkError(err)
-	rowDim, err := tiledb.NewDimension(ctx, "rows", []int32{1, 4}, int32(4))
+	rowDim, err := tiledb.NewDimension(ctx, "rows", []int32{1, 4}, int32(2))
 	checkError(err)
-	colDim, err := tiledb.NewDimension(ctx, "cols", []int32{1, 4}, int32(4))
+	colDim, err := tiledb.NewDimension(ctx, "cols", []int32{1, 4}, int32(2))
 	checkError(err)
 	err = domain.AddDimensions(rowDim, colDim)
 	checkError(err)
@@ -74,28 +73,24 @@ func createSparseArray() {
 	checkError(err)
 
 	// Add a single attribute "a" so each (i,j) cell can store an integer.
-	a, err := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_UINT32)
+	a, err := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_INT32)
 	checkError(err)
 	err = schema.AddAttributes(a)
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	array, err := tiledb.NewArray(ctx, denseSparseArrayName)
 	checkError(err)
 	err = array.Create(schema)
 	checkError(err)
 }
 
-func writeSparseArray() {
+func writeDenseSparseArray() {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
-	// Write some simple data to cells (1, 1), (2, 4) and (2, 3).
-	coords := []int32{1, 1, 2, 4, 2, 3}
-	data := []uint32{1, 2, 3}
-
-	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	// Open the array for writing, create the query
+	array, err := tiledb.NewArray(ctx, denseSparseArrayName)
 	checkError(err)
 	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
@@ -103,38 +98,37 @@ func writeSparseArray() {
 	checkError(err)
 	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
 	checkError(err)
+
+	coords := []int32{1, 2, 2, 1, 4, 3, 1, 4}
+	data := []int32{1, 2, 3, 4}
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
 	_, err = query.SetCoordinates(coords)
 	checkError(err)
 
-	// Perform the write and close the array.
+	// Perform the write.
 	err = query.Submit()
 	checkError(err)
 	err = array.Close()
 	checkError(err)
 }
 
-func readSparseArray() {
+func readDenseSparseArray() {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	array, err := tiledb.NewArray(ctx, denseSparseArrayName)
 	checkError(err)
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
 
-	// Slice only rows 1, 2 and cols 2, 3, 4
-	subArray := []int32{1, 2, 2, 4}
+	// Read the whole array
+	subArray := []int32{1, 4, 1, 4}
 
-	// Prepare the vector that will hold the results
-	// We take the upper bound on the result size as we do not know how large
-	// a buffer is needed since the array is sparse
-	maxElements, err := array.MaxBufferElements(subArray)
-	checkError(err)
-	data := make([]uint32, maxElements["a"][1])
-	coords := make([]int32, maxElements[tiledb.TILEDB_COORDS][1])
+	// Prepare the buffers
+	data := make([]int32, 16)
+	coords := make([]int32, 32)
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
@@ -167,19 +161,19 @@ func readSparseArray() {
 	checkError(err)
 }
 
-// ExampleSparseArray shows and example creation, writing and reading of a
-// sparse array
-func ExampleSparseArray() {
-	createSparseArray()
-	writeSparseArray()
-	readSparseArray()
+func ExampleWritingDenseSparse() {
+	createDenseSparseArray()
+	writeDenseSparseArray()
+	readDenseSparseArray()
 
 	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(sparseArrayName); err == nil {
-		err = os.RemoveAll(sparseArrayName)
+	if _, err := os.Stat(denseSparseArrayName); err == nil {
+		err = os.RemoveAll(denseSparseArrayName)
 		checkError(err)
 	}
 
-	// Output: Cell (2, 3) has data 3
-	// Cell (2, 4) has data 2
+	// Output: Cell (1, 2) has data 1
+	// Cell (1, 4) has data 4
+	// Cell (2, 1) has data 2
+	// Cell (4, 3) has data 3
 }

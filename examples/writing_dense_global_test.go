@@ -1,5 +1,5 @@
 /**
- * @file   quickstart_sparse_test.go
+ * @file   writing_dense_global_test.go
  *
  * @section LICENSE
  *
@@ -27,45 +27,42 @@
  *
  * @section DESCRIPTION
  *
- * This is a part of the TileDB quickstart tutorial:
- * 	 https://docs.tiledb.io/en/latest/quickstart.html
+ * This is a part of the TileDB tutorial:
+ *   https://docs.tiledb.io/en/latest/tutorials/writing-dense.html
  *
  * When run, this program will create a simple 2D dense array, write some data
- * to it, and read a slice of the data back in the layout of the user's choice
- * (passed as an argument to the program: "row", "col", or "global").
- *
+ * to it in global layout, and read the entire array data back.
  */
 
 package examples
 
 import (
 	"fmt"
-	tiledb "github.com/TileDB-Inc/TileDB-Go"
+	"github.com/TileDB-Inc/TileDB-Go"
 	"os"
 )
 
 // Name of array.
-var sparseArrayName = "quickstart_sparse"
+var denseGlobalArrayName = "writing_dense_global_array"
 
-func createSparseArray() {
+func createDenseGlobalArray() {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
-	// The array will be 4x4 with dimensions "rows" and "cols",
-	// with domain [1,4].
+	// The array will be 4x4 with dimensions "rows" and "cols", with domain [1,4]
+	// and space tiles 2x2
 	domain, err := tiledb.NewDomain(ctx)
 	checkError(err)
-	rowDim, err := tiledb.NewDimension(ctx, "rows", []int32{1, 4}, int32(4))
+	rowDim, err := tiledb.NewDimension(ctx, "rows", []int32{1, 4}, int32(2))
 	checkError(err)
-	colDim, err := tiledb.NewDimension(ctx, "cols", []int32{1, 4}, int32(4))
+	colDim, err := tiledb.NewDimension(ctx, "cols", []int32{1, 4}, int32(2))
 	checkError(err)
 	err = domain.AddDimensions(rowDim, colDim)
 	checkError(err)
 
-	// The array will be sparse.
-	schema, err := tiledb.NewArraySchema(ctx, tiledb.TILEDB_SPARSE)
-	checkError(err)
+	// The array will be dense.
+	schema, err := tiledb.NewArraySchema(ctx, tiledb.TILEDB_DENSE)
 	err = schema.SetDomain(domain)
 	checkError(err)
 	err = schema.SetCellOrder(tiledb.TILEDB_ROW_MAJOR)
@@ -74,67 +71,74 @@ func createSparseArray() {
 	checkError(err)
 
 	// Add a single attribute "a" so each (i,j) cell can store an integer.
-	a, err := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_UINT32)
+	a, err := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_INT32)
 	checkError(err)
 	err = schema.AddAttributes(a)
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	array, err := tiledb.NewArray(ctx, denseGlobalArrayName)
 	checkError(err)
 	err = array.Create(schema)
 	checkError(err)
 }
 
-func writeSparseArray() {
+func writeDenseGlobalArray() {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
-	// Write some simple data to cells (1, 1), (2, 4) and (2, 3).
-	coords := []int32{1, 1, 2, 4, 2, 3}
-	data := []uint32{1, 2, 3}
+	subarray := []int32{1, 4, 1, 2}
 
-	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	// Open the array for writing.
+	array, err := tiledb.NewArray(ctx, denseGlobalArrayName)
 	checkError(err)
 	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
-	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
+
+	// First submission
+	data := []int32{1, 2, 3, 4}
+	err = query.SetLayout(tiledb.TILEDB_GLOBAL_ORDER)
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	err = query.SetSubArray(subarray)
 	checkError(err)
 
-	// Perform the write and close the array.
+	// Perform the write
 	err = query.Submit()
+	checkError(err)
+
+	// Second submission, after updating the buffer contents
+	for i := 0; i < 4; i++ {
+		data[i] = int32(5 + i)
+	}
+	err = query.Submit()
+	checkError(err)
+
+	// IMPORTANT!
+	err = query.Finalize()
 	checkError(err)
 	err = array.Close()
 	checkError(err)
 }
 
-func readSparseArray() {
+func readDenseGlobalArray() {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	array, err := tiledb.NewArray(ctx, denseGlobalArrayName)
 	checkError(err)
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
 
-	// Slice only rows 1, 2 and cols 2, 3, 4
-	subArray := []int32{1, 2, 2, 4}
+	// Read the entire array
+	subArray := []int32{1, 4, 1, 4}
 
-	// Prepare the vector that will hold the results
-	// We take the upper bound on the result size as we do not know how large
-	// a buffer is needed since the array is sparse
-	maxElements, err := array.MaxBufferElements(subArray)
-	checkError(err)
-	data := make([]uint32, maxElements["a"][1])
-	coords := make([]int32, maxElements[tiledb.TILEDB_COORDS][1])
+	// Prepare the vector that will hold the result (of size 16 elements)
+	data := make([]int32, 16)
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
@@ -145,41 +149,27 @@ func readSparseArray() {
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
-	checkError(err)
 
 	// Submit the query and close the array.
 	err = query.Submit()
 	checkError(err)
-
-	// Print out the results.
-	elements, err := query.ResultBufferElements()
-	checkError(err)
-	resultNum := elements["a"][1]
-	for r := 0; r < int(resultNum); r++ {
-		i := coords[2*r]
-		j := coords[2*r+1]
-		a := data[r]
-		fmt.Printf("Cell (%d, %d) has data %d\n", i, j, a)
-	}
-
 	err = array.Close()
 	checkError(err)
+
+	// Print out the results.
+	fmt.Println(data)
 }
 
-// ExampleSparseArray shows and example creation, writing and reading of a
-// sparse array
-func ExampleSparseArray() {
-	createSparseArray()
-	writeSparseArray()
-	readSparseArray()
+func ExampleWritingDenseGlobal() {
+	createDenseGlobalArray()
+	writeDenseGlobalArray()
+	readDenseGlobalArray()
 
 	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(sparseArrayName); err == nil {
-		err = os.RemoveAll(sparseArrayName)
+	if _, err := os.Stat(denseGlobalArrayName); err == nil {
+		err = os.RemoveAll(denseGlobalArrayName)
 		checkError(err)
 	}
 
-	// Output: Cell (2, 3) has data 3
-	// Cell (2, 4) has data 2
+	// Output: [1 2 -2147483648 -2147483648 3 4 -2147483648 -2147483648 5 6 -2147483648 -2147483648 7 8 -2147483648 -2147483648]
 }

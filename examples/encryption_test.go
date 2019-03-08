@@ -1,5 +1,5 @@
 /**
- * @file   quickstart_sparse_test.go
+ * @file   encryption_test.go
  *
  * @section LICENSE
  *
@@ -27,12 +27,11 @@
  *
  * @section DESCRIPTION
  *
- * This is a part of the TileDB quickstart tutorial:
- * 	 https://docs.tiledb.io/en/latest/quickstart.html
+ * This is a part of the TileDB encryption tutorial:
+ *   https://docs.tiledb.io/en/latest/tutorials/encryption.html
  *
- * When run, this program will create a simple 2D dense array, write some data
- * to it, and read a slice of the data back in the layout of the user's choice
- * (passed as an argument to the program: "row", "col", or "global").
+ * When run, this program will create an encrypted 2D dense array, write some
+ * data to it, and read a slice of the data back.
  *
  */
 
@@ -40,20 +39,22 @@ package examples
 
 import (
 	"fmt"
-	tiledb "github.com/TileDB-Inc/TileDB-Go"
+	"github.com/TileDB-Inc/TileDB-Go"
 	"os"
 )
 
 // Name of array.
-var sparseArrayName = "quickstart_sparse"
+var encryptedArrayName = "encrypted_array"
 
-func createSparseArray() {
+// The 256-bit encryption key, stored as a string for convenience.
+var encryption_key = "0123456789abcdeF0123456789abcdeF"
+
+func createEncryptedArray() {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
-	// The array will be 4x4 with dimensions "rows" and "cols",
-	// with domain [1,4].
+	// The array will be 4x4 with dimensions "rows" and "cols", with domain [1,4].
 	domain, err := tiledb.NewDomain(ctx)
 	checkError(err)
 	rowDim, err := tiledb.NewDimension(ctx, "rows", []int32{1, 4}, int32(4))
@@ -63,9 +64,8 @@ func createSparseArray() {
 	err = domain.AddDimensions(rowDim, colDim)
 	checkError(err)
 
-	// The array will be sparse.
-	schema, err := tiledb.NewArraySchema(ctx, tiledb.TILEDB_SPARSE)
-	checkError(err)
+	// The array will be dense.
+	schema, err := tiledb.NewArraySchema(ctx, tiledb.TILEDB_DENSE)
 	err = schema.SetDomain(domain)
 	checkError(err)
 	err = schema.SetCellOrder(tiledb.TILEDB_ROW_MAJOR)
@@ -74,38 +74,37 @@ func createSparseArray() {
 	checkError(err)
 
 	// Add a single attribute "a" so each (i,j) cell can store an integer.
-	a, err := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_UINT32)
+	a, err := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_INT32)
 	checkError(err)
 	err = schema.AddAttributes(a)
 	checkError(err)
 
-	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	// Create the (empty) encrypted array with AES-256-GCM.
+	array, err := tiledb.NewArray(ctx, encryptedArrayName)
 	checkError(err)
-	err = array.Create(schema)
+	err = array.CreateWithKey(schema, tiledb.TILEDB_AES_256_GCM, encryption_key)
 	checkError(err)
 }
 
-func writeSparseArray() {
+func writeEncryptedArray() {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
-	// Write some simple data to cells (1, 1), (2, 4) and (2, 3).
-	coords := []int32{1, 1, 2, 4, 2, 3}
-	data := []uint32{1, 2, 3}
+	// Prepare some data for the array
+	data := []int32{
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
 	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	array, err := tiledb.NewArray(ctx, encryptedArrayName)
 	checkError(err)
-	err = array.Open(tiledb.TILEDB_WRITE)
+	err = array.OpenWithKey(tiledb.TILEDB_WRITE, tiledb.TILEDB_AES_256_GCM,
+		encryption_key)
 	checkError(err)
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
-	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
+	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
-	checkError(err)
-	_, err = query.SetCoordinates(coords)
 	checkError(err)
 
 	// Perform the write and close the array.
@@ -115,26 +114,22 @@ func writeSparseArray() {
 	checkError(err)
 }
 
-func readSparseArray() {
+func readEncryptedArray() {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	array, err := tiledb.NewArray(ctx, encryptedArrayName)
 	checkError(err)
-	err = array.Open(tiledb.TILEDB_READ)
+	err = array.OpenWithKey(tiledb.TILEDB_READ, tiledb.TILEDB_AES_256_GCM,
+		encryption_key)
 	checkError(err)
 
 	// Slice only rows 1, 2 and cols 2, 3, 4
 	subArray := []int32{1, 2, 2, 4}
 
-	// Prepare the vector that will hold the results
-	// We take the upper bound on the result size as we do not know how large
-	// a buffer is needed since the array is sparse
-	maxElements, err := array.MaxBufferElements(subArray)
-	checkError(err)
-	data := make([]uint32, maxElements["a"][1])
-	coords := make([]int32, maxElements[tiledb.TILEDB_COORDS][1])
+	// Prepare the vector that will hold the result (of size 6 elements)
+	data := make([]int32, 6)
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
@@ -145,41 +140,27 @@ func readSparseArray() {
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
-	checkError(err)
 
 	// Submit the query and close the array.
 	err = query.Submit()
 	checkError(err)
-
-	// Print out the results.
-	elements, err := query.ResultBufferElements()
-	checkError(err)
-	resultNum := elements["a"][1]
-	for r := 0; r < int(resultNum); r++ {
-		i := coords[2*r]
-		j := coords[2*r+1]
-		a := data[r]
-		fmt.Printf("Cell (%d, %d) has data %d\n", i, j, a)
-	}
-
 	err = array.Close()
 	checkError(err)
+
+	// Print out the results.
+	fmt.Println(data)
 }
 
-// ExampleSparseArray shows and example creation, writing and reading of a
-// sparse array
-func ExampleSparseArray() {
-	createSparseArray()
-	writeSparseArray()
-	readSparseArray()
+func ExampleEncryptedArray() {
+	createEncryptedArray()
+	writeEncryptedArray()
+	readEncryptedArray()
 
 	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(sparseArrayName); err == nil {
-		err = os.RemoveAll(sparseArrayName)
+	if _, err := os.Stat(encryptedArrayName); err == nil {
+		err = os.RemoveAll(encryptedArrayName)
 		checkError(err)
 	}
 
-	// Output: Cell (2, 3) has data 3
-	// Cell (2, 4) has data 2
+	// Output: [2 3 4 6 7 8]
 }
