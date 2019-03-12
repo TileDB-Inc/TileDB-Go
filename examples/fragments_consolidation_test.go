@@ -1,5 +1,5 @@
 /**
- * @file   quickstart_sparse_test.go
+ * @file   fragments_consolidation_test.go
  *
  * @section LICENSE
  *
@@ -27,13 +27,12 @@
  *
  * @section DESCRIPTION
  *
- * This is a part of the TileDB quickstart tutorial:
- * 	 https://docs.tiledb.io/en/latest/quickstart.html
+ * This is a part of the TileDB tutorial:
+ *   https://docs.tiledb.io/en/latest/tutorials/fragments-consolidation.html
  *
  * When run, this program will create a simple 2D dense array, write some data
- * to it, and read a slice of the data back in the layout of the user's choice
- * (passed as an argument to the program: "row", "col", or "global").
- *
+ * with three queries (creating three fragments), optionally consolidate
+ * and read the entire array data back.
  */
 
 package examples
@@ -45,15 +44,14 @@ import (
 )
 
 // Name of array.
-var sparseArrayName = "quickstart_sparse"
+var fragmentsConsolidationArrayName = "fragments_consolidation_array"
 
-func createSparseArray() {
+func createFragmentsConsolidationArray() {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
-	// The array will be 4x4 with dimensions "rows" and "cols",
-	// with domain [1,4].
+	// The array will be 4x4 with dimensions "rows" and "cols", with domain [1,4].
 	domain, err := tiledb.NewDomain(ctx)
 	checkError(err)
 	rowDim, err := tiledb.NewDimension(ctx, "rows", []int32{1, 4}, int32(4))
@@ -63,8 +61,8 @@ func createSparseArray() {
 	err = domain.AddDimensions(rowDim, colDim)
 	checkError(err)
 
-	// The array will be sparse.
-	schema, err := tiledb.NewArraySchema(ctx, tiledb.TILEDB_SPARSE)
+	// The array will be dense.
+	schema, err := tiledb.NewArraySchema(ctx, tiledb.TILEDB_DENSE)
 	checkError(err)
 	err = schema.SetDomain(domain)
 	checkError(err)
@@ -74,28 +72,86 @@ func createSparseArray() {
 	checkError(err)
 
 	// Add a single attribute "a" so each (i,j) cell can store an integer.
-	a, err := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_UINT32)
+	a, err := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_INT32)
 	checkError(err)
 	err = schema.AddAttributes(a)
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	array, err := tiledb.NewArray(ctx, fragmentsConsolidationArrayName)
 	checkError(err)
 	err = array.Create(schema)
 	checkError(err)
 }
 
-func writeSparseArray() {
+func writeFragmentsConsolidationArray1() {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
-	// Write some simple data to cells (1, 1), (2, 4) and (2, 3).
-	coords := []int32{1, 1, 2, 4, 2, 3}
-	data := []uint32{1, 2, 3}
+	// Prepare some data for the array
+	data := []int32{1, 2, 3, 4, 5, 6, 7, 8}
+	subarray := []int32{1, 2, 1, 4}
 
-	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	// Create the query
+	array, err := tiledb.NewArray(ctx, fragmentsConsolidationArrayName)
+	checkError(err)
+	err = array.Open(tiledb.TILEDB_WRITE)
+	checkError(err)
+	query, err := tiledb.NewQuery(ctx, array)
+	checkError(err)
+	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
+	checkError(err)
+	_, err = query.SetBuffer("a", data)
+	checkError(err)
+	err = query.SetSubArray(subarray)
+	checkError(err)
+
+	// Perform the write and close the array.
+	err = query.Submit()
+	checkError(err)
+	err = array.Close()
+	checkError(err)
+}
+
+func writeFragmentsConsolidationArray2() {
+	ctx, err := tiledb.NewContext(nil)
+	checkError(err)
+
+	// Prepare some data for the array
+	data := []int32{101, 102, 103, 104}
+	subarray := []int32{2, 3, 2, 3}
+
+	// Create the query
+	array, err := tiledb.NewArray(ctx, fragmentsConsolidationArrayName)
+	checkError(err)
+	err = array.Open(tiledb.TILEDB_WRITE)
+	checkError(err)
+	query, err := tiledb.NewQuery(ctx, array)
+	checkError(err)
+	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
+	checkError(err)
+	_, err = query.SetBuffer("a", data)
+	checkError(err)
+	err = query.SetSubArray(subarray)
+	checkError(err)
+
+	// Perform the write and close the array.
+	err = query.Submit()
+	checkError(err)
+	err = array.Close()
+	checkError(err)
+}
+
+func writeFragmentsConsolidationArray3() {
+	ctx, err := tiledb.NewContext(nil)
+	checkError(err)
+
+	// Prepare some data for the array
+	data := []int32{201, 202}
+	coords := []int32{1, 1, 3, 4}
+
+	// Create the query
+	array, err := tiledb.NewArray(ctx, fragmentsConsolidationArrayName)
 	checkError(err)
 	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
@@ -115,32 +171,32 @@ func writeSparseArray() {
 	checkError(err)
 }
 
-func readSparseArray() {
+func readFragmentsConsolidationArray() {
+	// Create TileDB context
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	array, err := tiledb.NewArray(ctx, fragmentsConsolidationArrayName)
 	checkError(err)
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
 
-	// Slice only rows 1, 2 and cols 2, 3, 4
-	subArray := []int32{1, 2, 2, 4}
-
-	// Prepare the vector that will hold the results
-	// We take the upper bound on the result size as we do not know how large
-	// a buffer is needed since the array is sparse
-	maxElements, err := array.MaxBufferElements(subArray)
-	checkError(err)
-	data := make([]uint32, maxElements["a"][1])
-	coords := make([]int32, maxElements[tiledb.TILEDB_COORDS][1])
+	// Read the entire array
+	subArray := []int32{1, 4, 1, 4}
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
 	err = query.SetSubArray(subArray)
 	checkError(err)
+
+	// Prepare the vector that will hold the result
+	maxElMap, err := array.MaxBufferElements(subArray)
+	checkError(err)
+	data := make([]int32, maxElMap["a"][1])
+	coords := make([]int32, maxElMap[tiledb.TILEDB_COORDS][1])
+
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
@@ -167,19 +223,33 @@ func readSparseArray() {
 	checkError(err)
 }
 
-// ExampleSparseArray shows and example creation, writing and reading of a
-// sparse array
-func ExampleSparseArray() {
-	createSparseArray()
-	writeSparseArray()
-	readSparseArray()
+func ExampleFragmentsConsolidationArray() {
+	createFragmentsConsolidationArray()
+	writeFragmentsConsolidationArray1()
+	writeFragmentsConsolidationArray2()
+	writeFragmentsConsolidationArray3()
+	readFragmentsConsolidationArray()
 
 	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(sparseArrayName); err == nil {
-		err = os.RemoveAll(sparseArrayName)
+	if _, err := os.Stat(fragmentsConsolidationArrayName); err == nil {
+		err = os.RemoveAll(fragmentsConsolidationArrayName)
 		checkError(err)
 	}
 
-	// Output: Cell (2, 3) has data 3
-	// Cell (2, 4) has data 2
+	// Output: Cell (1, 1) has data 201
+	// Cell (1, 2) has data 2
+	// Cell (1, 3) has data 3
+	// Cell (1, 4) has data 4
+	// Cell (2, 1) has data 5
+	// Cell (2, 2) has data 101
+	// Cell (2, 3) has data 102
+	// Cell (2, 4) has data 8
+	// Cell (3, 1) has data -2147483648
+	// Cell (3, 2) has data 103
+	// Cell (3, 3) has data 104
+	// Cell (3, 4) has data 202
+	// Cell (4, 1) has data -2147483648
+	// Cell (4, 2) has data -2147483648
+	// Cell (4, 3) has data -2147483648
+	// Cell (4, 4) has data -2147483648
 }

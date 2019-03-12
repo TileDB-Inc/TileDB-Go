@@ -1,32 +1,41 @@
-/*
-Copyright (c) 2018 TileDB, Inc.
+/**
+ * @file   quickstart_dense_test.go
+ *
+ * @section LICENSE
+ *
+ * The MIT License
+ *
+ * @copyright Copyright (c) 2018 TileDB, Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * @section DESCRIPTION
+ *
+ * This is a part of the TileDB quickstart tutorial:
+ *   https://docs.tiledb.io/en/latest/quickstart.html
+ *
+ * When run, this program will create a simple 2D dense array, write some data
+ * to it, and read a slice of the data back in the layout of the user's choice
+ * (passed as an argument to the program: "row", "col", or "global").
+ *
+ */
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-
-
-This is a part of the TileDB quickstart tutorial:
-https://docs.tiledb.io/en/latest/quickstart.html
-
-When run, this program will create a simple 2D dense array, write some data
-to it, and read a slice of the data back, then clean up.
-For simplicity this program does not handle errors
-*/
 package examples
 
 import (
@@ -41,54 +50,77 @@ var denseArrayName = "quickstart_dense"
 
 func createDenseArray() {
 	// Create a TileDB context.
-	ctx, _ := tiledb.NewContext(nil)
+	ctx, err := tiledb.NewContext(nil)
+	checkError(err)
 
 	// The array will be 4x4 with dimensions "rows" and "cols", with domain [1,4].
-	domain, _ := tiledb.NewDomain(ctx)
-	rowDim, _ := tiledb.NewDimension(ctx, "rows", []int32{1, 4}, int32(4))
-	colDim, _ := tiledb.NewDimension(ctx, "cols", []int32{1, 4}, int32(4))
-	domain.AddDimensions(rowDim, colDim)
+	domain, err := tiledb.NewDomain(ctx)
+	checkError(err)
+	rowDim, err := tiledb.NewDimension(ctx, "rows", []int32{1, 4}, int32(4))
+	checkError(err)
+	colDim, err := tiledb.NewDimension(ctx, "cols", []int32{1, 4}, int32(4))
+	checkError(err)
+	err = domain.AddDimensions(rowDim, colDim)
+	checkError(err)
 
 	// The array will be dense.
-	schema, _ := tiledb.NewArraySchema(ctx, tiledb.TILEDB_DENSE)
-	schema.SetDomain(domain)
-	schema.SetCellOrder(tiledb.TILEDB_ROW_MAJOR)
-	schema.SetTileOrder(tiledb.TILEDB_ROW_MAJOR)
+	schema, err := tiledb.NewArraySchema(ctx, tiledb.TILEDB_DENSE)
+	err = schema.SetDomain(domain)
+	checkError(err)
+	err = schema.SetCellOrder(tiledb.TILEDB_ROW_MAJOR)
+	checkError(err)
+	err = schema.SetTileOrder(tiledb.TILEDB_ROW_MAJOR)
+	checkError(err)
 
 	// Add a single attribute "a" so each (i,j) cell can store an integer.
-	a, _ := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_INT32)
-	schema.AddAttributes(a)
+	a, err := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_INT32)
+	checkError(err)
+	err = schema.AddAttributes(a)
+	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, _ := tiledb.NewArray(ctx, denseArrayName)
-	array.Create(schema)
+	array, err := tiledb.NewArray(ctx, denseArrayName)
+	checkError(err)
+	err = array.Create(schema)
+	checkError(err)
 }
 
 func writeDenseArray() {
-	ctx, _ := tiledb.NewContext(nil)
+	ctx, err := tiledb.NewContext(nil)
+	checkError(err)
 
 	// Prepare some data for the array
 	data := []int32{
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
 	// Open the array for writing and create the query.
-	array, _ := tiledb.NewArray(ctx, denseArrayName)
-	array.Open(tiledb.TILEDB_WRITE)
-	query, _ := tiledb.NewQuery(ctx, array)
-	query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
-	query.SetBuffer("a", data)
+	array, err := tiledb.NewArray(ctx, denseArrayName)
+	checkError(err)
+	err = array.Open(tiledb.TILEDB_WRITE)
+	checkError(err)
+	query, err := tiledb.NewQuery(ctx, array)
+	checkError(err)
+	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
+	checkError(err)
+	_, err = query.SetBuffer("a", data)
+	checkError(err)
 
 	// Perform the write and close the array.
-	query.Submit()
-	array.Close()
+	err = query.Submit()
+	checkError(err)
+	err = array.Close()
+	checkError(err)
 }
 
 func readDenseArray() {
-	ctx, _ := tiledb.NewContext(nil)
+	ctx, err := tiledb.NewContext(nil)
+	checkError(err)
 
 	// Prepare the array for reading
-	array, _ := tiledb.NewArray(ctx, denseArrayName)
-	array.Open(tiledb.TILEDB_READ)
+	array, err := tiledb.NewArray(ctx, denseArrayName)
+	checkError(err)
+	err = array.Open(tiledb.TILEDB_READ)
+	checkError(err)
 
 	// Slice only rows 1, 2 and cols 2, 3, 4
 	subArray := []int32{1, 2, 2, 4}
@@ -97,14 +129,20 @@ func readDenseArray() {
 	data := make([]int32, 6)
 
 	// Prepare the query
-	query, _ := tiledb.NewQuery(ctx, array)
-	query.SetSubArray(subArray)
-	query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
-	query.SetBuffer("a", data)
+	query, err := tiledb.NewQuery(ctx, array)
+	checkError(err)
+	err = query.SetSubArray(subArray)
+	checkError(err)
+	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
+	checkError(err)
+	_, err = query.SetBuffer("a", data)
+	checkError(err)
 
 	// Submit the query and close the array.
-	query.Submit()
-	array.Close()
+	err = query.Submit()
+	checkError(err)
+	err = array.Close()
+	checkError(err)
 
 	// Print out the results.
 	fmt.Println(data)
@@ -119,7 +157,8 @@ func ExampleDenseArray() {
 
 	// Cleanup example so unit tests are clean
 	if _, err := os.Stat(denseArrayName); err == nil {
-		os.RemoveAll(denseArrayName)
+		err = os.RemoveAll(denseArrayName)
+		checkError(err)
 	}
 
 	// Output: [2 3 4 6 7 8]

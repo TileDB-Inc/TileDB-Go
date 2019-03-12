@@ -1,5 +1,5 @@
 /**
- * @file   quickstart_sparse_test.go
+ * @file   using_tiledb_stats_test.go
  *
  * @section LICENSE
  *
@@ -27,44 +27,43 @@
  *
  * @section DESCRIPTION
  *
- * This is a part of the TileDB quickstart tutorial:
- * 	 https://docs.tiledb.io/en/latest/quickstart.html
+ * This is a part of the TileDB tutorial:
+ *   https://docs.tiledb.io/en/latest/performance/using-tiledb-statistics.html
  *
- * When run, this program will create a simple 2D dense array, write some data
- * to it, and read a slice of the data back in the layout of the user's choice
- * (passed as an argument to the program: "row", "col", or "global").
+ * When run, this program will create a 0.5GB dense array, and enable the
+ * TileDB statistics surrounding reads from the array.
  *
  */
 
 package examples
 
 import (
-	"fmt"
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 	"os"
 )
 
 // Name of array.
-var sparseArrayName = "quickstart_sparse"
+var statsArrayName = "stats_array"
 
-func createSparseArray() {
+func createStatsArray(rowTileExtent uint32, colTileExtent uint32) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
-	// The array will be 4x4 with dimensions "rows" and "cols",
-	// with domain [1,4].
+	// Define a domain
 	domain, err := tiledb.NewDomain(ctx)
 	checkError(err)
-	rowDim, err := tiledb.NewDimension(ctx, "rows", []int32{1, 4}, int32(4))
+	rowDim, err := tiledb.NewDimension(ctx,
+		"rows", []uint32{1, 12000}, rowTileExtent)
 	checkError(err)
-	colDim, err := tiledb.NewDimension(ctx, "cols", []int32{1, 4}, int32(4))
+	colDim, err := tiledb.NewDimension(ctx,
+		"cols", []uint32{1, 12000}, colTileExtent)
 	checkError(err)
 	err = domain.AddDimensions(rowDim, colDim)
 	checkError(err)
 
-	// The array will be sparse.
-	schema, err := tiledb.NewArraySchema(ctx, tiledb.TILEDB_SPARSE)
+	// The array will be dense.
+	schema, err := tiledb.NewArraySchema(ctx, tiledb.TILEDB_DENSE)
 	checkError(err)
 	err = schema.SetDomain(domain)
 	checkError(err)
@@ -74,38 +73,38 @@ func createSparseArray() {
 	checkError(err)
 
 	// Add a single attribute "a" so each (i,j) cell can store an integer.
-	a, err := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_UINT32)
+	a, err := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_INT32)
 	checkError(err)
 	err = schema.AddAttributes(a)
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	array, err := tiledb.NewArray(ctx, statsArrayName)
 	checkError(err)
 	err = array.Create(schema)
 	checkError(err)
 }
 
-func writeSparseArray() {
+func writeStatsArray() {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
-	// Write some simple data to cells (1, 1), (2, 4) and (2, 3).
-	coords := []int32{1, 1, 2, 4, 2, 3}
-	data := []uint32{1, 2, 3}
+	// Prepare some data for the array
+	values := make([]int32, 12000*12000)
+	for i := 0; i < len(values); i++ {
+		values[i] = int32(i)
+	}
 
-	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	// Create the query
+	array, err := tiledb.NewArray(ctx, statsArrayName)
 	checkError(err)
 	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
-	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
+	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
-	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("a", values)
 	checkError(err)
 
 	// Perform the write and close the array.
@@ -115,71 +114,63 @@ func writeSparseArray() {
 	checkError(err)
 }
 
-func readSparseArray() {
+func readStatsArray() {
+	// Create TileDB context
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	array, err := tiledb.NewArray(ctx, statsArrayName)
 	checkError(err)
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
 
-	// Slice only rows 1, 2 and cols 2, 3, 4
-	subArray := []int32{1, 2, 2, 4}
-
-	// Prepare the vector that will hold the results
-	// We take the upper bound on the result size as we do not know how large
-	// a buffer is needed since the array is sparse
-	maxElements, err := array.MaxBufferElements(subArray)
-	checkError(err)
-	data := make([]uint32, maxElements["a"][1])
-	coords := make([]int32, maxElements[tiledb.TILEDB_COORDS][1])
+	// Read a slice of 3,000 rows.
+	subArray := []uint32{1, 3000, 1, 12000}
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
 	err = query.SetSubArray(subArray)
 	checkError(err)
+
+	// Prepare the vector that will hold the result
+	maxElMap, err := array.MaxBufferElements(subArray)
+	checkError(err)
+	data := make([]int32, maxElMap["a"][1])
+
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+
+	// Enable the stats for the read query
+	err = tiledb.StatsEnable()
 	checkError(err)
 
-	// Submit the query and close the array.
+	// Submit the query
 	err = query.Submit()
 	checkError(err)
 
-	// Print out the results.
-	elements, err := query.ResultBufferElements()
+	// Print the report
+	err = tiledb.StatsDumpSTDOUT()
 	checkError(err)
-	resultNum := elements["a"][1]
-	for r := 0; r < int(resultNum); r++ {
-		i := coords[2*r]
-		j := coords[2*r+1]
-		a := data[r]
-		fmt.Printf("Cell (%d, %d) has data %d\n", i, j, a)
-	}
+	err = tiledb.StatsDisable()
+	checkError(err)
 
+	// Close the array
 	err = array.Close()
 	checkError(err)
 }
 
-// ExampleSparseArray shows and example creation, writing and reading of a
-// sparse array
-func ExampleSparseArray() {
-	createSparseArray()
-	writeSparseArray()
-	readSparseArray()
+func ExampleUsingTileDBStats() {
+	createStatsArray(1, 12000)
+	writeStatsArray()
+	readStatsArray()
 
 	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(sparseArrayName); err == nil {
-		err = os.RemoveAll(sparseArrayName)
+	if _, err := os.Stat(statsArrayName); err == nil {
+		err = os.RemoveAll(statsArrayName)
 		checkError(err)
 	}
-
-	// Output: Cell (2, 3) has data 3
-	// Cell (2, 4) has data 2
 }

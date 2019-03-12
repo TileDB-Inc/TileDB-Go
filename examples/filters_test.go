@@ -1,5 +1,5 @@
 /**
- * @file   quickstart_sparse_test.go
+ * @file   filters.go
  *
  * @section LICENSE
  *
@@ -27,12 +27,11 @@
  *
  * @section DESCRIPTION
  *
- * This is a part of the TileDB quickstart tutorial:
- * 	 https://docs.tiledb.io/en/latest/quickstart.html
+ * This is a part of the TileDB filters tutorial:
+ *   https://docs.tiledb.io/en/latest/tutorials/filters.html
  *
- * When run, this program will create a simple 2D dense array, write some data
- * to it, and read a slice of the data back in the layout of the user's choice
- * (passed as an argument to the program: "row", "col", or "global").
+ * When run, this program will create a 2D sparse array with several filters,
+ * write some data to it, and read a slice of the data back.
  *
  */
 
@@ -40,14 +39,15 @@ package examples
 
 import (
 	"fmt"
-	tiledb "github.com/TileDB-Inc/TileDB-Go"
 	"os"
+
+	"github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
-var sparseArrayName = "quickstart_sparse"
+var filtersArrayName = "filters_array"
 
-func createSparseArray() {
+func createFilterArray() {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -73,29 +73,61 @@ func createSparseArray() {
 	err = schema.SetTileOrder(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
 
-	// Add a single attribute "a" so each (i,j) cell can store an integer.
-	a, err := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_UINT32)
+	// Create two fixed-length attributes "a1" and "a2"
+	a1, err := tiledb.NewAttribute(ctx, "a1", tiledb.TILEDB_UINT32)
 	checkError(err)
-	err = schema.AddAttributes(a)
+	a2, err := tiledb.NewAttribute(ctx, "a2", tiledb.TILEDB_INT32)
+	checkError(err)
+
+	// a1 will be filtered by bit width reduction followed by zstd
+	// compression.
+	bitWidthReduction, err := tiledb.NewFilter(ctx,
+		tiledb.TILEDB_FILTER_BIT_WIDTH_REDUCTION)
+	checkError(err)
+	compressionZstd, err := tiledb.NewFilter(ctx, tiledb.TILEDB_FILTER_ZSTD)
+	checkError(err)
+	a1Filters, err := tiledb.NewFilterList(ctx)
+	checkError(err)
+	err = a1Filters.AddFilter(bitWidthReduction)
+	checkError(err)
+	err = a1Filters.AddFilter(compressionZstd)
+	checkError(err)
+	err = a1.SetFilterList(a1Filters)
+	checkError(err)
+
+	// a2 will just have a single gzip compression filter.
+	compressionGzip, err := tiledb.NewFilter(ctx, tiledb.TILEDB_FILTER_GZIP)
+	checkError(err)
+	a2Filters, err := tiledb.NewFilterList(ctx)
+	checkError(err)
+	err = a2Filters.AddFilter(compressionGzip)
+	checkError(err)
+	err = a2.SetFilterList(a2Filters)
+
+	// Add the attributes
+	err = schema.AddAttributes(a1)
+	checkError(err)
+	err = schema.AddAttributes(a2)
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	array, err := tiledb.NewArray(ctx, filtersArrayName)
 	checkError(err)
 	err = array.Create(schema)
 	checkError(err)
 }
 
-func writeSparseArray() {
+func writeFiltersArray() {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
 	// Write some simple data to cells (1, 1), (2, 4) and (2, 3).
 	coords := []int32{1, 1, 2, 4, 2, 3}
-	data := []uint32{1, 2, 3}
+	dataA1 := []uint32{1, 2, 3}
+	dataA2 := []int32{-1, -2, -3}
 
 	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	array, err := tiledb.NewArray(ctx, filtersArrayName)
 	checkError(err)
 	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
@@ -103,7 +135,9 @@ func writeSparseArray() {
 	checkError(err)
 	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetBuffer("a1", dataA1)
+	checkError(err)
+	_, err = query.SetBuffer("a2", dataA2)
 	checkError(err)
 	_, err = query.SetCoordinates(coords)
 	checkError(err)
@@ -115,12 +149,12 @@ func writeSparseArray() {
 	checkError(err)
 }
 
-func readSparseArray() {
+func readFiltersArray() {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	array, err := tiledb.NewArray(ctx, filtersArrayName)
 	checkError(err)
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
@@ -133,7 +167,7 @@ func readSparseArray() {
 	// a buffer is needed since the array is sparse
 	maxElements, err := array.MaxBufferElements(subArray)
 	checkError(err)
-	data := make([]uint32, maxElements["a"][1])
+	data := make([]uint32, maxElements["a1"][1])
 	coords := make([]int32, maxElements[tiledb.TILEDB_COORDS][1])
 
 	// Prepare the query
@@ -143,7 +177,7 @@ func readSparseArray() {
 	checkError(err)
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetBuffer("a1", data)
 	checkError(err)
 	_, err = query.SetCoordinates(coords)
 	checkError(err)
@@ -155,7 +189,7 @@ func readSparseArray() {
 	// Print out the results.
 	elements, err := query.ResultBufferElements()
 	checkError(err)
-	resultNum := elements["a"][1]
+	resultNum := elements["a1"][1]
 	for r := 0; r < int(resultNum); r++ {
 		i := coords[2*r]
 		j := coords[2*r+1]
@@ -169,14 +203,14 @@ func readSparseArray() {
 
 // ExampleSparseArray shows and example creation, writing and reading of a
 // sparse array
-func ExampleSparseArray() {
-	createSparseArray()
-	writeSparseArray()
-	readSparseArray()
+func ExampleFiltersArray() {
+	createFilterArray()
+	writeFiltersArray()
+	readFiltersArray()
 
 	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(sparseArrayName); err == nil {
-		err = os.RemoveAll(sparseArrayName)
+	if _, err := os.Stat(filtersArrayName); err == nil {
+		err = os.RemoveAll(filtersArrayName)
 		checkError(err)
 	}
 
