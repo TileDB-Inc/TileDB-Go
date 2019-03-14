@@ -52,14 +52,17 @@ as such the below table reference which versions are compatible.
 | 0.2.X             | 1.4.0          |
 | 0.3.X             | 1.4.0          |
 | 0.4.X             | 1.5.0 (Unreleased) |
+| 0.5.X             | 1.5.0 (Unreleased) |
 
 ## Quickstart
 
 TileDB core documentation has a good
 [quickstart guide](https://docs.tiledb.io/en/latest/quickstart.html) .
 The two complete examples in the guide are
-[quickstart_dense_test.go](quickstart_dense_test.go) and
-[quickstart_sparse_test.go](quickstart_sparse_test.go).
+[quickstart_dense_test.go](examples/quickstart_dense_test.go) and
+[quickstart_sparse_test.go](examples/quickstart_sparse_test.go).
+More examples in the [examples](examples) folder demonstrate several features of 
+the library.
 
 ## Example Usage
 
@@ -74,7 +77,7 @@ import (
 	"fmt"
 	"os"
 
-	tiledb "github.com/TileDB-Inc/TileDB-Go"
+	"github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
@@ -86,8 +89,9 @@ func createDenseArray() {
 
 	// The array will be 4x4 with dimensions "rows" and "cols", with domain [1,4].
 	domain, _ := tiledb.NewDomain(ctx)
-	rowDim, _ := tiledb.NewDimension(ctx, "rows", []int32{1, 3}, int32(3))
-	domain.AddDimensions(rowDim)
+	rowDim, _ := tiledb.NewDimension(ctx, "rows", []int32{1, 4}, int32(4))
+	colDim, _ := tiledb.NewDimension(ctx, "cols", []int32{1, 4}, int32(4))
+	domain.AddDimensions(rowDim, colDim)
 
 	// The array will be dense.
 	schema, _ := tiledb.NewArraySchema(ctx, tiledb.TILEDB_DENSE)
@@ -96,13 +100,8 @@ func createDenseArray() {
 	schema.SetTileOrder(tiledb.TILEDB_ROW_MAJOR)
 
 	// Add a single attribute "a" so each (i,j) cell can store an integer.
-	a, _ := tiledb.NewAttribute(ctx, "a1", tiledb.TILEDB_INT32)
+	a, _ := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_INT32)
 	schema.AddAttributes(a)
-
-	// Add a single attribute "a" so each (i,j) cell can store an integer.
-	a2, _ := tiledb.NewAttribute(ctx, "a2", tiledb.TILEDB_CHAR)
-	a2.SetCellValNum(TILEDB_VAR_NUM)
-	schema.AddAttributes(a, a2)
 
 	// Create the (empty) array on disk.
 	array, _ := tiledb.NewArray(ctx, denseArrayName)
@@ -113,20 +112,15 @@ func writeDenseArray() {
 	ctx, _ := tiledb.NewContext(nil)
 
 	// Prepare some data for the array
-	a1Data := []int32{1, 2, 3}
-
-	// String attributes are handled as byte arrays
-	// The user must pass a byte array to query.SetBuffer/SetBufferVar
-	a2Data := []byte("val1" + "val2" + "val3")
-	a2DataOffsets := []uint64{0,4,8}
+	data := []int32{
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
 	// Open the array for writing and create the query.
 	array, _ := tiledb.NewArray(ctx, denseArrayName)
 	array.Open(tiledb.TILEDB_WRITE)
 	query, _ := tiledb.NewQuery(ctx, array)
 	query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
-	query.SetBuffer("a1", a1Data)
-	query.SetBufferVar("a2", a2Offsets, a2Data)
+	query.SetBuffer("a", data)
 
 	// Perform the write and close the array.
 	query.Submit()
@@ -140,40 +134,24 @@ func readDenseArray() {
 	array, _ := tiledb.NewArray(ctx, denseArrayName)
 	array.Open(tiledb.TILEDB_READ)
 
-	// Prepare the vector that will hold the result (of size 3 elements)
-	// You can use Array.MaxBufferSize(subarray) to get estimate buffer sizes
-	// The sizes are set here for simplicity of the example
-	a1Data := make([]int32, 3)
-	a2Offsets:= make([]uint64, 3)
-	a2Data := make([]byte, 12)
+	// Slice only rows 1, 2 and cols 2, 3, 4
+	subArray := []int32{1, 2, 2, 4}
+
+	// Prepare the vector that will hold the result (of size 6 elements)
+	data := make([]int32, 6)
 
 	// Prepare the query
 	query, _ := tiledb.NewQuery(ctx, array)
+	query.SetSubArray(subArray)
 	query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
-	query.SetBuffer("a1", a1Data)
-	query.SetVarBuffer("a2", a2Offsets, a2Data)
+	query.SetBuffer("a", data)
 
 	// Submit the query and close the array.
 	query.Submit()
 	array.Close()
 
 	// Print out the results.
-	fmt.Println(a1Data)
-	fmt.Println(a2Data)
-	fmt.Println(a2Offsets)
-
-	// Produce slice of strings based on the offsets for a2
-	// This also converts from a byte array to strings
-	var a2Strings []string
-	for int i := 0; i < len(a2Offsets); i++ {
-		stringEndPosition := len(a2Data)
-		if i < len(a2Offsets) - 1 {
-			stringEndPosition = a2Offsets[i+1]
-		}
-		a2Strings = append(a2String, string(a2Data[a2Offsets[i]:stringEndPosition]))
-		}
-
-	fmt.Println(a2Strings)
+	fmt.Println(data)
 }
 
 // ExampleDenseArray shows and example creation, writing and reading of a dense
@@ -182,6 +160,12 @@ func main() {
 	createDenseArray()
 	writeDenseArray()
 	readDenseArray()
+
+	// Cleanup example
+	if _, err := os.Stat(denseArrayName); err == nil {
+		err = os.RemoveAll(denseArrayName)
+	}
+
 	// Output: [2 3 4 6 7 8]
 }
 ```
