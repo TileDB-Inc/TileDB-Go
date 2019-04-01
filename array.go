@@ -259,8 +259,8 @@ func (a *Array) NonEmptyDomain() ([]NonEmptyDomain, bool, error) {
 		return nil, false, err
 	}
 
-	var ret C.int
-	var isEmpty C.int
+	var ret C.int32_t
+	var isEmpty C.int32_t
 	switch domainType {
 
 	case TILEDB_INT8:
@@ -492,7 +492,7 @@ func (a *Array) MaxBufferSize(attributeName string, subarray interface{}) (uint6
 	defer C.free(unsafe.Pointer(cAttributeName))
 
 	var bufferSize C.uint64_t
-	var ret C.int
+	var ret C.int32_t
 	// Switch on domain type to cast subarray to proper type
 	switch domainType {
 	case TILEDB_INT8:
@@ -559,7 +559,7 @@ func (a *Array) MaxBufferSizeVar(attributeName string, subarray interface{}) (ui
 
 	var bufferValSize C.uint64_t
 	var bufferOffSize C.uint64_t
-	var ret C.int
+	var ret C.int32_t
 	// Switch on domain type to cast subarray to proper type
 	switch domainType {
 	case TILEDB_INT8:

@@ -79,7 +79,8 @@ func (a *Attribute) FilterList() (*FilterList, error) {
 // This is inferred from the type parameter of the NewAttribute
 // function, but can also be set manually.
 func (a *Attribute) SetCellValNum(val uint) error {
-	ret := C.tiledb_attribute_set_cell_val_num(a.context.tiledbContext, a.tiledbAttribute, C.uint(val))
+	ret := C.tiledb_attribute_set_cell_val_num(a.context.tiledbContext,
+		a.tiledbAttribute, C.uint32_t(val))
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error setting tiledb attribute cell val num: %s", a.context.LastError())
 	}
@@ -89,7 +90,7 @@ func (a *Attribute) SetCellValNum(val uint) error {
 // CellValNum returns number of values of one cell on this attribute.
 // For variable-sized attributes returns TILEDB_VAR_NUM.
 func (a *Attribute) CellValNum() (uint, error) {
-	var cellValNum C.uint
+	var cellValNum C.uint32_t
 	ret := C.tiledb_attribute_get_cell_val_num(a.context.tiledbContext, a.tiledbAttribute, &cellValNum)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("Error getting tiledb attribute cell val num: %s", a.context.LastError())

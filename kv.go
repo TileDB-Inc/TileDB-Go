@@ -101,7 +101,11 @@ setting, where machines need to operate on the same view of the k.
 func (k *KV) OpenAtWithKey(queryType QueryType, encryptionType EncryptionType, key string, timestamp uint64) error {
 	ckey := unsafe.Pointer(C.CString(key))
 	defer C.free(ckey)
-	ret := C.tiledb_kv_open_at_with_key(k.context.tiledbContext, k.tiledbKV, C.tiledb_query_type_t(queryType), C.tiledb_encryption_type_t(encryptionType), ckey, C.uint32_t(len(key)), C.uint64_t(timestamp))
+	ret := C.tiledb_kv_open_at_with_key(k.context.tiledbContext, k.tiledbKV,
+		C.tiledb_query_type_t(queryType),
+		C.tiledb_encryption_type_t(encryptionType),
+		ckey, C.uint32_t(len(key)),
+		C.uint64_t(timestamp))
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error opening tiledb kv with key at %d for querying: %s", timestamp, k.context.LastError())
 	}

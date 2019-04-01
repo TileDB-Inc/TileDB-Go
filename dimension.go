@@ -47,7 +47,7 @@ func NewDimension(context *Context, name string, domain interface{}, extent inte
 	}
 
 	var datatype Datatype
-	var ret C.int
+	var ret C.int32_t
 	// Convert domain to type then to void*
 	var cdomain unsafe.Pointer
 	// Convert extent to type then to void*
@@ -216,7 +216,7 @@ func (d *Dimension) Domain() (interface{}, error) {
 		return nil, err
 	}
 
-	var ret C.int
+	var ret C.int32_t
 	var domain interface{}
 	switch datatype {
 	case TILEDB_INT8:
@@ -336,7 +336,7 @@ func (d *Dimension) Extent() (interface{}, error) {
 		return nil, err
 	}
 
-	var ret C.int
+	var ret C.int32_t
 	var extent interface{}
 	switch datatype {
 	case TILEDB_INT8:

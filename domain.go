@@ -59,7 +59,7 @@ func (d *Domain) Type() (Datatype, error) {
 
 // NDim returns the number of dimensions
 func (d *Domain) NDim() (uint, error) {
-	var ndim C.uint
+	var ndim C.uint32_t
 	ret := C.tiledb_domain_get_ndim(d.context.tiledbContext, d.tiledbDomain, &ndim)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("Error getting tiledb domain number of dimensions: %s", d.context.LastError())
@@ -70,7 +70,8 @@ func (d *Domain) NDim() (uint, error) {
 // DimensionFromIndex retrieves a dimension object from a domain by index.
 func (d *Domain) DimensionFromIndex(index uint) (*Dimension, error) {
 	var dim *C.tiledb_dimension_t
-	ret := C.tiledb_domain_get_dimension_from_index(d.context.tiledbContext, d.tiledbDomain, C.uint(index), &dim)
+	ret := C.tiledb_domain_get_dimension_from_index(d.context.tiledbContext,
+		d.tiledbDomain, C.uint32_t(index), &dim)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting tiledb dimension by index for domain: %s", d.context.LastError())
 	}

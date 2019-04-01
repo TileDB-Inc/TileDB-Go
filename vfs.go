@@ -30,7 +30,7 @@ func (v *VFSfh) Free() {
 // IsClosed checks a vfs file handler to see if it is closed. Return true if
 // file handler is closed, false if its not closed and error is non-nil on error
 func (v *VFSfh) IsClosed() (bool, error) {
-	var isClosed C.int
+	var isClosed C.int32_t
 
 	ret := C.tiledb_vfs_fh_is_closed(v.context.tiledbContext, v.tiledbVFSfh, &isClosed)
 
@@ -141,7 +141,7 @@ func (v *VFS) EmptyBucket(uri string) error {
 func (v *VFS) IsEmptyBucket(uri string) (bool, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	var isEmpty C.int
+	var isEmpty C.int32_t
 	ret := C.tiledb_vfs_is_empty_bucket(v.context.tiledbContext, v.tiledbVFS, curi, &isEmpty)
 
 	if ret != C.TILEDB_OK {
@@ -159,7 +159,7 @@ func (v *VFS) IsEmptyBucket(uri string) (bool, error) {
 func (v *VFS) IsBucket(uri string) (bool, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	var isBucket C.int
+	var isBucket C.int32_t
 	ret := C.tiledb_vfs_is_bucket(v.context.tiledbContext, v.tiledbVFS, curi, &isBucket)
 
 	if ret != C.TILEDB_OK {
@@ -190,7 +190,7 @@ func (v *VFS) CreateDir(uri string) error {
 func (v *VFS) IsDir(uri string) (bool, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	var isDir C.int
+	var isDir C.int32_t
 	ret := C.tiledb_vfs_is_dir(v.context.tiledbContext, v.tiledbVFS, curi, &isDir)
 
 	if ret != C.TILEDB_OK {
@@ -221,7 +221,7 @@ func (v *VFS) RemoveDir(uri string) error {
 func (v *VFS) IsFile(uri string) (bool, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	var isFile C.int
+	var isFile C.int32_t
 	ret := C.tiledb_vfs_is_file(v.context.tiledbContext, v.tiledbVFS, curi, &isFile)
 
 	if ret != C.TILEDB_OK {
@@ -340,7 +340,7 @@ func (v *VFS) Read(fh *VFSfh, offset uint64, nbytes uint64) ([]byte, error) {
 		return []byte{}, fmt.Errorf("Unknown error in VFS.Read: %s", v.context.LastError())
 	}
 
-	bytes = C.GoBytes(cbuffer, C.int(nbytes))
+	bytes = C.GoBytes(cbuffer, C.int32_t(nbytes))
 
 	return bytes, nil
 }
