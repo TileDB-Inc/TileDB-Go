@@ -86,7 +86,7 @@ func (c *Context) LastError() error {
 
 // IsSupportedFS Return true if the given filesystem backend is supported.
 func (c *Context) IsSupportedFS(fs FS) (bool, error) {
-	var isSupported C.int
+	var isSupported C.int32_t
 	ret := C.tiledb_ctx_is_supported_fs(c.tiledbContext, C.tiledb_filesystem_t(fs), &isSupported)
 
 	if ret != C.TILEDB_OK {

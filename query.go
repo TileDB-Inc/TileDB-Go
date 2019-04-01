@@ -393,7 +393,7 @@ func (q *Query) Buffer(attributeName string) (interface{}, error) {
 	cattributeName := C.CString(attributeName)
 	defer C.free(unsafe.Pointer(cattributeName))
 
-	var ret C.int
+	var ret C.int32_t
 	var cbufferSize *C.uint64_t
 	var cbuffer unsafe.Pointer
 	var buffer interface{}
@@ -794,7 +794,7 @@ func (q *Query) BufferVar(attributeName string) ([]uint64, interface{}, error) {
 	cattributeName := C.CString(attributeName)
 	defer C.free(unsafe.Pointer(cattributeName))
 
-	var ret C.int
+	var ret C.int32_t
 	var cbufferSize *C.uint64_t
 	var cbuffer unsafe.Pointer
 	var buffer interface{}
@@ -1037,7 +1037,7 @@ func (q *Query) Type() (QueryType, error) {
 // HasResults Returns true if the query has results
 // Applicable only to read queries (it returns false for write queries)
 func (q *Query) HasResults() (bool, error) {
-	var hasResults C.int
+	var hasResults C.int32_t
 	ret := C.tiledb_query_has_results(q.context.tiledbContext, q.tiledbQuery, &hasResults)
 	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("Error checking if query has results: %s", q.context.LastError())

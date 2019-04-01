@@ -66,7 +66,7 @@ func (a *ArraySchema) AddAttributes(attributes ...*Attribute) error {
 
 // AttributeNum returns the number of attributes
 func (a *ArraySchema) AttributeNum() (uint, error) {
-	var attrNum C.uint
+	var attrNum C.uint32_t
 	ret := C.tiledb_array_schema_get_attribute_num(a.context.tiledbContext, a.tiledbArraySchema, &attrNum)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("Error getting attribute number for tiledb arraySchema: %s", a.context.LastError())
@@ -77,7 +77,11 @@ func (a *ArraySchema) AttributeNum() (uint, error) {
 // AttributeFromIndex get a copy of an Attribute in the schema by name.
 func (a *ArraySchema) AttributeFromIndex(index uint) (*Attribute, error) {
 	attr := Attribute{context: a.context}
-	ret := C.tiledb_array_schema_get_attribute_from_index(a.context.tiledbContext, a.tiledbArraySchema, C.uint(index), &attr.tiledbAttribute)
+	ret := C.tiledb_array_schema_get_attribute_from_index(
+		a.context.tiledbContext,
+		a.tiledbArraySchema,
+		C.uint32_t(index),
+		&attr.tiledbAttribute)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting attribute %d for tiledb arraySchema: %s", index, a.context.LastError())
 	}

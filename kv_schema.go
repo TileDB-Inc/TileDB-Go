@@ -66,7 +66,7 @@ func (k *KVSchema) AddAttributes(attributes ...*Attribute) error {
 
 // AttributeNum returns the number of attributes
 func (k *KVSchema) AttributeNum() (uint, error) {
-	var attrNum C.uint
+	var attrNum C.uint32_t
 	ret := C.tiledb_kv_schema_get_attribute_num(k.context.tiledbContext, k.tiledbKVSchema, &attrNum)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("Error getting attribute number for tiledb KVSchema: %s", k.context.LastError())
@@ -77,7 +77,10 @@ func (k *KVSchema) AttributeNum() (uint, error) {
 // AttributeFromIndex get a copy of an Attribute in the schema by name.
 func (k *KVSchema) AttributeFromIndex(index uint) (*Attribute, error) {
 	attr := Attribute{context: k.context}
-	ret := C.tiledb_kv_schema_get_attribute_from_index(k.context.tiledbContext, k.tiledbKVSchema, C.uint(index), &attr.tiledbAttribute)
+	ret := C.tiledb_kv_schema_get_attribute_from_index(k.context.tiledbContext,
+		k.tiledbKVSchema,
+		C.uint32_t(index),
+		&attr.tiledbAttribute)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting attribute %d for tiledb KVSchema: %s", index, k.context.LastError())
 	}

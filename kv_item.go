@@ -307,7 +307,7 @@ func (k *KVItem) Key() (interface{}, error) {
 		}
 	case TILEDB_CHAR:
 		elements := int(keySize) / C.sizeof_char
-		return C.GoStringN((*C.char)(cKey), C.int(elements)), nil
+		return C.GoStringN((*C.char)(cKey), C.int32_t(elements)), nil
 
 	default:
 		return nil, fmt.Errorf("Unsupported tiledb key type: %v", keyType)
@@ -573,7 +573,7 @@ func (k *KVItem) Value(attribute string) (interface{}, error) {
 		return float64(*(*C.double)(cValue)), nil
 	case TILEDB_CHAR:
 		elements := int(valueSize) / C.sizeof_char
-		return C.GoStringN((*C.char)(cValue), C.int(elements)), nil
+		return C.GoStringN((*C.char)(cValue), C.int32_t(elements)), nil
 	default:
 		return nil, fmt.Errorf("Unsupported tiledb value type: %v", valueType)
 	}
