@@ -48,11 +48,11 @@ as such the below table reference which versions are compatible.
 
 | TileDB-Go Version | TileDB Version |
 | ----------------- | -------------- |
-| 0.1.X             | 1.3.0          |
-| 0.2.X             | 1.4.0          |
-| 0.3.X             | 1.4.0          |
-| 0.4.X             | 1.5.0 (Unreleased) |
-| 0.5.X             | 1.5.0 (Unreleased) |
+| 0.1.X             | 1.3.X          |
+| 0.2.X             | 1.4.X          |
+| 0.3.X             | 1.4.X          |
+| 0.4.X             | 1.5.X          |
+| 0.5.X             | 1.5.X          |
 
 ## Quickstart
 
