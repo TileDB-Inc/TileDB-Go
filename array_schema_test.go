@@ -210,6 +210,10 @@ func TestArraySchema(t *testing.T) {
 		os.RemoveAll(tmpPathDump)
 	}
 
+	schemaType, err := arraySchema.Type()
+	assert.Nil(t, err)
+	assert.Equal(t, TILEDB_DENSE, schemaType)
+
 	// Test dumping to file
 	err = arraySchema.Dump(tmpPathDump)
 	assert.Nil(t, err)
