@@ -315,3 +315,15 @@ func (a *ArraySchema) Dump(path string) error {
 	}
 	return nil
 }
+
+// Type fetch the tiledb array type
+func (a *ArraySchema) Type() (ArrayType, error) {
+
+	var array_type C.tiledb_array_type_t
+	ret := C.tiledb_array_schema_get_array_type(a.context.tiledbContext, a.tiledbArraySchema, &array_type)
+	if ret != C.TILEDB_OK {
+		return TILEDB_DENSE, fmt.Errorf("Error fetching array schema type: %s", a.context.LastError())
+	}
+
+	return ArrayType(array_type), nil
+}
