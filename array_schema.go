@@ -51,8 +51,7 @@ func (a *ArraySchema) UnmarshalJSON(b []byte) error {
 			return err
 		}
 	}
-	jsonString := C.CString(string(b))
-	defer C.free(unsafe.Pointer(jsonString))
+	jsonString := (*C.char)(unsafe.Pointer(&b[0]))
 	var jsonStringLength = C.uint64_t(len(b))
 	ret := C.tiledb_array_schema_deserialize(a.context.tiledbContext, &a.tiledbArraySchema, C.tiledb_serialization_type_t(TILEDB_JSON), jsonString, jsonStringLength)
 	if ret != C.TILEDB_OK {
@@ -375,8 +374,7 @@ func (a *ArraySchema) Deserialize(serializationType SerializationType, b []byte)
 	if a.context == nil {
 		return fmt.Errorf("ArraySchema must be created before calling deserialize in order to have a valid context")
 	}
-	dataString := C.CString(string(b))
-	defer C.free(unsafe.Pointer(dataString))
+	dataString := (*C.char)(unsafe.Pointer(&b[0]))
 	var dataStringLength = C.uint64_t(len(b))
 	ret := C.tiledb_array_schema_deserialize(a.context.tiledbContext, &a.tiledbArraySchema, C.tiledb_serialization_type_t(serializationType), dataString, dataStringLength)
 	if ret != C.TILEDB_OK {
