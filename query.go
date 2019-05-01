@@ -54,8 +54,7 @@ func (q *Query) UnmarshalJSON(b []byte) error {
 			return err
 		}
 	}
-	jsonString := C.CString(string(b))
-	defer C.free(unsafe.Pointer(jsonString))
+	jsonString := (*C.char)(unsafe.Pointer(&b[0]))
 	var jsonStringLength = C.uint64_t(len(b))
 	ret := C.tiledb_query_deserialize(q.context.tiledbContext, q.tiledbQuery, C.tiledb_serialization_type_t(TILEDB_JSON), jsonString, jsonStringLength)
 	if ret != C.TILEDB_OK {
@@ -1104,8 +1103,7 @@ func (q *Query) Deserialize(serializationType SerializationType, b []byte) error
 	if q.context == nil {
 		return fmt.Errorf("Query must be created before calling deserialize in order to have a valid context")
 	}
-	dataString := C.CString(string(b))
-	defer C.free(unsafe.Pointer(dataString))
+	dataString := (*C.char)(unsafe.Pointer(&b[0]))
 	var dataStringLength = C.uint64_t(len(b))
 	ret := C.tiledb_query_deserialize(q.context.tiledbContext, q.tiledbQuery, C.tiledb_serialization_type_t(serializationType), dataString, dataStringLength)
 	if ret != C.TILEDB_OK {
