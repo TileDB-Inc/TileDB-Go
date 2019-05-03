@@ -32,14 +32,21 @@ type ArraySchema struct {
 
 // MarshalJSON marshal arraySchema struct to json using tiledb
 func (a *ArraySchema) MarshalJSON() ([]byte, error) {
-	var jsonString *C.char
-	defer C.free(unsafe.Pointer(jsonString))
-	var jsonStringLength C.uint64_t
-	ret := C.tiledb_array_schema_serialize(a.context.tiledbContext, a.tiledbArraySchema, C.tiledb_serialization_type_t(TILEDB_JSON), &jsonString, &jsonStringLength)
-	if ret != C.TILEDB_OK {
+	buffer, err := SerializeArraySchema(a, TILEDB_JSON)
+	if err != nil {
 		return nil, fmt.Errorf("Error marshaling json for array schema: %s", a.context.LastError())
 	}
-	return []byte(C.GoString(jsonString)), nil
+
+	bytes, err := buffer.Data()
+	if err != nil {
+		return nil, fmt.Errorf("Error marshaling json for array schema: %s", buffer.context.LastError())
+	}
+
+	// Create a full copy of the byte slice, as the Buffer object owns the memory.
+	cpy := make([]byte, len(bytes))
+	copy(cpy, bytes)
+
+	return cpy, nil
 }
 
 // UnmarshalJSON marshal arraySchema struct to json using tiledb
@@ -51,12 +58,30 @@ func (a *ArraySchema) UnmarshalJSON(b []byte) error {
 			return err
 		}
 	}
-	jsonString := (*C.char)(unsafe.Pointer(&b[0]))
-	var jsonStringLength = C.uint64_t(len(b))
-	ret := C.tiledb_array_schema_deserialize(a.context.tiledbContext, &a.tiledbArraySchema, C.tiledb_serialization_type_t(TILEDB_JSON), jsonString, jsonStringLength)
-	if ret != C.TILEDB_OK {
+
+	// Wrap the input byte slice in a Buffer (does not copy)
+	buffer, err := NewBuffer(a.context)
+	if err != nil {
 		return fmt.Errorf("Error unmarshaling json for array schema: %s", a.context.LastError())
 	}
+	err = buffer.SetBuffer(b)
+	if err != nil {
+		return fmt.Errorf("Error unmarshaling json for array schema: %s", a.context.LastError())
+	}
+
+	// Deserialize into a new array schema
+	var newCSchema *C.tiledb_array_schema_t
+	ret := C.tiledb_deserialize_array_schema(a.context.tiledbContext, &newCSchema, C.TILEDB_JSON, buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deserializing array schema: %s", a.context.LastError())
+	}
+
+	// Replace the C schema object with the deserialized one.
+	if a.tiledbArraySchema != nil {
+		C.tiledb_array_schema_free(&a.tiledbArraySchema);
+	}
+	a.tiledbArraySchema = newCSchema
+
 	return nil
 }
 
@@ -355,30 +380,4 @@ func (a *ArraySchema) Type() (ArrayType, error) {
 	}
 
 	return ArrayType(arrayType), nil
-}
-
-// Serialize arraySchema struct to sbyte using passed format
-func (a *ArraySchema) Serialize(serializationType SerializationType) ([]byte, error) {
-	var dataString *C.char
-	defer C.free(unsafe.Pointer(dataString))
-	var dataStringLength C.uint64_t
-	ret := C.tiledb_array_schema_serialize(a.context.tiledbContext, a.tiledbArraySchema, C.tiledb_serialization_type_t(serializationType), &dataString, &dataStringLength)
-	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error serializing array schema: %s", a.context.LastError())
-	}
-	return C.GoBytes(unsafe.Pointer(dataString), C.int(dataStringLength)), nil
-}
-
-// Deserialize arraySchema struct from given format
-func (a *ArraySchema) Deserialize(serializationType SerializationType, b []byte) error {
-	if a.context == nil {
-		return fmt.Errorf("ArraySchema must be created before calling deserialize in order to have a valid context")
-	}
-	dataString := (*C.char)(unsafe.Pointer(&b[0]))
-	var dataStringLength = C.uint64_t(len(b))
-	ret := C.tiledb_array_schema_deserialize(a.context.tiledbContext, &a.tiledbArraySchema, C.tiledb_serialization_type_t(serializationType), dataString, dataStringLength)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error deserializing array schema: %s", a.context.LastError())
-	}
-	return nil
 }
