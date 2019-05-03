@@ -27,40 +27,43 @@ type Query struct {
 	resultBufferElements map[string][2]*uint64
 }
 
-// MarshalJSON marshal arraySchema struct to json using tiledb
+// MarshalJSON marshal query struct to json using tiledb
 func (q *Query) MarshalJSON() ([]byte, error) {
-	var jsonString *C.char
-	defer C.free(unsafe.Pointer(jsonString))
-	var jsonStringLength C.uint64_t
-	ret := C.tiledb_query_serialize(q.context.tiledbContext, q.tiledbQuery, C.tiledb_serialization_type_t(TILEDB_JSON), &jsonString, &jsonStringLength)
-	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error marshaling json for array schema: %s", q.context.LastError())
+	buffer, err := SerializeQuery(q, TILEDB_JSON)
+	if err != nil {
+		return nil, fmt.Errorf("Error marshaling json for query: %s", q.context.LastError())
 	}
-	return []byte(C.GoString(jsonString)), nil
+
+	bytes, err := buffer.Data()
+	if err != nil {
+		return nil, fmt.Errorf("Error marshaling json for query: %s", buffer.context.LastError())
+	}
+
+	// Create a full copy of the byte slice, as the Buffer object owns the memory.
+	cpy := make([]byte, len(bytes))
+	copy(cpy, bytes)
+
+	return cpy, nil
 }
 
 // UnmarshalJSON marshal arraySchema struct to json using tiledb
 func (q *Query) UnmarshalJSON(b []byte) error {
 	var err error
 	if q.context == nil {
-		q.context, err = NewContext(nil)
-		if err != nil {
-			return err
-		}
+		return fmt.Errorf("Error unmarshaling json for query: nil context")
 	}
-	if q.array == nil {
-		q.array, err = NewArray(q.context, "")
-		if err != nil {
-			return err
-		}
+
+	// Wrap the input byte slice in a Buffer (does not copy)
+	buffer, err := NewBuffer(q.context)
+	if err != nil {
+		return fmt.Errorf("Error unmarshaling json for query: %s", q.context.LastError())
 	}
-	jsonString := (*C.char)(unsafe.Pointer(&b[0]))
-	var jsonStringLength = C.uint64_t(len(b))
-	ret := C.tiledb_query_deserialize(q.context.tiledbContext, q.tiledbQuery, C.tiledb_serialization_type_t(TILEDB_JSON), jsonString, jsonStringLength)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error unmarshaling json for array schema: %s", q.context.LastError())
+	err = buffer.SetBuffer(b)
+	if err != nil {
+		return fmt.Errorf("Error unmarshaling json for query: %s", q.context.LastError())
 	}
-	return nil
+
+	return DeserializeQuery(q, buffer, TILEDB_JSON)
 }
 
 /*
@@ -1088,30 +1091,4 @@ func (q *Query) HasResults() (bool, error) {
 // SetCoordinates sets the coordinate buffer
 func (q *Query) SetCoordinates(coordinates interface{}) (*uint64, error) {
 	return q.SetBuffer(TILEDB_COORDS, coordinates)
-}
-
-// Serialize arraySchema struct to sbyte using passed format
-func (q *Query) Serialize(serializationType SerializationType) ([]byte, error) {
-	var dataString *C.char
-	defer C.free(unsafe.Pointer(dataString))
-	var dataStringLength C.uint64_t
-	ret := C.tiledb_query_serialize(q.context.tiledbContext, q.tiledbQuery, C.tiledb_serialization_type_t(serializationType), &dataString, &dataStringLength)
-	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error serializing query: %s", q.context.LastError())
-	}
-	return C.GoBytes(unsafe.Pointer(dataString), C.int(dataStringLength)), nil
-}
-
-// Deserialize arraySchema struct from given format
-func (q *Query) Deserialize(serializationType SerializationType, b []byte) error {
-	if q.context == nil {
-		return fmt.Errorf("Query must be created before calling deserialize in order to have a valid context")
-	}
-	dataString := (*C.char)(unsafe.Pointer(&b[0]))
-	var dataStringLength = C.uint64_t(len(b))
-	ret := C.tiledb_query_deserialize(q.context.tiledbContext, q.tiledbQuery, C.tiledb_serialization_type_t(serializationType), dataString, dataStringLength)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error deserializing query : %s", q.context.LastError())
-	}
-	return nil
 }
