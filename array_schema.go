@@ -78,7 +78,7 @@ func (a *ArraySchema) UnmarshalJSON(b []byte) error {
 
 	// Replace the C schema object with the deserialized one.
 	if a.tiledbArraySchema != nil {
-		C.tiledb_array_schema_free(&a.tiledbArraySchema);
+		C.tiledb_array_schema_free(&a.tiledbArraySchema)
 	}
 	a.tiledbArraySchema = newCSchema
 
