@@ -1011,7 +1011,7 @@ func (q *Query) BufferSizeVar(attributeName string) (uint64, uint64, error) {
 
 	dataTypeSize := uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(datatype)))
 	offsetTypeSize := uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(TILEDB_UINT64)))
-	
+
 	cattributeName := C.CString(attributeName)
 	defer C.free(unsafe.Pointer(cattributeName))
 
