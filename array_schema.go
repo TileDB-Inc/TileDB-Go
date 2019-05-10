@@ -30,61 +30,6 @@ type ArraySchema struct {
 	context           *Context
 }
 
-// MarshalJSON marshal arraySchema struct to json using tiledb
-func (a *ArraySchema) MarshalJSON() ([]byte, error) {
-	buffer, err := SerializeArraySchema(a, TILEDB_JSON)
-	if err != nil {
-		return nil, fmt.Errorf("Error marshaling json for array schema: %s", a.context.LastError())
-	}
-
-	bytes, err := buffer.Data()
-	if err != nil {
-		return nil, fmt.Errorf("Error marshaling json for array schema: %s", buffer.context.LastError())
-	}
-
-	// Create a full copy of the byte slice, as the Buffer object owns the memory.
-	cpy := make([]byte, len(bytes))
-	copy(cpy, bytes)
-
-	return cpy, nil
-}
-
-// UnmarshalJSON marshal arraySchema struct to json using tiledb
-func (a *ArraySchema) UnmarshalJSON(b []byte) error {
-	var err error
-	if a.context == nil {
-		a.context, err = NewContext(nil)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Wrap the input byte slice in a Buffer (does not copy)
-	buffer, err := NewBuffer(a.context)
-	if err != nil {
-		return fmt.Errorf("Error unmarshaling json for array schema: %s", a.context.LastError())
-	}
-	err = buffer.SetBuffer(b)
-	if err != nil {
-		return fmt.Errorf("Error unmarshaling json for array schema: %s", a.context.LastError())
-	}
-
-	// Deserialize into a new array schema
-	var newCSchema *C.tiledb_array_schema_t
-	ret := C.tiledb_deserialize_array_schema(a.context.tiledbContext, &newCSchema, C.TILEDB_JSON, buffer.tiledbBuffer)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error deserializing array schema: %s", a.context.LastError())
-	}
-
-	// Replace the C schema object with the deserialized one.
-	if a.tiledbArraySchema != nil {
-		C.tiledb_array_schema_free(&a.tiledbArraySchema)
-	}
-	a.tiledbArraySchema = newCSchema
-
-	return nil
-}
-
 // NewArraySchema alloc a new ArraySchema
 func NewArraySchema(ctx *Context, arrayType ArrayType) (*ArraySchema, error) {
 	arraySchema := ArraySchema{context: ctx}
