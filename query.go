@@ -27,45 +27,6 @@ type Query struct {
 	resultBufferElements map[string][2]*uint64
 }
 
-// MarshalJSON marshal query struct to json using tiledb
-func (q *Query) MarshalJSON() ([]byte, error) {
-	buffer, err := SerializeQuery(q, TILEDB_JSON)
-	if err != nil {
-		return nil, fmt.Errorf("Error marshaling json for query: %s", q.context.LastError())
-	}
-
-	bytes, err := buffer.Data()
-	if err != nil {
-		return nil, fmt.Errorf("Error marshaling json for query: %s", buffer.context.LastError())
-	}
-
-	// Create a full copy of the byte slice, as the Buffer object owns the memory.
-	cpy := make([]byte, len(bytes))
-	copy(cpy, bytes)
-
-	return cpy, nil
-}
-
-// UnmarshalJSON marshal arraySchema struct to json using tiledb
-func (q *Query) UnmarshalJSON(b []byte) error {
-	var err error
-	if q.context == nil {
-		return fmt.Errorf("Error unmarshaling json for query: nil context")
-	}
-
-	// Wrap the input byte slice in a Buffer (does not copy)
-	buffer, err := NewBuffer(q.context)
-	if err != nil {
-		return fmt.Errorf("Error unmarshaling json for query: %s", q.context.LastError())
-	}
-	err = buffer.SetBuffer(b)
-	if err != nil {
-		return fmt.Errorf("Error unmarshaling json for query: %s", q.context.LastError())
-	}
-
-	return DeserializeQuery(q, buffer, TILEDB_JSON)
-}
-
 /*
 NewQuery Creates a TileDB query object.
 
