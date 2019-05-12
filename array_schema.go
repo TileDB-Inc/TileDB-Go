@@ -30,6 +30,83 @@ type ArraySchema struct {
 	context           *Context
 }
 
+// MarshalJSON marshal arraySchema struct to json using tiledb
+func (a *ArraySchema) MarshalJSON() ([]byte, error) {
+	clientSide := false // Currently this parameter is unused in libtiledb
+	buffer, err := SerializeArraySchema(a, TILEDB_JSON, clientSide)
+	if err != nil {
+		return nil, fmt.Errorf("Error marshaling json for array schema: %s", a.context.LastError())
+	}
+
+	bytes, err := buffer.Data()
+	if err != nil {
+		return nil, fmt.Errorf("Error marshaling json for array schema: %s", buffer.context.LastError())
+	}
+
+	// Create a full copy of the byte slice, as the Buffer object owns the memory.
+	size := len(bytes)
+	cpy := make([]byte, size)
+
+	copy(cpy, bytes)
+
+	// Check if the last character is a null byte, if so remove it from the slice
+	if cpy[size-1] == 0 {
+		cpy = cpy[:size-1]
+	}
+
+	runtime.KeepAlive(buffer)
+	return cpy, nil
+}
+
+// UnmarshalJSON marshal arraySchema struct to json using tiledb
+func (a *ArraySchema) UnmarshalJSON(b []byte) error {
+	var err error
+	if a.context == nil {
+		a.context, err = NewContext(nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	// tiledb c expect the byte array to include the null terminator
+	bytesWithNullTerminator := b
+	size := len(b)
+	// Add the null terminator if it is missing
+	if b[size-1] != 0 {
+		// If we need to add the null terminator we must first create a copy of the
+		// byte array, the marshaler does not allow editing the input byte array
+		bytesWithNullTerminator = make([]byte, size+1)
+		copy(bytesWithNullTerminator, b)
+		bytesWithNullTerminator[size] = 0
+	}
+
+	// Wrap the input byte slice in a Buffer (does not copy)
+	buffer, err := NewBuffer(a.context)
+	if err != nil {
+		return fmt.Errorf("Error unmarshaling json for array schema: %s", a.context.LastError())
+	}
+	err = buffer.SetBuffer(bytesWithNullTerminator)
+	if err != nil {
+		return fmt.Errorf("Error unmarshaling json for array schema: %s", a.context.LastError())
+	}
+
+	// Deserialize into a new array schema
+	var newCSchema *C.tiledb_array_schema_t
+	var cClientSide = C.int32_t(0) // Currently this parameter is unused in libtiledb
+	ret := C.tiledb_deserialize_array_schema(a.context.tiledbContext, buffer.tiledbBuffer, C.TILEDB_JSON, cClientSide, &newCSchema)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deserializing array schema: %s", a.context.LastError())
+	}
+
+	// Replace the C schema object with the deserialized one.
+	if a.tiledbArraySchema != nil {
+		C.tiledb_array_schema_free(&a.tiledbArraySchema)
+	}
+	a.tiledbArraySchema = newCSchema
+
+	return nil
+}
+
 // NewArraySchema alloc a new ArraySchema
 func NewArraySchema(ctx *Context, arrayType ArrayType) (*ArraySchema, error) {
 	arraySchema := ArraySchema{context: ctx}
