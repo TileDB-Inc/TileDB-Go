@@ -190,7 +190,7 @@ func TestArray(t *testing.T) {
 	// Get non empty domain, which is none since no data has been written
 	nonEmptyDomain, isEmpty, err := array.NonEmptyDomain()
 	assert.Nil(t, err)
-	assert.NotNil(t, nonEmptyDomain)
+	assert.Nil(t, nonEmptyDomain)
 	assert.True(t, isEmpty)
 
 	// Get MaxBufferSize, which is 0 because array is empty
@@ -279,7 +279,7 @@ func TestArrayEncryption(t *testing.T) {
 	// Get non empty domain, which is none since no data has been written
 	nonEmptyDomain, isEmpty, err := array.NonEmptyDomain()
 	assert.Nil(t, err)
-	assert.NotNil(t, nonEmptyDomain)
+	assert.Nil(t, nonEmptyDomain)
 	assert.True(t, isEmpty)
 
 	// Get MaxBufferSize, which is 0 because array is empty
