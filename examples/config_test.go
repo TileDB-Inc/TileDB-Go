@@ -37,8 +37,9 @@ package examples
 
 import (
 	"fmt"
-	"github.com/TileDB-Inc/TileDB-Go"
 	"os"
+
+	"github.com/TileDB-Inc/TileDB-Go"
 )
 
 var configFileName = "tiledb_config.txt"
