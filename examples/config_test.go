@@ -37,8 +37,9 @@ package examples
 
 import (
 	"fmt"
-	"github.com/TileDB-Inc/TileDB-Go"
 	"os"
+
+	"github.com/TileDB-Inc/TileDB-Go"
 )
 
 var configFileName = "tiledb_config.txt"
@@ -362,7 +363,7 @@ func ExampleConfig() {
 	// VFS connect timeout in ms is: 5000
 	// Tile cache size: 10000000
 	// Default settings:
-	// "sm.array_schema_cache_size" : "10000000"
+	// "sm.array_schema_cache_size" : ""
 	// "sm.check_coord_dups" : "true"
 	// "sm.check_coord_oob" : "true"
 	// "sm.check_global_order" : "true"
@@ -374,7 +375,7 @@ func ExampleConfig() {
 	// "sm.consolidation.steps" : "4294967295"
 	// "sm.dedup_coords" : "false"
 	// "sm.enable_signal_handlers" : "true"
-	// "sm.fragment_metadata_cache_size" : "10000000"
+	// "sm.fragment_metadata_cache_size" : ""
 	// "sm.num_async_threads" : "1"
 	// "sm.num_reader_threads" : "1"
 	// "sm.num_tbb_threads" : "-1"
@@ -384,8 +385,8 @@ func ExampleConfig() {
 	// "vfs.hdfs.kerb_ticket_cache_path" : ""
 	// "vfs.hdfs.name_node_uri" : ""
 	// "vfs.hdfs.username" : ""
-	// "vfs.max_batch_read_amplification" : "1"
-	// "vfs.max_batch_read_size" : "104857600"
+	// "vfs.max_batch_read_amplification" : ""
+	// "vfs.max_batch_read_size" : ""
 	// "vfs.min_parallel_size" : "10485760"
 	// "vfs.num_threads" : "2"
 	// "vfs.s3.aws_access_key_id" : ""
