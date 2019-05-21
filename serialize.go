@@ -146,11 +146,12 @@ func DeserializeArrayNonEmptyDomain(a *Array, buffer *Buffer, serializationType 
 }
 
 // SerializeQuery serializes a query
-func SerializeQuery(query *Query, serializationType SerializationType, clientSide bool) (*Buffer, error) {
-	buffer, err := NewBuffer(query.context)
-	if err != nil {
-		return nil, fmt.Errorf("Error serializing query: %s", query.context.LastError())
-	}
+func SerializeQuery(query *Query, serializationType SerializationType, clientSide bool) (*BufferList, error) {
+	bufferList := BufferList{context: query.context}
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&bufferList, func(bufferList *BufferList) {
+		bufferList.Free()
+	})
 
 	var cClientSide C.int32_t
 	if clientSide {
@@ -159,12 +160,12 @@ func SerializeQuery(query *Query, serializationType SerializationType, clientSid
 		cClientSide = 0
 	}
 
-	ret := C.tiledb_serialize_query(query.context.tiledbContext, query.tiledbQuery, C.tiledb_serialization_type_t(serializationType), cClientSide, buffer.tiledbBuffer)
+	ret := C.tiledb_serialize_query(query.context.tiledbContext, query.tiledbQuery, C.tiledb_serialization_type_t(serializationType), cClientSide, &bufferList.tiledbBufferList)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error serializing query: %s", query.context.LastError())
 	}
 
-	return buffer, nil
+	return &bufferList, nil
 }
 
 // DeserializeQuery deserializes a buffer into an existing query
