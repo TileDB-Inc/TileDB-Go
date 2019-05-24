@@ -12,6 +12,7 @@ import "C"
 
 import (
 	"fmt"
+	"reflect"
 	"runtime"
 	"unsafe"
 )
@@ -143,6 +144,69 @@ func DeserializeArrayNonEmptyDomain(a *Array, buffer *Buffer, serializationType 
 		}
 		return nonEmptyDomains, false, nil
 	}
+}
+
+// SerializeArrayMaxBufferSizes gets and serializes the array max buffer sizes for the given subarray
+func SerializeArrayMaxBufferSizes(a *Array, subarray interface{}, serializationType SerializationType) (*Buffer, error) {
+	// Create subarray void*
+	var cSubarray unsafe.Pointer
+	if reflect.TypeOf(subarray).Kind() != reflect.Slice {
+		return nil, fmt.Errorf("subarray passed must be a slice, type passed was: %s", reflect.TypeOf(subarray).Kind().String())
+	}
+	subarrayType := reflect.TypeOf(subarray).Elem().Kind()
+	switch subarrayType {
+	case reflect.Int:
+		tmpSubArray := subarray.([]int)
+		cSubarray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Int8:
+		tmpSubArray := subarray.([]int8)
+		cSubarray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Int16:
+		tmpSubArray := subarray.([]int16)
+		cSubarray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Int32:
+		tmpSubArray := subarray.([]int32)
+		cSubarray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Int64:
+		tmpSubArray := subarray.([]int64)
+		cSubarray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Uint:
+		tmpSubArray := subarray.([]uint)
+		cSubarray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Uint8:
+		tmpSubArray := subarray.([]uint8)
+		cSubarray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Uint16:
+		tmpSubArray := subarray.([]uint16)
+		cSubarray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Uint32:
+		tmpSubArray := subarray.([]uint32)
+		cSubarray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Uint64:
+		tmpSubArray := subarray.([]uint64)
+		cSubarray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Float32:
+		tmpSubArray := subarray.([]float32)
+		cSubarray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Float64:
+		tmpSubArray := subarray.([]float64)
+		cSubarray = unsafe.Pointer(&tmpSubArray[0])
+	default:
+		return nil, fmt.Errorf("unhandled subarray datatype: %s", subarrayType.String())
+	}
+
+	buffer := Buffer{context: a.context}
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
+		buffer.Free()
+	})
+
+	ret := C.tiledb_serialize_array_max_buffer_sizes(a.context.tiledbContext, a.tiledbArray, cSubarray, C.tiledb_serialization_type_t(serializationType), &buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error serializing array max buffer sizes: %s", a.context.LastError())
+	}
+
+	return &buffer, nil
 }
 
 // SerializeQuery serializes a query
