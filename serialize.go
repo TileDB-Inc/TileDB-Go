@@ -26,17 +26,18 @@ func SerializeArraySchema(schema *ArraySchema, serializationType SerializationTy
 		cClientSide = 0
 	}
 
-	buffer, err := NewBuffer(schema.context)
-	if err != nil {
-		return nil, fmt.Errorf("Error serializing array schema: %s", schema.context.LastError())
-	}
+	buffer := Buffer{context: schema.context}
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
+		buffer.Free()
+	})
 
-	ret := C.tiledb_serialize_array_schema(schema.context.tiledbContext, schema.tiledbArraySchema, C.tiledb_serialization_type_t(serializationType), cClientSide, buffer.tiledbBuffer)
+	ret := C.tiledb_serialize_array_schema(schema.context.tiledbContext, schema.tiledbArraySchema, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error serializing array schema: %s", schema.context.LastError())
 	}
 
-	return buffer, nil
+	return &buffer, nil
 }
 
 // DeserializeArraySchema deserializes a new array schema from the given buffer
@@ -90,18 +91,19 @@ func SerializeArrayNonEmptyDomain(a *Array, serializationType SerializationType)
 		return nil, fmt.Errorf("Error serializing array nonempty domain: %s", a.context.LastError())
 	}
 
-	buffer, err := NewBuffer(a.context)
-	if err != nil {
-		return nil, err
-	}
+	buffer := Buffer{context: schema.context}
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
+		buffer.Free()
+	})
 
 	var cClientSide = C.int32_t(0) // Currently this parameter is unused in libtiledb
-	ret = C.tiledb_serialize_array_nonempty_domain(a.context.tiledbContext, a.tiledbArray, unsafe.Pointer(&tmpDomain[0]), isEmpty, C.tiledb_serialization_type_t(serializationType), cClientSide, buffer.tiledbBuffer)
+	ret = C.tiledb_serialize_array_nonempty_domain(a.context.tiledbContext, a.tiledbArray, unsafe.Pointer(&tmpDomain[0]), isEmpty, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error serializing array nonempty domain: %s", a.context.LastError())
 	}
 
-	return buffer, nil
+	return &buffer, nil
 }
 
 // DeserializeArrayNonEmptyDomain deserializes an array nonempty domain
