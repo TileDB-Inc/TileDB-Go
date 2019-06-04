@@ -54,6 +54,22 @@ func (b *BufferList) NumBuffers() (uint, error) {
 	return uint(numBuffers), nil
 }
 
+// GetBuffer returns a Buffer at the given index in the list
+func (b *BufferList) GetBuffer(bufferIndex uint) (*Buffer, error) {
+	buffer := Buffer{context: b.context}
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
+		buffer.Free()
+	})
+
+	ret := C.tiledb_buffer_list_get_buffer(b.context.tiledbContext, b.tiledbBufferList, C.uint64_t(bufferIndex), &buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error getting tiledb buffer index %d from buffer list: %s", bufferIndex, b.context.LastError())
+	}
+
+	return &buffer, nil
+}
+
 // TotalSize returns total number of bytes in the buffers in the list
 func (b *BufferList) TotalSize() (uint64, error) {
 	var totalSize C.uint64_t
