@@ -730,10 +730,9 @@ func (q *Query) ResultBufferElements() (map[string][2]uint64, error) {
 			if err != nil {
 				return nil, fmt.Errorf("Could not get domainType for ResultBufferElements: %s", err)
 			}
-			domainTypeSize := uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(domainType)))
 
 			// Number of buffer elements is calculated
-			bufferElements := (*v[1]) / domainTypeSize
+			bufferElements := (*v[1]) / domainType.Size()
 			elements[attributeName] = [2]uint64{offsetElements, bufferElements}
 		} else {
 			// For fixed length attributes offset elements are always zero
@@ -755,10 +754,9 @@ func (q *Query) ResultBufferElements() (map[string][2]uint64, error) {
 			if err != nil {
 				return nil, fmt.Errorf("Could not get dataType for ResultBufferElements: %s", err)
 			}
-			dataTypeSize := uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(dataType)))
 
 			// Number of buffer elements is calculated
-			bufferElements := (*v[1]) / dataTypeSize
+			bufferElements := (*v[1]) / dataType.Size()
 			elements[attributeName] = [2]uint64{offsetElements, bufferElements}
 		}
 	}
@@ -970,8 +968,8 @@ func (q *Query) BufferSizeVar(attributeName string) (uint64, uint64, error) {
 		}
 	}
 
-	dataTypeSize := uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(datatype)))
-	offsetTypeSize := uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(TILEDB_UINT64)))
+	dataTypeSize := datatype.Size()
+	offsetTypeSize := TILEDB_UINT64.Size()
 
 	cattributeName := C.CString(attributeName)
 	defer C.free(unsafe.Pointer(cattributeName))
@@ -1031,7 +1029,7 @@ func (q *Query) BufferSize(attributeName string) (uint64, error) {
 		}
 	}
 
-	dataTypeSize := uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(datatype)))
+	dataTypeSize := datatype.Size()
 
 	cattributeName := C.CString(attributeName)
 	defer C.free(unsafe.Pointer(cattributeName))

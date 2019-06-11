@@ -81,8 +81,7 @@ func SerializeArrayNonEmptyDomain(a *Array, serializationType SerializationType)
 	if err != nil {
 		return nil, err
 	}
-	dataTypeSize := uint(C.tiledb_datatype_size(C.tiledb_datatype_t(domainType)))
-	subarraySize := 2 * ndims * dataTypeSize
+	subarraySize := 2 * ndims * uint(domainType.Size())
 
 	var isEmpty C.int32_t
 	tmpDomain := make([]uint8, subarraySize)
