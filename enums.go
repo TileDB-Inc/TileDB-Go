@@ -160,6 +160,11 @@ func (d Datatype) MakeSlice(numElements uint64) (interface{}, unsafe.Pointer, er
 	}
 }
 
+// Size returns the datatype size in bytes
+func (d Datatype) Size() uint64 {
+	return uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(d)))
+}
+
 // EncryptionType represents different encryption algorithms
 type EncryptionType uint8
 
