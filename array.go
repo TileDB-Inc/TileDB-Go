@@ -510,7 +510,7 @@ func (a *Array) MaxBufferElements(subarray interface{}) (map[string][2]uint64, e
 
 		// Get datatype size to convert byte lengths to needed buffer sizes
 		dataType, err := attribute.Type()
-		dataTypeSize := uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(dataType)))
+		dataTypeSize := dataType.Size()
 
 		// Get attribute name
 		name, err := attribute.Name()
@@ -548,12 +548,11 @@ func (a *Array) MaxBufferElements(subarray interface{}) (map[string][2]uint64, e
 	if err != nil {
 		return nil, fmt.Errorf("Could not get domainType for MaxBufferElements: %s", err)
 	}
-	domainTypeSize := uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(domainType)))
 	bufferValSize, err := a.MaxBufferSize(TILEDB_COORDS, subarray)
 	if err != nil {
 		return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
 	}
-	ret[TILEDB_COORDS] = [2]uint64{0, bufferValSize / domainTypeSize}
+	ret[TILEDB_COORDS] = [2]uint64{0, bufferValSize / domainType.Size()}
 
 	return ret, nil
 }
