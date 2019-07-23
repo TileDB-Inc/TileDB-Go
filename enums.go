@@ -7,6 +7,7 @@ package tiledb
 #include <tiledb/tiledb.h>
 #include <tiledb/tiledb_enum.h>
 #include <tiledb/tiledb_serialization.h>
+#include <stdlib.h>
 */
 import "C"
 
@@ -255,6 +256,13 @@ const (
 	// TILEDB_UNINITIALIZED Query not initialized.
 	TILEDB_UNINITIALIZED QueryStatus = C.TILEDB_UNINITIALIZED
 )
+
+func (q QueryStatus) String() string {
+	var cStatus *C.char
+	defer C.free(unsafe.Pointer(cStatus))
+	C.tiledb_query_status_to_str(C.tiledb_query_status_t(q), &cStatus)
+	return C.GoString(cStatus)
+}
 
 // QueryType read or write query
 type QueryType int8

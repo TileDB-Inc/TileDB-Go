@@ -38,9 +38,10 @@ package examples
 
 import (
 	"fmt"
-	"github.com/TileDB-Inc/TileDB-Go"
 	"os"
 	"unsafe"
+
+	"github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
@@ -220,7 +221,7 @@ func readReadingIncompleteArray() {
 
 	var queryStatus tiledb.QueryStatus
 
-	for {
+	for i := 0; i < 5; i++ {
 		// Submit the query
 		err = query.Submit()
 		checkError(err)
@@ -228,12 +229,19 @@ func readReadingIncompleteArray() {
 		queryStatus, err = query.Status()
 		checkError(err)
 
+		fmt.Println(queryStatus.String())
+
 		// Print out the results.
 		elements, err := query.ResultBufferElements()
 		checkError(err)
 		resultNum := elements["a1"][1]
+		fmt.Printf("resultNum=%d\n", resultNum)
 
-		if queryStatus == tiledb.TILEDB_INCOMPLETE && resultNum == 0 {
+		hasResults, err := query.HasResults()
+		checkError(err)
+		fmt.Printf("hasResults=%v\n", hasResults)
+
+		if queryStatus == tiledb.TILEDB_INCOMPLETE && !hasResults {
 			reallocateBuffers(&coords, &a1Data, &a2Off, &a2Data)
 			_, err = query.SetBuffer("a1", a1Data)
 			checkError(err)
