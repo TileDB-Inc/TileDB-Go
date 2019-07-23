@@ -19,7 +19,7 @@ Currently the following platforms are supported:
 ### Prerequisites
 This package requires the tiledb shared library be installed and on the system path. See the
 [official tiledb installation instructions](https://docs.tiledb.io/en/stable/installation.html)
-for installation methods.
+for installation methods. TileDB must be compiled with serialization support enabled.
 
 ### Go Installation
 
@@ -53,6 +53,7 @@ as such the below table reference which versions are compatible.
 | 0.3.X             | 1.4.X          |
 | 0.4.X             | 1.5.X          |
 | 0.5.X             | 1.5.X          |
+| 0.6.X             | 1.6.X          |
 
 ## Quickstart
 
