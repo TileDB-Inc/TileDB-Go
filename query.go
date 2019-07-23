@@ -66,6 +66,10 @@ func NewQuery(ctx *Context, array *Array) (*Query, error) {
 
 // Free tiledb_query_t that was allocated on heap in c
 func (q *Query) Free() {
+	q.bufferMutex.Lock()
+	defer q.bufferMutex.Unlock()
+	q.buffers = nil
+	q.resultBufferElements = nil
 	if q.tiledbQuery != nil {
 		C.tiledb_query_free(&q.tiledbQuery)
 	}
