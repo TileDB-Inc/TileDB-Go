@@ -107,6 +107,11 @@ func (d Datatype) ReflectKind() reflect.Kind {
 	}
 }
 
+// Size returns the datatype size in bytes
+func (d Datatype) Size() uint64 {
+	return uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(d)))
+}
+
 // EncryptionType represents different encryption algorithms
 type EncryptionType uint8
 
