@@ -242,7 +242,7 @@ func readReadingIncompleteArray() {
 			checkError(err)
 			_, err = query.SetCoordinates(coords)
 			checkError(err)
-		} else {
+		} else if resultNum > 0 {
 			elements, err := query.ResultBufferElements()
 			checkError(err)
 			printResultsReadingIncomplete(
@@ -268,4 +268,13 @@ func ExampleReadingIncompleteArray() {
 		err = os.RemoveAll(readingIncompleteArrayName)
 		checkError(err)
 	}
+
+	// Output: Printing results...
+	// Cell (1, 1), a1: 1, a2: a
+	// Reallocating...
+	// Printing results...
+	// Cell (2, 1), a1: 2, a2: bb
+	// Reallocating...
+	// Printing results...
+	// Cell (2, 2), a1: 3, a2: ccc
 }
