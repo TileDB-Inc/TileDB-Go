@@ -186,6 +186,7 @@ func (a *Array) Consolidate(config *Config) error {
 	if config == nil {
 		return fmt.Errorf("Config must not be nil for Consolidate")
 	}
+
 	curi := C.CString(a.uri)
 	defer C.free(unsafe.Pointer(curi))
 	ret := C.tiledb_array_consolidate(a.context.tiledbContext, curi, config.tiledbConfig)
@@ -203,6 +204,7 @@ func (a *Array) ConsolidateWithKey(encryptionType EncryptionType, key string, co
 	if config == nil {
 		return fmt.Errorf("Config must not be nil for ConsolidateWithKey")
 	}
+
 	ckey := unsafe.Pointer(C.CString(key))
 	defer C.free(ckey)
 	curi := C.CString(a.uri)
@@ -235,10 +237,70 @@ func (a *Array) QueryType() (QueryType, error) {
 	return QueryType(queryType), nil
 }
 
+// makeNonEmptyDomain creates a []NonEmptyDomain from a generic domain-typed slice
+func makeNonEmptyDomain(domain *Domain, domainSlice interface{}) ([]NonEmptyDomain, error) {
+	domainType, err := domain.Type()
+	if err != nil {
+		return nil, err
+	}
+	ndims, err := domain.NDim()
+	if err != nil {
+		return nil, err
+	}
+
+	nonEmptyDomains := make([]NonEmptyDomain, 0)
+	for i := uint(0); i < ndims; i++ {
+		dimension, err := domain.DimensionFromIndex(i)
+		if err != nil {
+			return nil, err
+		}
+		name, err := dimension.Name()
+		if err != nil {
+			return nil, err
+		}
+
+		switch domainType {
+		case TILEDB_INT8:
+			tmpDomain := domainSlice.([]int8)
+			nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []int8{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
+		case TILEDB_INT16:
+			tmpDomain := domainSlice.([]int16)
+			nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []int16{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
+		case TILEDB_INT32:
+			tmpDomain := domainSlice.([]int32)
+			nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []int32{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
+		case TILEDB_INT64:
+			tmpDomain := domainSlice.([]int64)
+			nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []int64{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
+		case TILEDB_UINT8:
+			tmpDomain := domainSlice.([]uint8)
+			nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []uint8{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
+		case TILEDB_UINT16:
+			tmpDomain := domainSlice.([]uint16)
+			nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []uint16{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
+		case TILEDB_UINT32:
+			tmpDomain := domainSlice.([]uint32)
+			nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []uint32{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
+		case TILEDB_UINT64:
+			tmpDomain := domainSlice.([]uint64)
+			nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []uint64{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
+		case TILEDB_FLOAT32:
+			tmpDomain := domainSlice.([]float32)
+			nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []float32{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
+		case TILEDB_FLOAT64:
+			tmpDomain := domainSlice.([]float64)
+			nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []float64{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
+		default:
+			return nil, fmt.Errorf("error creating non empty domain: unknown domain type")
+		}
+	}
+
+	return nonEmptyDomains, nil
+}
+
 // NonEmptyDomain retrieves the non-empty domain from an array
 // This returns the bounding coordinates for each dimension
 func (a *Array) NonEmptyDomain() ([]NonEmptyDomain, bool, error) {
-	nonEmptyDomains := make([]NonEmptyDomain, 0)
 	schema, err := a.Schema()
 	if err != nil {
 		return nil, false, err
@@ -259,212 +321,26 @@ func (a *Array) NonEmptyDomain() ([]NonEmptyDomain, bool, error) {
 		return nil, false, err
 	}
 
-	var ret C.int32_t
-	var isEmpty C.int32_t
-	switch domainType {
-
-	case TILEDB_INT8:
-		tmpDomain := make([]int8, 2*ndims)
-		ret = C.tiledb_array_get_non_empty_domain(a.context.tiledbContext, a.tiledbArray, unsafe.Pointer(&tmpDomain[0]), &isEmpty)
-		if ret != C.TILEDB_OK {
-			return nil, false, fmt.Errorf("Error in getting non empty domain for array: %s", a.context.LastError())
-		}
-		if isEmpty == 0 {
-			for i := uint(0); i < ndims; i++ {
-				dimension, err := domain.DimensionFromIndex(i)
-				if err != nil {
-					return nil, false, err
-				}
-
-				name, err := dimension.Name()
-				if err != nil {
-					return nil, false, err
-				}
-				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []int8{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
-			}
-		}
-	case TILEDB_INT16:
-		tmpDomain := make([]int16, 2*ndims)
-		ret = C.tiledb_array_get_non_empty_domain(a.context.tiledbContext, a.tiledbArray, unsafe.Pointer(&tmpDomain[0]), &isEmpty)
-		if ret != C.TILEDB_OK {
-			return nil, false, fmt.Errorf("Error in getting non empty domain for array: %s", a.context.LastError())
-		}
-		if isEmpty == 0 {
-			for i := uint(0); i < ndims; i++ {
-				dimension, err := domain.DimensionFromIndex(i)
-				if err != nil {
-					return nil, false, err
-				}
-
-				name, err := dimension.Name()
-				if err != nil {
-					return nil, false, err
-				}
-				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []int16{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
-			}
-		}
-	case TILEDB_INT32:
-		tmpDomain := make([]int32, 2*ndims)
-		ret = C.tiledb_array_get_non_empty_domain(a.context.tiledbContext, a.tiledbArray, unsafe.Pointer(&tmpDomain[0]), &isEmpty)
-		if ret != C.TILEDB_OK {
-			return nil, false, fmt.Errorf("Error in getting non empty domain for array: %s", a.context.LastError())
-		}
-		if isEmpty == 0 {
-			for i := uint(0); i < ndims; i++ {
-				dimension, err := domain.DimensionFromIndex(i)
-				if err != nil {
-					return nil, false, err
-				}
-
-				name, err := dimension.Name()
-				if err != nil {
-					return nil, false, err
-				}
-				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []int32{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
-			}
-		}
-	case TILEDB_INT64:
-		tmpDomain := make([]int64, 2*ndims)
-		ret = C.tiledb_array_get_non_empty_domain(a.context.tiledbContext, a.tiledbArray, unsafe.Pointer(&tmpDomain[0]), &isEmpty)
-		if ret != C.TILEDB_OK {
-			return nil, false, fmt.Errorf("Error in getting non empty domain for array: %s", a.context.LastError())
-		}
-		if isEmpty == 0 {
-			for i := uint(0); i < ndims; i++ {
-				dimension, err := domain.DimensionFromIndex(i)
-				if err != nil {
-					return nil, false, err
-				}
-
-				name, err := dimension.Name()
-				if err != nil {
-					return nil, false, err
-				}
-				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []int64{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
-			}
-		}
-	case TILEDB_UINT8:
-		tmpDomain := make([]uint8, 2*ndims)
-		ret = C.tiledb_array_get_non_empty_domain(a.context.tiledbContext, a.tiledbArray, unsafe.Pointer(&tmpDomain[0]), &isEmpty)
-		if ret != C.TILEDB_OK {
-			return nil, false, fmt.Errorf("Error in getting non empty domain for array: %s", a.context.LastError())
-		}
-		if isEmpty == 0 {
-			for i := uint(0); i < ndims; i++ {
-				dimension, err := domain.DimensionFromIndex(i)
-				if err != nil {
-					return nil, false, err
-				}
-
-				name, err := dimension.Name()
-				if err != nil {
-					return nil, false, err
-				}
-				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []uint8{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
-			}
-		}
-	case TILEDB_UINT16:
-		tmpDomain := make([]uint16, 2*ndims)
-		ret = C.tiledb_array_get_non_empty_domain(a.context.tiledbContext, a.tiledbArray, unsafe.Pointer(&tmpDomain[0]), &isEmpty)
-		if ret != C.TILEDB_OK {
-			return nil, false, fmt.Errorf("Error in getting non empty domain for array: %s", a.context.LastError())
-		}
-		if isEmpty == 0 {
-			for i := uint(0); i < ndims; i++ {
-				dimension, err := domain.DimensionFromIndex(i)
-				if err != nil {
-					return nil, false, err
-				}
-
-				name, err := dimension.Name()
-				if err != nil {
-					return nil, false, err
-				}
-				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []uint16{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
-			}
-		}
-	case TILEDB_UINT32:
-		tmpDomain := make([]uint32, 2*ndims)
-		ret = C.tiledb_array_get_non_empty_domain(a.context.tiledbContext, a.tiledbArray, unsafe.Pointer(&tmpDomain[0]), &isEmpty)
-		if ret != C.TILEDB_OK {
-			return nil, false, fmt.Errorf("Error in getting non empty domain for array: %s", a.context.LastError())
-		}
-		if isEmpty == 0 {
-			for i := uint(0); i < ndims; i++ {
-				dimension, err := domain.DimensionFromIndex(i)
-				if err != nil {
-					return nil, false, err
-				}
-
-				name, err := dimension.Name()
-				if err != nil {
-					return nil, false, err
-				}
-				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []uint32{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
-			}
-		}
-	case TILEDB_UINT64:
-		tmpDomain := make([]uint64, 2*ndims)
-		ret = C.tiledb_array_get_non_empty_domain(a.context.tiledbContext, a.tiledbArray, unsafe.Pointer(&tmpDomain[0]), &isEmpty)
-		if ret != C.TILEDB_OK {
-			return nil, false, fmt.Errorf("Error in getting non empty domain for array: %s", a.context.LastError())
-		}
-		if isEmpty == 0 {
-			for i := uint(0); i < ndims; i++ {
-				dimension, err := domain.DimensionFromIndex(i)
-				if err != nil {
-					return nil, false, err
-				}
-
-				name, err := dimension.Name()
-				if err != nil {
-					return nil, false, err
-				}
-				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []uint64{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
-			}
-		}
-	case TILEDB_FLOAT32:
-		tmpDomain := make([]float32, 2*ndims)
-		ret = C.tiledb_array_get_non_empty_domain(a.context.tiledbContext, a.tiledbArray, unsafe.Pointer(&tmpDomain[0]), &isEmpty)
-		if ret != C.TILEDB_OK {
-			return nil, false, fmt.Errorf("Error in getting non empty domain for array: %s", a.context.LastError())
-		}
-		if isEmpty == 0 {
-			for i := uint(0); i < ndims; i++ {
-				dimension, err := domain.DimensionFromIndex(i)
-				if err != nil {
-					return nil, false, err
-				}
-
-				name, err := dimension.Name()
-				if err != nil {
-					return nil, false, err
-				}
-				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []float32{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
-			}
-		}
-	case TILEDB_FLOAT64:
-		tmpDomain := make([]float64, 2*ndims)
-		ret = C.tiledb_array_get_non_empty_domain(a.context.tiledbContext, a.tiledbArray, unsafe.Pointer(&tmpDomain[0]), &isEmpty)
-		if ret != C.TILEDB_OK {
-			return nil, false, fmt.Errorf("Error in getting non empty domain for array: %s", a.context.LastError())
-		}
-		if isEmpty == 0 {
-			for i := uint(0); i < ndims; i++ {
-				dimension, err := domain.DimensionFromIndex(i)
-				if err != nil {
-					return nil, false, err
-				}
-
-				name, err := dimension.Name()
-				if err != nil {
-					return nil, false, err
-				}
-				nonEmptyDomains = append(nonEmptyDomains, NonEmptyDomain{DimensionName: name, Bounds: []float64{tmpDomain[i*2], tmpDomain[(i*2)+1]}})
-			}
-		}
+	tmpDomain, tmpDomainPtr, err := domainType.MakeSlice(uint64(2 * ndims))
+	if err != nil {
+		return nil, false, err
 	}
-	return nonEmptyDomains, isEmpty == 1, nil
+
+	var isEmpty C.int32_t
+	ret := C.tiledb_array_get_non_empty_domain(a.context.tiledbContext, a.tiledbArray, tmpDomainPtr, &isEmpty)
+	if ret != C.TILEDB_OK {
+		return nil, false, fmt.Errorf("Error in getting non empty domain for array: %s", a.context.LastError())
+	}
+
+	if isEmpty == 1 {
+		return nil, true, nil
+	} else {
+		nonEmptyDomains, err := makeNonEmptyDomain(domain, tmpDomain)
+		if err != nil {
+			return nil, false, err
+		}
+		return nonEmptyDomains, false, nil
+	}
 }
 
 // MaxBufferSize computes the upper bound on the buffer size (in bytes)
@@ -634,7 +510,7 @@ func (a *Array) MaxBufferElements(subarray interface{}) (map[string][2]uint64, e
 
 		// Get datatype size to convert byte lengths to needed buffer sizes
 		dataType, err := attribute.Type()
-		dataTypeSize := uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(dataType)))
+		dataTypeSize := dataType.Size()
 
 		// Get attribute name
 		name, err := attribute.Name()
@@ -672,12 +548,11 @@ func (a *Array) MaxBufferElements(subarray interface{}) (map[string][2]uint64, e
 	if err != nil {
 		return nil, fmt.Errorf("Could not get domainType for MaxBufferElements: %s", err)
 	}
-	domainTypeSize := uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(domainType)))
 	bufferValSize, err := a.MaxBufferSize(TILEDB_COORDS, subarray)
 	if err != nil {
 		return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
 	}
-	ret[TILEDB_COORDS] = [2]uint64{0, bufferValSize / domainTypeSize}
+	ret[TILEDB_COORDS] = [2]uint64{0, bufferValSize / domainType.Size()}
 
 	return ret, nil
 }

@@ -406,6 +406,15 @@ func TestQueryEffectiveBufferSize(t *testing.T) {
 	_, err = query.SetCoordinates(coordsWrite)
 	assert.Nil(t, err)
 
+	// Check the buffer sizes
+	offsetSize, dataSize, err := query.BufferSizeVar("a1")
+	assert.Nil(t, err)
+	assert.Equal(t, len(a1OffWrite), int(offsetSize))
+	assert.Equal(t, len(a1DataWrite), int(dataSize))
+	dataSize, err = query.BufferSize(TILEDB_COORDS)
+	assert.Nil(t, err)
+	assert.Equal(t, len(coordsWrite), int(dataSize))
+
 	// Perform the write, finalize and close the array.
 	err = query.Submit()
 	assert.Nil(t, err)

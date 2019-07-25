@@ -730,10 +730,9 @@ func (q *Query) ResultBufferElements() (map[string][2]uint64, error) {
 			if err != nil {
 				return nil, fmt.Errorf("Could not get domainType for ResultBufferElements: %s", err)
 			}
-			domainTypeSize := uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(domainType)))
 
 			// Number of buffer elements is calculated
-			bufferElements := (*v[1]) / domainTypeSize
+			bufferElements := (*v[1]) / domainType.Size()
 			elements[attributeName] = [2]uint64{offsetElements, bufferElements}
 		} else {
 			// For fixed length attributes offset elements are always zero
@@ -755,10 +754,9 @@ func (q *Query) ResultBufferElements() (map[string][2]uint64, error) {
 			if err != nil {
 				return nil, fmt.Errorf("Could not get dataType for ResultBufferElements: %s", err)
 			}
-			dataTypeSize := uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(dataType)))
 
 			// Number of buffer elements is calculated
-			bufferElements := (*v[1]) / dataTypeSize
+			bufferElements := (*v[1]) / dataType.Size()
 			elements[attributeName] = [2]uint64{offsetElements, bufferElements}
 		}
 	}
@@ -940,6 +938,118 @@ func (q *Query) BufferVar(attributeName string) ([]uint64, interface{}, error) {
 	}
 
 	return offsets, buffer, nil
+}
+
+// BufferSizeVar returns the size (in num elements) of the backing C buffers for the given variable-length attribute
+func (q *Query) BufferSizeVar(attributeName string) (uint64, uint64, error) {
+	var datatype Datatype
+	schema, err := q.array.Schema()
+	if err != nil {
+		return 0, 0, err
+	}
+
+	if attributeName == TILEDB_COORDS {
+		domain, err := schema.Domain()
+		if err != nil {
+			return 0, 0, err
+		}
+		datatype, err = domain.Type()
+		if err != nil {
+			return 0, 0, err
+		}
+	} else {
+		attribute, err := schema.AttributeFromName(attributeName)
+		if err != nil {
+			return 0, 0, err
+		}
+		datatype, err = attribute.Type()
+		if err != nil {
+			return 0, 0, err
+		}
+	}
+
+	dataTypeSize := datatype.Size()
+	offsetTypeSize := TILEDB_UINT64.Size()
+
+	cattributeName := C.CString(attributeName)
+	defer C.free(unsafe.Pointer(cattributeName))
+
+	var ret C.int32_t
+	var cbufferSize *C.uint64_t
+	var cbuffer unsafe.Pointer
+	var coffsetsSize *C.uint64_t
+	var coffsets *C.uint64_t
+	ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+	if ret != C.TILEDB_OK {
+		return 0, 0, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeName, q.context.LastError())
+	}
+
+	var offsetNumElements uint64
+	if coffsetsSize == nil {
+		offsetNumElements = 0
+	} else {
+		offsetNumElements = uint64(*coffsetsSize) / offsetTypeSize
+	}
+
+	var dataNumElements uint64
+	if cbufferSize == nil {
+		dataNumElements = 0
+	} else {
+		dataNumElements = uint64(*cbufferSize) / dataTypeSize
+	}
+
+	return offsetNumElements, dataNumElements, nil
+}
+
+// BufferSize returns the size (in num elements) of the backing C buffer for the given attribute
+func (q *Query) BufferSize(attributeName string) (uint64, error) {
+	var datatype Datatype
+	schema, err := q.array.Schema()
+	if err != nil {
+		return 0, err
+	}
+
+	if attributeName == TILEDB_COORDS {
+		domain, err := schema.Domain()
+		if err != nil {
+			return 0, err
+		}
+		datatype, err = domain.Type()
+		if err != nil {
+			return 0, err
+		}
+	} else {
+		attribute, err := schema.AttributeFromName(attributeName)
+		if err != nil {
+			return 0, err
+		}
+		datatype, err = attribute.Type()
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	dataTypeSize := datatype.Size()
+
+	cattributeName := C.CString(attributeName)
+	defer C.free(unsafe.Pointer(cattributeName))
+
+	var ret C.int32_t
+	var cbufferSize *C.uint64_t
+	var cbuffer unsafe.Pointer
+	ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeName, q.context.LastError())
+	}
+
+	var dataNumElements uint64
+	if cbufferSize == nil {
+		dataNumElements = 0
+	} else {
+		dataNumElements = uint64(*cbufferSize) / dataTypeSize
+	}
+
+	return dataNumElements, nil
 }
 
 // SetLayout sets the layout of the cells to be written or read
