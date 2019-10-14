@@ -366,6 +366,204 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) (*uint64,
 	return &bufferSize, nil
 }
 
+// AddRange adds a 1D range along a subarray dimension, which is in the form
+// (start, end, stride). All arguments should be references. The datatype of
+// the range components must be the same as the type of the domain of the
+// array in the query. The stride is currently unsupportedand set to nil.
+func (q *Query) AddRange(dimIdx uint32, start interface{}, end interface{}) error {
+	startReflectValue := reflect.ValueOf(start)
+	endReflectValue := reflect.ValueOf(end)
+
+	if startReflectValue.Kind() != endReflectValue.Kind() {
+		return fmt.Errorf(
+			"The datatype of the range components must be the same as the type, start was: %s, end was: %s",
+			startReflectValue.Kind().String(), endReflectValue.Kind().String())
+	}
+
+	var startBuffer unsafe.Pointer
+	var endBuffer unsafe.Pointer
+
+	startReflectType := reflect.TypeOf(start)
+	startType := startReflectType.Elem().Kind()
+
+	switch startType {
+	case reflect.Int:
+		tStart := start.(*int)
+		tEnd := end.(*int)
+		startBuffer = unsafe.Pointer(tStart)
+		endBuffer = unsafe.Pointer(tEnd)
+	case reflect.Int8:
+		tStart := start.(*int8)
+		tEnd := end.(*int8)
+		startBuffer = unsafe.Pointer(tStart)
+		endBuffer = unsafe.Pointer(tEnd)
+	case reflect.Int16:
+		tStart := start.(*int16)
+		tEnd := end.(*int16)
+		startBuffer = unsafe.Pointer(tStart)
+		endBuffer = unsafe.Pointer(tEnd)
+	case reflect.Int32:
+		tStart := start.(*int32)
+		tEnd := end.(*int32)
+		startBuffer = unsafe.Pointer(tStart)
+		endBuffer = unsafe.Pointer(tEnd)
+	case reflect.Int64:
+		tStart := start.(*int64)
+		tEnd := end.(*int64)
+		startBuffer = unsafe.Pointer(tStart)
+		endBuffer = unsafe.Pointer(tEnd)
+	case reflect.Uint:
+		tStart := start.(*uint)
+		tEnd := end.(*uint)
+		startBuffer = unsafe.Pointer(tStart)
+		endBuffer = unsafe.Pointer(tEnd)
+	case reflect.Uint8:
+		tStart := start.(*uint8)
+		tEnd := end.(*uint8)
+		startBuffer = unsafe.Pointer(tStart)
+		endBuffer = unsafe.Pointer(tEnd)
+	case reflect.Uint16:
+		tStart := start.(*uint16)
+		tEnd := end.(*uint16)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
+	case reflect.Uint32:
+		tStart := start.(*uint32)
+		tEnd := end.(*uint32)
+		startBuffer = unsafe.Pointer(tStart)
+		endBuffer = unsafe.Pointer(tEnd)
+	case reflect.Uint64:
+		tStart := start.(*uint64)
+		tEnd := end.(*uint64)
+		startBuffer = unsafe.Pointer(tStart)
+		endBuffer = unsafe.Pointer(tEnd)
+	case reflect.Float32:
+		tStart := start.(*float32)
+		tEnd := end.(*float32)
+		startBuffer = unsafe.Pointer(tStart)
+		endBuffer = unsafe.Pointer(tEnd)
+	case reflect.Float64:
+		tStart := start.(*float64)
+		tEnd := end.(*float64)
+		startBuffer = unsafe.Pointer(tStart)
+		endBuffer = unsafe.Pointer(tEnd)
+	default:
+		return fmt.Errorf("Unrecognized type of range component passed: %s",
+			startType.String())
+	}
+
+	ret := C.tiledb_query_add_range(
+		q.context.tiledbContext, q.tiledbQuery,
+		(C.uint32_t)(dimIdx), startBuffer, endBuffer, nil)
+
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf(
+			"Error adding query range: %s", q.context.LastError())
+	}
+
+	return nil
+}
+
+// GetRange retrieves a specific range of the query subarray
+// along a given dimension.
+// Returns (start, end, error)
+// Stride is not supported at the moment, always nil
+func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface{}, error) {
+	var pStart, pEnd, pStride unsafe.Pointer
+
+	ret := C.tiledb_query_get_range(
+		q.context.tiledbContext, q.tiledbQuery,
+		(C.uint32_t)(dimIdx), (C.uint64_t)(rangeNum), &pStart, &pEnd, &pStride)
+
+	if ret != C.TILEDB_OK {
+		return nil, nil, fmt.Errorf(
+			"Error retrieving query range: %s", q.context.LastError())
+	}
+
+	// We need to infer the datatype of the dimension represented by index
+	// dimIdx. That said:
+	// Get array schema
+	schema, err := q.array.Schema()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Get the domain object
+	domain, err := schema.Domain()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Use the index to retrieve the dimension object
+	dimension, err := domain.DimensionFromIndex(uint(dimIdx))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Finally get the dimension's type
+	datatype, err := dimension.Type()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Based on the type we fill in the interface{} objects for start, end
+	var start, end interface{}
+
+	switch datatype {
+	case TILEDB_INT8:
+		start = *(*int8)(unsafe.Pointer(pStart))
+		end = *(*int8)(unsafe.Pointer(pEnd))
+	case TILEDB_INT16:
+		start = *(*int16)(unsafe.Pointer(pStart))
+		end = *(*int16)(unsafe.Pointer(pEnd))
+	case TILEDB_INT32:
+		start = *(*int32)(unsafe.Pointer(pStart))
+		end = *(*int32)(unsafe.Pointer(pEnd))
+	case TILEDB_INT64:
+		start = *(*int64)(unsafe.Pointer(pStart))
+		end = *(*int64)(unsafe.Pointer(pEnd))
+	case TILEDB_UINT8:
+		start = *(*uint8)(unsafe.Pointer(pStart))
+		end = *(*uint8)(unsafe.Pointer(pEnd))
+	case TILEDB_UINT16:
+		start = *(*uint16)(unsafe.Pointer(pStart))
+		end = *(*uint16)(unsafe.Pointer(pEnd))
+	case TILEDB_UINT32:
+		start = *(*uint32)(unsafe.Pointer(pStart))
+		end = *(*uint32)(unsafe.Pointer(pEnd))
+	case TILEDB_UINT64:
+		start = *(*uint64)(unsafe.Pointer(pStart))
+		end = *(*uint64)(unsafe.Pointer(pEnd))
+	case TILEDB_FLOAT32:
+		start = *(*float32)(unsafe.Pointer(pStart))
+		end = *(*float32)(unsafe.Pointer(pEnd))
+	case TILEDB_FLOAT64:
+		start = *(*float64)(unsafe.Pointer(pStart))
+		end = *(*float64)(unsafe.Pointer(pEnd))
+	default:
+		return nil, nil, fmt.Errorf("Unrecognized dimension type: %d", datatype)
+	}
+
+	return start, end, nil
+}
+
+// GetRangeNum retrieves the number of ranges of the query subarray
+// along a given dimension.
+func (q *Query) GetRangeNum(dimIdx uint32) (*uint64, error) {
+	var rangeNum uint64
+
+	ret := C.tiledb_query_get_range_num(
+		q.context.tiledbContext, q.tiledbQuery,
+		(C.uint32_t)(dimIdx), (*C.uint64_t)(unsafe.Pointer(&rangeNum)))
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf(
+			"Error retrieving query range num: %s", q.context.LastError())
+	}
+
+	return &rangeNum, nil
+}
+
 // Buffer returns a slice backed by the underlying c buffer from tiledb
 func (q *Query) Buffer(attributeName string) (interface{}, error) {
 	var datatype Datatype
