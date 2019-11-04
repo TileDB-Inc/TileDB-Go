@@ -54,6 +54,7 @@ as such the below table reference which versions are compatible.
 | 0.4.X             | 1.5.X          |
 | 0.5.X             | 1.5.X          |
 | 0.6.X             | 1.6.X          |
+| 0.7.X             | 1.6.X          |
 
 ## Quickstart
 
