@@ -66,6 +66,32 @@ const (
 	TILEDB_STRING_UCS4 Datatype = C.TILEDB_STRING_UCS4
 	// TILEDB_ANY This can be any datatype. Must store (type tag, value) pairs.
 	TILEDB_ANY Datatype = C.TILEDB_ANY
+	// TILEDB_DATETIME_YEAR 64-bit signed integer representing year
+	TILEDB_DATETIME_YEAR Datatype = C.TILEDB_DATETIME_YEAR
+	// TILEDB_DATETIME_MONTH 64-bit signed integer representing month
+	TILEDB_DATETIME_MONTH Datatype = C.TILEDB_DATETIME_MONTH
+	// TILEDB_DATETIME_WEEK 64-bit signed integer representing week
+	TILEDB_DATETIME_WEEK Datatype = C.TILEDB_DATETIME_WEEK
+	// TILEDB_DATETIME_DAY 64-bit signed integer representing day
+	TILEDB_DATETIME_DAY Datatype = C.TILEDB_DATETIME_DAY
+	// TILEDB_DATETIME_HR 64-bit signed integer representing hour
+	TILEDB_DATETIME_HR Datatype = C.TILEDB_DATETIME_HR
+	// TILEDB_DATETIME_MIN 64-bit signed integer representing minute
+	TILEDB_DATETIME_MIN Datatype = C.TILEDB_DATETIME_MIN
+	// TILEDB_DATETIME_SEC 64-bit signed integer representing second
+	TILEDB_DATETIME_SEC Datatype = C.TILEDB_DATETIME_SEC
+	// TILEDB_DATETIME_MS 64-bit signed integer representing ms
+	TILEDB_DATETIME_MS Datatype = C.TILEDB_DATETIME_MS
+	// TILEDB_DATETIME_US 64-bit signed integer representing us
+	TILEDB_DATETIME_US Datatype = C.TILEDB_DATETIME_US
+	// TILEDB_DATETIME_NS 64-bit signed integer representing ns
+	TILEDB_DATETIME_NS Datatype = C.TILEDB_DATETIME_NS
+	// TILEDB_DATETIME_PS 64-bit signed integer representing ps
+	TILEDB_DATETIME_PS Datatype = C.TILEDB_DATETIME_PS
+	// TILEDB_DATETIME_FS 64-bit signed integer representing fs
+	TILEDB_DATETIME_FS Datatype = C.TILEDB_DATETIME_FS
+	// TILEDB_DATETIME_AS 64-bit signed integer representing as
+	TILEDB_DATETIME_AS Datatype = C.TILEDB_DATETIME_AS
 )
 
 // ReflectKind returns the reflect kind given a datatype
@@ -107,6 +133,8 @@ func (d Datatype) ReflectKind() reflect.Kind {
 		return reflect.Uint32
 	case TILEDB_ANY:
 		return reflect.Interface
+	case TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS:
+		return reflect.Int64
 	default:
 		return reflect.Interface
 	}
@@ -132,7 +160,7 @@ func (d Datatype) MakeSlice(numElements uint64) (interface{}, unsafe.Pointer, er
 		slice := make([]int32, numElements)
 		return slice, unsafe.Pointer(&slice[0]), nil
 
-	case TILEDB_INT64:
+	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS:
 		slice := make([]int64, numElements)
 		return slice, unsafe.Pointer(&slice[0]), nil
 
