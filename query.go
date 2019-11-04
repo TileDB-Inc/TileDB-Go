@@ -615,7 +615,7 @@ func (q *Query) Buffer(attributeName string) (interface{}, error) {
 		length := (*cbufferSize) / C.sizeof_int32_t
 		buffer = (*[1 << 30]int32)(cbuffer)[:length:length]
 
-	case TILEDB_INT64:
+	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int64_t
 		buffer = (*[1 << 30]int64)(cbuffer)[:length:length]
@@ -1023,7 +1023,7 @@ func (q *Query) BufferVar(attributeName string) ([]uint64, interface{}, error) {
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
-	case TILEDB_INT64:
+	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int64_t
 		buffer = (*[1 << 30]int64)(cbuffer)[:length:length]
