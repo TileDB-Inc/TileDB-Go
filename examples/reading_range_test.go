@@ -1,5 +1,5 @@
 /**
- * @file   range_test.go
+ * @file   rerading_range_test.go
  *
  * @section LICENSE
  *
@@ -27,8 +27,8 @@
  *
  * @section DESCRIPTION
  *
- * This is a part of the TileDB range tutorial:
- *   https://docs.tiledb.io/en/latest/range.html
+ * This is a part of the TileDB reading_range tutorial:
+ *   https://docs.tiledb.io/en/latest/reading_range.html
  *
  * When run, this program will create a simple 2D dense array, write some data
  * to it, and read a slice of the data back in the layout of the user's choice
@@ -46,9 +46,9 @@ import (
 )
 
 // Name of array.
-var rangeArrayName = "range_array"
+var readRangeArrayName = "read_range_array"
 
-func createRangeArray() {
+func createReadRangeArray() {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -79,13 +79,13 @@ func createRangeArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, rangeArrayName)
+	array, err := tiledb.NewArray(ctx, readRangeArrayName)
 	checkError(err)
 	err = array.Create(schema)
 	checkError(err)
 }
 
-func writeRangeArray() {
+func writeRearRangeArray() {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
@@ -94,7 +94,7 @@ func writeRangeArray() {
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
 	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, rangeArrayName)
+	array, err := tiledb.NewArray(ctx, readRangeArrayName)
 	checkError(err)
 	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
@@ -112,103 +112,86 @@ func writeRangeArray() {
 	checkError(err)
 }
 
-func addRange() {
+func readReadRangeArray(dimIdx uint32) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, rangeArrayName)
+	array, err := tiledb.NewArray(ctx, readRangeArrayName)
 	checkError(err)
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
+
+	// Prepare the vector that will hold the result (of size 6 elements)
+	data := make([]int32, 12)
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
 
-	// Try with invalid dimension types
-	err = query.AddRange(0, float32(1), float32(3))
-	fmt.Println(err)
-
-	// Try with invalid dimension index
-	err = query.AddRange(2, int32(1), int32(3))
-	fmt.Println(err)
-
-	// Try using valid index, range
-	err = query.AddRange(0, int32(1), int32(3))
+	err = query.AddRange(dimIdx, int32(1), int32(1))
+	checkError(err)
+	err = query.AddRange(dimIdx, int32(3), int32(4))
 	checkError(err)
 
+	numOfRanges, err := query.GetRangeNum(dimIdx)
+	checkError(err)
+	fmt.Printf("Num of Ranges: %d\n", *numOfRanges)
+
+	var I uint64
+	for I = 0; I < *numOfRanges; I++ {
+		start, end, err := query.GetRange(dimIdx, I)
+		checkError(err)
+		fmt.Printf("Range for dimension: %d, start: %v, end: %v\n", dimIdx, start, end)
+	}
+
+	ranges, err := query.GetRanges()
+	checkError(err)
+
+	fmt.Printf("Ranges: %v\n", ranges)
+
+	_, err = query.SetBuffer("a", data)
+	checkError(err)
+
+	// Submit the query and close the array.
+	err = query.Submit()
+	checkError(err)
 	err = array.Close()
 	checkError(err)
+
+	// Print out the results.
+	fmt.Println(data)
 }
 
-func getRangeNum() {
-	ctx, err := tiledb.NewContext(nil)
-	checkError(err)
-
-	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, rangeArrayName)
-	checkError(err)
-	err = array.Open(tiledb.TILEDB_READ)
-	checkError(err)
-
-	// Prepare the query
-	query, err := tiledb.NewQuery(ctx, array)
-	checkError(err)
-
-	// Try using valid index
-	rangeNum, err := query.GetRangeNum(0)
-	checkError(err)
-
-	fmt.Printf("Number of ranges across dimension 0 is: %d\n", *rangeNum)
-
-	err = array.Close()
-	checkError(err)
-}
-
-func getRange() {
-	ctx, err := tiledb.NewContext(nil)
-	checkError(err)
-
-	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, rangeArrayName)
-	checkError(err)
-	err = array.Open(tiledb.TILEDB_READ)
-	checkError(err)
-
-	// Prepare the query
-	query, err := tiledb.NewQuery(ctx, array)
-	checkError(err)
-
-	// Try using valid dimension index and range index
-	start, end, err := query.GetRange(0, 0)
-	checkError(err)
-
-	fmt.Printf("Range start for dimension 0, range 0 is: %d\n", start.(int32))
-	fmt.Printf("Range end for dimension 0, range 0 is: %d\n", end.(int32))
-
-	err = array.Close()
-	checkError(err)
-}
-
-// ExampleRange shows an example of creation, writing of a dense array
-// and useage of range functions
-func ExampleRange() {
-	createRangeArray()
-	writeRangeArray()
-	addRange()
-	getRangeNum()
-	getRange()
+// ExampleReadRangeArray shows and example creation, writing and range reading
+// of a dense array
+func ExampleReadRangeArray() {
+	createReadRangeArray()
+	writeRearRangeArray()
+	// Rows
+	readReadRangeArray(0)
+	// Columns
+	readReadRangeArray(1)
 
 	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(rangeArrayName); err == nil {
-		err = os.RemoveAll(rangeArrayName)
+	if _, err := os.Stat(readRangeArrayName); err == nil {
+		err = os.RemoveAll(readRangeArrayName)
 		checkError(err)
 	}
 
-	// Output: Error adding query range: [TileDB::Subarray] Error: Cannot add range to dimension; Range must be in the domain the subarray is constructed from
-	// Error adding query range: [TileDB::Subarray] Error: Cannot add range to dimension; Invalid dimension index
-	// Number of ranges across dimension 0 is: 1
-	// Range start for dimension 0, range 0 is: 1
-	// Range end for dimension 0, range 0 is: 4
+	// Output: Num of Ranges: 2
+	// Range for dimension: 0, start: 1, end: 1
+	// Range for dimension: 0, start: 3, end: 4
+	// Ranges: [[{1 1} {3 4}] [{1 4}]]
+	// [1 2 3 4 9 10 11 12 13 14 15 16]
+	// Num of Ranges: 2
+	// Range for dimension: 1, start: 1, end: 1
+	// Range for dimension: 1, start: 3, end: 4
+	// Ranges: [[{1 4}] [{1 1} {3 4}]]
+	// [1 3 4 5 7 8 9 11 12 13 15 16]
 }
+
+//  1  2  3  4
+//  5  6  7  8
+//  9 10 11 12
+// 13 14 15 16
