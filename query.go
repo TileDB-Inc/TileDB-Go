@@ -27,6 +27,12 @@ type Query struct {
 	resultBufferElements map[string][2]*uint64
 }
 
+// RangeLimits defines a query range
+type RangeLimits struct {
+	start interface{}
+	end   interface{}
+}
+
 /*
 NewQuery Creates a TileDB query object.
 
@@ -367,9 +373,9 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) (*uint64,
 }
 
 // AddRange adds a 1D range along a subarray dimension, which is in the form
-// (start, end, stride). All arguments should be references. The datatype of
-// the range components must be the same as the type of the domain of the
-// array in the query. The stride is currently unsupportedand set to nil.
+// (start, end, stride). The datatype of the range components must be the same
+// as the type of the domain of the array in the query.
+// The stride is currently unsupported and set to nil.
 func (q *Query) AddRange(dimIdx uint32, start interface{}, end interface{}) error {
 	startReflectValue := reflect.ValueOf(start)
 	endReflectValue := reflect.ValueOf(end)
@@ -384,69 +390,69 @@ func (q *Query) AddRange(dimIdx uint32, start interface{}, end interface{}) erro
 	var endBuffer unsafe.Pointer
 
 	startReflectType := reflect.TypeOf(start)
-	startType := startReflectType.Elem().Kind()
+	startType := startReflectType.Kind()
 
 	switch startType {
 	case reflect.Int:
-		tStart := start.(*int)
-		tEnd := end.(*int)
-		startBuffer = unsafe.Pointer(tStart)
-		endBuffer = unsafe.Pointer(tEnd)
+		tStart := start.(int)
+		tEnd := end.(int)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
 	case reflect.Int8:
-		tStart := start.(*int8)
-		tEnd := end.(*int8)
-		startBuffer = unsafe.Pointer(tStart)
-		endBuffer = unsafe.Pointer(tEnd)
+		tStart := start.(int8)
+		tEnd := end.(int8)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
 	case reflect.Int16:
-		tStart := start.(*int16)
-		tEnd := end.(*int16)
-		startBuffer = unsafe.Pointer(tStart)
-		endBuffer = unsafe.Pointer(tEnd)
+		tStart := start.(int16)
+		tEnd := end.(int16)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
 	case reflect.Int32:
-		tStart := start.(*int32)
-		tEnd := end.(*int32)
-		startBuffer = unsafe.Pointer(tStart)
-		endBuffer = unsafe.Pointer(tEnd)
+		tStart := start.(int32)
+		tEnd := end.(int32)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
 	case reflect.Int64:
-		tStart := start.(*int64)
-		tEnd := end.(*int64)
-		startBuffer = unsafe.Pointer(tStart)
-		endBuffer = unsafe.Pointer(tEnd)
+		tStart := start.(int64)
+		tEnd := end.(int64)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
 	case reflect.Uint:
-		tStart := start.(*uint)
-		tEnd := end.(*uint)
-		startBuffer = unsafe.Pointer(tStart)
-		endBuffer = unsafe.Pointer(tEnd)
+		tStart := start.(uint)
+		tEnd := end.(uint)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
 	case reflect.Uint8:
-		tStart := start.(*uint8)
-		tEnd := end.(*uint8)
-		startBuffer = unsafe.Pointer(tStart)
-		endBuffer = unsafe.Pointer(tEnd)
+		tStart := start.(uint8)
+		tEnd := end.(uint8)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
 	case reflect.Uint16:
-		tStart := start.(*uint16)
-		tEnd := end.(*uint16)
+		tStart := start.(uint16)
+		tEnd := end.(uint16)
 		startBuffer = unsafe.Pointer(&tStart)
 		endBuffer = unsafe.Pointer(&tEnd)
 	case reflect.Uint32:
-		tStart := start.(*uint32)
-		tEnd := end.(*uint32)
-		startBuffer = unsafe.Pointer(tStart)
-		endBuffer = unsafe.Pointer(tEnd)
+		tStart := start.(uint32)
+		tEnd := end.(uint32)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
 	case reflect.Uint64:
-		tStart := start.(*uint64)
-		tEnd := end.(*uint64)
-		startBuffer = unsafe.Pointer(tStart)
-		endBuffer = unsafe.Pointer(tEnd)
+		tStart := start.(uint64)
+		tEnd := end.(uint64)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
 	case reflect.Float32:
-		tStart := start.(*float32)
-		tEnd := end.(*float32)
-		startBuffer = unsafe.Pointer(tStart)
-		endBuffer = unsafe.Pointer(tEnd)
+		tStart := start.(float32)
+		tEnd := end.(float32)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
 	case reflect.Float64:
-		tStart := start.(*float64)
-		tEnd := end.(*float64)
-		startBuffer = unsafe.Pointer(tStart)
-		endBuffer = unsafe.Pointer(tEnd)
+		tStart := start.(float64)
+		tEnd := end.(float64)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
 	default:
 		return fmt.Errorf("Unrecognized type of range component passed: %s",
 			startType.String())
@@ -545,6 +551,53 @@ func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface
 	}
 
 	return start, end, nil
+}
+
+// GetRanges gets the number of dimensions from the array under current query
+// and builds an array of dimensions that have as memmbers arrays of ranges
+func (q *Query) GetRanges() ([][]RangeLimits, error) {
+	// We need to infer the datatype of the dimension represented by index
+	// dimIdx. That said:
+	// Get array schema
+	schema, err := q.array.Schema()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the domain object
+	domain, err := schema.Domain()
+	if err != nil {
+		return nil, err
+	}
+
+	// Use the index to retrieve the dimension object
+	nDim, err := domain.NDim()
+	if err != nil {
+		return nil, err
+	}
+
+	var dimIdx uint32
+
+	ranges := make([][]RangeLimits, nDim)
+	for dimIdx = 0; dimIdx < uint32(nDim); dimIdx++ {
+		numOfRanges, err := q.GetRangeNum(dimIdx)
+		if err != nil {
+			return nil, err
+		}
+
+		var I uint64
+		ranges[dimIdx] = make([]RangeLimits, 0)
+		for I = 0; I < *numOfRanges; I++ {
+			start, end, err := q.GetRange(dimIdx, I)
+			if err != nil {
+				return nil, err
+			}
+
+			ranges[dimIdx] = append(ranges[dimIdx], RangeLimits{start: start, end: end})
+		}
+	}
+
+	return ranges, err
 }
 
 // GetRangeNum retrieves the number of ranges of the query subarray
