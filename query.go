@@ -9,6 +9,7 @@ package tiledb
 import "C"
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"runtime"
@@ -555,7 +556,7 @@ func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface
 
 // GetRanges gets the number of dimensions from the array under current query
 // and builds an array of dimensions that have as memmbers arrays of ranges
-func (q *Query) GetRanges() ([][]RangeLimits, error) {
+func (q *Query) GetRanges() (map[string][]RangeLimits, error) {
 	// We need to infer the datatype of the dimension represented by index
 	// dimIdx. That said:
 	// Get array schema
@@ -576,28 +577,89 @@ func (q *Query) GetRanges() ([][]RangeLimits, error) {
 		return nil, err
 	}
 
-	var dimIdx uint32
+	var dimIdx uint
 
-	ranges := make([][]RangeLimits, nDim)
-	for dimIdx = 0; dimIdx < uint32(nDim); dimIdx++ {
-		numOfRanges, err := q.GetRangeNum(dimIdx)
+	rangeMap := make(map[string][]RangeLimits)
+	for dimIdx = 0; dimIdx < nDim; dimIdx++ {
+		// Get dimension object
+		dimension, err := domain.DimensionFromIndex(dimIdx)
+		if err != nil {
+			return nil, err
+		}
+		// Get name from dimension
+		name, err := dimension.Name()
+		if err != nil {
+			return nil, err
+		}
+		// Get number of renges to iterate
+		numOfRanges, err := q.GetRangeNum(uint32(dimIdx))
 		if err != nil {
 			return nil, err
 		}
 
 		var I uint64
-		ranges[dimIdx] = make([]RangeLimits, 0)
+		rangeArray := make([]RangeLimits, 0)
 		for I = 0; I < *numOfRanges; I++ {
-			start, end, err := q.GetRange(dimIdx, I)
+			// Iterate through ranges
+			start, end, err := q.GetRange(uint32(dimIdx), I)
+			if err != nil {
+				return nil, err
+			}
+			// Append range to range Array
+			rangeArray = append(rangeArray, RangeLimits{start: start, end: end})
+		}
+		// key: name (string), value: rangeArray ([]RangeLimits)
+		rangeMap[name] = rangeArray
+	}
+
+	return rangeMap, err
+}
+
+// JSONFromRanges returns a JSON represenation of query ranges
+func (q *Query) JSONFromRanges() (*string, error) {
+	rangeMap, err := q.GetRanges()
+	if err != nil {
+		return nil, err
+	}
+
+	var rangesJSON string = "{"
+
+	rangeMapIndex := 0
+	for dimensionName, rangeArray := range rangeMap {
+		numOfRanges := len(rangeArray)
+		rangesJSON += "\"" + dimensionName + "\"" + ":["
+		for I := 0; I < numOfRanges; I++ {
+			start, err := json.Marshal(rangeArray[I].start)
 			if err != nil {
 				return nil, err
 			}
 
-			ranges[dimIdx] = append(ranges[dimIdx], RangeLimits{start: start, end: end})
+			end, err := json.Marshal(rangeArray[I].end)
+			if err != nil {
+				return nil, err
+			}
+
+			r := fmt.Sprintf("{\"start\": %s, \"end\": %s}", string(start), string(end))
+
+			if I < numOfRanges-1 {
+				rangesJSON = rangesJSON + r + ","
+			} else {
+				rangesJSON = rangesJSON + r
+			}
 		}
+
+		if rangeMapIndex < len(rangeMap)-1 {
+			rangesJSON += "]" + ","
+		} else {
+			rangesJSON += "]"
+		}
+
+		rangeMapIndex++
 	}
 
-	return ranges, err
+	rangesJSON += "}"
+
+	return &rangesJSON, nil
 }
 
 // GetRangeNum retrieves the number of ranges of the query subarray
