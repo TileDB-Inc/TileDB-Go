@@ -150,6 +150,11 @@ func readReadRangeArray(dimIdx uint32) {
 
 	fmt.Printf("Ranges: %v\n", ranges)
 
+	rangesJSON, err := query.JSONFromRanges()
+	checkError(err)
+
+	fmt.Printf("Ranges JSON: %s\n", *rangesJSON)
+
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
 
@@ -182,12 +187,14 @@ func ExampleReadRangeArray() {
 	// Output: Num of Ranges: 2
 	// Range for dimension: 0, start: 1, end: 1
 	// Range for dimension: 0, start: 3, end: 4
-	// Ranges: [[{1 1} {3 4}] [{1 4}]]
+	// Ranges: map[cols:[{1 4}] rows:[{1 1} {3 4}]]
+	// Ranges JSON: {"rows":[{"start": 1, "end": 1},{"start": 3, "end": 4}],"cols":[{"start": 1, "end": 4}]}
 	// [1 2 3 4 9 10 11 12 13 14 15 16]
 	// Num of Ranges: 2
 	// Range for dimension: 1, start: 1, end: 1
 	// Range for dimension: 1, start: 3, end: 4
-	// Ranges: [[{1 4}] [{1 1} {3 4}]]
+	// Ranges: map[cols:[{1 1} {3 4}] rows:[{1 4}]]
+	// Ranges JSON: {"rows":[{"start": 1, "end": 4}],"cols":[{"start": 1, "end": 1},{"start": 3, "end": 4}]}
 	// [1 3 4 5 7 8 9 11 12 13 15 16]
 }
 
@@ -195,3 +202,22 @@ func ExampleReadRangeArray() {
 //  5  6  7  8
 //  9 10 11 12
 // 13 14 15 16
+
+// {
+// 	"cols":[
+// 	   {
+// 		  "start":1,
+// 		  "end":4
+// 	   }
+// 	],
+// 	"rows":[
+// 	   {
+// 		  "start":1,
+// 		  "end":1
+// 	   },
+// 	   {
+// 		  "start":3,
+// 		  "end":4
+// 	   }
+// 	]
+//  }
