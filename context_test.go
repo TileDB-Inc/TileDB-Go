@@ -99,3 +99,17 @@ func TestContextIsFSSupported(t *testing.T) {
 	_, ctxErr := context.IsSupportedFS(TILEDB_S3)
 	assert.Nil(t, ctxErr)
 }
+
+func TestContextSetTag(t *testing.T) {
+	context, err := NewContext(nil)
+	assert.Nil(t, err)
+	err = context.SetTag("key", "value")
+	assert.Nil(t, err)
+}
+
+func TestContextSetDefaultTags(t *testing.T) {
+	context, err := NewContext(nil)
+	assert.Nil(t, err)
+	err = context.SetDefaultTags()
+	assert.Nil(t, err)
+}

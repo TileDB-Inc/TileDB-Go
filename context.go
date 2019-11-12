@@ -99,3 +99,39 @@ func (c *Context) IsSupportedFS(fs FS) (bool, error) {
 
 	return true, nil
 }
+
+// SetTag, sets context tag
+func (c *Context) SetTag(key string, value string) error {
+	ckey := C.CString(key)
+	defer C.free(unsafe.Pointer(ckey))
+	cvalue := C.CString(value)
+	defer C.free(unsafe.Pointer(cvalue))
+
+	ret := C.tiledb_ctx_set_tag(c.tiledbContext, ckey, cvalue)
+
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error in setting tag")
+	}
+
+	return nil
+}
+
+// SetTag, sets context tag
+func (c *Context) SetDefaultTags() error {
+	err := c.SetTag("x-tiledb-api-language", "go")
+	if err != nil {
+		return err
+	}
+
+	err = c.SetTag("x-tiledb-api-language-version", "0.8.0")
+	if err != nil {
+		return err
+	}
+
+	err = c.SetTag("x-tiledb-api-sys-platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
