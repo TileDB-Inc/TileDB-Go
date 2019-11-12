@@ -106,10 +106,3 @@ func TestContextSetTag(t *testing.T) {
 	err = context.SetTag("key", "value")
 	assert.Nil(t, err)
 }
-
-func TestContextSetDefaultTags(t *testing.T) {
-	context, err := NewContext(nil)
-	assert.Nil(t, err)
-	err = context.SetDefaultTags()
-	assert.Nil(t, err)
-}

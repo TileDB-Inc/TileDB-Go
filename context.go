@@ -45,6 +45,8 @@ func NewContext(config *Config) (*Context, error) {
 		context.Free()
 	})
 
+	context.setDefaultTags()
+
 	return &context, nil
 }
 
@@ -116,8 +118,7 @@ func (c *Context) SetTag(key string, value string) error {
 	return nil
 }
 
-// SetTag, sets context tag
-func (c *Context) SetDefaultTags() error {
+func (c *Context) setDefaultTags() error {
 	err := c.SetTag("x-tiledb-api-language", "go")
 	if err != nil {
 		return err
