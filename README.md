@@ -23,23 +23,7 @@ for installation methods. TileDB must be compiled with serialization support ena
 
 ### Go Installation
 
-To install these bindings you can use go get:
-
-```bash
- go get -v github.com/TileDB-Inc/TileDB-Go
-```
-
-To install package test dependencies:
-
-```bash
-go get -vt github.com/TileDB-Inc/TileDB-Go
-```
-
-Package tests can be run with:
-
-```bash
-go test github.com/TileDB-Inc/TileDB-Go
-```
+For installation instructions please visit [Quick Install](https://docs.tiledb.com/developer/installation/quick-install) in the docs
 
 ## Compatibility
 
@@ -55,14 +39,15 @@ as such the below table reference which versions are compatible.
 | 0.5.X             | 1.5.X          |
 | 0.6.X             | 1.6.X          |
 | 0.7.X             | 1.6.X          |
+| 0.8.X             | 1.7.X          |
 
 ## Quickstart
 
 TileDB core documentation has a good
-[quickstart guide](https://docs.tiledb.io/en/latest/quickstart.html) .
+[quickstart guide](https://docs.tiledb.com/developer/quickstart) .
 The two complete examples in the guide are
-[quickstart_dense_test.go](examples/quickstart_dense_test.go) and
-[quickstart_sparse_test.go](examples/quickstart_sparse_test.go).
+[quickstart_dense_test.go](https://docs.tiledb.com/developer/quickstart#dense-array) and
+[quickstart_sparse_test.go](https://docs.tiledb.com/developer/quickstart#sparse-array).
 More examples in the [examples](examples) folder demonstrate several features of 
 the library.
 
