@@ -25,22 +25,6 @@ for installation methods. TileDB must be compiled with serialization support ena
 
 For installation instructions please visit [Quick Install](https://docs.tiledb.com/developer/installation/quick-install) in the docs
 
-## Compatibility
-
-TileDB-Go follows semantic versioning. Currently tiledb core library does not,
-as such the below table reference which versions are compatible.
-
-| TileDB-Go Version | TileDB Version |
-| ----------------- | -------------- |
-| 0.1.X             | 1.3.X          |
-| 0.2.X             | 1.4.X          |
-| 0.3.X             | 1.4.X          |
-| 0.4.X             | 1.5.X          |
-| 0.5.X             | 1.5.X          |
-| 0.6.X             | 1.6.X          |
-| 0.7.X             | 1.6.X          |
-| 0.8.X             | 1.7.X          |
-
 ## Quickstart
 
 TileDB core documentation has a good
@@ -156,6 +140,23 @@ func main() {
 	// Output: [2 3 4 6 7 8]
 }
 ```
+
+## Compatibility
+
+TileDB-Go follows semantic versioning. Currently tiledb core library does not,
+as such the below table reference which versions are compatible.
+
+| TileDB-Go Version | TileDB Version |
+| ----------------- | -------------- |
+| 0.1.X             | 1.3.X          |
+| 0.2.X             | 1.4.X          |
+| 0.3.X             | 1.4.X          |
+| 0.4.X             | 1.5.X          |
+| 0.5.X             | 1.5.X          |
+| 0.6.X             | 1.6.X          |
+| 0.7.X             | 1.6.X          |
+| 0.8.X             | 1.7.X          |
+
 
 ## Missing Functionality
 
