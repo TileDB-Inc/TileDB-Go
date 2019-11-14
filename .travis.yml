@@ -3,12 +3,24 @@ language: go
 go:
   - "1.x"
 
-dist: trusty
+dist: xenial
 
 matrix:
   include:
     - os: linux
+      addons:
+        apt:
+          packages:
+            - libcurl4-openssl-dev
+            - libssl-dev
+          update: true
     - os: osx
+      addons:
+        homebrew:
+          packages:
+            - openssl
+            - libcurl
+          update: true
 
 install:
     - source scripts/ci_install_tiledb.sh
