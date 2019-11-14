@@ -526,7 +526,7 @@ func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface
 	case TILEDB_INT32:
 		start = *(*int32)(unsafe.Pointer(pStart))
 		end = *(*int32)(unsafe.Pointer(pEnd))
-	case TILEDB_INT64:
+	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS:
 		start = *(*int64)(unsafe.Pointer(pStart))
 		end = *(*int64)(unsafe.Pointer(pEnd))
 	case TILEDB_UINT8:
