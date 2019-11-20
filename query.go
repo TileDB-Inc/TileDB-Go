@@ -34,6 +34,15 @@ type RangeLimits struct {
 	end   interface{}
 }
 
+// MarshalJSON implements the Marshaler interface for RangeLimits
+func (r RangeLimits) MarshalJSON() ([]byte, error) {
+	rangeLimitMap := make(map[string]interface{}, 0)
+	rangeLimitMap["end"] = r.end
+	rangeLimitMap["start"] = r.start
+
+	return json.Marshal(rangeLimitMap)
+}
+
 /*
 NewQuery Creates a TileDB query object.
 
@@ -613,53 +622,6 @@ func (q *Query) GetRanges() (map[string][]RangeLimits, error) {
 	}
 
 	return rangeMap, err
-}
-
-// JSONFromRanges returns a JSON represenation of query ranges
-func (q *Query) JSONFromRanges() (*string, error) {
-	rangeMap, err := q.GetRanges()
-	if err != nil {
-		return nil, err
-	}
-
-	var rangesJSON string = "{"
-
-	rangeMapIndex := 0
-	for dimensionName, rangeArray := range rangeMap {
-		numOfRanges := len(rangeArray)
-		rangesJSON += "\"" + dimensionName + "\"" + ":["
-		for I := 0; I < numOfRanges; I++ {
-			start, err := json.Marshal(rangeArray[I].start)
-			if err != nil {
-				return nil, err
-			}
-
-			end, err := json.Marshal(rangeArray[I].end)
-			if err != nil {
-				return nil, err
-			}
-
-			r := fmt.Sprintf("{\"start\": %s, \"end\": %s}", string(start), string(end))
-
-			if I < numOfRanges-1 {
-				rangesJSON = rangesJSON + r + ","
-			} else {
-				rangesJSON = rangesJSON + r
-			}
-		}
-
-		if rangeMapIndex < len(rangeMap)-1 {
-			rangesJSON += "]" + ","
-		} else {
-			rangesJSON += "]"
-		}
-
-		rangeMapIndex++
-	}
-
-	rangesJSON += "}"
-
-	return &rangesJSON, nil
 }
 
 // GetRangeNum retrieves the number of ranges of the query subarray

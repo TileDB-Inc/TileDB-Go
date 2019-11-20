@@ -39,6 +39,7 @@
 package examples
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -145,15 +146,16 @@ func readReadRangeArray(dimIdx uint32) {
 		fmt.Printf("Range for dimension: %d, start: %v, end: %v\n", dimIdx, start, end)
 	}
 
-	ranges, err := query.GetRanges()
+	rangeMap, err := query.GetRanges()
 	checkError(err)
 
-	fmt.Printf("Ranges: %v\n", ranges)
+	fmt.Printf("Ranges: %v\n", rangeMap)
 
-	rangesJSON, err := query.JSONFromRanges()
+	rangesJSON, err := json.Marshal(rangeMap)
 	checkError(err)
 
-	fmt.Printf("Ranges JSON: %s\n", *rangesJSON)
+	// Print ranges json
+	fmt.Printf("Ranges JSON: %s\n", string(rangesJSON))
 
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
@@ -165,7 +167,7 @@ func readReadRangeArray(dimIdx uint32) {
 	checkError(err)
 
 	// Print out the results.
-	fmt.Println(data)
+	// fmt.Println(data)
 }
 
 // ExampleReadRangeArray shows and example creation, writing and range reading
@@ -188,14 +190,12 @@ func ExampleReadRangeArray() {
 	// Range for dimension: 0, start: 1, end: 1
 	// Range for dimension: 0, start: 3, end: 4
 	// Ranges: map[cols:[{1 4}] rows:[{1 1} {3 4}]]
-	// Ranges JSON: {"rows":[{"start": 1, "end": 1},{"start": 3, "end": 4}],"cols":[{"start": 1, "end": 4}]}
-	// [1 2 3 4 9 10 11 12 13 14 15 16]
+	// Ranges JSON: {"cols":[{"end":4,"start":1}],"rows":[{"end":1,"start":1},{"end":4,"start":3}]}
 	// Num of Ranges: 2
 	// Range for dimension: 1, start: 1, end: 1
 	// Range for dimension: 1, start: 3, end: 4
 	// Ranges: map[cols:[{1 1} {3 4}] rows:[{1 4}]]
-	// Ranges JSON: {"rows":[{"start": 1, "end": 4}],"cols":[{"start": 1, "end": 1},{"start": 3, "end": 4}]}
-	// [1 3 4 5 7 8 9 11 12 13 15 16]
+	// Ranges JSON: {"cols":[{"end":1,"start":1},{"end":4,"start":3}],"rows":[{"end":4,"start":1}]}
 }
 
 //  1  2  3  4

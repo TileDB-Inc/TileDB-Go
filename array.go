@@ -9,8 +9,11 @@ package tiledb
 import "C"
 
 import (
+	"encoding/json"
 	"fmt"
+	"reflect"
 	"runtime"
+	"strconv"
 	"unsafe"
 )
 
@@ -25,6 +28,20 @@ type Array struct {
 	tiledbArray *C.tiledb_array_t
 	context     *Context
 	uri         string
+}
+
+// ArrayMetadata defines metadata for the array
+type ArrayMetadata struct {
+	Key      string
+	KeyLen   uint32
+	Datatype Datatype
+	ValueNum uint
+	Value    interface{}
+}
+
+// MarshalJSON implements the Marshaler interface for ArrayMetadata
+func (a ArrayMetadata) MarshalJSON() ([]byte, error) {
+	return json.Marshal(a.Value)
 }
 
 // NonEmptyDomain contains the non empty dimension bounds and dimension name
@@ -567,4 +584,474 @@ func (a *Array) URI() (string, error) {
 		return uri, fmt.Errorf("Error getting URI for array: uri is empty")
 	}
 	return uri, nil
+}
+
+// PutMetadata puts a metadata key-value item to an open array. The array must
+// be opened in WRITE mode, otherwise the function will error out.
+func (a *Array) PutMetadata(key string, value interface{}) error {
+	ckey := C.CString(key)
+	defer C.free(unsafe.Pointer(ckey))
+
+	var isSliceValue bool = false
+	if reflect.TypeOf(value).Kind() == reflect.Slice {
+		isSliceValue = true
+	}
+
+	var datatype Datatype
+	var valueNum C.uint
+	var valueType reflect.Kind
+
+	valueInterfaceVal := reflect.ValueOf(value)
+	if isSliceValue {
+		if valueInterfaceVal.Len() == 0 {
+			return fmt.Errorf("Value passed must be a non-empty slice, size of slice is: %d", valueInterfaceVal.Len())
+		}
+		valueType = reflect.TypeOf(value).Elem().Kind()
+		valueNum = C.uint(valueInterfaceVal.Len())
+	} else {
+		valueType = reflect.TypeOf(value).Kind()
+		valueNum = 1
+	}
+
+	var ret C.int32_t
+	switch valueType {
+	case reflect.Int:
+		// Check size of int on platform
+		if strconv.IntSize == 32 {
+			datatype = TILEDB_INT32
+			if isSliceValue {
+				tmpValue := value.([]int32)
+				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
+			} else {
+				tmpValue := value.(int32)
+				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
+			}
+		} else {
+			datatype = TILEDB_INT64
+			if isSliceValue {
+				tmpValue := value.([]int64)
+				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
+			} else {
+				tmpValue := value.(int64)
+				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
+			}
+		}
+	case reflect.Int8:
+		datatype = TILEDB_INT8
+		if isSliceValue {
+			tmpValue := value.([]int8)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
+		} else {
+			tmpValue := value.(int8)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
+		}
+	case reflect.Int16:
+		datatype = TILEDB_INT16
+		if isSliceValue {
+			tmpValue := value.([]int16)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
+		} else {
+			tmpValue := value.(int16)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
+		}
+	case reflect.Int32:
+		datatype = TILEDB_INT32
+		if isSliceValue {
+			tmpValue := value.([]int32)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
+		} else {
+			tmpValue := value.(int32)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
+		}
+	case reflect.Int64:
+		datatype = TILEDB_INT64
+		if isSliceValue {
+			tmpValue := value.([]int64)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
+		} else {
+			tmpValue := value.(int64)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
+		}
+	case reflect.Uint:
+		// Check size of uint on platform
+		if strconv.IntSize == 32 {
+			datatype = TILEDB_UINT32
+			if isSliceValue {
+				tmpValue := value.([]uint32)
+				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
+			} else {
+				tmpValue := value.(uint32)
+				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
+			}
+		} else {
+			datatype = TILEDB_UINT64
+			if isSliceValue {
+				tmpValue := value.([]uint64)
+				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
+			} else {
+				tmpValue := value.(uint64)
+				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
+			}
+		}
+	case reflect.Uint8:
+		datatype = TILEDB_UINT8
+		if isSliceValue {
+			tmpValue := value.([]uint8)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
+		} else {
+			tmpValue := value.(uint8)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
+		}
+	case reflect.Uint16:
+		datatype = TILEDB_UINT16
+		if isSliceValue {
+			tmpValue := value.([]uint16)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
+		} else {
+			tmpValue := value.(uint16)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
+		}
+	case reflect.Uint32:
+		datatype = TILEDB_UINT32
+		if isSliceValue {
+			tmpValue := value.([]uint32)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
+		} else {
+			tmpValue := value.(uint32)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
+		}
+	case reflect.Uint64:
+		datatype = TILEDB_UINT64
+		if isSliceValue {
+			tmpValue := value.([]uint64)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
+		} else {
+			tmpValue := value.(uint64)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
+		}
+	case reflect.Float32:
+		datatype = TILEDB_FLOAT32
+		if isSliceValue {
+			tmpValue := value.([]float32)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
+		} else {
+			tmpValue := value.(float32)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
+		}
+	case reflect.Float64:
+		datatype = TILEDB_FLOAT64
+		if isSliceValue {
+			tmpValue := value.([]float64)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
+		} else {
+			tmpValue := value.(float64)
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
+		}
+	case reflect.String:
+		datatype = TILEDB_STRING_UTF8
+		stringValue := value.(string)
+		valueNum = C.uint(len(stringValue))
+		cTmpValue := C.CString(stringValue)
+		defer C.free(unsafe.Pointer(cTmpValue))
+		if valueNum > 0 {
+			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(cTmpValue))
+		}
+	default:
+		if isSliceValue {
+			return fmt.Errorf("Unrecognized value type passed: %s", valueInterfaceVal.Index(0).Kind().String())
+		}
+		return fmt.Errorf("Unrecognized value type passed: %s", valueInterfaceVal.Kind().String())
+	}
+
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error adding metadata to array: %s", a.context.LastError())
+	}
+	return nil
+}
+
+// DeleteMetadata deletes a metadata key-value item from an open array. The array must
+// be opened in WRITE mode, otherwise the function will error out.
+func (a *Array) DeleteMetadata(key string) error {
+	ckey := C.CString(key)
+	defer C.free(unsafe.Pointer(ckey))
+
+	ret := C.tiledb_array_delete_metadata(a.context.tiledbContext, a.tiledbArray, ckey)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deleting metadata from array: %s", a.context.LastError())
+	}
+	return nil
+}
+
+// GetMetadata gets a metadata key-value item from an open array. The array must
+// be opened in READ mode, otherwise the function will error out.
+func (a *Array) GetMetadata(key string) (Datatype, uint, interface{}, error) {
+	ckey := C.CString(key)
+	defer C.free(unsafe.Pointer(ckey))
+
+	var cType C.tiledb_datatype_t
+	var cValueNum C.uint
+	var cvalue unsafe.Pointer
+
+	ret := C.tiledb_array_get_metadata(a.context.tiledbContext, a.tiledbArray, ckey, &cType, &cValueNum, &cvalue)
+	if ret != C.TILEDB_OK {
+		return 0, 0, nil, fmt.Errorf("Error getting metadata from array: %s, key: %s", a.context.LastError(), key)
+	}
+
+	valueNum := uint(cValueNum)
+	if valueNum == 0 {
+		return 0, 0, nil, fmt.Errorf("Error getting metadata from array, key: %s does not exist", key)
+	}
+
+	datatype := Datatype(cType)
+	value, err := getMetadataValue(datatype, valueNum, cvalue)
+	if err != nil {
+		return 0, 0, nil, fmt.Errorf("%s, key: %s", err.Error(), key)
+	}
+
+	return datatype, valueNum, value, nil
+}
+
+// GetMetadataNum gets then number of metadata items in an open array. The array must
+// be opened in READ mode, otherwise the function will error out.
+func (a *Array) GetMetadataNum() (uint64, error) {
+	var cNum C.uint64_t
+
+	ret := C.tiledb_array_get_metadata_num(a.context.tiledbContext, a.tiledbArray, &cNum)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("Error getting number of metadata from array: %s", a.context.LastError())
+	}
+
+	return uint64(cNum), nil
+}
+
+// GetMetadataFromIndex gets a metadata item from an open array using an index.
+// The array must be opened in READ mode, otherwise the function will
+// error out.
+func (a *Array) GetMetadataFromIndex(index uint64) (*ArrayMetadata, error) {
+	var cKey *C.char
+	defer C.free(unsafe.Pointer(cKey))
+	var cIndex C.uint64_t = C.uint64_t(index)
+	var cType C.tiledb_datatype_t
+	var cKeyLen C.uint32_t
+	var cValueNum C.uint
+	var cvalue unsafe.Pointer
+
+	ret := C.tiledb_array_get_metadata_from_index(a.context.tiledbContext,
+		a.tiledbArray, cIndex, &cKey, &cKeyLen, &cType, &cValueNum, &cvalue)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error getting metadata from array: %s, Index: %d", a.context.LastError(), index)
+	}
+
+	valueNum := uint(cValueNum)
+	if valueNum == 0 {
+		return nil, fmt.Errorf("Error getting metadata from array, Index: %d does not exist", index)
+	}
+
+	datatype := Datatype(cType)
+	value, err := getMetadataValue(datatype, valueNum, cvalue)
+	if err != nil {
+		return nil, fmt.Errorf("%s, Index: %d", err.Error(), index)
+	}
+
+	arrayMetadata := ArrayMetadata{
+		Key:      C.GoString(cKey),
+		KeyLen:   uint32(cKeyLen),
+		Datatype: datatype,
+		ValueNum: valueNum,
+		Value:    value,
+	}
+
+	return &arrayMetadata, nil
+}
+
+// GetMetadataMap returns a map[string]*ArrayMetadata where key is the key of
+// each metadata added and value is an ArrayMetadata struct. The map contains
+// all array metadata previously added
+func (a *Array) GetMetadataMap() (map[string]*ArrayMetadata, error) {
+	metadataMap := make(map[string]*ArrayMetadata)
+
+	numOfMetadata, err := a.GetMetadataNum()
+	if err != nil {
+		return nil, err
+	}
+
+	var I uint64
+	for I = 0; I < numOfMetadata; I++ {
+		arrayMetadata, err := a.GetMetadataFromIndex(I)
+		if err != nil {
+			return nil, err
+		}
+		metadataMap[arrayMetadata.Key] = arrayMetadata
+	}
+
+	return metadataMap, nil
+}
+
+// ConsolidateMetadata consolidates the array metadata into a single array
+// metadata file.
+// You must first finalize all queries to the array before consolidation can
+// begin (as consolidation temporarily acquires an exclusive lock on the array).
+func (a *Array) ConsolidateMetadata(config *Config) error {
+	curi := C.CString(a.uri)
+	defer C.free(unsafe.Pointer(curi))
+
+	var ret C.int32_t
+	if config == nil {
+		ret = C.tiledb_array_consolidate_metadata(a.context.tiledbContext, curi, nil)
+	} else {
+		ret = C.tiledb_array_consolidate_metadata(a.context.tiledbContext, curi, config.tiledbConfig)
+	}
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error consolidating array metadata")
+	}
+
+	return nil
+}
+
+// ConsolidateMetadataWithKey consolidates the array metadata of an encrypted
+// array into a single file.
+// You must first finalize all queries to the array before consolidation can
+// begin (as consolidation temporarily acquires an exclusive lock on the array).
+func (a *Array) ConsolidateMetadataWithKey(encryptionType EncryptionType, key string, config *Config) error {
+	ckey := unsafe.Pointer(C.CString(key))
+	defer C.free(ckey)
+	curi := C.CString(a.uri)
+	defer C.free(unsafe.Pointer(curi))
+
+	var ret C.int32_t
+	if config == nil {
+		ret = C.tiledb_array_consolidate_metadata_with_key(a.context.tiledbContext,
+			curi, C.tiledb_encryption_type_t(encryptionType), ckey, C.uint32_t(len(key)), nil)
+	} else {
+		ret = C.tiledb_array_consolidate_metadata_with_key(a.context.tiledbContext,
+			curi, C.tiledb_encryption_type_t(encryptionType), ckey, C.uint32_t(len(key)), config.tiledbConfig)
+	}
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error consolidating array metadata")
+	}
+
+	return nil
+}
+
+func getMetadataValue(datatype Datatype, valueNum uint, cvalue unsafe.Pointer) (interface{}, error) {
+	var value interface{}
+	switch datatype {
+	case TILEDB_INT8:
+		if valueNum > 1 {
+			tmpValue := make([]int8, valueNum)
+			tmpslice := (*[1 << 30]C.int8_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = int8(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*int8)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_INT16:
+		if valueNum > 1 {
+			tmpValue := make([]int16, valueNum)
+			tmpslice := (*[1 << 30]C.int16_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = int16(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*int16)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_INT32:
+		if valueNum > 1 {
+			tmpValue := make([]int32, valueNum)
+			tmpslice := (*[1 << 30]C.int32_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = int32(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*int32)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_INT64:
+		if valueNum > 1 {
+			tmpValue := make([]int64, valueNum)
+			tmpslice := (*[1 << 30]C.int64_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = int64(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*int64)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_UINT8:
+		if valueNum > 1 {
+			tmpValue := make([]uint8, valueNum)
+			tmpslice := (*[1 << 30]C.uint8_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = uint8(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*uint8)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_UINT16:
+		if valueNum > 1 {
+			tmpValue := make([]uint16, valueNum)
+			tmpslice := (*[1 << 30]C.uint16_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = uint16(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*uint16)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_UINT32:
+		if valueNum > 1 {
+			tmpValue := make([]uint32, valueNum)
+			tmpslice := (*[1 << 30]C.uint32_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = uint32(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*uint32)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_UINT64:
+		if valueNum > 1 {
+			tmpValue := make([]uint64, valueNum)
+			tmpslice := (*[1 << 30]C.uint64_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = uint64(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*uint64)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_FLOAT32:
+		if valueNum > 1 {
+			tmpValue := make([]float32, valueNum)
+			tmpslice := (*[1 << 30]C.float)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = float32(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*float32)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_FLOAT64:
+		if valueNum > 1 {
+			tmpValue := make([]float64, valueNum)
+			tmpslice := (*[1 << 30]C.double)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = float64(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*float64)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_STRING_UTF8:
+		tmpslice := (*[1 << 30]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+		value = C.GoString(&tmpslice[0])[0:valueNum]
+	default:
+		return nil, fmt.Errorf("Unrecognized value type: %d", datatype)
+	}
+
+	return value, nil
 }
