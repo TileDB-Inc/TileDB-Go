@@ -249,3 +249,28 @@ func DeserializeQuery(query *Query, buffer *Buffer, serializationType Serializat
 
 	return nil
 }
+
+// SerializeArrayMetadata gets and serializes the array metadata
+func SerializeArrayMetadata(a *Array, serializationType SerializationType) (*Buffer, error) {
+	buffer := Buffer{context: a.context}
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
+		buffer.Free()
+	})
+
+	ret := C.tiledb_serialize_array_metadata(a.context.tiledbContext, a.tiledbArray, C.tiledb_serialization_type_t(serializationType), &buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error serializing array metadata: %s", a.context.LastError())
+	}
+
+	return &buffer, nil
+}
+
+// DeserializeArrayMetadata deserializes array metadata
+func DeserializeArrayMetadata(a *Array, buffer *Buffer, serializationType SerializationType) error {
+	ret := C.tiledb_deserialize_array_metadata(a.context.tiledbContext, a.tiledbArray, C.tiledb_serialization_type_t(serializationType), buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deserializing array metadata: %s", a.context.LastError())
+	}
+	return nil
+}
