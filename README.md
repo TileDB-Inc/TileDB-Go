@@ -29,7 +29,9 @@ as such the below table reference which versions are compatible.
 | 0.5.X             | 1.5.X          |
 | 0.6.X             | 1.6.X          |
 | 0.7.X             | 1.6.X          |
-| 0.8.X             | 1.7.X          |
+| 0.8.0             | 1.7.0          |
+| 0.8.1             | 1.7.0          |
+| 0.8.2             | 1.7.2          |
 
 
 ## Missing Functionality
