@@ -680,92 +680,92 @@ func (q *Query) Buffer(attributeName string) (interface{}, error) {
 	case TILEDB_INT8:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int8_t
-		buffer = (*[1 << 30]int8)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]int8)(cbuffer)[:length:length]
 
 	case TILEDB_INT16:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int16_t
-		buffer = (*[1 << 30]int16)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]int16)(cbuffer)[:length:length]
 
 	case TILEDB_INT32:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int32_t
-		buffer = (*[1 << 30]int32)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]int32)(cbuffer)[:length:length]
 
 	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int64_t
-		buffer = (*[1 << 30]int64)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]int64)(cbuffer)[:length:length]
 
 	case TILEDB_UINT8:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint8_t
-		buffer = (*[1 << 30]uint8)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
 
 	case TILEDB_UINT16:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint16_t
-		buffer = (*[1 << 30]uint16)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint16)(cbuffer)[:length:length]
 
 	case TILEDB_UINT32:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint32_t
-		buffer = (*[1 << 30]uint32)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint32)(cbuffer)[:length:length]
 
 	case TILEDB_UINT64:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint64_t
-		buffer = (*[1 << 30]uint64)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint64)(cbuffer)[:length:length]
 
 	case TILEDB_FLOAT32:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_float
-		buffer = (*[1 << 30]float32)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]float32)(cbuffer)[:length:length]
 
 	case TILEDB_FLOAT64:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_double
-		buffer = (*[1 << 30]float64)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]float64)(cbuffer)[:length:length]
 
 	case TILEDB_CHAR:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_char
-		buffer = (*[1 << 30]byte)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]byte)(cbuffer)[:length:length]
 
 	case TILEDB_STRING_ASCII:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint8_t
-		buffer = (*[1 << 30]uint8)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
 
 	case TILEDB_STRING_UTF8:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint8_t
-		buffer = (*[1 << 30]uint8)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
 
 	case TILEDB_STRING_UTF16:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint16_t
-		buffer = (*[1 << 30]uint16)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint16)(cbuffer)[:length:length]
 
 	case TILEDB_STRING_UTF32:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint32_t
-		buffer = (*[1 << 30]uint32)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint32)(cbuffer)[:length:length]
 
 	case TILEDB_STRING_UCS2:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint16_t
-		buffer = (*[1 << 30]uint16)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint16)(cbuffer)[:length:length]
 
 	case TILEDB_STRING_UCS4:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint32_t
-		buffer = (*[1 << 30]uint32)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint32)(cbuffer)[:length:length]
 
 	case TILEDB_ANY:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int32_t
-		buffer = (*[1 << 30]C.int8_t)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]C.int8_t)(cbuffer)[:length:length]
 
 	default:
 		return nil, fmt.Errorf("Unrecognized attribute type: %d", datatype)
@@ -1082,128 +1082,128 @@ func (q *Query) BufferVar(attributeName string) ([]uint64, interface{}, error) {
 	case TILEDB_INT8:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int8_t
-		buffer = (*[1 << 30]int8)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]int8)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_INT16:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int16_t
-		buffer = (*[1 << 30]int16)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]int16)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_INT32:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int32_t
-		buffer = (*[1 << 30]int32)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]int32)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int64_t
-		buffer = (*[1 << 30]int64)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]int64)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_UINT8:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint8_t
-		buffer = (*[1 << 30]uint8)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_UINT16:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint16_t
-		buffer = (*[1 << 30]uint16)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint16)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_UINT32:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint32_t
-		buffer = (*[1 << 30]uint32)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint32)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_UINT64:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint64_t
-		buffer = (*[1 << 30]uint64)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint64)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_FLOAT32:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_float
-		buffer = (*[1 << 30]float32)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]float32)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_FLOAT64:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_double
-		buffer = (*[1 << 30]float64)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]float64)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_CHAR:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_char
-		buffer = (*[1 << 30]byte)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]byte)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_STRING_ASCII:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint8_t
-		buffer = (*[1 << 30]uint8)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_STRING_UTF8:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint8_t
-		buffer = (*[1 << 30]uint8)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_STRING_UTF16:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint16_t
-		buffer = (*[1 << 30]uint16)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint16)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_STRING_UTF32:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint32_t
-		buffer = (*[1 << 30]uint32)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint32)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_STRING_UCS2:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint16_t
-		buffer = (*[1 << 30]uint16)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint16)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_STRING_UCS4:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint32_t
-		buffer = (*[1 << 30]uint32)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]uint32)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_ANY:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int32_t
-		buffer = (*[1 << 30]C.int8_t)(cbuffer)[:length:length]
+		buffer = (*[1 << 46]C.int8_t)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
-		offsets = (*[1 << 30]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	default:
 		return nil, nil, fmt.Errorf("Unrecognized attribute type: %d", datatype)

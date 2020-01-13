@@ -78,7 +78,7 @@ func (b *Buffer) Data() ([]byte, error) {
 		return nil, nil
 	} else {
 		size := uint64(csize)
-		return (*[1 << 30]uint8)(unsafe.Pointer(cbuffer))[:size:size], nil
+		return (*[1 << 46]uint8)(unsafe.Pointer(cbuffer))[:size:size], nil
 	}
 }
 
