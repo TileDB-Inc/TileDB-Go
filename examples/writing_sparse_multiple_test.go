@@ -39,8 +39,9 @@ package examples
 
 import (
 	"fmt"
-	"github.com/TileDB-Inc/TileDB-Go"
 	"os"
+
+	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
@@ -85,6 +86,26 @@ func createMultipleWritesSparseArray() {
 	checkError(err)
 }
 
+func execQueryUnordered(ctx *tiledb.Context, array *tiledb.Array,
+	data []int32, coords []int32) {
+	query, err := tiledb.NewQuery(ctx, array)
+	checkError(err)
+	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
+	checkError(err)
+
+	// Submit query
+	_, err = query.SetBuffer("a", data)
+	checkError(err)
+	_, err = query.SetCoordinates(coords)
+	checkError(err)
+	// Perform the write.
+	err = query.Submit()
+	checkError(err)
+	// IMPORTANT!
+	err = query.Finalize()
+	checkError(err)
+}
+
 func writeMultipleWritesSparseArray() {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -102,26 +123,11 @@ func writeMultipleWritesSparseArray() {
 	// First write
 	coords1 := []int32{1, 1, 2, 4, 2, 3}
 	data1 := []int32{1, 2, 3}
-	_, err = query.SetBuffer("a", data1)
-	checkError(err)
-	_, err = query.SetCoordinates(coords1)
-	checkError(err)
+	execQueryUnordered(ctx, array, data1, coords1)
 
-	// Perform the write.
-	err = query.Submit()
-	checkError(err)
-
-	// Submit second query
 	coords2 := []int32{4, 1, 2, 4}
 	data2 := []int32{4, 20}
-	_, err = query.SetBuffer("a", data2)
-	checkError(err)
-	_, err = query.SetCoordinates(coords2)
-	checkError(err)
-
-	// Perform the write.
-	err = query.Submit()
-	checkError(err)
+	execQueryUnordered(ctx, array, data2, coords2)
 
 	err = array.Close()
 	checkError(err)
