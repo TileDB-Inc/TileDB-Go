@@ -939,7 +939,7 @@ func getMetadataValue(datatype Datatype, valueNum uint, cvalue unsafe.Pointer) (
 	case TILEDB_INT8:
 		if valueNum > 1 {
 			tmpValue := make([]int8, valueNum)
-			tmpslice := (*[1 << 30]C.int8_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.int8_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = int8(s)
 			}
@@ -950,7 +950,7 @@ func getMetadataValue(datatype Datatype, valueNum uint, cvalue unsafe.Pointer) (
 	case TILEDB_INT16:
 		if valueNum > 1 {
 			tmpValue := make([]int16, valueNum)
-			tmpslice := (*[1 << 30]C.int16_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.int16_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = int16(s)
 			}
@@ -961,7 +961,7 @@ func getMetadataValue(datatype Datatype, valueNum uint, cvalue unsafe.Pointer) (
 	case TILEDB_INT32:
 		if valueNum > 1 {
 			tmpValue := make([]int32, valueNum)
-			tmpslice := (*[1 << 30]C.int32_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.int32_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = int32(s)
 			}
@@ -972,7 +972,7 @@ func getMetadataValue(datatype Datatype, valueNum uint, cvalue unsafe.Pointer) (
 	case TILEDB_INT64:
 		if valueNum > 1 {
 			tmpValue := make([]int64, valueNum)
-			tmpslice := (*[1 << 30]C.int64_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.int64_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = int64(s)
 			}
@@ -983,7 +983,7 @@ func getMetadataValue(datatype Datatype, valueNum uint, cvalue unsafe.Pointer) (
 	case TILEDB_UINT8:
 		if valueNum > 1 {
 			tmpValue := make([]uint8, valueNum)
-			tmpslice := (*[1 << 30]C.uint8_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.uint8_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = uint8(s)
 			}
@@ -994,7 +994,7 @@ func getMetadataValue(datatype Datatype, valueNum uint, cvalue unsafe.Pointer) (
 	case TILEDB_UINT16:
 		if valueNum > 1 {
 			tmpValue := make([]uint16, valueNum)
-			tmpslice := (*[1 << 30]C.uint16_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.uint16_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = uint16(s)
 			}
@@ -1005,7 +1005,7 @@ func getMetadataValue(datatype Datatype, valueNum uint, cvalue unsafe.Pointer) (
 	case TILEDB_UINT32:
 		if valueNum > 1 {
 			tmpValue := make([]uint32, valueNum)
-			tmpslice := (*[1 << 30]C.uint32_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.uint32_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = uint32(s)
 			}
@@ -1016,7 +1016,7 @@ func getMetadataValue(datatype Datatype, valueNum uint, cvalue unsafe.Pointer) (
 	case TILEDB_UINT64:
 		if valueNum > 1 {
 			tmpValue := make([]uint64, valueNum)
-			tmpslice := (*[1 << 30]C.uint64_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.uint64_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = uint64(s)
 			}
@@ -1027,7 +1027,7 @@ func getMetadataValue(datatype Datatype, valueNum uint, cvalue unsafe.Pointer) (
 	case TILEDB_FLOAT32:
 		if valueNum > 1 {
 			tmpValue := make([]float32, valueNum)
-			tmpslice := (*[1 << 30]C.float)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.float)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = float32(s)
 			}
@@ -1038,7 +1038,7 @@ func getMetadataValue(datatype Datatype, valueNum uint, cvalue unsafe.Pointer) (
 	case TILEDB_FLOAT64:
 		if valueNum > 1 {
 			tmpValue := make([]float64, valueNum)
-			tmpslice := (*[1 << 30]C.double)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.double)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = float64(s)
 			}
@@ -1047,7 +1047,7 @@ func getMetadataValue(datatype Datatype, valueNum uint, cvalue unsafe.Pointer) (
 			value = *(*float64)(unsafe.Pointer(cvalue))
 		}
 	case TILEDB_STRING_UTF8:
-		tmpslice := (*[1 << 30]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+		tmpslice := (*[1 << 46]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
 		value = C.GoString(&tmpslice[0])[0:valueNum]
 	default:
 		return nil, fmt.Errorf("Unrecognized value type: %d", datatype)

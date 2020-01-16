@@ -224,7 +224,7 @@ func (d *Dimension) Domain() (interface{}, error) {
 		defer C.free(cdomain)
 		tmpDomain := make([]int8, 2)
 		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 30]C.int8_t)(unsafe.Pointer(cdomain))[:2:2]
+		tmpslice := (*[1 << 46]C.int8_t)(unsafe.Pointer(cdomain))[:2:2]
 		for i, s := range tmpslice {
 			tmpDomain[i] = int8(s)
 		}
@@ -234,7 +234,7 @@ func (d *Dimension) Domain() (interface{}, error) {
 		defer C.free(cdomain)
 		tmpDomain := make([]int16, 2)
 		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 30]C.int16_t)(unsafe.Pointer(cdomain))[:2:2]
+		tmpslice := (*[1 << 46]C.int16_t)(unsafe.Pointer(cdomain))[:2:2]
 		for i, s := range tmpslice {
 			tmpDomain[i] = int16(s)
 		}
@@ -244,7 +244,7 @@ func (d *Dimension) Domain() (interface{}, error) {
 		defer C.free(cdomain)
 		tmpDomain := make([]int32, 2)
 		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 30]C.int32_t)(unsafe.Pointer(cdomain))[:2:2]
+		tmpslice := (*[1 << 46]C.int32_t)(unsafe.Pointer(cdomain))[:2:2]
 		for i, s := range tmpslice {
 			tmpDomain[i] = int32(s)
 		}
@@ -254,7 +254,7 @@ func (d *Dimension) Domain() (interface{}, error) {
 		defer C.free(cdomain)
 		tmpDomain := make([]int64, 2)
 		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 30]C.int64_t)(unsafe.Pointer(cdomain))[:2:2]
+		tmpslice := (*[1 << 46]C.int64_t)(unsafe.Pointer(cdomain))[:2:2]
 		for i, s := range tmpslice {
 			tmpDomain[i] = int64(s)
 		}
@@ -264,7 +264,7 @@ func (d *Dimension) Domain() (interface{}, error) {
 		defer C.free(cdomain)
 		tmpDomain := make([]uint8, 2)
 		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 30]C.uint8_t)(unsafe.Pointer(cdomain))[:2:2]
+		tmpslice := (*[1 << 46]C.uint8_t)(unsafe.Pointer(cdomain))[:2:2]
 		for i, s := range tmpslice {
 			tmpDomain[i] = uint8(s)
 		}
@@ -274,7 +274,7 @@ func (d *Dimension) Domain() (interface{}, error) {
 		defer C.free(cdomain)
 		tmpDomain := make([]uint16, 2)
 		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 30]C.uint16_t)(unsafe.Pointer(cdomain))[:2:2]
+		tmpslice := (*[1 << 46]C.uint16_t)(unsafe.Pointer(cdomain))[:2:2]
 		for i, s := range tmpslice {
 			tmpDomain[i] = uint16(s)
 		}
@@ -284,7 +284,7 @@ func (d *Dimension) Domain() (interface{}, error) {
 		defer C.free(cdomain)
 		tmpDomain := make([]uint32, 2)
 		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 30]C.uint32_t)(unsafe.Pointer(cdomain))[:2:2]
+		tmpslice := (*[1 << 46]C.uint32_t)(unsafe.Pointer(cdomain))[:2:2]
 		for i, s := range tmpslice {
 			tmpDomain[i] = uint32(s)
 		}
@@ -294,7 +294,7 @@ func (d *Dimension) Domain() (interface{}, error) {
 		defer C.free(cdomain)
 		tmpDomain := make([]uint64, 2)
 		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 30]C.uint64_t)(unsafe.Pointer(cdomain))[:2:2]
+		tmpslice := (*[1 << 46]C.uint64_t)(unsafe.Pointer(cdomain))[:2:2]
 		for i, s := range tmpslice {
 			tmpDomain[i] = uint64(s)
 		}
@@ -304,7 +304,7 @@ func (d *Dimension) Domain() (interface{}, error) {
 		defer C.free(cdomain)
 		tmpDomain := make([]float32, 2)
 		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 30]C.float)(unsafe.Pointer(cdomain))[:2:2]
+		tmpslice := (*[1 << 46]C.float)(unsafe.Pointer(cdomain))[:2:2]
 		for i, s := range tmpslice {
 			tmpDomain[i] = float32(s)
 		}
@@ -314,7 +314,7 @@ func (d *Dimension) Domain() (interface{}, error) {
 		defer C.free(cdomain)
 		tmpDomain := make([]float64, 2)
 		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 30]C.double)(unsafe.Pointer(cdomain))[:2:2]
+		tmpslice := (*[1 << 46]C.double)(unsafe.Pointer(cdomain))[:2:2]
 		for i, s := range tmpslice {
 			tmpDomain[i] = float64(s)
 		}
