@@ -39,8 +39,9 @@ package examples
 
 import (
 	"fmt"
-	"github.com/TileDB-Inc/TileDB-Go"
 	"os"
+
+	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
@@ -85,6 +86,26 @@ func createSparseGlobalArray() {
 	checkError(err)
 }
 
+func execQueryGlobalOrder(ctx *tiledb.Context, array *tiledb.Array,
+	data []int32, coords []int32) {
+	query, err := tiledb.NewQuery(ctx, array)
+	checkError(err)
+	err = query.SetLayout(tiledb.TILEDB_GLOBAL_ORDER)
+	checkError(err)
+
+	// Submit query
+	_, err = query.SetBuffer("a", data)
+	checkError(err)
+	_, err = query.SetCoordinates(coords)
+	checkError(err)
+	// Perform the write.
+	err = query.Submit()
+	checkError(err)
+	// IMPORTANT!
+	err = query.Finalize()
+	checkError(err)
+}
+
 func writeSparseGlobalArray() {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -94,38 +115,17 @@ func writeSparseGlobalArray() {
 	checkError(err)
 	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
-	query, err := tiledb.NewQuery(ctx, array)
-	checkError(err)
-	err = query.SetLayout(tiledb.TILEDB_GLOBAL_ORDER)
-	checkError(err)
 
-	// First submission
+	// Query 1
 	coords1 := []int32{1, 1, 2, 4}
 	data1 := []int32{1, 2}
-	_, err = query.SetBuffer("a", data1)
-	checkError(err)
-	_, err = query.SetCoordinates(coords1)
-	checkError(err)
+	execQueryGlobalOrder(ctx, array, data1, coords1)
 
-	// Perform the write.
-	err = query.Submit()
-	checkError(err)
-
-	// Submit second query
+	// Query 2
 	coords2 := []int32{2, 3}
 	data2 := []int32{3}
-	_, err = query.SetBuffer("a", data2)
-	checkError(err)
-	_, err = query.SetCoordinates(coords2)
-	checkError(err)
+	execQueryGlobalOrder(ctx, array, data2, coords2)
 
-	// Perform the write.
-	err = query.Submit()
-	checkError(err)
-
-	// IMPORTANT!
-	err = query.Finalize()
-	checkError(err)
 	err = array.Close()
 	checkError(err)
 }
