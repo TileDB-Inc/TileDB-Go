@@ -1046,6 +1046,12 @@ func getMetadataValue(datatype Datatype, valueNum uint, cvalue unsafe.Pointer) (
 		} else {
 			value = *(*float64)(unsafe.Pointer(cvalue))
 		}
+	case TILEDB_CHAR:
+		tmpslice := (*[1 << 46]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+		value = C.GoString(&tmpslice[0])[0:valueNum]
+	case TILEDB_STRING_ASCII:
+		tmpslice := (*[1 << 46]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+		value = C.GoString(&tmpslice[0])[0:valueNum]
 	case TILEDB_STRING_UTF8:
 		tmpslice := (*[1 << 46]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
 		value = C.GoString(&tmpslice[0])[0:valueNum]
