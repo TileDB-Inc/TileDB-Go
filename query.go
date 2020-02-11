@@ -182,6 +182,30 @@ func (q *Query) SetSubArray(subArray interface{}) error {
 	return nil
 }
 
+// SetBufferUnsafe Sets the buffer for a fixed-sized attribute to a query
+// This takes an unsafe pointer which is passsed straight to tiledb c_api
+// for advanced useage
+func (q *Query) SetBufferUnsafe(attribute string, buffer unsafe.Pointer, bufferSize uint64) (*uint64, error) {
+	cAttribute := C.CString(attribute)
+	defer C.free(unsafe.Pointer(cAttribute))
+
+	ret := C.tiledb_query_set_buffer(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		cAttribute,
+		buffer,
+		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf(
+			"Error setting query buffer: %s", q.context.LastError())
+	}
+
+	q.resultBufferElements[attribute] = [2]*uint64{nil, &bufferSize}
+
+	return &bufferSize, nil
+}
+
 // SetBuffer Sets the buffer for a fixed-sized attribute to a query
 // The buffer must be an initialized slice
 func (q *Query) SetBuffer(attribute string, buffer interface{}) (*uint64,
@@ -777,10 +801,34 @@ func (q *Query) Buffer(attributeName string) (interface{}, error) {
 	return buffer, nil
 }
 
-// SetBufferVar Sets the buffer for a fixed-sized attribute to a query
+// SetBufferVarUnsafe Sets the buffer for a variable sized attribute to a query
+// This takes unsafe pointers which is passsed straight to tiledb c_api
+// for advanced useage
+func (q *Query) SetBufferVarUnsafe(attribute string, offset unsafe.Pointer, offsetSize uint64, buffer unsafe.Pointer, bufferSize uint64) (*uint64, *uint64, error) {
+	cAttribute := C.CString(attribute)
+	defer C.free(unsafe.Pointer(cAttribute))
+
+	ret := C.tiledb_query_set_buffer_var(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		cAttribute,
+		(*C.uint64_t)(offset),
+		(*C.uint64_t)(unsafe.Pointer(&offsetSize)),
+		buffer,
+		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
+
+	if ret != C.TILEDB_OK {
+		return nil, nil, fmt.Errorf("Error setting query var buffer: %s", q.context.LastError())
+	}
+
+	q.resultBufferElements[attribute] = [2]*uint64{&offsetSize, &bufferSize}
+
+	return &offsetSize, &bufferSize, nil
+}
+
+// SetBufferVar Sets the buffer for a variable sized attribute to a query
 // The buffer must be an initialized slice
-func (q *Query) SetBufferVar(attribute string, offset []uint64,
-	buffer interface{}) (*uint64, *uint64, error) {
+func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface{}) (*uint64, *uint64, error) {
 	bufferReflectType := reflect.TypeOf(buffer)
 	bufferReflectValue := reflect.ValueOf(buffer)
 	if bufferReflectValue.Kind() != reflect.Slice {

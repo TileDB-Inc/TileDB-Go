@@ -7,10 +7,12 @@ package tiledb
 #include <tiledb/tiledb.h>
 #include <tiledb/tiledb_enum.h>
 #include <tiledb/tiledb_serialization.h>
+#include <stdlib.h>
 */
 import "C"
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"unsafe"
@@ -93,6 +95,44 @@ const (
 	// TILEDB_DATETIME_AS 64-bit signed integer representing as
 	TILEDB_DATETIME_AS Datatype = C.TILEDB_DATETIME_AS
 )
+
+// String returns string representation
+func (d Datatype) String() string {
+	var cname *C.char
+	defer C.free(unsafe.Pointer(cname))
+	C.tiledb_datatype_to_str(C.tiledb_datatype_t(d), &cname)
+	return C.GoString(cname)
+}
+
+// MarshalJSON interface for marshaling to json
+func (d Datatype) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.String())
+}
+
+// UnmarshalJSON interface for unmarshaling from json
+func (d *Datatype) UnmarshalJSON(bytes []byte) error {
+	return d.FromString(string(bytes))
+}
+
+// FromString converts from a datatype string to enum
+func (d *Datatype) FromString(s string) error {
+	cname := C.CString(s)
+	defer C.free(unsafe.Pointer(cname))
+	var cDatatype C.tiledb_datatype_t
+	ret := C.tiledb_datatype_from_str(cname, &cDatatype)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("%s is not a recognized tiledb_datatype_t", s)
+	}
+	*d = Datatype(cDatatype)
+	return nil
+}
+
+// DatatypeFromString converts from a datatype string to enum
+func DatatypeFromString(s string) Datatype {
+	var d Datatype
+	d.FromString(s)
+	return d
+}
 
 // ReflectKind returns the reflect kind given a datatype
 func (d Datatype) ReflectKind() reflect.Kind {
