@@ -828,6 +828,16 @@ func (a *Array) GetMetadataNum() (uint64, error) {
 // The array must be opened in READ mode, otherwise the function will
 // error out.
 func (a *Array) GetMetadataFromIndex(index uint64) (*ArrayMetadata, error) {
+	return a.GetMetadataFromIndexWithValueLimit(index, nil)
+}
+
+// GetMetadataFromIndexWithValueLimit gets a metadata item from an open array using an index.
+// The array must be opened in READ mode, otherwise the function will
+// error out.
+// limit parameter limits the number of values returned if string or array
+// This is helpful for pushdown of limitting metadata. If nil value is returned
+// in full
+func (a *Array) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*ArrayMetadata, error) {
 	var cKey *C.char
 	defer C.free(unsafe.Pointer(cKey))
 	var cIndex C.uint64_t = C.uint64_t(index)
@@ -848,6 +858,9 @@ func (a *Array) GetMetadataFromIndex(index uint64) (*ArrayMetadata, error) {
 	}
 
 	datatype := Datatype(cType)
+	if limit != nil && valueNum > *limit {
+		valueNum = *limit
+	}
 	value, err := getMetadataValue(datatype, valueNum, cvalue)
 	if err != nil {
 		return nil, fmt.Errorf("%s, Index: %d", err.Error(), index)
@@ -868,6 +881,16 @@ func (a *Array) GetMetadataFromIndex(index uint64) (*ArrayMetadata, error) {
 // each metadata added and value is an ArrayMetadata struct. The map contains
 // all array metadata previously added
 func (a *Array) GetMetadataMap() (map[string]*ArrayMetadata, error) {
+	return a.GetMetadataMapWithValueLimit(nil)
+}
+
+// GetMetadataMapWithValueLimit returns a map[string]*ArrayMetadata where key is the key of
+// each metadata added and value is an ArrayMetadata struct. The map contains
+// all array metadata previously added
+// limit parameter limits the number of values returned if string or array
+// This is helpful for pushdown of limitting metadata. If nil value is returned
+// in full
+func (a *Array) GetMetadataMapWithValueLimit(limit *uint) (map[string]*ArrayMetadata, error) {
 	metadataMap := make(map[string]*ArrayMetadata)
 
 	numOfMetadata, err := a.GetMetadataNum()
@@ -877,7 +900,7 @@ func (a *Array) GetMetadataMap() (map[string]*ArrayMetadata, error) {
 
 	var I uint64
 	for I = 0; I < numOfMetadata; I++ {
-		arrayMetadata, err := a.GetMetadataFromIndex(I)
+		arrayMetadata, err := a.GetMetadataFromIndexWithValueLimit(I, limit)
 		if err != nil {
 			return nil, err
 		}
