@@ -147,6 +147,36 @@ func DeserializeArrayNonEmptyDomain(a *Array, buffer *Buffer, serializationType 
 	}
 }
 
+// SerializeArrayNonEmptyDomainAllDimensions gets and serializes the array nonempty domain
+func SerializeArrayNonEmptyDomainAllDimensions(a *Array, serializationType SerializationType) (*Buffer, error) {
+
+	buffer := Buffer{context: a.context}
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
+		buffer.Free()
+	})
+
+	var cClientSide = C.int32_t(0) // Currently this parameter is unused in libtiledb
+	ret := C.tiledb_serialize_array_non_empty_domain_all_dimensions(a.context.tiledbContext, a.tiledbArray, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error serializing array nonempty domain: %s", a.context.LastError())
+	}
+
+	return &buffer, nil
+}
+
+// DeserializeArrayNonEmptyDomainAllDimensions deserializes an array nonempty domain
+func DeserializeArrayNonEmptyDomainAllDimensions(a *Array, buffer *Buffer, serializationType SerializationType) error {
+
+	var cClientSide = C.int32_t(0) // Currently this parameter is unused in libtiledb
+	ret := C.tiledb_deserialize_array_non_empty_domain_all_dimensions(a.context.tiledbContext, a.tiledbArray, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deserializing array nonempty domain: %s", a.context.LastError())
+	}
+
+	return nil
+}
+
 // SerializeArrayMaxBufferSizes gets and serializes the array max buffer sizes for the given subarray
 func SerializeArrayMaxBufferSizes(a *Array, subarray interface{}, serializationType SerializationType) (*Buffer, error) {
 	// Create subarray void*
