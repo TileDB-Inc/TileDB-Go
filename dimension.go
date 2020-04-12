@@ -186,6 +186,31 @@ func (d *Dimension) Free() {
 	}
 }
 
+// SetCellValNum Sets the number of values per cell for a dimension.
+// If this is not used, the default is `1`.
+// This is inferred from the type parameter of the NewDimension
+// function, but can also be set manually.
+func (d *Dimension) SetCellValNum(val uint) error {
+	ret := C.tiledb_dimension_set_cell_val_num(d.context.tiledbContext,
+		d.tiledbDimension, C.uint32_t(val))
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error setting tiledb dimension cell val num: %s", d.context.LastError())
+	}
+	return nil
+}
+
+// CellValNum returns number of values of one cell on this attribute.
+// For variable-sized attributes returns TILEDB_VAR_NUM.
+func (d *Dimension) CellValNum() (uint, error) {
+	var cellValNum C.uint32_t
+	ret := C.tiledb_dimension_get_cell_val_num(d.context.tiledbContext, d.tiledbDimension, &cellValNum)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("Error getting tiledb dimension cell val num: %s", d.context.LastError())
+	}
+
+	return uint(cellValNum), nil
+}
+
 // Name returns the name of the dimension
 func (d *Dimension) Name() (string, error) {
 	var cName *C.char

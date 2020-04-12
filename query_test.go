@@ -726,6 +726,10 @@ func TestQueryWrite(t *testing.T) {
 	assert.Nil(t, query.SetLayout(TILEDB_ROW_MAJOR))
 
 	// Create write buffers
+	bufferDim1 := []int8{4, 6}
+	_, err = query.SetBuffer("dim1", bufferDim1)
+	assert.Nil(t, err)
+
 	bufferA1 := []int32{1, 2}
 	_, err = query.SetBuffer("a1", bufferA1)
 	assert.Nil(t, err)
