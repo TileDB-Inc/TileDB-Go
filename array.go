@@ -360,6 +360,97 @@ func (a *Array) NonEmptyDomain() ([]NonEmptyDomain, bool, error) {
 	}
 }
 
+// NonEmptyDomainVarFromName retrieves the non-empty domain from an array for a
+// given dimension name.
+// This returns the bounding coordinates for the dimension
+func (a *Array) NonEmptyDomainVarFromName(dimName string) ([]NonEmptyDomain, []NonEmptyDomain, bool, error) {
+
+	schema, err := a.Schema()
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	domain, err := schema.Domain()
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	domainType, err := domain.Type()
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	cDimName := C.CString(dimName)
+	defer C.free(unsafe.Pointer(cDimName))
+
+	var cstartSize C.uint64_t
+	var cendSize C.uint64_t
+
+	var isEmpty C.int32_t
+
+	var start interface{}
+	var end interface{}
+	var cstart unsafe.Pointer
+	var cend unsafe.Pointer
+
+	switch domainType {
+	case TILEDB_STRING_ASCII:
+		ret := C.tiledb_array_get_non_empty_domain_var_size_from_name(
+			a.context.tiledbContext,
+			a.tiledbArray,
+			cDimName,
+			&cstartSize,
+			&cendSize,
+			&isEmpty)
+		if ret != C.TILEDB_OK {
+			return nil, nil, false, fmt.Errorf("Error in getting non empty domain size for dimension %s for array: %s", dimName, a.context.LastError())
+		}
+
+		if isEmpty == 1 {
+			return nil, nil, true, nil
+		}
+
+		start, cstart, err = domainType.MakeSlice(uint64(cstartSize))
+		if err != nil {
+			return nil, nil, false, err
+		}
+
+		end, cend, err = domainType.MakeSlice(uint64(cendSize))
+		if err != nil {
+			return nil, nil, false, err
+		}
+
+		ret = C.tiledb_array_get_non_empty_domain_var_from_name(
+			a.context.tiledbContext,
+			a.tiledbArray,
+			cDimName,
+			cstart,
+			cend,
+			&isEmpty)
+		if ret != C.TILEDB_OK {
+			return nil, nil, false, fmt.Errorf("Error in getting non empty domain for dimension %s for array: %s", dimName, a.context.LastError())
+		}
+
+		if isEmpty == 1 {
+			return nil, nil, true, nil
+		} else {
+			nonEmptyDomainsStart, err := makeNonEmptyDomain(domain, start)
+			if err != nil {
+				return nil, nil, false, err
+			}
+
+			nonEmptyDomainsEnd, err := makeNonEmptyDomain(domain, end)
+			if err != nil {
+				return nil, nil, false, err
+			}
+
+			return nonEmptyDomainsStart, nonEmptyDomainsEnd, false, nil
+		}
+	}
+
+	return nil, nil, false, nil
+}
+
 // MaxBufferSize computes the upper bound on the buffer size (in bytes)
 // required for a read query for a given fixed attribute and subarray
 func (a *Array) MaxBufferSize(attributeName string, subarray interface{}) (uint64, error) {

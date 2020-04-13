@@ -552,37 +552,6 @@ func (q *Query) AddRangeVar(dimIdx uint32, start string, end string) error {
 	return nil
 }
 
-// AddRangeVar adds a range applicable to variable-sized dimensions
-// Applicable only to string dimensions
-func (q *Query) AddRangeVar(dimIdx uint32, start string, end string) error {
-	if start == "" {
-		return fmt.Errorf("Start buffer passed must be a non-empty string")
-	}
-
-	if end == "" {
-		return fmt.Errorf("End buffer passed must be a non-empty string")
-	}
-
-	var startBuffer unsafe.Pointer
-	var endBuffer unsafe.Pointer
-
-	tStart := []bytes(start)
-	tEnd := []bytes(end)
-	startBuffer = unsafe.Pointer(&(tStart)[0])
-	endBuffer = unsafe.Pointer(&(tEnd)[0])
-
-	ret := C.tiledb_query_add_range_var(
-		q.context.tiledbContext, q.tiledbQuery,
-		(C.uint32_t)(dimIdx), startBuffer, (C.uint64_t)(startSize), endBuffer, (C.uint64_t)(endSize))
-
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf(
-			"Error adding query range: %s", q.context.LastError())
-	}
-
-	return nil
-}
-
 // GetRange retrieves a specific range of the query subarray
 // along a given dimension.
 // Returns (start, end, error)
