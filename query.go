@@ -210,9 +210,6 @@ func (q *Query) SetBufferUnsafe(attribute string, buffer unsafe.Pointer, bufferS
 // The buffer must be an initialized slice
 func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uint64,
 	error) {
-
-	fmt.Printf("%v\n", attributeOrDimension)
-
 	bufferReflectType := reflect.TypeOf(buffer)
 	bufferReflectValue := reflect.ValueOf(buffer)
 	if bufferReflectValue.Kind() != reflect.Slice {
@@ -986,7 +983,6 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 		// Store slice so underlying array is not gc'ed
 		q.buffers = append(q.buffers, tmpBuffer)
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
-		// cbuffer = unsafe.Pointer(C.CString("ccbbddddaa"))
 	case reflect.Uint16:
 		// Set buffersize
 		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint16(0)))
