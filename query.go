@@ -520,33 +520,80 @@ func (q *Query) AddRange(dimIdx uint32, start interface{}, end interface{}) erro
 
 // AddRangeVar adds a range applicable to variable-sized dimensions
 // Applicable only to string dimensions
-func (q *Query) AddRangeVar(dimIdx uint32, start string, end string) error {
-	if start == "" {
-		return fmt.Errorf("Start buffer passed must be a non-empty string")
+func (q *Query) AddRangeVar(dimIdx uint32, start interface{}, end interface{}) error {
+	startReflectValue := reflect.ValueOf(start)
+	endReflectValue := reflect.ValueOf(end)
+
+	if startReflectValue.Kind() != reflect.Slice {
+		return fmt.Errorf("Start buffer passed must be a slice that is pre"+
+			"-allocated, type passed was: %s", startReflectValue.Kind().String())
 	}
 
-	if end == "" {
-		return fmt.Errorf("End buffer passed must be a non-empty string")
+	if endReflectValue.Kind() != reflect.Slice {
+		return fmt.Errorf("End buffer passed must be a slice that is pre"+
+			"-allocated, type passed was: %s", endReflectValue.Kind().String())
 	}
+
+	startSize := uint64(startReflectValue.Len())
+	endSize := uint64(endReflectValue.Len())
 
 	var startBuffer unsafe.Pointer
 	var endBuffer unsafe.Pointer
 
-	tStart := []byte(start)
-	tEnd := []byte(end)
-	startBuffer = unsafe.Pointer(&(tStart)[0])
-	endBuffer = unsafe.Pointer(&(tEnd)[0])
+	startReflectType := reflect.TypeOf(start)
+	startType := startReflectType.Elem().Kind()
 
-	startSize := len(tStart)
-	endSize := len(tEnd)
+	switch startType {
+	case reflect.Int:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Int8:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Int16:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Int32:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Int64:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Uint:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Uint8:
+		tStart := start.([]uint8)
+		tEnd := end.([]uint8)
+		startBuffer = unsafe.Pointer(&(tStart)[0])
+		endBuffer = unsafe.Pointer(&(tEnd)[0])
 
-	ret := C.tiledb_query_add_range_var(
-		q.context.tiledbContext, q.tiledbQuery,
-		(C.uint32_t)(dimIdx), startBuffer, (C.uint64_t)(startSize), endBuffer, (C.uint64_t)(endSize))
+		ret := C.tiledb_query_add_range_var(
+			q.context.tiledbContext, q.tiledbQuery,
+			(C.uint32_t)(dimIdx), startBuffer, (C.uint64_t)(startSize), endBuffer, (C.uint64_t)(endSize))
 
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf(
-			"Error adding query range: %s", q.context.LastError())
+		if ret != C.TILEDB_OK {
+			return fmt.Errorf(
+				"Error adding query range var: %s", q.context.LastError())
+		}
+	case reflect.Uint16:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Uint32:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Uint64:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Float32:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Float64:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	default:
+		return fmt.Errorf("Unrecognized type of range component passed: %s",
+			startType.String())
 	}
 
 	return nil

@@ -140,7 +140,7 @@ func readStringDimArray() {
 	checkError(err)
 	s1 := "a"
 	s2 := "ee"
-	err = query.AddRangeVar(0, s1, s2)
+	err = query.AddRangeVar(0, []byte(s1), []byte(s2))
 	checkError(err)
 
 	offsets := make([]uint64, 4)
