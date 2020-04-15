@@ -220,6 +220,18 @@ func TestDimensionDomainTypes(t *testing.T) {
 	assert.NotNil(t, extent)
 	assert.EqualValues(t, float64(5), extent)
 
+	dimension, err = NewStringDimension(context, "test")
+	assert.Nil(t, err)
+	assert.NotNil(t, dimension)
+	domain, err = dimension.Domain()
+	assert.Nil(t, err)
+	// Test getting domain
+	assert.Nil(t, domain)
+	// Test getting extent
+	extent, err = dimension.Extent()
+	assert.Nil(t, err)
+	assert.Nil(t, extent)
+
 	// Temp path for testing dump
 	tmpPathDump := os.TempDir() + string(os.PathSeparator) + "tiledb_dimension_dump_test"
 	// Cleanup tmp file when test ends

@@ -628,6 +628,9 @@ func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface
 	case TILEDB_FLOAT64:
 		start = *(*float64)(unsafe.Pointer(pStart))
 		end = *(*float64)(unsafe.Pointer(pEnd))
+	case TILEDB_STRING_ASCII:
+		start = *(*uint8)(unsafe.Pointer(pStart))
+		end = *(*uint8)(unsafe.Pointer(pEnd))
 	default:
 		return nil, nil, fmt.Errorf("Unrecognized dimension type: %d", datatype)
 	}
