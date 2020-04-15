@@ -179,11 +179,60 @@ func NewDimension(context *Context, name string, domain interface{}, extent inte
 	return &dimension, nil
 }
 
+// NewStringDimension alloc a new string dimension
+func NewStringDimension(context *Context, name string) (*Dimension, error) {
+	dimension := Dimension{context: context}
+	var cname *C.char = C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+
+	var datatype Datatype
+	var ret C.int32_t
+
+	datatype = TILEDB_STRING_ASCII
+	ret = C.tiledb_dimension_alloc(context.tiledbContext, cname, C.tiledb_datatype_t(datatype), nil, nil, &dimension.tiledbDimension)
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error creating tiledb dimension: %s", context.LastError())
+	}
+
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&dimension, func(dimension *Dimension) {
+		dimension.Free()
+	})
+
+	return &dimension, nil
+}
+
 // Free tiledb_dimension_t that was allocated on heap in c
 func (d *Dimension) Free() {
 	if d.tiledbDimension != nil {
 		C.tiledb_dimension_free(&d.tiledbDimension)
 	}
+}
+
+// SetCellValNum Sets the number of values per cell for a dimension.
+// If this is not used, the default is `1`.
+// This is inferred from the type parameter of the NewDimension
+// function, but can also be set manually.
+func (d *Dimension) SetCellValNum(val uint) error {
+	ret := C.tiledb_dimension_set_cell_val_num(d.context.tiledbContext,
+		d.tiledbDimension, C.uint32_t(val))
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error setting tiledb dimension cell val num: %s", d.context.LastError())
+	}
+	return nil
+}
+
+// CellValNum returns number of values of one cell on this attribute.
+// For variable-sized attributes returns TILEDB_VAR_NUM.
+func (d *Dimension) CellValNum() (uint, error) {
+	var cellValNum C.uint32_t
+	ret := C.tiledb_dimension_get_cell_val_num(d.context.tiledbContext, d.tiledbDimension, &cellValNum)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("Error getting tiledb dimension cell val num: %s", d.context.LastError())
+	}
+
+	return uint(cellValNum), nil
 }
 
 // Name returns the name of the dimension
@@ -319,6 +368,8 @@ func (d *Dimension) Domain() (interface{}, error) {
 			tmpDomain[i] = float64(s)
 		}
 		domain = tmpDomain
+	case TILEDB_STRING_ASCII:
+		domain = nil
 	default:
 		return nil, fmt.Errorf("Unrecognized domain type: %d", datatype)
 	}
@@ -389,6 +440,8 @@ func (d *Dimension) Extent() (interface{}, error) {
 		defer C.free(cextent)
 		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
 		extent = *(*float64)(unsafe.Pointer(cextent))
+	case TILEDB_STRING_ASCII:
+		extent = nil
 	default:
 		return nil, fmt.Errorf("Unrecognized extent type: %d", datatype)
 	}

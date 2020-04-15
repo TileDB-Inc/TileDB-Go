@@ -208,7 +208,7 @@ func (q *Query) SetBufferUnsafe(attribute string, buffer unsafe.Pointer, bufferS
 
 // SetBuffer Sets the buffer for a fixed-sized attribute to a query
 // The buffer must be an initialized slice
-func (q *Query) SetBuffer(attribute string, buffer interface{}) (*uint64,
+func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uint64,
 	error) {
 	bufferReflectType := reflect.TypeOf(buffer)
 	bufferReflectValue := reflect.ValueOf(buffer)
@@ -227,45 +227,59 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) (*uint64,
 			err)
 	}
 
-	var attributeType Datatype
+	var attributeOrDimensionType Datatype
 	// If we are setting tiledb coordinates for a sparse array we want to check
 	// the domain type. The TILEDB_COORDS attribute is only materialized after
 	// the first write
-	if attribute == TILEDB_COORDS {
+	if attributeOrDimension == TILEDB_COORDS {
 		domain, err := schema.Domain()
 		if err != nil {
 			return nil, fmt.Errorf(
 				"Could not get domain for SetBuffer: %s",
-				attribute)
+				attributeOrDimension)
 		}
-		attributeType, err = domain.Type()
+		attributeOrDimensionType, err = domain.Type()
 		if err != nil {
 			return nil, fmt.Errorf(
 				"Could not get domainType for SetBuffer: %s",
-				attribute)
+				attributeOrDimension)
 		}
 	} else {
-		schemaAttribute, err := schema.AttributeFromName(attribute)
+		schemaAttribute, err := schema.AttributeFromName(attributeOrDimension)
 		if err != nil {
-			return nil, fmt.Errorf(
-				"Could not get attribute for SetBuffer: %s",
-				attribute)
-		}
+			domain, err := schema.Domain()
+			if err != nil {
+				return nil, fmt.Errorf(
+					"Could not get domain from array schema for SetBuffer: %s",
+					err)
+			}
 
-		attributeType, err = schemaAttribute.Type()
-		if err != nil {
-			return nil, fmt.Errorf(
-				"Could not get attributeType for SetBuffer: %s",
-				attribute)
+			dimension, err := domain.DimensionFromName(attributeOrDimension)
+			if err != nil {
+				return nil, fmt.Errorf("Could not get attribute or dimension for SetBuffer: %s",
+					attributeOrDimension)
+			}
+
+			attributeOrDimensionType, err = dimension.Type()
+			if err != nil {
+				return nil, fmt.Errorf("Could not get dimensionType for SetBuffer: %s",
+					attributeOrDimension)
+			}
+		} else {
+			attributeOrDimensionType, err = schemaAttribute.Type()
+			if err != nil {
+				return nil, fmt.Errorf("Could not get attributeType for SetBuffer: %s",
+					attributeOrDimension)
+			}
 		}
 	}
 
 	bufferType := bufferReflectType.Elem().Kind()
-	if attributeType.ReflectKind() != bufferType {
+	if attributeOrDimensionType.ReflectKind() != bufferType {
 		return nil, fmt.Errorf("Buffer and Attribute do not have the same"+
 			" data types. Buffer: %s, Attribute: %s",
 			bufferType.String(),
-			attributeType.ReflectKind().String())
+			attributeOrDimensionType.ReflectKind().String())
 	}
 
 	var cbuffer unsafe.Pointer
@@ -385,13 +399,13 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) (*uint64,
 				bufferType.String())
 	}
 
-	cAttribute := C.CString(attribute)
-	defer C.free(unsafe.Pointer(cAttribute))
+	cAttributeOrDimension := C.CString(attributeOrDimension)
+	defer C.free(unsafe.Pointer(cAttributeOrDimension))
 
 	ret := C.tiledb_query_set_buffer(
 		q.context.tiledbContext,
 		q.tiledbQuery,
-		cAttribute,
+		cAttributeOrDimension,
 		cbuffer,
 		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
 
@@ -400,7 +414,7 @@ func (q *Query) SetBuffer(attribute string, buffer interface{}) (*uint64,
 			"Error setting query buffer: %s", q.context.LastError())
 	}
 
-	q.resultBufferElements[attribute] =
+	q.resultBufferElements[attributeOrDimension] =
 		[2]*uint64{nil, &bufferSize}
 
 	return &bufferSize, nil
@@ -504,6 +518,87 @@ func (q *Query) AddRange(dimIdx uint32, start interface{}, end interface{}) erro
 	return nil
 }
 
+// AddRangeVar adds a range applicable to variable-sized dimensions
+// Applicable only to string dimensions
+func (q *Query) AddRangeVar(dimIdx uint32, start interface{}, end interface{}) error {
+	startReflectValue := reflect.ValueOf(start)
+	endReflectValue := reflect.ValueOf(end)
+
+	if startReflectValue.Kind() != reflect.Slice {
+		return fmt.Errorf("Start buffer passed must be a slice that is pre"+
+			"-allocated, type passed was: %s", startReflectValue.Kind().String())
+	}
+
+	if endReflectValue.Kind() != reflect.Slice {
+		return fmt.Errorf("End buffer passed must be a slice that is pre"+
+			"-allocated, type passed was: %s", endReflectValue.Kind().String())
+	}
+
+	startSize := uint64(startReflectValue.Len())
+	endSize := uint64(endReflectValue.Len())
+
+	var startBuffer unsafe.Pointer
+	var endBuffer unsafe.Pointer
+
+	startReflectType := reflect.TypeOf(start)
+	startType := startReflectType.Elem().Kind()
+
+	switch startType {
+	case reflect.Int:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Int8:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Int16:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Int32:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Int64:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Uint:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Uint8:
+		tStart := start.([]uint8)
+		tEnd := end.([]uint8)
+		startBuffer = unsafe.Pointer(&(tStart)[0])
+		endBuffer = unsafe.Pointer(&(tEnd)[0])
+
+		ret := C.tiledb_query_add_range_var(
+			q.context.tiledbContext, q.tiledbQuery,
+			(C.uint32_t)(dimIdx), startBuffer, (C.uint64_t)(startSize), endBuffer, (C.uint64_t)(endSize))
+
+		if ret != C.TILEDB_OK {
+			return fmt.Errorf(
+				"Error adding query range var: %s", q.context.LastError())
+		}
+	case reflect.Uint16:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Uint32:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Uint64:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Float32:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Float64:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	default:
+		return fmt.Errorf("Unrecognized type of range component passed: %s",
+			startType.String())
+	}
+
+	return nil
+}
+
 // GetRange retrieves a specific range of the query subarray
 // along a given dimension.
 // Returns (start, end, error)
@@ -580,6 +675,9 @@ func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface
 	case TILEDB_FLOAT64:
 		start = *(*float64)(unsafe.Pointer(pStart))
 		end = *(*float64)(unsafe.Pointer(pEnd))
+	case TILEDB_STRING_ASCII:
+		start = *(*uint8)(unsafe.Pointer(pStart))
+		end = *(*uint8)(unsafe.Pointer(pEnd))
 	default:
 		return nil, nil, fmt.Errorf("Unrecognized dimension type: %d", datatype)
 	}
@@ -826,9 +924,9 @@ func (q *Query) SetBufferVarUnsafe(attribute string, offset unsafe.Pointer, offs
 	return &offsetSize, &bufferSize, nil
 }
 
-// SetBufferVar Sets the buffer for a variable sized attribute to a query
+// SetBufferVar Sets the buffer for a variable sized attribute/dimension to a query
 // The buffer must be an initialized slice
-func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface{}) (*uint64, *uint64, error) {
+func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffer interface{}) (*uint64, *uint64, error) {
 	bufferReflectType := reflect.TypeOf(buffer)
 	bufferReflectValue := reflect.ValueOf(buffer)
 	if bufferReflectValue.Kind() != reflect.Slice {
@@ -844,22 +942,41 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 			err)
 	}
 
-	schemaAttribute, err := schema.AttributeFromName(attribute)
-	if err != nil {
-		return nil, nil, fmt.Errorf("Could not get attribute for SetBuffer: %s",
-			attribute)
-	}
+	var attributeOrDimensionType Datatype
 
-	attributeType, err := schemaAttribute.Type()
+	schemaAttribute, err := schema.AttributeFromName(attributeOrDimension)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Could not get attributeType for SetBuffer: %s",
-			attribute)
+		domain, err := schema.Domain()
+		if err != nil {
+			return nil, nil, fmt.Errorf(
+				"Could not get domain from array schema for SetBufferVar: %s",
+				err)
+		}
+
+		dimension, err := domain.DimensionFromName(attributeOrDimension)
+		if err != nil {
+			return nil, nil, fmt.Errorf("Could not get attribute or dimension for SetBufferVar: %s",
+				attributeOrDimension)
+		} else {
+			attributeOrDimensionType, err = dimension.Type()
+			if err != nil {
+				return nil, nil, fmt.Errorf("Could not get dimensionType for SetBufferVar: %s",
+					attributeOrDimension)
+			}
+		}
+	} else {
+		attributeOrDimensionType, err = schemaAttribute.Type()
+		if err != nil {
+			return nil, nil, fmt.Errorf("Could not get attributeType for SetBufferVar: %s",
+				attributeOrDimension)
+		}
 	}
 
 	bufferType := bufferReflectType.Elem().Kind()
-	if attributeType.ReflectKind() != bufferType {
+
+	if attributeOrDimensionType.ReflectKind() != bufferType {
 		return nil, nil, fmt.Errorf("Buffer and Attribute do not have the same"+
-			" data types. Buffer: %s, Attribute: %s", bufferType.String(), attributeType.ReflectKind().String())
+			" data types. Buffer: %s, Attribute: %s", bufferType.String(), attributeOrDimensionType.ReflectKind().String())
 	}
 
 	bufferSize := uint64(bufferReflectValue.Len())
@@ -1000,13 +1117,13 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 			bufferType.String())
 	}
 
-	cAttribute := C.CString(attribute)
-	defer C.free(unsafe.Pointer(cAttribute))
+	cAttributeOrDimension := C.CString(attributeOrDimension)
+	defer C.free(unsafe.Pointer(cAttributeOrDimension))
 
 	ret := C.tiledb_query_set_buffer_var(
 		q.context.tiledbContext,
 		q.tiledbQuery,
-		cAttribute,
+		cAttributeOrDimension,
 		(*C.uint64_t)(coffset),
 		(*C.uint64_t)(unsafe.Pointer(&offsetSize)),
 		cbuffer,
@@ -1017,7 +1134,7 @@ func (q *Query) SetBufferVar(attribute string, offset []uint64, buffer interface
 			q.context.LastError())
 	}
 
-	q.resultBufferElements[attribute] =
+	q.resultBufferElements[attributeOrDimension] =
 		[2]*uint64{&offsetSize, &bufferSize}
 
 	return &offsetSize, &bufferSize, nil
