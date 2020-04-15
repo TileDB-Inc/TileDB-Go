@@ -121,6 +121,15 @@ func readSparseHeterDimArray() {
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
 
+	// Non-empty domain: [1,4], [1,4]
+	x, isEmpty, err := array.NonEmptyDomain()
+	if !isEmpty {
+		d1 := x[0].Bounds.([]float32)
+		d2 := x[1].Bounds.([]int64)
+		fmt.Printf("Non-empty domain: [%f,%f], [%d,%d]\n",
+			d1[0], d1[1], d2[0], d2[1])
+	}
+
 	buffD1R := make([]float32, 4)
 	buffD2R := make([]int64, 4)
 	buffAR := make([]int32, 4)
@@ -166,7 +175,8 @@ func ExampleSparseHeterDimArray() {
 		checkError(err)
 	}
 
-	// Output: D1 Buffer: [1.1 1.2 1.3 1.4]
+	// Output: Non-empty domain: [1.100000,1.400000], [1,4]
+	// D1 Buffer: [1.1 1.2 1.3 1.4]
 	// D2 Buffer: [1 2 3 4]
 	// A Attribute Data: [1 2 3 4]
 }
