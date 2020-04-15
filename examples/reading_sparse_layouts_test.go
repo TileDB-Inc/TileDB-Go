@@ -40,8 +40,9 @@ package examples
 
 import (
 	"fmt"
-	"github.com/TileDB-Inc/TileDB-Go"
 	"os"
+
+	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
@@ -91,8 +92,18 @@ func writeReadingSparseLayoutsArray() {
 	checkError(err)
 
 	// Prepare data for writing.
-	coords := []int32{1, 1, 1, 2, 2, 2, 1, 4, 2, 3, 2, 4}
-	data := []uint32{1, 2, 3, 4, 5, 6}
+	coords := []int32{1, 1,
+		1, 2,
+		2, 2,
+		1, 4,
+		2, 3,
+		2, 4}
+	data := []uint32{1,
+		2,
+		3,
+		4,
+		5,
+		6}
 
 	// Open the array for writing and create the query.
 	array, err := tiledb.NewArray(ctx, readingSparseLayoutsArrayName)
@@ -117,7 +128,7 @@ func writeReadingSparseLayoutsArray() {
 	checkError(err)
 }
 
-func readeReadingSparseLayoutsArray() {
+func readReadingSparseLayoutsArray() {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
@@ -179,7 +190,7 @@ func readeReadingSparseLayoutsArray() {
 func ExampleReadingSparseLayouts() {
 	createReadingSparseLayoutsArray()
 	writeReadingSparseLayoutsArray()
-	readeReadingSparseLayoutsArray()
+	readReadingSparseLayoutsArray()
 
 	// Cleanup example so unit tests are clean
 	if _, err := os.Stat(readingSparseLayoutsArrayName); err == nil {

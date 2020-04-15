@@ -138,13 +138,78 @@ func DeserializeArrayNonEmptyDomain(a *Array, buffer *Buffer, serializationType 
 
 	if isEmpty == 1 {
 		return nil, true, nil
-	} else {
-		nonEmptyDomains, err := makeNonEmptyDomain(domain, tmpDomain)
+	}
+
+	tmpDomainType := reflect.TypeOf(tmpDomain).Elem().Kind()
+	nonEmptyDomains := make([]NonEmptyDomain, 0)
+	for i := uint(0); i < ndims; i++ {
+		dimension, err := domain.DimensionFromIndex(i)
 		if err != nil {
 			return nil, false, err
 		}
-		return nonEmptyDomains, false, nil
+
+		var nonEmptyDomain *NonEmptyDomain
+
+		switch tmpDomainType {
+		case reflect.Int:
+			tmpSubArray := tmpDomain.([]int)
+			tmpDimension := []int{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
+		case reflect.Int8:
+			tmpSubArray := tmpDomain.([]int8)
+			tmpDimension := []int8{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
+		case reflect.Int16:
+			tmpSubArray := tmpDomain.([]int16)
+			tmpDimension := []int16{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
+		case reflect.Int32:
+			tmpSubArray := tmpDomain.([]int32)
+			tmpDimension := []int32{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
+		case reflect.Int64:
+			tmpSubArray := tmpDomain.([]int64)
+			tmpDimension := []int64{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
+		case reflect.Uint:
+			tmpSubArray := tmpDomain.([]uint)
+			tmpDimension := []uint{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
+		case reflect.Uint8:
+			tmpSubArray := tmpDomain.([]uint8)
+			tmpDimension := []uint8{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
+		case reflect.Uint16:
+			tmpSubArray := tmpDomain.([]uint16)
+			tmpDimension := []uint16{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
+		case reflect.Uint32:
+			tmpSubArray := tmpDomain.([]uint32)
+			tmpDimension := []uint32{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
+		case reflect.Uint64:
+			tmpSubArray := tmpDomain.([]uint64)
+			tmpDimension := []uint64{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
+		case reflect.Float32:
+			tmpSubArray := tmpDomain.([]float32)
+			tmpDimension := []float32{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
+		case reflect.Float64:
+			tmpSubArray := tmpDomain.([]float64)
+			tmpDimension := []float64{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
+		default:
+			return nil, false, fmt.Errorf("unhandled domain datatype: %s", tmpDomainType.String())
+		}
+
+		if err != nil {
+			return nil, false, err
+		}
+		nonEmptyDomains = append(nonEmptyDomains, *nonEmptyDomain)
 	}
+
+	return nonEmptyDomains, false, nil
 }
 
 // SerializeArrayNonEmptyDomainAllDimensions gets and serializes the array nonempty domain

@@ -179,6 +179,30 @@ func NewDimension(context *Context, name string, domain interface{}, extent inte
 	return &dimension, nil
 }
 
+// NewStringDimension alloc a new string dimension
+func NewStringDimension(context *Context, name string) (*Dimension, error) {
+	dimension := Dimension{context: context}
+	var cname *C.char = C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+
+	var datatype Datatype
+	var ret C.int32_t
+
+	datatype = TILEDB_STRING_ASCII
+	ret = C.tiledb_dimension_alloc(context.tiledbContext, cname, C.tiledb_datatype_t(datatype), nil, nil, &dimension.tiledbDimension)
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error creating tiledb dimension: %s", context.LastError())
+	}
+
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&dimension, func(dimension *Dimension) {
+		dimension.Free()
+	})
+
+	return &dimension, nil
+}
+
 // Free tiledb_dimension_t that was allocated on heap in c
 func (d *Dimension) Free() {
 	if d.tiledbDimension != nil {
@@ -344,6 +368,8 @@ func (d *Dimension) Domain() (interface{}, error) {
 			tmpDomain[i] = float64(s)
 		}
 		domain = tmpDomain
+	case TILEDB_STRING_ASCII:
+		domain = nil
 	default:
 		return nil, fmt.Errorf("Unrecognized domain type: %d", datatype)
 	}
@@ -414,6 +440,8 @@ func (d *Dimension) Extent() (interface{}, error) {
 		defer C.free(cextent)
 		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
 		extent = *(*float64)(unsafe.Pointer(cextent))
+	case TILEDB_STRING_ASCII:
+		extent = nil
 	default:
 		return nil, fmt.Errorf("Unrecognized extent type: %d", datatype)
 	}
