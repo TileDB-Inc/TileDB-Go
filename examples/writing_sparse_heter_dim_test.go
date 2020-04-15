@@ -35,6 +35,7 @@
 package examples
 
 import (
+	"fmt"
 	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
@@ -43,7 +44,7 @@ import (
 // Name of array.
 var heterArrayName = "writing_sparse_heter_dim"
 
-func createSparseArray() {
+func createSparseHeterDimArray() {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -78,14 +79,14 @@ func createSparseArray() {
 	checkError(err)
 }
 
-func writeSparseArray() {
+func writeSparseHeterDimArray() {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
 	// Write some simple data to cells.
-	buff_d1 := []float32{1.1, 1.2, 1.3, 1.4}
-	buff_d2 := []float32{1, 2, 3, 4}
-	buff_a := []int32{1, 2, 3, 4}
+	buffD1 := []float32{1.1, 1.2, 1.3, 1.4}
+	buffD2 := []int64{1, 2, 3, 4}
+	buffA := []int32{1, 2, 3, 4}
 
 	// Open the array for writing and create the query.
 	array, err := tiledb.NewArray(ctx, heterArrayName)
@@ -96,11 +97,11 @@ func writeSparseArray() {
 	checkError(err)
 	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
 	checkError(err)
-	_, err = query.SetBuffer("a", buff_a)
+	_, err = query.SetBuffer("d1", buffD1)
 	checkError(err)
-	_, err = query.SetCoordinates(buff_d1)
+	_, err = query.SetBuffer("d2", buffD2)
 	checkError(err)
-	_, err = query.SetCoordinates(buff_d2)
+	_, err = query.SetBuffer("a", buffA)
 	checkError(err)
 
 	// Perform the write and close the array.
@@ -110,7 +111,7 @@ func writeSparseArray() {
 	checkError(err)
 }
 
-func readSparseArray() {
+func readSparseHeterDimArray() {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
@@ -121,15 +122,15 @@ func readSparseArray() {
 	checkError(err)
 
 	buffD1R := make([]float32, 4)
-	buffD2R := make([]int32, 4)
+	buffD2R := make([]int64, 4)
 	buffAR := make([]int32, 4)
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
-	_, err = query.SetCoordinates(buffD1R)
+	_, err = query.SetBuffer("d1", buffD1R)
 	checkError(err)
-	_, err = query.SetCoordinates(buffD2R)
+	_, err = query.SetBuffer("d2", buffD2R)
 	checkError(err)
 	_, err = query.SetBuffer("a", buffAR)
 	checkError(err)
@@ -144,6 +145,10 @@ func readSparseArray() {
 	err = query.Submit()
 	checkError(err)
 
+	fmt.Printf("D1 Buffer: %v\n", buffD1R)
+	fmt.Printf("D2 Buffer: %v\n", buffD2R)
+	fmt.Printf("A Attribute Data: %v\n", buffAR)
+
 	err = array.Close()
 	checkError(err)
 }
@@ -151,19 +156,17 @@ func readSparseArray() {
 // ExampleSparseHeterDimArray shows and example creation, writing and reading of
 // a sparse array using heterogeneus dimensions
 func ExampleSparseHeterDimArray() {
-	err := os.RemoveAll(heterArrayName)
-	checkError(err)
+	createSparseHeterDimArray()
+	writeSparseHeterDimArray()
+	readSparseHeterDimArray()
 
-	createSparseArray()
-	writeSparseArray()
-	readSparseArray()
+	// Cleanup example so unit tests are clean
+	if _, err := os.Stat(heterArrayName); err == nil {
+		err = os.RemoveAll(heterArrayName)
+		checkError(err)
+	}
 
-	// // Cleanup example so unit tests are clean
-	// if _, err := os.Stat(heterArrayName); err == nil {
-	// 	err = os.RemoveAll(heterArrayName)
-	// 	checkError(err)
-	// }
-
-	// Output: Cell (2, 3) has data 3
-	// Cell (2, 4) has data 2
+	// Output: D1 Buffer: [1.1 1.2 1.3 1.4]
+	// D2 Buffer: [1 2 3 4]
+	// A Attribute Data: [1 2 3 4]
 }
