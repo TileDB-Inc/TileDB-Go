@@ -466,6 +466,93 @@ func (a *Array) NonEmptyDomainVarFromName(dimName string) (*NonEmptyDomain, bool
 	return nonEmptyDomain, false, nil
 }
 
+// NonEmptyDomainVarFromIndex retrieves the non-empty domain from an array for a
+// given var-sized dimension index. Supports only TILEDB_STRING_ASCII type
+// Returns the bounding coordinates for the dimension
+func (a *Array) NonEmptyDomainVarFromIndex(dimIdx uint) (*NonEmptyDomain, bool, error) {
+
+	schema, err := a.Schema()
+	if err != nil {
+		return nil, false, err
+	}
+
+	domain, err := schema.Domain()
+	if err != nil {
+		return nil, false, err
+	}
+
+	dimension, err := domain.DimensionFromIndex(dimIdx)
+	if err != nil {
+		return nil, false, fmt.Errorf("Could not get dimension having index: %d", dimIdx)
+	}
+
+	dimType, err := dimension.Type()
+	if err != nil {
+		return nil, false, err
+	}
+
+	var cstartSize C.uint64_t
+	var cendSize C.uint64_t
+
+	var isEmpty C.int32_t
+
+	var start interface{}
+	var end interface{}
+	var cstart unsafe.Pointer
+	var cend unsafe.Pointer
+
+	ret := C.tiledb_array_get_non_empty_domain_var_size_from_index(
+		a.context.tiledbContext,
+		a.tiledbArray,
+		(C.uint32_t)(dimIdx),
+		&cstartSize,
+		&cendSize,
+		&isEmpty)
+	if ret != C.TILEDB_OK {
+		return nil, false, fmt.Errorf("Error in getting non empty domain size for dimension %d for array: %s", dimIdx, a.context.LastError())
+	}
+
+	if isEmpty == 1 {
+		return nil, true, nil
+	}
+
+	bounds := make([]interface{}, 0)
+
+	start, cstart, err = dimType.MakeSlice(uint64(cstartSize))
+	if err != nil {
+		return nil, false, err
+	}
+	bounds = append(bounds, start)
+
+	end, cend, err = dimType.MakeSlice(uint64(cendSize))
+	if err != nil {
+		return nil, false, err
+	}
+	bounds = append(bounds, end)
+
+	ret = C.tiledb_array_get_non_empty_domain_var_from_index(
+		a.context.tiledbContext,
+		a.tiledbArray,
+		(C.uint32_t)(dimIdx),
+		cstart,
+		cend,
+		&isEmpty)
+	if ret != C.TILEDB_OK {
+		return nil, false, fmt.Errorf("Error in getting non empty domain for dimension index %d for array: %s", dimIdx, a.context.LastError())
+	}
+
+	if isEmpty == 1 {
+		return nil, true, nil
+	}
+
+	nonEmptyDomain, err := getNonEmptyDomainForDim(dimension, bounds)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return nonEmptyDomain, false, nil
+}
+
 // MaxBufferSize computes the upper bound on the buffer size (in bytes)
 // required for a read query for a given fixed attribute and subarray
 func (a *Array) MaxBufferSize(attributeName string, subarray interface{}) (uint64, error) {

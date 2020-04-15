@@ -127,6 +127,14 @@ func readStringDimArray() {
 		fmt.Printf("NonEmptyDomain Bounds: %v\n", nonEmptyDomain.Bounds)
 	}
 
+	nonEmptyDomain, isEmpty, err = array.NonEmptyDomainVarFromIndex(uint(0))
+	checkError(err)
+
+	if !isEmpty {
+		fmt.Printf("NonEmptyDomain Dimension Name: %v\n", nonEmptyDomain.DimensionName)
+		fmt.Printf("NonEmptyDomain Bounds: %v\n", nonEmptyDomain.Bounds)
+	}
+
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
@@ -165,6 +173,8 @@ func ExampleStringDimArray() {
 	}
 
 	// Output: NonEmptyDomain Dimension Name: d
+	// NonEmptyDomain Bounds: [aa dddd]
+	// NonEmptyDomain Dimension Name: d
 	// NonEmptyDomain Bounds: [aa dddd]
 	// offsets: [0 2 4 6]
 	// data: aabbccdddd
