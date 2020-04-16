@@ -238,6 +238,7 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 				"Could not get domain for SetBuffer: %s",
 				attributeOrDimension)
 		}
+
 		attributeOrDimensionType, err = domain.Type()
 		if err != nil {
 			return nil, fmt.Errorf(
