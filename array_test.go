@@ -193,6 +193,18 @@ func TestArray(t *testing.T) {
 	assert.Nil(t, nonEmptyDomain)
 	assert.True(t, isEmpty)
 
+	// Test from name
+	nonEmptyDomainFromName, isEmpty, err := array.NonEmptyDomainFromName("dim1")
+	assert.Nil(t, err)
+	assert.Nil(t, nonEmptyDomainFromName)
+	assert.True(t, isEmpty)
+
+	// Test from index
+	nonEmptyDomainFromIndex, isEmpty, err := array.NonEmptyDomainFromIndex(0)
+	assert.Nil(t, err)
+	assert.Nil(t, nonEmptyDomainFromIndex)
+	assert.True(t, isEmpty)
+
 	// Get MaxBufferSize, which is 0 because array is empty
 	maxBufferSize, err := array.MaxBufferSize("a1", []int8{1, 6})
 	assert.Nil(t, err)
