@@ -566,8 +566,8 @@ func (q *Query) AddRangeVar(dimIdx uint32, start interface{}, end interface{}) e
 	case reflect.Uint8:
 		tStart := start.([]uint8)
 		tEnd := end.([]uint8)
-		startBuffer = unsafe.Pointer(&(tStart)[0])
-		endBuffer = unsafe.Pointer(&(tEnd)[0])
+		startBuffer = unsafe.Pointer(&(tStart[0]))
+		endBuffer = unsafe.Pointer(&(tEnd[0]))
 
 		ret := C.tiledb_query_add_range_var(
 			q.context.tiledbContext, q.tiledbQuery,
@@ -765,14 +765,14 @@ func (q *Query) GetRangeNum(dimIdx uint32) (*uint64, error) {
 }
 
 // Buffer returns a slice backed by the underlying c buffer from tiledb
-func (q *Query) Buffer(attributeName string) (interface{}, error) {
+func (q *Query) Buffer(attributeOrDimension string) (interface{}, error) {
 	var datatype Datatype
 	schema, err := q.array.Schema()
 	if err != nil {
 		return nil, err
 	}
 
-	if attributeName == TILEDB_COORDS {
+	if attributeOrDimension == TILEDB_COORDS {
 		domain, err := schema.Domain()
 		if err != nil {
 			return nil, err
@@ -782,18 +782,34 @@ func (q *Query) Buffer(attributeName string) (interface{}, error) {
 			return nil, err
 		}
 	} else {
-		attribute, err := schema.AttributeFromName(attributeName)
+		attribute, err := schema.AttributeFromName(attributeOrDimension)
 		if err != nil {
-			return nil, err
-		}
-		datatype, err = attribute.Type()
-		if err != nil {
-			return nil, err
+			domain, err := schema.Domain()
+			if err != nil {
+				return nil, fmt.Errorf(
+					"Could not get domain from array schema for SetBuffer: %s",
+					err)
+			}
+
+			dimension, err := domain.DimensionFromName(attributeOrDimension)
+			if err != nil {
+				return nil, fmt.Errorf("Could not get attribute or dimension for SetBuffer: %s", attributeOrDimension)
+			}
+
+			datatype, err = dimension.Type()
+			if err != nil {
+				return nil, fmt.Errorf("Could not get dimensionType for SetBuffer: %s", attributeOrDimension)
+			}
+		} else {
+			datatype, err = attribute.Type()
+			if err != nil {
+				return nil, fmt.Errorf("Could not get attributeType for SetBuffer: %s", attributeOrDimension)
+			}
 		}
 	}
 
-	cattributeName := C.CString(attributeName)
-	defer C.free(unsafe.Pointer(cattributeName))
+	cAttributeOrDimension := C.CString(attributeOrDimension)
+	defer C.free(unsafe.Pointer(cAttributeOrDimension))
 
 	var ret C.int32_t
 	var cbufferSize *C.uint64_t
@@ -801,92 +817,92 @@ func (q *Query) Buffer(attributeName string) (interface{}, error) {
 	var buffer interface{}
 	switch datatype {
 	case TILEDB_INT8:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int8_t
 		buffer = (*[1 << 46]int8)(cbuffer)[:length:length]
 
 	case TILEDB_INT16:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int16_t
 		buffer = (*[1 << 46]int16)(cbuffer)[:length:length]
 
 	case TILEDB_INT32:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int32_t
 		buffer = (*[1 << 46]int32)(cbuffer)[:length:length]
 
 	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int64_t
 		buffer = (*[1 << 46]int64)(cbuffer)[:length:length]
 
 	case TILEDB_UINT8:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint8_t
 		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
 
 	case TILEDB_UINT16:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint16_t
 		buffer = (*[1 << 46]uint16)(cbuffer)[:length:length]
 
 	case TILEDB_UINT32:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint32_t
 		buffer = (*[1 << 46]uint32)(cbuffer)[:length:length]
 
 	case TILEDB_UINT64:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint64_t
 		buffer = (*[1 << 46]uint64)(cbuffer)[:length:length]
 
 	case TILEDB_FLOAT32:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_float
 		buffer = (*[1 << 46]float32)(cbuffer)[:length:length]
 
 	case TILEDB_FLOAT64:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_double
 		buffer = (*[1 << 46]float64)(cbuffer)[:length:length]
 
 	case TILEDB_CHAR:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_char
 		buffer = (*[1 << 46]byte)(cbuffer)[:length:length]
 
 	case TILEDB_STRING_ASCII:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint8_t
 		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
 
 	case TILEDB_STRING_UTF8:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint8_t
 		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
 
 	case TILEDB_STRING_UTF16:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint16_t
 		buffer = (*[1 << 46]uint16)(cbuffer)[:length:length]
 
 	case TILEDB_STRING_UTF32:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint32_t
 		buffer = (*[1 << 46]uint32)(cbuffer)[:length:length]
 
 	case TILEDB_STRING_UCS2:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint16_t
 		buffer = (*[1 << 46]uint16)(cbuffer)[:length:length]
 
 	case TILEDB_STRING_UCS4:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint32_t
 		buffer = (*[1 << 46]uint32)(cbuffer)[:length:length]
 
 	case TILEDB_ANY:
-		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int32_t
 		buffer = (*[1 << 46]C.int8_t)(cbuffer)[:length:length]
 
@@ -894,7 +910,7 @@ func (q *Query) Buffer(attributeName string) (interface{}, error) {
 		return nil, fmt.Errorf("Unrecognized attribute type: %d", datatype)
 	}
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeName, q.context.LastError())
+		return nil, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeOrDimension, q.context.LastError())
 	}
 
 	return buffer, nil
@@ -958,12 +974,11 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 		if err != nil {
 			return nil, nil, fmt.Errorf("Could not get attribute or dimension for SetBufferVar: %s",
 				attributeOrDimension)
-		} else {
-			attributeOrDimensionType, err = dimension.Type()
-			if err != nil {
-				return nil, nil, fmt.Errorf("Could not get dimensionType for SetBufferVar: %s",
-					attributeOrDimension)
-			}
+		}
+		attributeOrDimensionType, err = dimension.Type()
+		if err != nil {
+			return nil, nil, fmt.Errorf("Could not get dimensionType for SetBufferVar: %s",
+				attributeOrDimension)
 		}
 	} else {
 		attributeOrDimensionType, err = schemaAttribute.Type()
@@ -1157,9 +1172,10 @@ func (q *Query) ResultBufferElements() (map[string][2]uint64, error) {
 		return nil, fmt.Errorf("Could not get schema for ResultBufferElements: %s", err)
 	}
 
-	for attributeName, v := range q.resultBufferElements {
+	var datatype Datatype
+	for attributeOrDimension, v := range q.resultBufferElements {
 		// Handle coordinates
-		if attributeName == TILEDB_COORDS {
+		if attributeOrDimension == TILEDB_COORDS {
 			// For fixed length attributes offset elements are always zero
 			offsetElements := uint64(0)
 
@@ -1174,7 +1190,7 @@ func (q *Query) ResultBufferElements() (map[string][2]uint64, error) {
 
 			// Number of buffer elements is calculated
 			bufferElements := (*v[1]) / domainType.Size()
-			elements[attributeName] = [2]uint64{offsetElements, bufferElements}
+			elements[attributeOrDimension] = [2]uint64{offsetElements, bufferElements}
 		} else {
 			// For fixed length attributes offset elements are always zero
 			offsetElements := uint64(0)
@@ -1184,21 +1200,35 @@ func (q *Query) ResultBufferElements() (map[string][2]uint64, error) {
 			}
 
 			// Get the attribute
-			attribute, err := schema.AttributeFromName(attributeName)
-
+			attribute, err := schema.AttributeFromName(attributeOrDimension)
 			if err != nil {
-				return nil, fmt.Errorf("Could not get attribute for ResultBufferElements: %s", err)
-			}
+				domain, err := schema.Domain()
+				if err != nil {
+					return nil, fmt.Errorf(
+						"Could not get domain from array schema for SetBuffer: %s",
+						err)
+				}
 
-			// Get datatype size to convert byte lengths to needed buffer sizes
-			dataType, err := attribute.Type()
-			if err != nil {
-				return nil, fmt.Errorf("Could not get dataType for ResultBufferElements: %s", err)
+				dimension, err := domain.DimensionFromName(attributeOrDimension)
+				if err != nil {
+					return nil, fmt.Errorf("Could not get attribute or dimension for SetBuffer: %s", attributeOrDimension)
+				}
+
+				datatype, err = dimension.Type()
+				if err != nil {
+					return nil, fmt.Errorf("Could not get dimensionType for SetBuffer: %s", attributeOrDimension)
+				}
+			} else {
+				// Get datatype size to convert byte lengths to needed buffer sizes
+				datatype, err = attribute.Type()
+				if err != nil {
+					return nil, fmt.Errorf("Could not get dataType for ResultBufferElements: %s", err)
+				}
 			}
 
 			// Number of buffer elements is calculated
-			bufferElements := (*v[1]) / dataType.Size()
-			elements[attributeName] = [2]uint64{offsetElements, bufferElements}
+			bufferElements := (*v[1]) / datatype.Size()
+			elements[attributeOrDimension] = [2]uint64{offsetElements, bufferElements}
 		}
 	}
 
@@ -1207,14 +1237,14 @@ func (q *Query) ResultBufferElements() (map[string][2]uint64, error) {
 
 // BufferVar returns a slice backed by the underlying c buffer from tiledb for
 // offets and values
-func (q *Query) BufferVar(attributeName string) ([]uint64, interface{}, error) {
+func (q *Query) BufferVar(attributeOrDimension string) ([]uint64, interface{}, error) {
 	var datatype Datatype
 	schema, err := q.array.Schema()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if attributeName == TILEDB_COORDS {
+	if attributeOrDimension == TILEDB_COORDS {
 		domain, err := schema.Domain()
 		if err != nil {
 			return nil, nil, err
@@ -1224,18 +1254,34 @@ func (q *Query) BufferVar(attributeName string) ([]uint64, interface{}, error) {
 			return nil, nil, err
 		}
 	} else {
-		attribute, err := schema.AttributeFromName(attributeName)
+		attribute, err := schema.AttributeFromName(attributeOrDimension)
 		if err != nil {
-			return nil, nil, err
-		}
-		datatype, err = attribute.Type()
-		if err != nil {
-			return nil, nil, err
+			domain, err := schema.Domain()
+			if err != nil {
+				return nil, nil, fmt.Errorf(
+					"Could not get domain from array schema for BufferVar: %s",
+					err)
+			}
+
+			dimension, err := domain.DimensionFromName(attributeOrDimension)
+			if err != nil {
+				return nil, nil, fmt.Errorf("Could not get attribute or dimension for BufferVar: %s", attributeOrDimension)
+			}
+
+			datatype, err = dimension.Type()
+			if err != nil {
+				return nil, nil, fmt.Errorf("Could not get dimensionType for BufferVar: %s", attributeOrDimension)
+			}
+		} else {
+			datatype, err = attribute.Type()
+			if err != nil {
+				return nil, nil, fmt.Errorf("Could not get attributeType for BufferVar: %s", attributeOrDimension)
+			}
 		}
 	}
 
-	cattributeName := C.CString(attributeName)
-	defer C.free(unsafe.Pointer(cattributeName))
+	cattributeNameOrDimension := C.CString(attributeOrDimension)
+	defer C.free(unsafe.Pointer(cattributeNameOrDimension))
 
 	var ret C.int32_t
 	var cbufferSize *C.uint64_t
@@ -1246,126 +1292,126 @@ func (q *Query) BufferVar(attributeName string) ([]uint64, interface{}, error) {
 	var offsets []uint64
 	switch datatype {
 	case TILEDB_INT8:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int8_t
 		buffer = (*[1 << 46]int8)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_INT16:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int16_t
 		buffer = (*[1 << 46]int16)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_INT32:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int32_t
 		buffer = (*[1 << 46]int32)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int64_t
 		buffer = (*[1 << 46]int64)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_UINT8:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint8_t
 		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_UINT16:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint16_t
 		buffer = (*[1 << 46]uint16)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_UINT32:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint32_t
 		buffer = (*[1 << 46]uint32)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_UINT64:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint64_t
 		buffer = (*[1 << 46]uint64)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_FLOAT32:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_float
 		buffer = (*[1 << 46]float32)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_FLOAT64:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_double
 		buffer = (*[1 << 46]float64)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_CHAR:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_char
 		buffer = (*[1 << 46]byte)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_STRING_ASCII:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint8_t
 		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_STRING_UTF8:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint8_t
 		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_STRING_UTF16:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint16_t
 		buffer = (*[1 << 46]uint16)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_STRING_UTF32:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint32_t
 		buffer = (*[1 << 46]uint32)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_STRING_UCS2:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint16_t
 		buffer = (*[1 << 46]uint16)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_STRING_UCS4:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint32_t
 		buffer = (*[1 << 46]uint32)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
 	case TILEDB_ANY:
-		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int32_t
 		buffer = (*[1 << 46]C.int8_t)(cbuffer)[:length:length]
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
@@ -1375,21 +1421,21 @@ func (q *Query) BufferVar(attributeName string) ([]uint64, interface{}, error) {
 		return nil, nil, fmt.Errorf("Unrecognized attribute type: %d", datatype)
 	}
 	if ret != C.TILEDB_OK {
-		return nil, nil, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeName, q.context.LastError())
+		return nil, nil, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeOrDimension, q.context.LastError())
 	}
 
 	return offsets, buffer, nil
 }
 
 // BufferSizeVar returns the size (in num elements) of the backing C buffers for the given variable-length attribute
-func (q *Query) BufferSizeVar(attributeName string) (uint64, uint64, error) {
+func (q *Query) BufferSizeVar(attributeOrDimension string) (uint64, uint64, error) {
 	var datatype Datatype
 	schema, err := q.array.Schema()
 	if err != nil {
 		return 0, 0, err
 	}
 
-	if attributeName == TILEDB_COORDS {
+	if attributeOrDimension == TILEDB_COORDS {
 		domain, err := schema.Domain()
 		if err != nil {
 			return 0, 0, err
@@ -1399,30 +1445,46 @@ func (q *Query) BufferSizeVar(attributeName string) (uint64, uint64, error) {
 			return 0, 0, err
 		}
 	} else {
-		attribute, err := schema.AttributeFromName(attributeName)
+		attribute, err := schema.AttributeFromName(attributeOrDimension)
 		if err != nil {
-			return 0, 0, err
-		}
-		datatype, err = attribute.Type()
-		if err != nil {
-			return 0, 0, err
+			domain, err := schema.Domain()
+			if err != nil {
+				return 0, 0, fmt.Errorf(
+					"Could not get domain from array schema for BufferSizeVar: %s",
+					err)
+			}
+
+			dimension, err := domain.DimensionFromName(attributeOrDimension)
+			if err != nil {
+				return 0, 0, fmt.Errorf("Could not get attribute or dimension for BufferSizeVar: %s", attributeOrDimension)
+			}
+
+			datatype, err = dimension.Type()
+			if err != nil {
+				return 0, 0, fmt.Errorf("Could not get dimensionType for BufferSizeVar: %s", attributeOrDimension)
+			}
+		} else {
+			datatype, err = attribute.Type()
+			if err != nil {
+				return 0, 0, fmt.Errorf("Could not get attributeType for BufferSizeVar: %s", attributeOrDimension)
+			}
 		}
 	}
 
 	dataTypeSize := datatype.Size()
 	offsetTypeSize := TILEDB_UINT64.Size()
 
-	cattributeName := C.CString(attributeName)
-	defer C.free(unsafe.Pointer(cattributeName))
+	cattributeNameOrDimension := C.CString(attributeOrDimension)
+	defer C.free(unsafe.Pointer(cattributeNameOrDimension))
 
 	var ret C.int32_t
 	var cbufferSize *C.uint64_t
 	var cbuffer unsafe.Pointer
 	var coffsetsSize *C.uint64_t
 	var coffsets *C.uint64_t
-	ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeName, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+	ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 	if ret != C.TILEDB_OK {
-		return 0, 0, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeName, q.context.LastError())
+		return 0, 0, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeOrDimension, q.context.LastError())
 	}
 
 	var offsetNumElements uint64
@@ -1443,14 +1505,14 @@ func (q *Query) BufferSizeVar(attributeName string) (uint64, uint64, error) {
 }
 
 // BufferSize returns the size (in num elements) of the backing C buffer for the given attribute
-func (q *Query) BufferSize(attributeName string) (uint64, error) {
+func (q *Query) BufferSize(attributeNameOrDimension string) (uint64, error) {
 	var datatype Datatype
 	schema, err := q.array.Schema()
 	if err != nil {
 		return 0, err
 	}
 
-	if attributeName == TILEDB_COORDS {
+	if attributeNameOrDimension == TILEDB_COORDS {
 		domain, err := schema.Domain()
 		if err != nil {
 			return 0, err
@@ -1460,27 +1522,43 @@ func (q *Query) BufferSize(attributeName string) (uint64, error) {
 			return 0, err
 		}
 	} else {
-		attribute, err := schema.AttributeFromName(attributeName)
+		attribute, err := schema.AttributeFromName(attributeNameOrDimension)
 		if err != nil {
-			return 0, err
-		}
-		datatype, err = attribute.Type()
-		if err != nil {
-			return 0, err
+			domain, err := schema.Domain()
+			if err != nil {
+				return 0, fmt.Errorf(
+					"Could not get domain from array schema for BufferSize: %s",
+					err)
+			}
+
+			dimension, err := domain.DimensionFromName(attributeNameOrDimension)
+			if err != nil {
+				return 0, fmt.Errorf("Could not get attribute or dimension for BufferSize: %s", attributeNameOrDimension)
+			}
+
+			datatype, err = dimension.Type()
+			if err != nil {
+				return 0, fmt.Errorf("Could not get dimensionType for BufferSize: %s", attributeNameOrDimension)
+			}
+		} else {
+			datatype, err = attribute.Type()
+			if err != nil {
+				return 0, err
+			}
 		}
 	}
 
 	dataTypeSize := datatype.Size()
 
-	cattributeName := C.CString(attributeName)
-	defer C.free(unsafe.Pointer(cattributeName))
+	cattributeNameOrDimension := C.CString(attributeNameOrDimension)
+	defer C.free(unsafe.Pointer(cattributeNameOrDimension))
 
 	var ret C.int32_t
 	var cbufferSize *C.uint64_t
 	var cbuffer unsafe.Pointer
-	ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeName, &cbuffer, &cbufferSize)
+	ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &cbuffer, &cbufferSize)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeName, q.context.LastError())
+		return 0, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeNameOrDimension, q.context.LastError())
 	}
 
 	var dataNumElements uint64
