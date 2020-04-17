@@ -553,6 +553,111 @@ func (a *Array) NonEmptyDomainVarFromIndex(dimIdx uint) (*NonEmptyDomain, bool, 
 	return nonEmptyDomain, false, nil
 }
 
+// NonEmptyDomainFromName retrieves the non-empty domain from an array for a
+// given fixed-sized dimension name
+// Returns the bounding coordinates for the dimension
+func (a *Array) NonEmptyDomainFromName(dimName string) (*NonEmptyDomain, bool, error) {
+	schema, err := a.Schema()
+	if err != nil {
+		return nil, false, err
+	}
+
+	domain, err := schema.Domain()
+	if err != nil {
+		return nil, false, err
+	}
+
+	dimension, err := domain.DimensionFromName(dimName)
+	if err != nil {
+		return nil, false, fmt.Errorf("Could not get dimension: %s", dimName)
+	}
+
+	dimensionType, err := dimension.Type()
+	if err != nil {
+		return nil, false, err
+	}
+
+	tmpDimension, tmpDimensionPtr, err := dimensionType.MakeSlice(uint64(2))
+	if err != nil {
+		return nil, false, err
+	}
+
+	cDimName := C.CString(dimName)
+	defer C.free(unsafe.Pointer(cDimName))
+
+	var isEmpty C.int32_t
+	ret := C.tiledb_array_get_non_empty_domain_from_name(
+		a.context.tiledbContext,
+		a.tiledbArray,
+		cDimName,
+		tmpDimensionPtr, &isEmpty)
+	if ret != C.TILEDB_OK {
+		return nil, false, fmt.Errorf("Error in getting non empty domain for dimension: %s", a.context.LastError())
+	}
+
+	if isEmpty == 1 {
+		return nil, true, nil
+	}
+	// If at least one domain for a dimension is empty the union of domains is non-empty
+	nonEmptyDomain, err := getNonEmptyDomainForDim(dimension, tmpDimension)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return nonEmptyDomain, false, nil
+}
+
+// NonEmptyDomainFromIndex retrieves the non-empty domain from an array for a
+// given fixed-sized dimension index.
+// Returns the bounding coordinates for the dimension
+func (a *Array) NonEmptyDomainFromIndex(dimIdx uint) (*NonEmptyDomain, bool, error) {
+	schema, err := a.Schema()
+	if err != nil {
+		return nil, false, err
+	}
+
+	domain, err := schema.Domain()
+	if err != nil {
+		return nil, false, err
+	}
+
+	dimension, err := domain.DimensionFromIndex(dimIdx)
+	if err != nil {
+		return nil, false, fmt.Errorf("Could not get dimension: %d", dimIdx)
+	}
+
+	dimensionType, err := dimension.Type()
+	if err != nil {
+		return nil, false, err
+	}
+
+	tmpDimension, tmpDimensionPtr, err := dimensionType.MakeSlice(uint64(2))
+	if err != nil {
+		return nil, false, err
+	}
+
+	var isEmpty C.int32_t
+	ret := C.tiledb_array_get_non_empty_domain_from_index(
+		a.context.tiledbContext,
+		a.tiledbArray,
+		(C.uint32_t)(dimIdx),
+		tmpDimensionPtr, &isEmpty)
+	if ret != C.TILEDB_OK {
+		return nil, false, fmt.Errorf("Error in getting non empty domain for dimension: %s", a.context.LastError())
+	}
+
+	if isEmpty == 1 {
+		return nil, true, nil
+	}
+	// If at least one domain for a dimension is empty the union of domains is non-empty
+	nonEmptyDomain, err := getNonEmptyDomainForDim(dimension, tmpDimension)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return nonEmptyDomain, false, nil
+}
+
 // MaxBufferSize computes the upper bound on the buffer size (in bytes)
 // required for a read query for a given fixed attribute and subarray
 func (a *Array) MaxBufferSize(attributeName string, subarray interface{}) (uint64, error) {
