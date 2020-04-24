@@ -626,6 +626,18 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	_, err = query.SetBuffer("cols", colsRead)
 	assert.Nil(t, err)
 
+	// Get Range for rows
+	rangeStart, rangeEnd, err := query.GetRange(0, 0)
+	assert.Nil(t, err)
+	assert.EqualValues(t, rowsRange[0], rangeStart)
+	assert.EqualValues(t, rowsRange[1], rangeEnd)
+
+	// Get Range for cols
+	rangeStart, rangeEnd, err = query.GetRange(1, 0)
+	assert.Nil(t, err)
+	assert.EqualValues(t, colsRange[0], rangeStart)
+	assert.EqualValues(t, colsRange[1], rangeEnd)
+
 	// Submit the query
 	err = query.Submit()
 	assert.Nil(t, err)
@@ -784,6 +796,12 @@ func TestQueryEffectiveBufferSizeStrings(t *testing.T) {
 	assert.NotNil(t, query)
 	_, _, err = query.SetBufferVar("rows", rowsOffRead, rowsRead)
 	assert.Nil(t, err)
+
+	// Get Range
+	rangeStart, rangeEnd, err := query.GetRange(0, 0)
+	assert.Nil(t, err)
+	assert.EqualValues(t, rowsRange[0], rangeStart)
+	assert.EqualValues(t, rowsRange[1], rangeEnd)
 
 	// Submit the query
 	err = query.Submit()
