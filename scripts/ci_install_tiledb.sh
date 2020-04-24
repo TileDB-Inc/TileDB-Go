@@ -6,7 +6,7 @@ original_dir=$PWD
 
 # Install tiledb using 2.0.0 release
 mkdir build_deps && cd build_deps \
-&& git clone https://github.com/TileDB-Inc/TileDB.git -b 2.0.0-rc1 && cd TileDB \
+&& git clone https://github.com/TileDB-Inc/TileDB.git -b dev && cd TileDB \
 && export deps_args="" \
 && export bootstrap_args="--enable=verbose,static-tiledb,serialization" \
 && mkdir -p build && cd build

@@ -607,14 +607,8 @@ func (q *Query) AddRangeVar(dimIdx uint32, start interface{}, end interface{}) e
 func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface{}, error) {
 	var pStart, pEnd, pStride unsafe.Pointer
 
-	ret := C.tiledb_query_get_range(
-		q.context.tiledbContext, q.tiledbQuery,
-		(C.uint32_t)(dimIdx), (C.uint64_t)(rangeNum), &pStart, &pEnd, &pStride)
-
-	if ret != C.TILEDB_OK {
-		return nil, nil, fmt.Errorf(
-			"Error retrieving query range: %s", q.context.LastError())
-	}
+	// Based on the type we fill in the interface{} objects for start, end
+	var start, end interface{}
 
 	// We need to infer the datatype of the dimension represented by index
 	// dimIdx. That said:
@@ -642,48 +636,98 @@ func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface
 		return nil, nil, err
 	}
 
-	// Based on the type we fill in the interface{} objects for start, end
-	var start, end interface{}
+	cellValNum, err := dimension.CellValNum()
+	if err != nil {
+		return nil, nil, err
+	}
 
-	switch datatype {
-	case TILEDB_INT8:
-		start = *(*int8)(unsafe.Pointer(pStart))
-		end = *(*int8)(unsafe.Pointer(pEnd))
-	case TILEDB_INT16:
-		start = *(*int16)(unsafe.Pointer(pStart))
-		end = *(*int16)(unsafe.Pointer(pEnd))
-	case TILEDB_INT32:
-		start = *(*int32)(unsafe.Pointer(pStart))
-		end = *(*int32)(unsafe.Pointer(pEnd))
-	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS:
-		start = *(*int64)(unsafe.Pointer(pStart))
-		end = *(*int64)(unsafe.Pointer(pEnd))
-	case TILEDB_UINT8:
-		start = *(*uint8)(unsafe.Pointer(pStart))
-		end = *(*uint8)(unsafe.Pointer(pEnd))
-	case TILEDB_UINT16:
-		start = *(*uint16)(unsafe.Pointer(pStart))
-		end = *(*uint16)(unsafe.Pointer(pEnd))
-	case TILEDB_UINT32:
-		start = *(*uint32)(unsafe.Pointer(pStart))
-		end = *(*uint32)(unsafe.Pointer(pEnd))
-	case TILEDB_UINT64:
-		start = *(*uint64)(unsafe.Pointer(pStart))
-		end = *(*uint64)(unsafe.Pointer(pEnd))
-	case TILEDB_FLOAT32:
-		start = *(*float32)(unsafe.Pointer(pStart))
-		end = *(*float32)(unsafe.Pointer(pEnd))
-	case TILEDB_FLOAT64:
-		start = *(*float64)(unsafe.Pointer(pStart))
-		end = *(*float64)(unsafe.Pointer(pEnd))
-	case TILEDB_STRING_ASCII:
-		start = *(*uint8)(unsafe.Pointer(pStart))
-		end = *(*uint8)(unsafe.Pointer(pEnd))
-	default:
-		return nil, nil, fmt.Errorf("Unrecognized dimension type: %d", datatype)
+	if cellValNum == TILEDB_VAR_NUM {
+
+		var startSize, endSize C.uint64_t
+
+		ret := C.tiledb_query_get_range_var_size(
+			q.context.tiledbContext, q.tiledbQuery,
+			(C.uint32_t)(dimIdx), (C.uint64_t)(rangeNum), &startSize, &endSize)
+
+		if ret != C.TILEDB_OK {
+			return nil, nil, fmt.Errorf(
+				"Error retrieving query range: %s", q.context.LastError())
+		}
+
+		startData := make([]byte, startSize)
+		endData := make([]byte, endSize)
+
+		ret = C.tiledb_query_get_range_var(
+			q.context.tiledbContext, q.tiledbQuery,
+			(C.uint32_t)(dimIdx), (C.uint64_t)(rangeNum), unsafe.Pointer(&startData[0]), unsafe.Pointer(&endData[0]))
+
+		if ret != C.TILEDB_OK {
+			return nil, nil, fmt.Errorf(
+				"Error retrieving query range: %s", q.context.LastError())
+		}
+
+		start = startData
+		end = endData
+
+	} else {
+		ret := C.tiledb_query_get_range(
+			q.context.tiledbContext, q.tiledbQuery,
+			(C.uint32_t)(dimIdx), (C.uint64_t)(rangeNum), &pStart, &pEnd, &pStride)
+
+		if ret != C.TILEDB_OK {
+			return nil, nil, fmt.Errorf(
+				"Error retrieving query range: %s", q.context.LastError())
+		}
+
+		switch datatype {
+		case TILEDB_INT8:
+			start = *(*int8)(unsafe.Pointer(pStart))
+			end = *(*int8)(unsafe.Pointer(pEnd))
+		case TILEDB_INT16:
+			start = *(*int16)(unsafe.Pointer(pStart))
+			end = *(*int16)(unsafe.Pointer(pEnd))
+		case TILEDB_INT32:
+			start = *(*int32)(unsafe.Pointer(pStart))
+			end = *(*int32)(unsafe.Pointer(pEnd))
+		case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS:
+			start = *(*int64)(unsafe.Pointer(pStart))
+			end = *(*int64)(unsafe.Pointer(pEnd))
+		case TILEDB_UINT8:
+			start = *(*uint8)(unsafe.Pointer(pStart))
+			end = *(*uint8)(unsafe.Pointer(pEnd))
+		case TILEDB_UINT16:
+			start = *(*uint16)(unsafe.Pointer(pStart))
+			end = *(*uint16)(unsafe.Pointer(pEnd))
+		case TILEDB_UINT32:
+			start = *(*uint32)(unsafe.Pointer(pStart))
+			end = *(*uint32)(unsafe.Pointer(pEnd))
+		case TILEDB_UINT64:
+			start = *(*uint64)(unsafe.Pointer(pStart))
+			end = *(*uint64)(unsafe.Pointer(pEnd))
+		case TILEDB_FLOAT32:
+			start = *(*float32)(unsafe.Pointer(pStart))
+			end = *(*float32)(unsafe.Pointer(pEnd))
+		case TILEDB_FLOAT64:
+			start = *(*float64)(unsafe.Pointer(pStart))
+			end = *(*float64)(unsafe.Pointer(pEnd))
+		case TILEDB_STRING_ASCII:
+			start = *(*uint8)(unsafe.Pointer(pStart))
+			end = *(*uint8)(unsafe.Pointer(pEnd))
+		default:
+			return nil, nil, fmt.Errorf("Unrecognized dimension type: %d", datatype)
+		}
 	}
 
 	return start, end, nil
+}
+
+// GetRangeVar exists for continuinity with other TileDB APIs
+// GetRange in Golang supports the variable length attribute also
+// The function retrieves a specific range of the query subarray
+// along a given dimension.
+// Returns (start, end, error)
+func (q *Query) GetRangeVar(dimIdx uint32, rangeNum uint64) (interface{}, interface{}, error) {
+	return q.GetRange(dimIdx, rangeNum)
 }
 
 // GetRanges gets the number of dimensions from the array under current query
@@ -723,6 +767,7 @@ func (q *Query) GetRanges() (map[string][]RangeLimits, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		// Get number of renges to iterate
 		numOfRanges, err := q.GetRangeNum(uint32(dimIdx))
 		if err != nil {
@@ -732,7 +777,7 @@ func (q *Query) GetRanges() (map[string][]RangeLimits, error) {
 		var I uint64
 		rangeArray := make([]RangeLimits, 0)
 		for I = 0; I < *numOfRanges; I++ {
-			// Iterate through ranges
+
 			start, end, err := q.GetRange(uint32(dimIdx), I)
 			if err != nil {
 				return nil, err
