@@ -369,3 +369,42 @@ func DeserializeArrayMetadata(a *Array, buffer *Buffer, serializationType Serial
 	}
 	return nil
 }
+
+// SerializeQueryEstResultSizes gets and serializes the query estimated result sizes
+func SerializeQueryEstResultSizes(q *Query, serializationType SerializationType, clientSide bool) (*Buffer, error) {
+	var cClientSide C.int32_t
+	if clientSide {
+		cClientSide = 1
+	} else {
+		cClientSide = 0
+	}
+
+	buffer := Buffer{context: q.context}
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
+		buffer.Free()
+	})
+
+	ret := C.tiledb_serialize_query_est_result_sizes(q.context.tiledbContext, q.tiledbQuery, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error serializing query est buffer sizes: %s", q.context.LastError())
+	}
+
+	return &buffer, nil
+}
+
+// DeserializeQueryEstResultSizes deserializes query estimated result sizes
+func DeserializeQueryEstResultSizes(q *Query, buffer *Buffer, serializationType SerializationType, clientSide bool) error {
+	var cClientSide C.int32_t
+	if clientSide {
+		cClientSide = 1
+	} else {
+		cClientSide = 0
+	}
+
+	ret := C.tiledb_deserialize_query_est_result_sizes(q.context.tiledbContext, q.tiledbQuery, C.tiledb_serialization_type_t(serializationType), cClientSide, buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deserializing query est buffer sizes: %s", q.context.LastError())
+	}
+	return nil
+}
