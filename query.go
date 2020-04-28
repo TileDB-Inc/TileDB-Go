@@ -255,6 +255,15 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 					err)
 			}
 
+			hasDim, err := domain.HasDimension(attributeOrDimension)
+			if err != nil {
+				return nil, err
+			}
+
+			if !hasDim {
+				return nil, fmt.Errorf("Dimension: %s was not found in domain", attributeOrDimension)
+			}
+
 			dimension, err := domain.DimensionFromName(attributeOrDimension)
 			if err != nil {
 				return nil, fmt.Errorf("Could not get attribute or dimension for SetBuffer: %s",
@@ -836,6 +845,15 @@ func (q *Query) Buffer(attributeOrDimension string) (interface{}, error) {
 					err)
 			}
 
+			hasDim, err := domain.HasDimension(attributeOrDimension)
+			if err != nil {
+				return nil, err
+			}
+
+			if !hasDim {
+				return nil, fmt.Errorf("Dimension: %s was not found in domain", attributeOrDimension)
+			}
+
 			dimension, err := domain.DimensionFromName(attributeOrDimension)
 			if err != nil {
 				return nil, fmt.Errorf("Could not get attribute or dimension for SetBuffer: %s", attributeOrDimension)
@@ -1013,6 +1031,15 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 			return nil, nil, fmt.Errorf(
 				"Could not get domain from array schema for SetBufferVar: %s",
 				err)
+		}
+
+		hasDim, err := domain.HasDimension(attributeOrDimension)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if !hasDim {
+			return nil, nil, fmt.Errorf("Dimension: %s was not found in domain", attributeOrDimension)
 		}
 
 		dimension, err := domain.DimensionFromName(attributeOrDimension)
@@ -1254,6 +1281,15 @@ func (q *Query) ResultBufferElements() (map[string][2]uint64, error) {
 						err)
 				}
 
+				hasDim, err := domain.HasDimension(attributeOrDimension)
+				if err != nil {
+					return nil, err
+				}
+
+				if !hasDim {
+					return nil, fmt.Errorf("Dimension: %s was not found in domain", attributeOrDimension)
+				}
+
 				dimension, err := domain.DimensionFromName(attributeOrDimension)
 				if err != nil {
 					return nil, fmt.Errorf("Could not get attribute or dimension for SetBuffer: %s", attributeOrDimension)
@@ -1306,6 +1342,15 @@ func (q *Query) BufferVar(attributeOrDimension string) ([]uint64, interface{}, e
 				return nil, nil, fmt.Errorf(
 					"Could not get domain from array schema for BufferVar: %s",
 					err)
+			}
+
+			hasDim, err := domain.HasDimension(attributeOrDimension)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			if !hasDim {
+				return nil, nil, fmt.Errorf("Dimension: %s was not found in domain", attributeOrDimension)
 			}
 
 			dimension, err := domain.DimensionFromName(attributeOrDimension)
@@ -1499,6 +1544,15 @@ func (q *Query) BufferSizeVar(attributeOrDimension string) (uint64, uint64, erro
 					err)
 			}
 
+			hasDim, err := domain.HasDimension(attributeOrDimension)
+			if err != nil {
+				return 0, 0, err
+			}
+
+			if !hasDim {
+				return 0, 0, fmt.Errorf("Dimension: %s was not found in domain", attributeOrDimension)
+			}
+
 			dimension, err := domain.DimensionFromName(attributeOrDimension)
 			if err != nil {
 				return 0, 0, fmt.Errorf("Could not get attribute or dimension for BufferSizeVar: %s", attributeOrDimension)
@@ -1574,6 +1628,15 @@ func (q *Query) BufferSize(attributeNameOrDimension string) (uint64, error) {
 				return 0, fmt.Errorf(
 					"Could not get domain from array schema for BufferSize: %s",
 					err)
+			}
+
+			hasDim, err := domain.HasDimension(attributeNameOrDimension)
+			if err != nil {
+				return 0, err
+			}
+
+			if !hasDim {
+				return 0, fmt.Errorf("Dimension: %s was not found in domain", attributeNameOrDimension)
 			}
 
 			dimension, err := domain.DimensionFromName(attributeNameOrDimension)
