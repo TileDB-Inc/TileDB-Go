@@ -252,13 +252,6 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 		}
 
 		if hasDim {
-			domain, err := schema.Domain()
-			if err != nil {
-				return nil, fmt.Errorf(
-					"Could not get domain from array schema for SetBuffer: %s",
-					err)
-			}
-
 			dimension, err := domain.DimensionFromName(attributeOrDimension)
 			if err != nil {
 				return nil, fmt.Errorf("Could not get attribute or dimension for SetBuffer: %s",
