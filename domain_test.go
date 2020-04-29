@@ -64,9 +64,17 @@ func TestDomain(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, domain)
 
+	hasDim, err := domain.HasDimension("test")
+	assert.Nil(t, err)
+	assert.Equal(t, false, hasDim)
+
 	// Add dimension
 	err = domain.AddDimensions(dimension)
 	assert.Nil(t, err)
+
+	hasDim, err = domain.HasDimension("test")
+	assert.Nil(t, err)
+	assert.Equal(t, true, hasDim)
 
 	// Test getting type
 	datatype, err := domain.Type()

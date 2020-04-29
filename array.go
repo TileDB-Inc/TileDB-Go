@@ -391,6 +391,15 @@ func (a *Array) NonEmptyDomainVarFromName(dimName string) (*NonEmptyDomain, bool
 		return nil, false, err
 	}
 
+	hasDim, err := domain.HasDimension(dimName)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if !hasDim {
+		return nil, false, fmt.Errorf("Dimension: %s was not found in domain", dimName)
+	}
+
 	dimension, err := domain.DimensionFromName(dimName)
 	if err != nil {
 		return nil, false, fmt.Errorf("Could not get dimension: %s", dimName)
@@ -565,6 +574,15 @@ func (a *Array) NonEmptyDomainFromName(dimName string) (*NonEmptyDomain, bool, e
 	domain, err := schema.Domain()
 	if err != nil {
 		return nil, false, err
+	}
+
+	hasDim, err := domain.HasDimension(dimName)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if !hasDim {
+		return nil, false, fmt.Errorf("Dimension: %s was not found in domain", dimName)
 	}
 
 	dimension, err := domain.DimensionFromName(dimName)
