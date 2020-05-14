@@ -29,57 +29,111 @@ func isLeapYear(year int) bool {
 
 func secondsFromEpochYears(numOfYears int64) int64 {
 	var numOfSeconds int64 = 0
-	for y := int64(epochYear); y < epochYear+numOfYears; y++ {
-		if isLeapYear(int(y)) {
-			numOfSeconds += secondsInLeapYear
-		} else {
-			numOfSeconds += secondsInCommonYear
+
+	if numOfYears > 0 {
+		for y := int64(epochYear); y < epochYear+numOfYears; y++ {
+			if isLeapYear(int(y)) {
+				numOfSeconds += secondsInLeapYear
+			} else {
+				numOfSeconds += secondsInCommonYear
+			}
+		}
+	} else {
+		for y := int64(epochYear) - 1; y >= epochYear+numOfYears; y-- {
+			if isLeapYear(int(y)) {
+				numOfSeconds -= secondsInLeapYear
+			} else {
+				numOfSeconds -= secondsInCommonYear
+			}
 		}
 	}
+
 	return numOfSeconds
 }
 
-func secondsFromEpochMonths(numOfMonths int64) int64 {
-	var numOfSeconds int64 = 0
-	numOfYears := numOfMonths / 12
-	if numOfYears > 0 {
-		numOfSeconds += secondsFromEpochYears(numOfYears)
+// abs returns the absolute value of x
+func abs(x int64) int64 {
+	if x < 0 {
+		return -x
 	}
-	numOfMonthsInLastYear := numOfMonths % 12
+	return x
+}
 
-	for m := int64(1); m <= numOfMonthsInLastYear; m++ {
-		switch m {
-		case 1:
-			numOfSeconds += 31 * secondsInDay
-		case 2:
-			currentYear := epochYear + numOfYears + 1
-			if isLeapYear(int(currentYear)) {
-				numOfSeconds += 29 * secondsInDay
-			} else {
-				numOfSeconds += 28 * secondsInDay
+func secondsFromEpochMonths(numOfMonths int64) int64 {
+	numOfYears := numOfMonths / 12
+	numOfSeconds := secondsFromEpochYears(numOfYears)
+	numOfMonthsInLastYear := abs(numOfMonths) % 12
+
+	if numOfMonths > 0 {
+		for m := int64(1); m <= numOfMonthsInLastYear; m++ {
+			switch m {
+			case 1:
+				numOfSeconds += 31 * secondsInDay
+			case 2:
+				currentYear := epochYear + numOfYears + 1
+				if isLeapYear(int(currentYear)) {
+					numOfSeconds += 29 * secondsInDay
+				} else {
+					numOfSeconds += 28 * secondsInDay
+				}
+			case 3:
+				numOfSeconds += 31 * secondsInDay
+			case 4:
+				numOfSeconds += 30 * secondsInDay
+			case 5:
+				numOfSeconds += 31 * secondsInDay
+			case 6:
+				numOfSeconds += 30 * secondsInDay
+			case 7:
+				numOfSeconds += 31 * secondsInDay
+			case 8:
+				numOfSeconds += 31 * secondsInDay
+			case 9:
+				numOfSeconds += 30 * secondsInDay
+			case 10:
+				numOfSeconds += 31 * secondsInDay
+			case 11:
+				numOfSeconds += 30 * secondsInDay
+			case 12:
+				numOfSeconds += 31 * secondsInDay
 			}
-		case 3:
-			numOfSeconds += 31 * secondsInDay
-		case 4:
-			numOfSeconds += 30 * secondsInDay
-		case 5:
-			numOfSeconds += 31 * secondsInDay
-		case 6:
-			numOfSeconds += 30 * secondsInDay
-		case 7:
-			numOfSeconds += 31 * secondsInDay
-		case 8:
-			numOfSeconds += 31 * secondsInDay
-		case 9:
-			numOfSeconds += 30 * secondsInDay
-		case 10:
-			numOfSeconds += 31 * secondsInDay
-		case 11:
-			numOfSeconds += 30 * secondsInDay
-		case 12:
-			numOfSeconds += 31 * secondsInDay
+		}
+	} else {
+		for m := int64(12); m > 12-numOfMonthsInLastYear; m-- {
+			switch m {
+			case 1:
+				numOfSeconds -= 31 * secondsInDay
+			case 2:
+				currentYear := epochYear - numOfYears - 1
+				if isLeapYear(int(currentYear)) {
+					numOfSeconds -= 29 * secondsInDay
+				} else {
+					numOfSeconds -= 28 * secondsInDay
+				}
+			case 3:
+				numOfSeconds -= 31 * secondsInDay
+			case 4:
+				numOfSeconds -= 30 * secondsInDay
+			case 5:
+				numOfSeconds -= 31 * secondsInDay
+			case 6:
+				numOfSeconds -= 30 * secondsInDay
+			case 7:
+				numOfSeconds -= 31 * secondsInDay
+			case 8:
+				numOfSeconds -= 31 * secondsInDay
+			case 9:
+				numOfSeconds -= 30 * secondsInDay
+			case 10:
+				numOfSeconds -= 31 * secondsInDay
+			case 11:
+				numOfSeconds -= 30 * secondsInDay
+			case 12:
+				numOfSeconds -= 31 * secondsInDay
+			}
 		}
 	}
+
 	return numOfSeconds
 }
 
