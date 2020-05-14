@@ -1394,6 +1394,17 @@ func getMetadataValue(datatype Datatype, valueNum uint, cvalue unsafe.Pointer) (
 	case TILEDB_STRING_UTF8:
 		tmpslice := (*[1 << 46]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
 		value = C.GoString(&tmpslice[0])[0:valueNum]
+	case TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK,
+		TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN,
+		TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US,
+		TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS,
+		TILEDB_DATETIME_AS:
+		if valueNum > 1 {
+			return nil, fmt.Errorf("Unrecognized value type: %d", datatype)
+		} else {
+			var timestamp interface{} = *(*int16)(unsafe.Pointer(cvalue))
+			value = GetTimeFromTimestamp(datatype, timestamp.(int64))
+		}
 	default:
 		return nil, fmt.Errorf("Unrecognized value type: %d", datatype)
 	}
