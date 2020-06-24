@@ -149,6 +149,9 @@ func readSparseArray() {
 	err = query.AddRange(1, int32(1), int32(4))
 	checkError(err)
 
+	size, err := query.EstResultSize("a")
+	fmt.Printf("Estimated query size in bytes: %d\n", *size)
+
 	// Submit the query and close the array.
 	err = query.Submit()
 	checkError(err)
@@ -174,7 +177,8 @@ func ExampleSparseArray() {
 		checkError(err)
 	}
 
-	// Output: Cell (1, 1) has data 1
+	// Output: Estimated query size in bytes: 12
+	// Cell (1, 1) has data 1
 	// Cell (2, 3) has data 3
 	// Cell (2, 4) has data 2
 }
