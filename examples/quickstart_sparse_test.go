@@ -40,8 +40,9 @@ package examples
 
 import (
 	"fmt"
-	tiledb "github.com/TileDB-Inc/TileDB-Go"
 	"os"
+
+	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
@@ -91,7 +92,8 @@ func writeSparseArray() {
 	checkError(err)
 
 	// Write some simple data to cells (1, 1), (2, 4) and (2, 3).
-	coords := []int32{1, 1, 2, 4, 2, 3}
+	buffD1 := []int32{1, 2, 2}
+	buffD2 := []int32{1, 4, 3}
 	data := []uint32{1, 2, 3}
 
 	// Open the array for writing and create the query.
@@ -103,9 +105,11 @@ func writeSparseArray() {
 	checkError(err)
 	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetBuffer("rows", buffD1)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("cols", buffD2)
+	checkError(err)
+	_, err = query.SetBuffer("a", data)
 	checkError(err)
 
 	// Perform the write and close the array.
@@ -125,42 +129,32 @@ func readSparseArray() {
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
 
-	// Slice only rows 1, 2 and cols 2, 3, 4
-	subArray := []int32{1, 2, 2, 4}
-
-	// Prepare the vector that will hold the results
-	// We take the upper bound on the result size as we do not know how large
-	// a buffer is needed since the array is sparse
-	maxElements, err := array.MaxBufferElements(subArray)
-	checkError(err)
-	data := make([]uint32, maxElements["a"][1])
-	coords := make([]int32, maxElements[tiledb.TILEDB_COORDS][1])
+	buffD1R := make([]int32, 3)
+	buffD2R := make([]int32, 3)
+	buffAR := make([]uint32, 3)
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
-	err = query.SetSubArray(subArray)
+	_, err = query.SetBuffer("rows", buffD1R)
 	checkError(err)
-	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
+	_, err = query.SetBuffer("cols", buffD2R)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetBuffer("a", buffAR)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
+	checkError(err)
+	err = query.AddRange(0, int32(1), int32(2))
+	checkError(err)
+	err = query.AddRange(1, int32(1), int32(4))
 	checkError(err)
 
 	// Submit the query and close the array.
 	err = query.Submit()
 	checkError(err)
 
-	// Print out the results.
-	elements, err := query.ResultBufferElements()
-	checkError(err)
-	resultNum := elements["a"][1]
-	for r := 0; r < int(resultNum); r++ {
-		i := coords[2*r]
-		j := coords[2*r+1]
-		a := data[r]
-		fmt.Printf("Cell (%d, %d) has data %d\n", i, j, a)
+	for i, aVal := range buffAR {
+		fmt.Printf("Cell (%d, %d) has data %d\n", buffD1R[i], buffD2R[i], aVal)
 	}
 
 	err = array.Close()
@@ -180,6 +174,7 @@ func ExampleSparseArray() {
 		checkError(err)
 	}
 
-	// Output: Cell (2, 3) has data 3
+	// Output: Cell (1, 1) has data 1
+	// Cell (2, 3) has data 3
 	// Cell (2, 4) has data 2
 }
