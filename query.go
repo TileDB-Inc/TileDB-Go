@@ -1762,3 +1762,93 @@ func (q *Query) HasResults() (bool, error) {
 func (q *Query) SetCoordinates(coordinates interface{}) (*uint64, error) {
 	return q.SetBuffer(TILEDB_COORDS, coordinates)
 }
+
+// EstResultSize gets the query estimated result size in bytes for an attribute
+func (q *Query) EstResultSize(attributeName string) (*uint64, error) {
+	cAttributeName := C.CString(attributeName)
+	defer C.free(unsafe.Pointer(cAttributeName))
+
+	var size uint64
+
+	ret := C.tiledb_query_get_est_result_size(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		cAttributeName,
+		(*C.uint64_t)(unsafe.Pointer(&size)))
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error estimating query result size: %s", q.context.LastError())
+	}
+
+	return &size, nil
+}
+
+// EstResultSizeVar gets the query estimated result size in bytes for a var sized attribute
+func (q *Query) EstResultSizeVar(attributeName string) (*uint64, *uint64, error) {
+	cAttributeName := C.CString(attributeName)
+	defer C.free(unsafe.Pointer(cAttributeName))
+
+	var sizeOff, sizeVal uint64
+
+	ret := C.tiledb_query_get_est_result_size_var(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		cAttributeName,
+		(*C.uint64_t)(unsafe.Pointer(&sizeOff)),
+		(*C.uint64_t)(unsafe.Pointer(&sizeVal)))
+	if ret != C.TILEDB_OK {
+		return nil, nil, fmt.Errorf("Error estimating query result var size: %s", q.context.LastError())
+	}
+
+	return &sizeOff, &sizeVal, nil
+}
+
+// GetFragmentNum returns num of fragments
+func (q *Query) GetFragmentNum() (*uint32, error) {
+	var num uint32
+
+	ret := C.tiledb_query_get_fragment_num(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		(*C.uint32_t)(unsafe.Pointer(&num)))
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error getting num of fragments: %s", q.context.LastError())
+	}
+
+	return &num, nil
+}
+
+// GetFragmentURI returns uri for a fragment
+func (q *Query) GetFragmentURI(num uint64) (*string, error) {
+	var cURI *C.char
+
+	ret := C.tiledb_query_get_fragment_uri(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		(C.uint64_t)(num),
+		&cURI)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error uri for fragment : %d", q.context.LastError())
+	}
+
+	uri := C.GoString(cURI)
+
+	return &uri, nil
+
+}
+
+// GetFragmentTimestampRange returns timestamp range for a fragment
+func (q *Query) GetFragmentTimestampRange(num uint64) (*uint64, *uint64, error) {
+	var t1, t2 uint64
+
+	ret := C.tiledb_query_get_fragment_timestamp_range(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		(C.uint64_t)(num),
+		(*C.uint64_t)(unsafe.Pointer(&t1)),
+		(*C.uint64_t)(unsafe.Pointer(&t2)))
+	if ret != C.TILEDB_OK {
+		return nil, nil, fmt.Errorf("Error getting fragment timestamp: %s", q.context.LastError())
+	}
+
+	return &t1, &t2, nil
+}

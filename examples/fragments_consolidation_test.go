@@ -39,8 +39,9 @@ package examples
 
 import (
 	"fmt"
-	tiledb "github.com/TileDB-Inc/TileDB-Go"
 	"os"
+
+	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
@@ -167,6 +168,19 @@ func writeFragmentsConsolidationArray3() {
 	// Perform the write and close the array.
 	err = query.Submit()
 	checkError(err)
+
+	num, err := query.GetFragmentNum()
+	checkError(err)
+	fmt.Printf("Num of fragments: %d\n", *num)
+
+	_, err = query.GetFragmentURI(0)
+	checkError(err)
+	// fmt.Printf("Uri of fragment: %d is: %s\n", 0, *uri)
+
+	_, _, err = query.GetFragmentTimestampRange(0)
+	checkError(err)
+	// fmt.Printf("Timestamp range for fragment: %d is t1: %d, t2: %d\n", 0, *t1, *t2)
+
 	err = array.Close()
 	checkError(err)
 }
@@ -236,7 +250,8 @@ func ExampleFragmentsConsolidationArray() {
 		checkError(err)
 	}
 
-	// Output: Cell (1, 1) has data 201
+	// Output: Num of fragments: 1
+	// Cell (1, 1) has data 201
 	// Cell (1, 2) has data 2
 	// Cell (1, 3) has data 3
 	// Cell (1, 4) has data 4

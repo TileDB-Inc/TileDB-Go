@@ -40,9 +40,10 @@ package examples
 
 import (
 	"fmt"
-	"github.com/TileDB-Inc/TileDB-Go"
 	"os"
 	"unsafe"
+
+	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
@@ -224,6 +225,15 @@ func readVariableLengthArray() {
 	_, _, err = query.SetBufferVar("a2", a2Off, a2Data)
 	checkError(err)
 
+	sizeOff, sizeVal, err := query.EstResultSizeVar("a1")
+	checkError(err)
+	fmt.Printf("a1, Estimated offset size: %d, estimated query size in bytes for : %d\n",
+		*sizeOff, *sizeVal)
+	sizeOff, sizeVal, err = query.EstResultSizeVar("a2")
+	checkError(err)
+	fmt.Printf("a2, Estimated offset size: %d, estimated query size in bytes for : %d\n",
+		*sizeOff, *sizeVal)
+
 	// Submit the query and close the array.
 	err = query.Submit()
 	checkError(err)
@@ -247,7 +257,10 @@ func ExampleVariableLengthArray() {
 		checkError(err)
 	}
 
-	// Output: a1: bb, a2: 22
+	// Output:
+	// a1, Estimated offset size: 48, estimated query size in bytes for : 11
+	// a2, Estimated offset size: 48, estimated query size in bytes for : 39
+	// a1: bb, a2: 22
 	// a1: ccc, a2: 3
 	// a1: dd, a2: 4
 	// a1: f, a2: 66
