@@ -1137,7 +1137,7 @@ func (a *Array) GetMetadata(key string) (Datatype, uint, interface{}, error) {
 	}
 
 	if cvalue == nil {
-		return 0, 0, nil, fmt.Error("Error getting metadata from array, value is empty")
+		return 0, 0, nil, fmt.Errorf("Error getting metadata from array, value is empty")
 	}
 
 	datatype := Datatype(cType)
@@ -1196,7 +1196,7 @@ func (a *Array) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 	}
 
 	if cvalue == nil {
-		return 0, 0, nil, fmt.Error("Error getting metadata from array, value is empty")
+		return nil, fmt.Errorf("Error getting metadata from array, value is empty")
 	}
 
 	datatype := Datatype(cType)
