@@ -902,6 +902,24 @@ func (a *Array) URI() (string, error) {
 	return uri, nil
 }
 
+// PutCharMetadata adds char metadata to array
+func (a *Array) PutCharMetadata(key string, charData string) error {
+	ckey := C.CString(key)
+	defer C.free(unsafe.Pointer(ckey))
+
+	var datatype Datatype = TILEDB_CHAR
+
+	valueNum := C.uint(len(charData))
+	ret := C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray,
+		ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&[]byte(charData)[0]))
+
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error adding char metadata to array: %s", a.context.LastError())
+	}
+
+	return nil
+}
+
 // PutMetadata puts a metadata key-value item to an open array. The array must
 // be opened in WRITE mode, otherwise the function will error out.
 func (a *Array) PutMetadata(key string, value interface{}) error {
@@ -1118,6 +1136,10 @@ func (a *Array) GetMetadata(key string) (Datatype, uint, interface{}, error) {
 		return 0, 0, nil, fmt.Errorf("Error getting metadata from array, key: %s does not exist", key)
 	}
 
+	if cvalue == nil {
+		return 0, 0, nil, fmt.Errorf("Error getting metadata from array, value is empty")
+	}
+
 	datatype := Datatype(cType)
 	value, err := getMetadataValue(datatype, valueNum, cvalue)
 	if err != nil {
@@ -1171,6 +1193,10 @@ func (a *Array) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 	valueNum := uint(cValueNum)
 	if valueNum == 0 {
 		return nil, fmt.Errorf("Error getting metadata from array, Index: %d does not exist", index)
+	}
+
+	if cvalue == nil {
+		return nil, fmt.Errorf("Error getting metadata from array, value is empty")
 	}
 
 	datatype := Datatype(cType)
