@@ -113,6 +113,9 @@ func writeArrayMetadata() {
 	err = array.PutMetadata("key5", "This is TileDb array metadata")
 	checkError(err)
 
+	err = array.PutCharMetadata("key6", "This is TileDb array char metadata")
+	checkError(err)
+
 	array.Free()
 	ctx.Free()
 }
@@ -175,6 +178,16 @@ func readArrayMetadata() {
 	fmt.Printf("Value Num: %d\n", arrayMetadata.ValueNum)
 	fmt.Printf("Value: %v\n", arrayMetadata.Value.(int32))
 
+	var limit uint = 3
+	arrayMetadataWithValueLimit, err := array.GetMetadataFromIndexWithValueLimit(5, &limit)
+	checkError(err)
+
+	fmt.Printf("Key: %s\n", arrayMetadataWithValueLimit.Key)
+	fmt.Printf("Key len: %d\n", arrayMetadataWithValueLimit.KeyLen)
+	fmt.Printf("Datatype: %d\n", arrayMetadataWithValueLimit.Datatype)
+	fmt.Printf("Value Num: %d\n", arrayMetadata.ValueNum)
+	fmt.Printf("Value: %v\n", arrayMetadataWithValueLimit.Value.(string))
+
 	err = array.ConsolidateMetadata(nil)
 	checkError(err)
 
@@ -215,8 +228,11 @@ func clearArrayMetadata() {
 	err = array.DeleteMetadata("key5")
 	checkError(err)
 
-	// Key does not exist
 	err = array.DeleteMetadata("key6")
+	checkError(err)
+
+	// Key does not exist
+	err = array.DeleteMetadata("key7")
 	checkError(err)
 
 	array.Free()
@@ -250,11 +266,16 @@ func ExampleArrayMetadataArray() {
 	// Value Num: 4
 	// Value: [25.1 26.2 27.3 28.4]
 	// Value: This is TileDb array metadata
-	// Num of metadata: 5
+	// Num of metadata: 6
 	// Key: key1
 	// Key len: 4
 	// Datatype: 0
 	// Value Num: 1
 	// Value: 25
-	// {"key1":25,"key2":[25,26,27,28],"key3":25.1,"key4":[25.1,26.2,27.3,28.4],"key5":"This is TileDb array metadata"}
+	// Key: key6
+	// Key len: 4
+	// Datatype: 4
+	// Value Num: 1
+	// Value: Thi
+	// {"key1":25,"key2":[25,26,27,28],"key3":25.1,"key4":[25.1,26.2,27.3,28.4],"key5":"This is TileDb array metadata","key6":"This is TileDb array char metadata"}
 }

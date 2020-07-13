@@ -902,6 +902,24 @@ func (a *Array) URI() (string, error) {
 	return uri, nil
 }
 
+// PutCharMetadata adds char metadata to array
+func (a *Array) PutCharMetadata(key string, charData string) error {
+	ckey := C.CString(key)
+	defer C.free(unsafe.Pointer(ckey))
+
+	var datatype Datatype = TILEDB_CHAR
+
+	valueNum := C.uint(len(charData))
+	ret := C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray,
+		ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&[]byte(charData)[0]))
+
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error adding char metadata to array: %s", a.context.LastError())
+	}
+
+	return nil
+}
+
 // PutMetadata puts a metadata key-value item to an open array. The array must
 // be opened in WRITE mode, otherwise the function will error out.
 func (a *Array) PutMetadata(key string, value interface{}) error {
@@ -1386,7 +1404,7 @@ func getMetadataValue(datatype Datatype, valueNum uint, cvalue unsafe.Pointer) (
 			value = *(*float64)(unsafe.Pointer(cvalue))
 		}
 	case TILEDB_CHAR:
-		tmpslice := (*[1 << 46]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+		tmpslice := (*[1 << 30]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
 		value = C.GoString(&tmpslice[0])[0:valueNum]
 	case TILEDB_STRING_ASCII:
 		tmpslice := (*[1 << 46]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
