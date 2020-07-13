@@ -1136,6 +1136,10 @@ func (a *Array) GetMetadata(key string) (Datatype, uint, interface{}, error) {
 		return 0, 0, nil, fmt.Errorf("Error getting metadata from array, key: %s does not exist", key)
 	}
 
+	if cvalue == nil {
+		return 0, 0, nil, fmt.Error("Error getting metadata from array, value is empty")
+	}
+
 	datatype := Datatype(cType)
 	value, err := getMetadataValue(datatype, valueNum, cvalue)
 	if err != nil {
@@ -1189,6 +1193,10 @@ func (a *Array) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 	valueNum := uint(cValueNum)
 	if valueNum == 0 {
 		return nil, fmt.Errorf("Error getting metadata from array, Index: %d does not exist", index)
+	}
+
+	if cvalue == nil {
+		return 0, 0, nil, fmt.Error("Error getting metadata from array, value is empty")
 	}
 
 	datatype := Datatype(cType)
@@ -1404,7 +1412,7 @@ func getMetadataValue(datatype Datatype, valueNum uint, cvalue unsafe.Pointer) (
 			value = *(*float64)(unsafe.Pointer(cvalue))
 		}
 	case TILEDB_CHAR:
-		tmpslice := (*[1 << 30]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+		tmpslice := (*[1 << 46]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
 		value = C.GoString(&tmpslice[0])[0:valueNum]
 	case TILEDB_STRING_ASCII:
 		tmpslice := (*[1 << 46]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
