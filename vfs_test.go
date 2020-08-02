@@ -2,6 +2,7 @@ package tiledb
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"testing"
 
@@ -127,4 +128,76 @@ func ExampleNewVFS() {
 			// Output: URI is not a directory
 		}
 	}
+}
+
+func TestVFSFH(t *testing.T) {
+	config, err := NewConfig()
+	assert.Nil(t, err)
+
+	context, err := NewContext(config)
+	assert.Nil(t, err)
+
+	vfs, err := NewVFS(context, config)
+	assert.Nil(t, err)
+
+	tmpPath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_vfs_fh"
+	defer os.Remove(tmpPath)
+	if _, err = os.Stat(tmpPath); err == nil {
+		os.Remove(tmpPath)
+	}
+
+	tmpFilePath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_vfs_fh" + string(os.PathSeparator) + "file_test"
+	defer os.Remove(tmpFilePath)
+	if _, err = os.Stat(tmpFilePath); err == nil {
+		os.Remove(tmpFilePath)
+	}
+
+	isFile, err := vfs.IsFile(tmpPath)
+	assert.Nil(t, err)
+	assert.False(t, isFile)
+
+	isDir, err := vfs.IsDir(tmpPath)
+	assert.Nil(t, err)
+	assert.False(t, isDir)
+
+	// Create directory
+	err = vfs.CreateDir(tmpPath)
+	assert.Nil(t, err)
+
+	isDir, err = vfs.IsDir(tmpPath)
+	assert.Nil(t, err)
+	assert.True(t, isDir)
+
+	w, err := vfs.Open(tmpFilePath, TILEDB_VFS_WRITE)
+	assert.Nil(t, err)
+	b := []byte{1, 2, 3}
+	n, err := w.Write(b)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, n)
+	err = w.Close()
+	assert.Nil(t, err)
+
+	r, err := vfs.Open(tmpFilePath, TILEDB_VFS_READ)
+	assert.Nil(t, err)
+	bRead := make([]byte, 3)
+	n, err = r.Read(bRead)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, n)
+	assert.Nil(t, err)
+	assert.ElementsMatch(t, b, bRead)
+
+	n, err = r.Read(bRead)
+	assert.NotNil(t, err)
+	assert.Equal(t, io.EOF, err)
+	assert.Equal(t, 0, n)
+
+	noffset, err := r.Seek(0, io.SeekStart)
+	assert.Nil(t, err)
+	assert.EqualValues(t, 0, noffset)
+	n, err = r.Read(bRead)
+	assert.Nil(t, err)
+	assert.Equal(t, 3, n)
+	err = r.Close()
+	assert.Nil(t, err)
+	assert.ElementsMatch(t, b, bRead)
 }
