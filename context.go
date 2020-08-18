@@ -45,7 +45,10 @@ func NewContext(config *Config) (*Context, error) {
 		context.Free()
 	})
 
-	context.setDefaultTags()
+	err1 := context.setDefaultTags()
+	if err != nil {
+		return nil, fmt.Errorf("Error creating tiledb context: %s", err1.Error())
+	}
 
 	return &context, nil
 }

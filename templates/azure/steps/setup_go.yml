@@ -1,0 +1,15 @@
+parameters:
+  goVersion: '1.14'
+
+steps:
+  - task: GoTool@0
+    displayName: 'Use Go ${{ parameters.goVersion }}'
+    inputs:
+      version: ${{ parameters.goVersion }}
+
+  - script: |
+      set -e -x
+      mkdir -p '$(GOPATH)/bin'
+      echo '##vso[task.prependpath]$(GOROOT)/bin'
+      echo '##vso[task.prependpath]$(GOPATH)/bin'
+    displayName: 'Create Go Workspace'

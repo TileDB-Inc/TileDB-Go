@@ -38,7 +38,7 @@ func ExampleNewContext() {
 		// handle error
 		return
 	}
-	// Output: false
+	// Output: true
 	fmt.Println(isS3Supported)
 }
 
@@ -56,6 +56,7 @@ func TestNewContext(t *testing.T) {
 	// Test context with config
 	context, err = NewContext(config)
 	assert.Nil(t, err)
+	assert.NotNil(t, context)
 }
 
 // TestGetContextConfig tests setting a new context

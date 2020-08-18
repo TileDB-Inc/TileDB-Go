@@ -116,7 +116,8 @@ func TestFileConfig(t *testing.T) {
 		os.Remove(tmpPath)
 	}
 
-	config.SaveToFile(tmpPath)
+	err = config.SaveToFile(tmpPath)
+	assert.Nil(t, err)
 
 	config2, err := LoadConfig(tmpPath)
 	assert.Nil(t, err)

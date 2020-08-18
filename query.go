@@ -22,7 +22,6 @@ type Query struct {
 	tiledbQuery          *C.tiledb_query_t
 	array                *Array
 	context              *Context
-	uri                  string
 	buffers              []interface{}
 	bufferMutex          sync.Mutex
 	resultBufferElements map[string][2]*uint64
@@ -36,7 +35,7 @@ type RangeLimits struct {
 
 // MarshalJSON implements the Marshaler interface for RangeLimits
 func (r RangeLimits) MarshalJSON() ([]byte, error) {
-	rangeLimitMap := make(map[string]interface{}, 0)
+	rangeLimitMap := make(map[string]interface{})
 	rangeLimitMap["end"] = r.end
 	rangeLimitMap["start"] = r.start
 
@@ -75,7 +74,7 @@ func NewQuery(ctx *Context, array *Array) (*Query, error) {
 		query.Free()
 	})
 
-	query.resultBufferElements = make(map[string][2]*uint64, 0)
+	query.resultBufferElements = make(map[string][2]*uint64)
 
 	return &query, nil
 }
@@ -1209,7 +1208,7 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 // second is number of elements in the data buffer. For fixed sized attributes
 // (and coordinates), the first is always 0.
 func (q *Query) ResultBufferElements() (map[string][2]uint64, error) {
-	elements := make(map[string][2]uint64, 0)
+	elements := make(map[string][2]uint64)
 
 	// Will need the schema to infer data type size for attributes
 	schema, err := q.array.Schema()
