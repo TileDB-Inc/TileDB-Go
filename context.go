@@ -74,12 +74,25 @@ func (c *Context) Config() (*Config, error) {
 // LastError returns the last error from this context
 func (c *Context) LastError() error {
 	var err *C.tiledb_error_t
-	C.tiledb_ctx_get_last_error(c.tiledbContext, &err)
+	ret := C.tiledb_ctx_get_last_error(c.tiledbContext, &err)
+
+	if ret == C.TILEDB_OOM {
+		return fmt.Errorf("Out of Memory error in tiledb_ctx_get_last_error")
+	} else if ret != C.TILEDB_OK {
+		return fmt.Errorf("Unknown error in tiledb_ctx_get_last_error")
+	}
 
 	if err != nil {
 		var msg *C.char
 		defer C.tiledb_error_free(&err)
-		C.tiledb_error_message(err, &msg)
+		ret := C.tiledb_error_message(err, &msg)
+
+		if ret == C.TILEDB_OOM {
+			return fmt.Errorf("Out of Memory error in tiledb_error_message")
+		} else if ret != C.TILEDB_OK {
+			return fmt.Errorf("Unknown error in tiledb_error_message")
+		}
+
 		return fmt.Errorf("%s", C.GoString(msg))
 	}
 	return nil
