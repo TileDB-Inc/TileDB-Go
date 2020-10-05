@@ -78,7 +78,6 @@ func (c *Context) LastError() error {
 
 	if err != nil {
 		var msg *C.char
-		defer C.free(unsafe.Pointer(msg))
 		defer C.tiledb_error_free(&err)
 		C.tiledb_error_message(err, &msg)
 		return fmt.Errorf("%s", C.GoString(msg))
