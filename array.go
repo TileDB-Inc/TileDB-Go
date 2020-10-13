@@ -234,6 +234,21 @@ func (a *Array) ConsolidateWithKey(encryptionType EncryptionType, key string, co
 	return nil
 }
 
+// Vacuum cleans up the array, such as consolidated fragments and array metadata
+func (a *Array) Vacuum(config *Config) error {
+	if config == nil {
+		return fmt.Errorf("Config must not be nil for Vacuum")
+	}
+
+	curi := C.CString(a.uri)
+	defer C.free(unsafe.Pointer(curi))
+	ret := C.tiledb_array_vacuum(a.context.tiledbContext, curi, config.tiledbConfig)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error vacuumimg tiledb array: %s", a.context.LastError())
+	}
+	return nil
+}
+
 // Schema returns the ArraySchema for the array
 func (a *Array) Schema() (*ArraySchema, error) {
 	arraySchema := ArraySchema{context: a.context}
