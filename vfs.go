@@ -2,7 +2,7 @@ package tiledb
 
 /*
 #cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl -lclibrary
+#cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb.h>
 #include <stdlib.h>
 #include "clibrary.h"
