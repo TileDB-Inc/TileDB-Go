@@ -188,7 +188,7 @@ func readArrayMetadata() {
 	fmt.Printf("Value Num: %d\n", arrayMetadata.ValueNum)
 	fmt.Printf("Value: %v\n", arrayMetadataWithValueLimit.Value.(string))
 
-	err = array.ConsolidateMetadata(nil)
+	err = array.Consolidate(nil)
 	checkError(err)
 
 	metadataMap, err := array.GetMetadataMap()
