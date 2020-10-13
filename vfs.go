@@ -2,17 +2,21 @@ package tiledb
 
 /*
 #cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
+#cgo linux LDFLAGS: -ldl -lclibrary
 #include <tiledb/tiledb.h>
 #include <stdlib.h>
+#include "clibrary.h"
 */
 import "C"
 
 import (
 	"fmt"
 	"runtime"
+	"strings"
 	"unsafe"
 )
+
+const arrayMetadataFolderName = "__meta"
 
 // VFSfh is a virtual file system file handler
 type VFSfh struct {
@@ -395,4 +399,59 @@ func (v *VFS) DirSize(uri string) (uint64, error) {
 	}
 
 	return uint64(cfsize), nil
+}
+
+// Callback is a type
+type Callback struct {
+	Func func(string, unsafe.Pointer)
+	Path string
+	Data unsafe.Pointer
+}
+
+//export numOfFragmentsInPath
+func numOfFragmentsInPath(path *C.cchar_t, data unsafe.Pointer) int32 {
+	ctx, err := NewContext(nil)
+	if err != nil {
+		return 0
+	}
+
+	config, err := NewConfig()
+	if err != nil {
+		return 0
+	}
+
+	vfs, err := NewVFS(ctx, config)
+	if err != nil {
+		return 0
+	}
+
+	uri := C.GoString(path)
+
+	isDir, err := vfs.IsDir(uri)
+	if err != nil {
+		return 0
+	}
+
+	if isDir && !strings.HasSuffix(uri, arrayMetadataFolderName) {
+		*((*int)(data))++
+	}
+
+	return 1
+}
+
+// NumOfFragmentsInPath returns number of folders in a path
+func (v *VFS) NumOfFragmentsInPath(path string) (int, error) {
+	cpath := C.CString(path)
+	defer C.free(unsafe.Pointer(cpath))
+
+	var numOfFolders int
+	data := unsafe.Pointer(&numOfFolders)
+
+	ret := C._num_of_folders_in_path(v.context.tiledbContext, v.tiledbVFS, cpath, data)
+
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("Error in getting dir list %s: %s", path, v.context.LastError())
+	}
+
+	return *(*int)(data), nil
 }
