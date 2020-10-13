@@ -14,6 +14,8 @@ import (
 	"runtime"
 	"strings"
 	"unsafe"
+
+	pointer "github.com/mattn/go-pointer"
 )
 
 const arrayMetadataFolderName = "__meta"
@@ -401,39 +403,25 @@ func (v *VFS) DirSize(uri string) (uint64, error) {
 	return uint64(cfsize), nil
 }
 
-// Callback is a type
-type Callback struct {
-	Func func(string, unsafe.Pointer)
-	Path string
-	Data unsafe.Pointer
+// NumOfFragmentsData is a type
+type NumOfFragmentsData struct {
+	NumOfFolders int
+	Vfs          *VFS
 }
 
 //export numOfFragmentsInPath
 func numOfFragmentsInPath(path *C.cchar_t, data unsafe.Pointer) int32 {
-	ctx, err := NewContext(nil)
-	if err != nil {
-		return 0
-	}
-
-	config, err := NewConfig()
-	if err != nil {
-		return 0
-	}
-
-	vfs, err := NewVFS(ctx, config)
-	if err != nil {
-		return 0
-	}
+	numOfFragmentsData := pointer.Restore(data).(*NumOfFragmentsData)
 
 	uri := C.GoString(path)
 
-	isDir, err := vfs.IsDir(uri)
+	isDir, err := numOfFragmentsData.Vfs.IsDir(uri)
 	if err != nil {
 		return 0
 	}
 
 	if isDir && !strings.HasSuffix(uri, arrayMetadataFolderName) {
-		*((*int)(data))++
+		numOfFragmentsData.NumOfFolders++
 	}
 
 	return 1
@@ -444,8 +432,11 @@ func (v *VFS) NumOfFragmentsInPath(path string) (int, error) {
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
 
-	var numOfFolders int
-	data := unsafe.Pointer(&numOfFolders)
+	numOfFragmentsData := NumOfFragmentsData{
+		NumOfFolders: 0,
+		Vfs:          v,
+	}
+	data := pointer.Save(&numOfFragmentsData)
 
 	ret := C._num_of_folders_in_path(v.context.tiledbContext, v.tiledbVFS, cpath, data)
 
@@ -453,5 +444,5 @@ func (v *VFS) NumOfFragmentsInPath(path string) (int, error) {
 		return 0, fmt.Errorf("Error in getting dir list %s: %s", path, v.context.LastError())
 	}
 
-	return *(*int)(data), nil
+	return numOfFragmentsData.NumOfFolders, nil
 }

@@ -98,8 +98,10 @@ func writeVacuumSparseArray(buffD []int32, data []int32) {
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
 
-	// Perform the write and close the array.
+	// Perform the write
 	err = query.Submit()
+	checkError(err)
+	err = query.Finalize()
 	checkError(err)
 	err = array.Close()
 	checkError(err)
@@ -133,13 +135,16 @@ func readVacuumSparseArray() {
 	size, err := query.EstResultSize("a")
 	fmt.Printf("Estimated query size in bytes: %d\n", *size)
 
-	// Submit the query and close the array.
+	// Submit the query
 	err = query.Submit()
 	checkError(err)
 
 	for i, aVal := range buffA {
 		fmt.Printf("Cell (%d) has data %d\n", buffD[i], aVal)
 	}
+
+	err = query.Finalize()
+	checkError(err)
 
 	err = array.Close()
 	checkError(err)
