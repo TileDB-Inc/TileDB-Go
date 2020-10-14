@@ -386,7 +386,8 @@ func TestQueryEffectiveBufferSize(t *testing.T) {
 	assert.NotNil(t, array)
 
 	// Prepare some data for the array
-	coordsWrite := []int32{1, 1, 2, 1, 2, 2}
+	buffD1 := []int32{1, 2, 2}
+	buffD2 := []int32{1, 1, 2}
 	a1DataWrite := []byte("abbccc")
 	a1OffWrite := []uint64{0, 1, 3}
 
@@ -403,7 +404,9 @@ func TestQueryEffectiveBufferSize(t *testing.T) {
 	assert.Nil(t, err)
 	_, _, err = query.SetBufferVar("a1", a1OffWrite, a1DataWrite)
 	assert.Nil(t, err)
-	_, err = query.SetCoordinates(coordsWrite)
+	_, err = query.SetBuffer("rows", buffD1)
+	assert.Nil(t, err)
+	_, err = query.SetBuffer("cols", buffD2)
 	assert.Nil(t, err)
 
 	// Check the buffer sizes
@@ -411,9 +414,12 @@ func TestQueryEffectiveBufferSize(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, len(a1OffWrite), int(offsetSize))
 	assert.Equal(t, len(a1DataWrite), int(dataSize))
-	dataSize, err = query.BufferSize(TILEDB_COORDS)
+	rowsDataSize, err := query.BufferSize("rows")
 	assert.Nil(t, err)
-	assert.Equal(t, len(coordsWrite), int(dataSize))
+	assert.Equal(t, len(buffD1), int(rowsDataSize))
+	colsDataSize, err := query.BufferSize("cols")
+	assert.Nil(t, err)
+	assert.Equal(t, len(buffD2), int(colsDataSize))
 
 	// Perform the write, finalize and close the array.
 	err = query.Submit()
@@ -430,7 +436,8 @@ func TestQueryEffectiveBufferSize(t *testing.T) {
 	subArray := []int32{2, 2, 2, 2}
 
 	// Prepare buffers
-	coordsRead := make([]int32, 2)
+	rows := make([]int32, 2)
+	cols := make([]int32, 2)
 	// Allocate 4 bytes to store the read result
 	a1DataRead := make([]byte, 4)
 	a1OffRead := make([]uint64, 1)
@@ -448,7 +455,9 @@ func TestQueryEffectiveBufferSize(t *testing.T) {
 		a1OffRead, a1DataRead)
 	assert.Nil(t, err)
 	assert.NotNil(t, query)
-	_, err = query.SetCoordinates(coordsRead)
+	_, err = query.SetBuffer("rows", rows)
+	assert.Nil(t, err)
+	_, err = query.SetBuffer("cols", cols)
 	assert.Nil(t, err)
 
 	// Submit the query
@@ -469,7 +478,8 @@ func TestQueryEffectiveBufferSize(t *testing.T) {
 	elements, err := query.ResultBufferElements()
 	assert.Nil(t, err)
 	assert.EqualValues(t, elements["a1"], [2]uint64{1, 3})
-	assert.EqualValues(t, elements[TILEDB_COORDS], [2]uint64{0, 2})
+	assert.EqualValues(t, elements["rows"], [2]uint64{0, 1})
+	assert.EqualValues(t, elements["cols"], [2]uint64{0, 1})
 
 	query.Free()
 }
@@ -575,8 +585,6 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, len(a1OffWrite), int(offsetSize))
 	assert.Equal(t, len(a1DataWrite), int(dataSize))
-	_, err = query.BufferSize(TILEDB_COORDS)
-	assert.NotNil(t, err)
 	dataSize, err = query.BufferSize("rows")
 	assert.Nil(t, err)
 	assert.Equal(t, len(rowsWrite), int(dataSize))
@@ -661,6 +669,7 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 
 	query.Free()
 }
+
 func TestQueryEffectiveBufferSizeStrings(t *testing.T) {
 	// Create configuration
 	config, err := NewConfig()
@@ -928,8 +937,6 @@ func TestQueryEffectiveBufferSizeStringsHeterogeneous(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, len(a1OffWrite), int(offsetSize))
 	assert.Equal(t, len(a1DataWrite), int(dataSize))
-	_, err = query.BufferSize(TILEDB_COORDS)
-	assert.NotNil(t, err)
 	offsetSize, dataSize, err = query.BufferSizeVar("rows")
 	assert.Nil(t, err)
 	assert.Equal(t, len(rowsOffWrite), int(offsetSize))
@@ -1517,7 +1524,7 @@ func TestSparseQueryWrite(t *testing.T) {
 
 	// Set coordinates, since test is 1d, this is subarray
 	subArray := []int8{0, 1}
-	_, err = query.SetCoordinates(subArray)
+	_, err = query.SetBuffer("dim1", subArray)
 	assert.Nil(t, err)
 
 	// Submit write query
@@ -1554,7 +1561,7 @@ func TestSparseQueryWrite(t *testing.T) {
 	//assert.Nil(t, err)
 
 	// Set coordinates, since test is 1d, this is subarray
-	_, err = query.SetCoordinates(subArray)
+	_, err = query.SetBuffer("dim1", subArray)
 	assert.Nil(t, err)
 
 	maxElements, err := array.MaxBufferElements(subArray)
