@@ -49,6 +49,9 @@ import (
 // Name of array.
 var variableLengthArrayName = "variable_length_array"
 
+const rowsVariableLengthTileExtent = 4
+const colsVariableLengthTileExtent = 4
+
 func createVariableLengthArray() {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
@@ -57,9 +60,9 @@ func createVariableLengthArray() {
 	// The array will be 4x4 with dimensions "rows" and "cols", with domain [1,4].
 	domain, err := tiledb.NewDomain(ctx)
 	checkError(err)
-	rowDim, err := tiledb.NewDimension(ctx, "rows", []int32{1, 4}, int32(4))
+	rowDim, err := tiledb.NewDimension(ctx, "rows", []int32{1, 4}, int32(rowsVariableLengthTileExtent))
 	checkError(err)
-	colDim, err := tiledb.NewDimension(ctx, "cols", []int32{1, 4}, int32(4))
+	colDim, err := tiledb.NewDimension(ctx, "cols", []int32{1, 4}, int32(colsVariableLengthTileExtent))
 	checkError(err)
 	err = domain.AddDimensions(rowDim, colDim)
 	checkError(err)
@@ -207,16 +210,17 @@ func readVariableLengthArray() {
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
+
 	err = query.SetSubArray(subArray)
 	checkError(err)
 
-	maxElMap, err := array.MaxBufferElements(subArray)
+	bufferElements, err := query.EstimateBufferElements()
 	checkError(err)
 
-	a1Off := make([]uint64, maxElMap["a1"][0])
-	a1Data := make([]byte, maxElMap["a1"][1])
-	a2Off := make([]uint64, maxElMap["a2"][0])
-	a2Data := make([]int32, maxElMap["a2"][1])
+	a1Off := make([]uint64, bufferElements["a1"][0])
+	a1Data := make([]byte, bufferElements["a1"][1]*rowsVariableLengthTileExtent)
+	a2Off := make([]uint64, bufferElements["a2"][0])
+	a2Data := make([]int32, bufferElements["a2"][1]*colsVariableLengthTileExtent)
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)

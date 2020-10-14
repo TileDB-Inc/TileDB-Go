@@ -150,20 +150,21 @@ func readMultipleWritesSparseArray() {
 	// Read the whole array
 	subArray := []int32{1, 4, 1, 4}
 
-	// Prepare the vector that will hold the results
-	// We take the upper bound on the result size as we do not know how large
-	// a buffer is needed since the array is sparse
-	maxElements, err := array.MaxBufferElements(subArray)
-	checkError(err)
-	data := make([]int32, maxElements["a"][1])
-	rows := make([]int32, maxElements["rows"][1])
-	cols := make([]int32, maxElements["cols"][1])
-
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
 	err = query.SetSubArray(subArray)
 	checkError(err)
+
+	// Prepare the vector that will hold the results
+	// We take the upper bound on the result size as we do not know how large
+	// a buffer is needed since the array is sparse
+	bufferElements, err := query.EstimateBufferElements()
+	checkError(err)
+	data := make([]int32, bufferElements["a"][1])
+	rows := make([]int32, bufferElements["rows"][1])
+	cols := make([]int32, bufferElements["cols"][1])
+
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
 	_, err = query.SetBuffer("a", data)

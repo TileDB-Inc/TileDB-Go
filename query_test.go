@@ -1348,18 +1348,18 @@ func TestQueryWrite(t *testing.T) {
 	err = query.SetSubArray(subArray)
 	assert.Nil(t, err)
 
-	maxElements, err := array.MaxBufferElements(subArray)
+	bufferElements, err := query.EstimateBufferElements()
 	assert.Nil(t, err)
-	assert.Equal(t, uint64(0), maxElements["a1"][0])
-	assert.Equal(t, uint64(2), maxElements["a1"][1])
-	assert.Equal(t, uint64(0), maxElements["a2"][0])
-	assert.Equal(t, uint64(2), maxElements["a2"][1])
-	assert.Equal(t, uint64(2), maxElements["a3"][0])
-	assert.Equal(t, uint64(15), maxElements["a3"][1])
-	assert.Equal(t, uint64(2), maxElements["a4"][0])
-	assert.Equal(t, uint64(20), maxElements["a4"][1])
-	assert.Equal(t, uint64(2), maxElements["a5"][0])
-	assert.Equal(t, uint64(20), maxElements["a5"][1])
+	assert.Equal(t, uint64(0), bufferElements["a1"][0])
+	assert.Equal(t, uint64(2), bufferElements["a1"][1])
+	assert.Equal(t, uint64(0), bufferElements["a2"][0])
+	assert.Equal(t, uint64(2), bufferElements["a2"][1])
+	assert.Equal(t, uint64(2), bufferElements["a3"][0])
+	assert.Equal(t, uint64(2), bufferElements["a3"][1])
+	assert.Equal(t, uint64(2), bufferElements["a4"][0])
+	assert.Equal(t, uint64(4), bufferElements["a4"][1])
+	assert.Equal(t, uint64(2), bufferElements["a5"][0])
+	assert.Equal(t, uint64(4), bufferElements["a5"][1])
 
 	// Set empty buffers for reading
 	readBufferA1 := make([]int32, 2)
@@ -1564,10 +1564,10 @@ func TestSparseQueryWrite(t *testing.T) {
 	_, err = query.SetBuffer("dim1", subArray)
 	assert.Nil(t, err)
 
-	maxElements, err := array.MaxBufferElements(subArray)
+	bufferElements, err := query.EstimateBufferElements()
 	assert.Nil(t, err)
-	assert.Equal(t, uint64(0), maxElements["a1"][0])
-	assert.Equal(t, uint64(2), maxElements["a1"][1])
+	assert.Equal(t, uint64(0), bufferElements["a1"][0])
+	assert.Equal(t, uint64(2), bufferElements["a1"][1])
 
 	// Set empty buffers for reading
 	readBufferA1 := make([]int32, 2)

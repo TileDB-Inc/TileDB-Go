@@ -40,8 +40,9 @@ package examples
 
 import (
 	"fmt"
-	tiledb "github.com/TileDB-Inc/TileDB-Go"
 	"os"
+
+	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
@@ -147,10 +148,10 @@ func readMultiAttributeArray() {
 	// Prepare the vector that will hold the result
 	// (of size 6 elements for "a1" and 12 elements for "a2" since
 	// it stores two floats per cell)
-	maxElMap, err := array.MaxBufferElements(subArray)
+	bufferElements, err := query.EstimateBufferElements()
 	checkError(err)
-	a1Data := make([]byte, maxElMap["a1"][1])
-	a2Data := make([]float32, maxElMap["a2"][1])
+	a1Data := make([]byte, bufferElements["a1"][1])
+	a2Data := make([]float32, bufferElements["a2"][1])
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
@@ -166,7 +167,7 @@ func readMultiAttributeArray() {
 	checkError(err)
 
 	fmt.Println("Reading both attributes a1 and a2:")
-	for i := 0; i < int(maxElMap["a1"][1]); i++ {
+	for i := 0; i < int(bufferElements["a1"][1]); i++ {
 		fmt.Printf("a1: %s, a2: (%.1f,%.1f)\n", string(a1Data[i]),
 			a2Data[2*i], a2Data[2*i+1])
 	}
@@ -195,9 +196,9 @@ func readMultiAttributeArraySubSelect() {
 
 	// Prepare the vector that will hold the result
 	// (of size 6 elements for "a1")
-	maxElMap, err := array.MaxBufferElements(subArray)
+	bufferElements, err := query.EstimateBufferElements()
 	checkError(err)
-	a1Data := make([]byte, maxElMap["a1"][1])
+	a1Data := make([]byte, bufferElements["a1"][1])
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
@@ -211,7 +212,7 @@ func readMultiAttributeArraySubSelect() {
 	checkError(err)
 
 	fmt.Println("Subselecting on attribute a1:")
-	for i := 0; i < int(maxElMap["a1"][1]); i++ {
+	for i := 0; i < int(bufferElements["a1"][1]); i++ {
 		fmt.Printf("a1: %s\n", string(a1Data[i]))
 	}
 	fmt.Printf("\n")

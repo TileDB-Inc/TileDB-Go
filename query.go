@@ -1744,6 +1744,122 @@ func (q *Query) EstResultSizeVar(attributeName string) (*uint64, *uint64, error)
 	return &sizeOff, &sizeVal, nil
 }
 
+/*
+EstimateBufferElements compute an upper bound on the buffer elements needed to
+read a subarray or range(s)
+Returns a map of attribute or dimension name to the maximum
+number of elements that can be read in the given subarray. For each attribute,
+a pair of numbers are returned. The first, for variable-length attributes, is
+the maximum number of offsets for that attribute in the given subarray. For
+fixed-length attributes and coordinates, the first is always 0. The second
+is the maximum number of elements for that attribute in the given subarray.
+*/
+func (q *Query) EstimateBufferElements() (map[string][2]uint64, error) {
+	// Build map
+	ret := make(map[string][2]uint64, 0)
+	// Get schema
+	schema, err := q.array.Schema()
+	if err != nil {
+		return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+	}
+
+	attributes, err := schema.Attributes()
+	if err != nil {
+		return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+	}
+	// Loop through each attribute
+	for _, attribute := range attributes {
+
+		// Check if attribute is variable attribute or not
+		cellValNum, err := attribute.CellValNum()
+		if err != nil {
+			return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+		}
+
+		// Get datatype size to convert byte lengths to needed buffer sizes
+		dataType, err := attribute.Type()
+		dataTypeSize := dataType.Size()
+
+		// Get attribute name
+		name, err := attribute.Name()
+		if err != nil {
+			return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+		}
+
+		if cellValNum == TILEDB_VAR_NUM {
+			bufferOffsetSize, bufferValSize, err := q.EstResultSizeVar(name)
+			if err != nil {
+				return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+			}
+			// Set sizes for attribute in return map
+			ret[name] = [2]uint64{
+				*bufferOffsetSize / uint64(C.TILEDB_OFFSET_SIZE),
+				*bufferValSize / dataTypeSize}
+		} else {
+			bufferValSize, err := q.EstResultSize(name)
+			if err != nil {
+				return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+			}
+			ret[name] = [2]uint64{0, *bufferValSize / dataTypeSize}
+		}
+	}
+
+	// Handle coordinates
+	domain, err := schema.Domain()
+	if err != nil {
+		return nil, fmt.Errorf("Could not get domain for MaxBufferElements: %s", err)
+	}
+
+	ndims, err := domain.NDim()
+	if err != nil {
+		return nil, err
+	}
+
+	for dimIdx := uint(0); dimIdx < ndims; dimIdx++ {
+		dim, err := domain.DimensionFromIndex(dimIdx)
+		if err != nil {
+			return nil, err
+		}
+
+		dimType, err := dim.Type()
+		if err != nil {
+			return nil, err
+		}
+
+		dataTypeSize := dimType.Size()
+
+		cellValNum, err := dim.CellValNum()
+		if err != nil {
+			return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+		}
+
+		// Get dimension name
+		name, err := dim.Name()
+		if err != nil {
+			return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+		}
+
+		if cellValNum == TILEDB_VAR_NUM {
+			bufferOffsetSize, bufferValSize, err := q.EstResultSizeVar(name)
+			if err != nil {
+				return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+			}
+			// Set sizes for dimension in return map
+			ret[name] = [2]uint64{
+				*bufferOffsetSize / uint64(C.TILEDB_OFFSET_SIZE),
+				*bufferValSize / dataTypeSize}
+		} else {
+			bufferValSize, err := q.EstResultSize(name)
+			if err != nil {
+				return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+			}
+			ret[name] = [2]uint64{0, *bufferValSize / dataTypeSize}
+		}
+	}
+
+	return ret, nil
+}
+
 // GetFragmentNum returns num of fragments
 func (q *Query) GetFragmentNum() (*uint32, error) {
 	var num uint32

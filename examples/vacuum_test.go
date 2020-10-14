@@ -40,6 +40,7 @@ package examples
 import (
 	"fmt"
 	"os"
+	"unsafe"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
@@ -117,15 +118,8 @@ func readVacuumSparseArray() {
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
 
-	buffD := make([]int32, 3)
-	buffA := make([]int32, 3)
-
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
-	checkError(err)
-	_, err = query.SetBuffer("d", buffD)
-	checkError(err)
-	_, err = query.SetBuffer("a", buffA)
 	checkError(err)
 	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
 	checkError(err)
@@ -133,7 +127,19 @@ func readVacuumSparseArray() {
 	checkError(err)
 
 	size, err := query.EstResultSize("a")
-	fmt.Printf("Estimated query size in bytes: %d\n", *size)
+	checkError(err)
+	fmt.Printf("Estimated query size in bytes for attribute 'a': %d\n", *size)
+	buffA := make([]int32, (*size)/uint64(unsafe.Sizeof(int32(0))))
+
+	size, err = query.EstResultSize("d")
+	checkError(err)
+	fmt.Printf("Estimated query size in bytes for dimension 'd': %d\n", *size)
+	buffD := make([]int32, (*size)/uint64(unsafe.Sizeof(int32(0))))
+
+	_, err = query.SetBuffer("d", buffD)
+	checkError(err)
+	_, err = query.SetBuffer("a", buffA)
+	checkError(err)
 
 	// Submit the query
 	err = query.Submit()
@@ -229,14 +235,16 @@ func ExampleVacuumSparseArray() {
 		checkError(err)
 	}
 
-	// Output: Estimated query size in bytes: 12
+	// Output: Estimated query size in bytes for attribute 'a': 12
+	// Estimated query size in bytes for dimension 'd': 12
 	// Cell (1) has data 1
 	// Cell (2) has data 2
 	// Cell (3) has data 3
 	// Num of fragments after 2 writes before consolidate: 2
 	// Num of fragments after consolidate: 3
 	// Num of fragments after vacuum: 1
-	// Estimated query size in bytes: 12
+	// Estimated query size in bytes for attribute 'a': 12
+	// Estimated query size in bytes for dimension 'd': 12
 	// Cell (1) has data 1
 	// Cell (2) has data 2
 	// Cell (3) has data 3
