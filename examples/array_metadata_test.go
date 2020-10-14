@@ -188,7 +188,13 @@ func readArrayMetadata() {
 	fmt.Printf("Value Num: %d\n", arrayMetadata.ValueNum)
 	fmt.Printf("Value: %v\n", arrayMetadataWithValueLimit.Value.(string))
 
-	err = array.ConsolidateMetadata(nil)
+	config, err := tiledb.NewConfig()
+	checkError(err)
+
+	err = config.Set("sm.consolidation.mode", "array_meta")
+	checkError(err)
+
+	err = array.Consolidate(config)
 	checkError(err)
 
 	metadataMap, err := array.GetMetadataMap()

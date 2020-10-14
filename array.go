@@ -1267,52 +1267,6 @@ func (a *Array) GetMetadataMapWithValueLimit(limit *uint) (map[string]*ArrayMeta
 	return metadataMap, nil
 }
 
-// ConsolidateMetadata consolidates the array metadata into a single array
-// metadata file.
-// You must first finalize all queries to the array before consolidation can
-// begin (as consolidation temporarily acquires an exclusive lock on the array).
-func (a *Array) ConsolidateMetadata(config *Config) error {
-	curi := C.CString(a.uri)
-	defer C.free(unsafe.Pointer(curi))
-
-	var ret C.int32_t
-	if config == nil {
-		ret = C.tiledb_array_consolidate_metadata(a.context.tiledbContext, curi, nil)
-	} else {
-		ret = C.tiledb_array_consolidate_metadata(a.context.tiledbContext, curi, config.tiledbConfig)
-	}
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error consolidating array metadata")
-	}
-
-	return nil
-}
-
-// ConsolidateMetadataWithKey consolidates the array metadata of an encrypted
-// array into a single file.
-// You must first finalize all queries to the array before consolidation can
-// begin (as consolidation temporarily acquires an exclusive lock on the array).
-func (a *Array) ConsolidateMetadataWithKey(encryptionType EncryptionType, key string, config *Config) error {
-	ckey := unsafe.Pointer(C.CString(key))
-	defer C.free(ckey)
-	curi := C.CString(a.uri)
-	defer C.free(unsafe.Pointer(curi))
-
-	var ret C.int32_t
-	if config == nil {
-		ret = C.tiledb_array_consolidate_metadata_with_key(a.context.tiledbContext,
-			curi, C.tiledb_encryption_type_t(encryptionType), ckey, C.uint32_t(len(key)), nil)
-	} else {
-		ret = C.tiledb_array_consolidate_metadata_with_key(a.context.tiledbContext,
-			curi, C.tiledb_encryption_type_t(encryptionType), ckey, C.uint32_t(len(key)), config.tiledbConfig)
-	}
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error consolidating array metadata")
-	}
-
-	return nil
-}
-
 func getMetadataValue(datatype Datatype, valueNum uint, cvalue unsafe.Pointer) (interface{}, error) {
 	var value interface{}
 	switch datatype {
