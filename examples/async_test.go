@@ -37,8 +37,9 @@ package examples
 
 import (
 	"fmt"
-	"github.com/TileDB-Inc/TileDB-Go"
 	"os"
+
+	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
@@ -90,7 +91,8 @@ func writeAsyncArray() {
 	checkError(err)
 
 	// Write some simple data to cells (1, 1), (2, 1), (2, 2) and (4, 3).
-	coords := []int32{1, 1, 2, 1, 2, 2, 4, 3}
+	buffD1 := []int32{1, 2, 2, 4}
+	buffD2 := []int32{1, 1, 2, 3}
 	data := []uint32{1, 2, 3, 4}
 
 	// Open the array for writing and create the query.
@@ -104,7 +106,9 @@ func writeAsyncArray() {
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("rows", buffD1)
+	checkError(err)
+	_, err = query.SetBuffer("cols", buffD2)
 	checkError(err)
 
 	// Submit query asynchronously
@@ -147,7 +151,8 @@ func readAsyncArray() {
 	maxElements, err := array.MaxBufferElements(subArray)
 	checkError(err)
 	data := make([]uint32, maxElements["a"][1])
-	coords := make([]int32, maxElements[tiledb.TILEDB_COORDS][1])
+	rows := make([]int32, maxElements["rows"][1])
+	cols := make([]int32, maxElements["cols"][1])
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
@@ -158,7 +163,9 @@ func readAsyncArray() {
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("rows", rows)
+	checkError(err)
+	_, err = query.SetBuffer("cols", cols)
 	checkError(err)
 
 	// Submit query asynchronously
@@ -182,8 +189,8 @@ func readAsyncArray() {
 	checkError(err)
 	resultNum := elements["a"][1]
 	for r := 0; r < int(resultNum); r++ {
-		i := coords[2*r]
-		j := coords[2*r+1]
+		i := rows[r]
+		j := cols[r]
 		a := data[r]
 		fmt.Printf("Cell (%d, %d) has data %d\n", i, j, a)
 	}

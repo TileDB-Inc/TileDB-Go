@@ -236,45 +236,35 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 
 	var attributeOrDimensionType Datatype
 	// If we are setting tiledb coordinates for a sparse array we want to check
-	// the domain type. The TILEDB_COORDS attribute is only materialized after
-	// the first write
-	if attributeOrDimension == TILEDB_COORDS {
-		attributeOrDimensionType, err = domain.Type()
+	// the domain type.
+	hasDim, err := domain.HasDimension(attributeOrDimension)
+	if err != nil {
+		return nil, err
+	}
+
+	if hasDim {
+		dimension, err := domain.DimensionFromName(attributeOrDimension)
 		if err != nil {
-			return nil, fmt.Errorf(
-				"Could not get domainType for SetBuffer: %s",
+			return nil, fmt.Errorf("Could not get attribute or dimension for SetBuffer: %s",
+				attributeOrDimension)
+		}
+
+		attributeOrDimensionType, err = dimension.Type()
+		if err != nil {
+			return nil, fmt.Errorf("Could not get dimensionType for SetBuffer: %s",
 				attributeOrDimension)
 		}
 	} else {
-		hasDim, err := domain.HasDimension(attributeOrDimension)
+		schemaAttribute, err := schema.AttributeFromName(attributeOrDimension)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Could not get attribute %s for SetBuffer",
+				attributeOrDimension)
 		}
 
-		if hasDim {
-			dimension, err := domain.DimensionFromName(attributeOrDimension)
-			if err != nil {
-				return nil, fmt.Errorf("Could not get attribute or dimension for SetBuffer: %s",
-					attributeOrDimension)
-			}
-
-			attributeOrDimensionType, err = dimension.Type()
-			if err != nil {
-				return nil, fmt.Errorf("Could not get dimensionType for SetBuffer: %s",
-					attributeOrDimension)
-			}
-		} else {
-			schemaAttribute, err := schema.AttributeFromName(attributeOrDimension)
-			if err != nil {
-				return nil, fmt.Errorf("Could not get attribute %s for SetBuffer",
-					attributeOrDimension)
-			}
-
-			attributeOrDimensionType, err = schemaAttribute.Type()
-			if err != nil {
-				return nil, fmt.Errorf("Could not get attributeType for SetBuffer: %s",
-					attributeOrDimension)
-			}
+		attributeOrDimensionType, err = schemaAttribute.Type()
+		if err != nil {
+			return nil, fmt.Errorf("Could not get attributeType for SetBuffer: %s",
+				attributeOrDimension)
 		}
 	}
 
@@ -827,37 +817,30 @@ func (q *Query) Buffer(attributeOrDimension string) (interface{}, error) {
 			err)
 	}
 
-	if attributeOrDimension == TILEDB_COORDS {
-		datatype, err = domain.Type()
+	hasDim, err := domain.HasDimension(attributeOrDimension)
+	if err != nil {
+		return nil, err
+	}
+
+	if hasDim {
+		dimension, err := domain.DimensionFromName(attributeOrDimension)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Could not get attribute or dimension for SetBuffer: %s", attributeOrDimension)
+		}
+
+		datatype, err = dimension.Type()
+		if err != nil {
+			return nil, fmt.Errorf("Could not get dimensionType for SetBuffer: %s", attributeOrDimension)
 		}
 	} else {
-		hasDim, err := domain.HasDimension(attributeOrDimension)
+		attribute, err := schema.AttributeFromName(attributeOrDimension)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Could not get attribute %s for Buffer", attributeOrDimension)
 		}
 
-		if hasDim {
-			dimension, err := domain.DimensionFromName(attributeOrDimension)
-			if err != nil {
-				return nil, fmt.Errorf("Could not get attribute or dimension for SetBuffer: %s", attributeOrDimension)
-			}
-
-			datatype, err = dimension.Type()
-			if err != nil {
-				return nil, fmt.Errorf("Could not get dimensionType for SetBuffer: %s", attributeOrDimension)
-			}
-		} else {
-			attribute, err := schema.AttributeFromName(attributeOrDimension)
-			if err != nil {
-				return nil, fmt.Errorf("Could not get attribute %s for Buffer", attributeOrDimension)
-			}
-
-			datatype, err = attribute.Type()
-			if err != nil {
-				return nil, fmt.Errorf("Could not get attributeType for SetBuffer: %s", attributeOrDimension)
-			}
+		datatype, err = attribute.Type()
+		if err != nil {
+			return nil, fmt.Errorf("Could not get attributeType for SetBuffer: %s", attributeOrDimension)
 		}
 	}
 
@@ -1241,60 +1224,45 @@ func (q *Query) ResultBufferElements() (map[string][2]uint64, error) {
 
 	var datatype Datatype
 	for attributeOrDimension, v := range q.resultBufferElements {
-		// Handle coordinates
-		if attributeOrDimension == TILEDB_COORDS {
-			// For fixed length attributes offset elements are always zero
-			offsetElements := uint64(0)
-
-			domainType, err := domain.Type()
-			if err != nil {
-				return nil, fmt.Errorf("Could not get domainType for ResultBufferElements: %s", err)
-			}
-
-			// Number of buffer elements is calculated
-			bufferElements := (*v[1]) / domainType.Size()
-			elements[attributeOrDimension] = [2]uint64{offsetElements, bufferElements}
-		} else {
-			// For fixed length attributes offset elements are always zero
-			offsetElements := uint64(0)
-			if v[0] != nil {
-				// The attribute is variable lenght
-				offsetElements = (*v[0]) / uint64(unsafe.Sizeof(uint64(0)))
-			}
-
-			hasDim, err := domain.HasDimension(attributeOrDimension)
-			if err != nil {
-				return nil, err
-			}
-
-			if hasDim {
-				dimension, err := domain.DimensionFromName(attributeOrDimension)
-				if err != nil {
-					return nil, fmt.Errorf("Could not get attribute or dimension for SetBuffer: %s", attributeOrDimension)
-				}
-
-				datatype, err = dimension.Type()
-				if err != nil {
-					return nil, fmt.Errorf("Could not get dimensionType for SetBuffer: %s", attributeOrDimension)
-				}
-			} else {
-				// Get the attribute
-				attribute, err := schema.AttributeFromName(attributeOrDimension)
-				if err != nil {
-					return nil, fmt.Errorf("Could not get attribute %s for ResultBufferElements: %s", attributeOrDimension, err)
-				}
-
-				// Get datatype size to convert byte lengths to needed buffer sizes
-				datatype, err = attribute.Type()
-				if err != nil {
-					return nil, fmt.Errorf("Could not get attribute type for ResultBufferElements: %s", err)
-				}
-			}
-
-			// Number of buffer elements is calculated
-			bufferElements := (*v[1]) / datatype.Size()
-			elements[attributeOrDimension] = [2]uint64{offsetElements, bufferElements}
+		// For fixed length attributes offset elements are always zero
+		offsetElements := uint64(0)
+		if v[0] != nil {
+			// The attribute is variable lenght
+			offsetElements = (*v[0]) / uint64(unsafe.Sizeof(uint64(0)))
 		}
+
+		hasDim, err := domain.HasDimension(attributeOrDimension)
+		if err != nil {
+			return nil, err
+		}
+
+		if hasDim {
+			dimension, err := domain.DimensionFromName(attributeOrDimension)
+			if err != nil {
+				return nil, fmt.Errorf("Could not get attribute or dimension for SetBuffer: %s", attributeOrDimension)
+			}
+
+			datatype, err = dimension.Type()
+			if err != nil {
+				return nil, fmt.Errorf("Could not get dimensionType for SetBuffer: %s", attributeOrDimension)
+			}
+		} else {
+			// Get the attribute
+			attribute, err := schema.AttributeFromName(attributeOrDimension)
+			if err != nil {
+				return nil, fmt.Errorf("Could not get attribute %s for ResultBufferElements: %s", attributeOrDimension, err)
+			}
+
+			// Get datatype size to convert byte lengths to needed buffer sizes
+			datatype, err = attribute.Type()
+			if err != nil {
+				return nil, fmt.Errorf("Could not get attribute type for ResultBufferElements: %s", err)
+			}
+		}
+
+		// Number of buffer elements is calculated
+		bufferElements := (*v[1]) / datatype.Size()
+		elements[attributeOrDimension] = [2]uint64{offsetElements, bufferElements}
 	}
 
 	return elements, nil
@@ -1316,37 +1284,30 @@ func (q *Query) BufferVar(attributeOrDimension string) ([]uint64, interface{}, e
 			err)
 	}
 
-	if attributeOrDimension == TILEDB_COORDS {
-		datatype, err = domain.Type()
+	hasDim, err := domain.HasDimension(attributeOrDimension)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if hasDim {
+		dimension, err := domain.DimensionFromName(attributeOrDimension)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("Could not get attribute or dimension for BufferVar: %s", attributeOrDimension)
+		}
+
+		datatype, err = dimension.Type()
+		if err != nil {
+			return nil, nil, fmt.Errorf("Could not get dimensionType for BufferVar: %s", attributeOrDimension)
 		}
 	} else {
-		hasDim, err := domain.HasDimension(attributeOrDimension)
+		attribute, err := schema.AttributeFromName(attributeOrDimension)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("Could not get attribute for BufferVar: %s", attributeOrDimension)
 		}
 
-		if hasDim {
-			dimension, err := domain.DimensionFromName(attributeOrDimension)
-			if err != nil {
-				return nil, nil, fmt.Errorf("Could not get attribute or dimension for BufferVar: %s", attributeOrDimension)
-			}
-
-			datatype, err = dimension.Type()
-			if err != nil {
-				return nil, nil, fmt.Errorf("Could not get dimensionType for BufferVar: %s", attributeOrDimension)
-			}
-		} else {
-			attribute, err := schema.AttributeFromName(attributeOrDimension)
-			if err != nil {
-				return nil, nil, fmt.Errorf("Could not get attribute for BufferVar: %s", attributeOrDimension)
-			}
-
-			datatype, err = attribute.Type()
-			if err != nil {
-				return nil, nil, fmt.Errorf("Could not get attributeType for BufferVar: %s", attributeOrDimension)
-			}
+		datatype, err = attribute.Type()
+		if err != nil {
+			return nil, nil, fmt.Errorf("Could not get attributeType for BufferVar: %s", attributeOrDimension)
 		}
 	}
 
@@ -1512,37 +1473,30 @@ func (q *Query) BufferSizeVar(attributeOrDimension string) (uint64, uint64, erro
 			err)
 	}
 
-	if attributeOrDimension == TILEDB_COORDS {
-		datatype, err = domain.Type()
+	hasDim, err := domain.HasDimension(attributeOrDimension)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	if hasDim {
+		dimension, err := domain.DimensionFromName(attributeOrDimension)
 		if err != nil {
-			return 0, 0, err
+			return 0, 0, fmt.Errorf("Could not get attribute or dimension for BufferSizeVar: %s", attributeOrDimension)
+		}
+
+		datatype, err = dimension.Type()
+		if err != nil {
+			return 0, 0, fmt.Errorf("Could not get dimensionType for BufferSizeVar: %s", attributeOrDimension)
 		}
 	} else {
-		hasDim, err := domain.HasDimension(attributeOrDimension)
+		attribute, err := schema.AttributeFromName(attributeOrDimension)
 		if err != nil {
-			return 0, 0, err
+			return 0, 0, fmt.Errorf("Could not get attribute %s for BufferSizeVar", attributeOrDimension)
 		}
 
-		if hasDim {
-			dimension, err := domain.DimensionFromName(attributeOrDimension)
-			if err != nil {
-				return 0, 0, fmt.Errorf("Could not get attribute or dimension for BufferSizeVar: %s", attributeOrDimension)
-			}
-
-			datatype, err = dimension.Type()
-			if err != nil {
-				return 0, 0, fmt.Errorf("Could not get dimensionType for BufferSizeVar: %s", attributeOrDimension)
-			}
-		} else {
-			attribute, err := schema.AttributeFromName(attributeOrDimension)
-			if err != nil {
-				return 0, 0, fmt.Errorf("Could not get attribute %s for BufferSizeVar", attributeOrDimension)
-			}
-
-			datatype, err = attribute.Type()
-			if err != nil {
-				return 0, 0, fmt.Errorf("Could not get attributeType for BufferSizeVar: %s", attributeOrDimension)
-			}
+		datatype, err = attribute.Type()
+		if err != nil {
+			return 0, 0, fmt.Errorf("Could not get attributeType for BufferSizeVar: %s", attributeOrDimension)
 		}
 	}
 
@@ -1594,37 +1548,30 @@ func (q *Query) BufferSize(attributeNameOrDimension string) (uint64, error) {
 			err)
 	}
 
-	if attributeNameOrDimension == TILEDB_COORDS {
-		datatype, err = domain.Type()
+	hasDim, err := domain.HasDimension(attributeNameOrDimension)
+	if err != nil {
+		return 0, err
+	}
+
+	if hasDim {
+		dimension, err := domain.DimensionFromName(attributeNameOrDimension)
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("Could not get attribute or dimension for BufferSize: %s", attributeNameOrDimension)
+		}
+
+		datatype, err = dimension.Type()
+		if err != nil {
+			return 0, fmt.Errorf("Could not get dimensionType for BufferSize: %s", attributeNameOrDimension)
 		}
 	} else {
-		hasDim, err := domain.HasDimension(attributeNameOrDimension)
+		attribute, err := schema.AttributeFromName(attributeNameOrDimension)
 		if err != nil {
 			return 0, err
 		}
 
-		if hasDim {
-			dimension, err := domain.DimensionFromName(attributeNameOrDimension)
-			if err != nil {
-				return 0, fmt.Errorf("Could not get attribute or dimension for BufferSize: %s", attributeNameOrDimension)
-			}
-
-			datatype, err = dimension.Type()
-			if err != nil {
-				return 0, fmt.Errorf("Could not get dimensionType for BufferSize: %s", attributeNameOrDimension)
-			}
-		} else {
-			attribute, err := schema.AttributeFromName(attributeNameOrDimension)
-			if err != nil {
-				return 0, err
-			}
-
-			datatype, err = attribute.Type()
-			if err != nil {
-				return 0, err
-			}
+		datatype, err = attribute.Type()
+		if err != nil {
+			return 0, err
 		}
 	}
 
@@ -1756,11 +1703,6 @@ func (q *Query) HasResults() (bool, error) {
 		return false, fmt.Errorf("Error checking if query has results: %s", q.context.LastError())
 	}
 	return int(hasResults) == 1, nil
-}
-
-// SetCoordinates sets the coordinate buffer
-func (q *Query) SetCoordinates(coordinates interface{}) (*uint64, error) {
-	return q.SetBuffer(TILEDB_COORDS, coordinates)
 }
 
 // EstResultSize gets the query estimated result size in bytes for an attribute

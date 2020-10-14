@@ -361,6 +361,3 @@ const (
 
 // TILEDB_VAR_NUM indicates variable sized attributes for cell values
 var TILEDB_VAR_NUM = uint(C.TILEDB_VAR_NUM)
-
-// TILEDB_COORDS A special name indicating the coordinates attribute.
-var TILEDB_COORDS = C.GoString(C.TILEDB_COORDS)

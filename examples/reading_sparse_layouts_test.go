@@ -92,18 +92,9 @@ func writeReadingSparseLayoutsArray() {
 	checkError(err)
 
 	// Prepare data for writing.
-	coords := []int32{1, 1,
-		1, 2,
-		2, 2,
-		1, 4,
-		2, 3,
-		2, 4}
-	data := []uint32{1,
-		2,
-		3,
-		4,
-		5,
-		6}
+	buffD1 := []int32{1, 1, 2, 1, 2, 2}
+	buffD2 := []int32{1, 2, 2, 4, 3, 4}
+	data := []uint32{1, 2, 3, 4, 5, 6}
 
 	// Open the array for writing and create the query.
 	array, err := tiledb.NewArray(ctx, readingSparseLayoutsArrayName)
@@ -116,7 +107,9 @@ func writeReadingSparseLayoutsArray() {
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("rows", buffD1)
+	checkError(err)
+	_, err = query.SetBuffer("cols", buffD2)
 	checkError(err)
 
 	// Perform the write, finalize and close the array.
@@ -154,7 +147,8 @@ func readReadingSparseLayoutsArray() {
 	maxElements, err := array.MaxBufferElements(subArray)
 	checkError(err)
 	data := make([]uint32, maxElements["a"][1])
-	coords := make([]int32, maxElements[tiledb.TILEDB_COORDS][1])
+	rows := make([]int32, maxElements["rows"][1])
+	cols := make([]int32, maxElements["cols"][1])
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
@@ -165,7 +159,9 @@ func readReadingSparseLayoutsArray() {
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("rows", rows)
+	checkError(err)
+	_, err = query.SetBuffer("cols", cols)
 	checkError(err)
 
 	// Submit the query and close the array.
@@ -177,8 +173,8 @@ func readReadingSparseLayoutsArray() {
 	checkError(err)
 	resultNum := elements["a"][1]
 	for r := 0; r < int(resultNum); r++ {
-		i := coords[2*r]
-		j := coords[2*r+1]
+		i := rows[r]
+		j := cols[r]
 		a := data[r]
 		fmt.Printf("Cell (%d, %d) has data %d\n", i, j, a)
 	}

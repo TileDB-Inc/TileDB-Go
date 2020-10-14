@@ -148,8 +148,9 @@ func writeFragmentsConsolidationArray3() {
 	checkError(err)
 
 	// Prepare some data for the array
+	buffD1 := []int32{1, 3}
+	buffD2 := []int32{1, 4}
 	data := []int32{201, 202}
-	coords := []int32{1, 1, 3, 4}
 
 	// Create the query
 	array, err := tiledb.NewArray(ctx, fragmentsConsolidationArrayName)
@@ -162,7 +163,9 @@ func writeFragmentsConsolidationArray3() {
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("rows", buffD1)
+	checkError(err)
+	_, err = query.SetBuffer("cols", buffD2)
 	checkError(err)
 
 	// Perform the write and close the array.
@@ -208,14 +211,18 @@ func readFragmentsConsolidationArray() {
 	// Prepare the vector that will hold the result
 	maxElMap, err := array.MaxBufferElements(subArray)
 	checkError(err)
+
 	data := make([]int32, maxElMap["a"][1])
-	coords := make([]int32, maxElMap[tiledb.TILEDB_COORDS][1])
+	rows := make([]int32, maxElMap["rows"][1])
+	cols := make([]int32, maxElMap["cols"][1])
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("rows", rows)
+	checkError(err)
+	_, err = query.SetBuffer("cols", cols)
 	checkError(err)
 
 	// Submit the query and close the array.
@@ -227,8 +234,8 @@ func readFragmentsConsolidationArray() {
 	checkError(err)
 	resultNum := elements["a"][1]
 	for r := 0; r < int(resultNum); r++ {
-		i := coords[2*r]
-		j := coords[2*r+1]
+		i := rows[r]
+		j := cols[r]
 		a := data[r]
 		fmt.Printf("Cell (%d, %d) has data %d\n", i, j, a)
 	}

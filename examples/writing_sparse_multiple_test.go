@@ -87,7 +87,7 @@ func createMultipleWritesSparseArray() {
 }
 
 func execQueryUnordered(ctx *tiledb.Context, array *tiledb.Array,
-	data []int32, coords []int32) {
+	data []int32, buffD1 []int32, buffD2 []int32) {
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
 	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
@@ -96,7 +96,9 @@ func execQueryUnordered(ctx *tiledb.Context, array *tiledb.Array,
 	// Submit query
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("rows", buffD1)
+	checkError(err)
+	_, err = query.SetBuffer("cols", buffD2)
 	checkError(err)
 	// Perform the write.
 	err = query.Submit()
@@ -121,13 +123,15 @@ func writeMultipleWritesSparseArray() {
 	checkError(err)
 
 	// First write
-	coords1 := []int32{1, 1, 2, 4, 2, 3}
+	buffD1 := []int32{1, 2, 2}
+	buffD2 := []int32{1, 4, 3}
 	data1 := []int32{1, 2, 3}
-	execQueryUnordered(ctx, array, data1, coords1)
+	execQueryUnordered(ctx, array, data1, buffD1, buffD2)
 
-	coords2 := []int32{4, 1, 2, 4}
+	buffD1 = []int32{4, 2}
+	buffD2 = []int32{1, 2}
 	data2 := []int32{4, 20}
-	execQueryUnordered(ctx, array, data2, coords2)
+	execQueryUnordered(ctx, array, data2, buffD1, buffD2)
 
 	err = array.Close()
 	checkError(err)
@@ -152,7 +156,8 @@ func readMultipleWritesSparseArray() {
 	maxElements, err := array.MaxBufferElements(subArray)
 	checkError(err)
 	data := make([]int32, maxElements["a"][1])
-	coords := make([]int32, maxElements[tiledb.TILEDB_COORDS][1])
+	rows := make([]int32, maxElements["rows"][1])
+	cols := make([]int32, maxElements["cols"][1])
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
@@ -163,7 +168,9 @@ func readMultipleWritesSparseArray() {
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("rows", rows)
+	checkError(err)
+	_, err = query.SetBuffer("cols", cols)
 	checkError(err)
 
 	// Submit the query and close the array.
@@ -175,8 +182,8 @@ func readMultipleWritesSparseArray() {
 	checkError(err)
 	resultNum := elements["a"][1]
 	for r := 0; r < int(resultNum); r++ {
-		i := coords[2*r]
-		j := coords[2*r+1]
+		i := rows[r]
+		j := cols[r]
 		a := data[r]
 		fmt.Printf("Cell (%d, %d) has data %d\n", i, j, a)
 	}
@@ -197,7 +204,8 @@ func ExampleWritingSparseMultiple() {
 	}
 
 	// Output: Cell (1, 1) has data 1
+	// Cell (2, 2) has data 20
 	// Cell (2, 3) has data 3
-	// Cell (2, 4) has data 20
+	// Cell (2, 4) has data 2
 	// Cell (4, 1) has data 4
 }

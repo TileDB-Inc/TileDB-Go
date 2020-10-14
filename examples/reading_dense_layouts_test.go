@@ -40,8 +40,9 @@ package examples
 
 import (
 	"fmt"
-	"github.com/TileDB-Inc/TileDB-Go"
 	"os"
+
+	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
@@ -137,7 +138,8 @@ func readReadingDenseLayoutsArray() {
 
 	// Prepare the vector that will hold the result (of size 6 elements)
 	data := make([]int32, 6)
-	coords := make([]int32, 12)
+	rows := make([]int32, 6)
+	cols := make([]int32, 6)
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
@@ -148,7 +150,9 @@ func readReadingDenseLayoutsArray() {
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("rows", rows)
+	checkError(err)
+	_, err = query.SetBuffer("cols", cols)
 	checkError(err)
 
 	// Submit the query and close the array.
@@ -160,8 +164,8 @@ func readReadingDenseLayoutsArray() {
 	checkError(err)
 	resultNum := elements["a"][1]
 	for r := 0; r < int(resultNum); r++ {
-		i := coords[2*r]
-		j := coords[2*r+1]
+		i := rows[r]
+		j := cols[r]
 		a := data[r]
 		fmt.Printf("Cell (%d, %d) has data %d\n", i, j, a)
 	}
