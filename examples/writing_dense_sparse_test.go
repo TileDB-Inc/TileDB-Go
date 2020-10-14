@@ -39,8 +39,9 @@ package examples
 
 import (
 	"fmt"
-	"github.com/TileDB-Inc/TileDB-Go"
 	"os"
+
+	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
@@ -99,11 +100,14 @@ func writeDenseSparseArray() {
 	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
 	checkError(err)
 
-	coords := []int32{1, 2, 2, 1, 4, 3, 1, 4}
+	buffD1 := []int32{1, 2, 4, 1}
+	buffD2 := []int32{2, 1, 3, 4}
 	data := []int32{1, 2, 3, 4}
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("rows", buffD1)
+	checkError(err)
+	_, err = query.SetBuffer("cols", buffD2)
 	checkError(err)
 
 	// Perform the write.
@@ -128,7 +132,8 @@ func readDenseSparseArray() {
 
 	// Prepare the buffers
 	data := make([]int32, 16)
-	coords := make([]int32, 32)
+	rows := make([]int32, 16)
+	cols := make([]int32, 16)
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
@@ -139,7 +144,9 @@ func readDenseSparseArray() {
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("rows", rows)
+	checkError(err)
+	_, err = query.SetBuffer("cols", cols)
 	checkError(err)
 
 	// Submit the query and close the array.
@@ -151,8 +158,8 @@ func readDenseSparseArray() {
 	checkError(err)
 	resultNum := elements["a"][1]
 	for r := 0; r < int(resultNum); r++ {
-		i := coords[2*r]
-		j := coords[2*r+1]
+		i := rows[r]
+		j := cols[r]
 		a := data[r]
 		fmt.Printf("Cell (%d, %d) has data %d\n", i, j, a)
 	}

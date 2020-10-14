@@ -41,7 +41,7 @@ import (
 	"os"
 	"unsafe"
 
-	"github.com/TileDB-Inc/TileDB-Go"
+	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
@@ -99,7 +99,8 @@ func writeReadingIncompleteArray() {
 	checkError(err)
 
 	// Prepare some data for the array
-	coords := []int32{1, 1, 2, 1, 2, 2}
+	buffD1 := []int32{1, 2, 2}
+	buffD2 := []int32{1, 1, 2}
 	a1Data := []int32{1, 2, 3}
 	a2Data := []byte("abbccc")
 	a2Off := []uint64{0, 1, 3}
@@ -117,7 +118,9 @@ func writeReadingIncompleteArray() {
 	checkError(err)
 	_, _, err = query.SetBufferVar("a2", a2Off, a2Data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("rows", buffD1)
+	checkError(err)
+	_, err = query.SetBuffer("cols", buffD2)
 	checkError(err)
 
 	// Perform the write, finalize and close the array.
@@ -130,7 +133,8 @@ func writeReadingIncompleteArray() {
 }
 
 func reallocateBuffers(
-	coords *[]int32,
+	rows *[]int32,
+	cols *[]int32,
 	a1Data *[]int32,
 	a2Off *[]uint64,
 	a2Data *[]byte) {
@@ -138,14 +142,16 @@ func reallocateBuffers(
 
 	//// Note: this is a naive reallocation - you should handle
 	//// reallocation properly depending on your application
-	*coords = make([]int32, 2*len(*coords))
+	*rows = make([]int32, 2*len(*rows))
+	*cols = make([]int32, 2*len(*cols))
 	*a1Data = make([]int32, 2*len(*a1Data))
 	*a2Off = make([]uint64, 2*len(*a2Off))
 	*a2Data = make([]byte, 2*len(*a2Data))
 }
 
 func printResultsReadingIncomplete(
-	coords []int32,
+	rows []int32,
+	cols []int32,
 	a1Data []int32,
 	a2Off []uint64,
 	a2Data []byte,
@@ -178,8 +184,8 @@ func printResultsReadingIncomplete(
 	// Print the results
 	resultNum := resultElA2Off // For clarity
 	for r := 0; r < int(resultNum); r++ {
-		i := coords[2*r]
-		j := coords[2*r+1]
+		i := rows[r]
+		j := cols[r]
 		a1 := a1Data[r]
 		fmt.Printf("Cell (%d, %d), a1: %d, a2: %s\n",
 			i, j, a1, string(a2Str[r]))
@@ -200,7 +206,8 @@ func readReadingIncompleteArray() {
 	subArray := []int32{1, 4, 1, 4}
 
 	// Prepare buffers such that the results **cannot** fit
-	coords := make([]int32, 2)
+	rows := make([]int32, 1)
+	cols := make([]int32, 1)
 	a1Data := make([]int32, 1)
 	a2Off := make([]uint64, 1)
 	a2Data := make([]byte, 1)
@@ -216,7 +223,9 @@ func readReadingIncompleteArray() {
 	checkError(err)
 	_, _, err = query.SetBufferVar("a2", a2Off, a2Data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("rows", rows)
+	checkError(err)
+	_, err = query.SetBuffer("cols", cols)
 	checkError(err)
 
 	var queryStatus tiledb.QueryStatus
@@ -235,18 +244,20 @@ func readReadingIncompleteArray() {
 		resultNum := elements["a1"][1]
 
 		if queryStatus == tiledb.TILEDB_INCOMPLETE && resultNum == 0 {
-			reallocateBuffers(&coords, &a1Data, &a2Off, &a2Data)
+			reallocateBuffers(&rows, &cols, &a1Data, &a2Off, &a2Data)
 			_, err = query.SetBuffer("a1", a1Data)
 			checkError(err)
 			_, _, err = query.SetBufferVar("a2", a2Off, a2Data)
 			checkError(err)
-			_, err = query.SetCoordinates(coords)
+			_, err = query.SetBuffer("rows", rows)
+			checkError(err)
+			_, err = query.SetBuffer("cols", cols)
 			checkError(err)
 		} else {
 			elements, err := query.ResultBufferElements()
 			checkError(err)
 			printResultsReadingIncomplete(
-				coords, a1Data, a2Off, a2Data, elements)
+				rows, cols, a1Data, a2Off, a2Data, elements)
 		}
 
 		if queryStatus != tiledb.TILEDB_INCOMPLETE {

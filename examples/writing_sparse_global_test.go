@@ -87,7 +87,7 @@ func createSparseGlobalArray() {
 }
 
 func execQueryGlobalOrder(ctx *tiledb.Context, array *tiledb.Array,
-	data []int32, coords []int32) {
+	data []int32, buffD1 []int32, buffD2 []int32) {
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
 	err = query.SetLayout(tiledb.TILEDB_GLOBAL_ORDER)
@@ -96,7 +96,9 @@ func execQueryGlobalOrder(ctx *tiledb.Context, array *tiledb.Array,
 	// Submit query
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("rows", buffD1)
+	checkError(err)
+	_, err = query.SetBuffer("cols", buffD2)
 	checkError(err)
 	// Perform the write.
 	err = query.Submit()
@@ -117,14 +119,16 @@ func writeSparseGlobalArray() {
 	checkError(err)
 
 	// Query 1
-	coords1 := []int32{1, 1, 2, 4}
+	buffD1 := []int32{1, 2}
+	buffD2 := []int32{1, 4}
 	data1 := []int32{1, 2}
-	execQueryGlobalOrder(ctx, array, data1, coords1)
+	execQueryGlobalOrder(ctx, array, data1, buffD1, buffD2)
 
 	// Query 2
-	coords2 := []int32{2, 3}
+	buffD1 = []int32{2}
+	buffD2 = []int32{3}
 	data2 := []int32{3}
-	execQueryGlobalOrder(ctx, array, data2, coords2)
+	execQueryGlobalOrder(ctx, array, data2, buffD1, buffD2)
 
 	err = array.Close()
 	checkError(err)
@@ -149,7 +153,8 @@ func readSparseGlobalArray() {
 	maxElements, err := array.MaxBufferElements(subArray)
 	checkError(err)
 	data := make([]int32, maxElements["a"][1])
-	coords := make([]int32, maxElements[tiledb.TILEDB_COORDS][1])
+	rows := make([]int32, maxElements["rows"][1])
+	cols := make([]int32, maxElements["cols"][1])
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
@@ -160,7 +165,9 @@ func readSparseGlobalArray() {
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("rows", rows)
+	checkError(err)
+	_, err = query.SetBuffer("cols", cols)
 	checkError(err)
 
 	// Submit the query and close the array.
@@ -172,8 +179,8 @@ func readSparseGlobalArray() {
 	checkError(err)
 	resultNum := elements["a"][1]
 	for r := 0; r < int(resultNum); r++ {
-		i := coords[2*r]
-		j := coords[2*r+1]
+		i := rows[r]
+		j := cols[r]
 		a := data[r]
 		fmt.Printf("Cell (%d, %d) has data %d\n", i, j, a)
 	}

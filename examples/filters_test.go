@@ -41,7 +41,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/TileDB-Inc/TileDB-Go"
+	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
@@ -122,7 +122,8 @@ func writeFiltersArray() {
 	checkError(err)
 
 	// Write some simple data to cells (1, 1), (2, 4) and (2, 3).
-	coords := []int32{1, 1, 2, 4, 2, 3}
+	buffD1 := []int32{1, 2, 2}
+	buffD2 := []int32{1, 4, 3}
 	dataA1 := []uint32{1, 2, 3}
 	dataA2 := []int32{-1, -2, -3}
 
@@ -139,7 +140,9 @@ func writeFiltersArray() {
 	checkError(err)
 	_, err = query.SetBuffer("a2", dataA2)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("rows", buffD1)
+	checkError(err)
+	_, err = query.SetBuffer("cols", buffD2)
 	checkError(err)
 
 	// Perform the write and close the array.
@@ -168,7 +171,8 @@ func readFiltersArray() {
 	maxElements, err := array.MaxBufferElements(subArray)
 	checkError(err)
 	data := make([]uint32, maxElements["a1"][1])
-	coords := make([]int32, maxElements[tiledb.TILEDB_COORDS][1])
+	rows := make([]int32, maxElements["rows"][1])
+	cols := make([]int32, maxElements["cols"][1])
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
@@ -179,7 +183,9 @@ func readFiltersArray() {
 	checkError(err)
 	_, err = query.SetBuffer("a1", data)
 	checkError(err)
-	_, err = query.SetCoordinates(coords)
+	_, err = query.SetBuffer("rows", rows)
+	checkError(err)
+	_, err = query.SetBuffer("cols", cols)
 	checkError(err)
 
 	// Submit the query and close the array.
@@ -191,8 +197,8 @@ func readFiltersArray() {
 	checkError(err)
 	resultNum := elements["a1"][1]
 	for r := 0; r < int(resultNum); r++ {
-		i := coords[2*r]
-		j := coords[2*r+1]
+		i := rows[r]
+		j := cols[r]
 		a := data[r]
 		fmt.Printf("Cell (%d, %d) has data %d\n", i, j, a)
 	}
