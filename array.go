@@ -827,7 +827,7 @@ func (a *Array) MaxBufferSizeVar(attributeName string, subarray interface{}) (ui
 /*
 MaxBufferElements compute an upper bound on the buffer elements needed to
 read a subarray.
-Returns A map of attribute name (including TILEDB_COORDS) to the maximum
+Returns A map of attribute or dimension name to the maximum
 number of elements that can be read in the given subarray. For each attribute,
 a pair of numbers are returned. The first, for variable-length attributes, is
 the maximum number of offsets for that attribute in the given subarray. For
@@ -875,9 +875,6 @@ func (a *Array) MaxBufferElements(subarray interface{}) (map[string][2]uint64, e
 			ret[name] = [2]uint64{
 				bufferOffsetSize / uint64(C.TILEDB_OFFSET_SIZE),
 				bufferValSize / dataTypeSize}
-			if err != nil {
-				return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
-			}
 		} else {
 			bufferValSize, err := a.MaxBufferSize(name, subarray)
 			if err != nil {
@@ -892,15 +889,53 @@ func (a *Array) MaxBufferElements(subarray interface{}) (map[string][2]uint64, e
 	if err != nil {
 		return nil, fmt.Errorf("Could not get domain for MaxBufferElements: %s", err)
 	}
-	domainType, err := domain.Type()
+
+	ndims, err := domain.NDim()
 	if err != nil {
-		return nil, fmt.Errorf("Could not get domainType for MaxBufferElements: %s", err)
+		return nil, err
 	}
-	bufferValSize, err := a.MaxBufferSize(TILEDB_COORDS, subarray)
-	if err != nil {
-		return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+
+	for dimIdx := uint(0); dimIdx < ndims; dimIdx++ {
+		dim, err := domain.DimensionFromIndex(dimIdx)
+		if err != nil {
+			return nil, err
+		}
+
+		dimType, err := dim.Type()
+		if err != nil {
+			return nil, err
+		}
+
+		dataTypeSize := dimType.Size()
+
+		cellValNum, err := dim.CellValNum()
+		if err != nil {
+			return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+		}
+
+		// Get dimension name
+		name, err := dim.Name()
+		if err != nil {
+			return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+		}
+
+		if cellValNum == TILEDB_VAR_NUM {
+			bufferOffsetSize, bufferValSize, err := a.MaxBufferSizeVar(name, subarray)
+			if err != nil {
+				return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+			}
+			// Set sizes for dimension in return map
+			ret[name] = [2]uint64{
+				bufferOffsetSize / uint64(C.TILEDB_OFFSET_SIZE),
+				bufferValSize / dataTypeSize}
+		} else {
+			bufferValSize, err := a.MaxBufferSize(name, subarray)
+			if err != nil {
+				return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+			}
+			ret[name] = [2]uint64{0, bufferValSize / dataTypeSize}
+		}
 	}
-	ret[TILEDB_COORDS] = [2]uint64{0, bufferValSize / domainType.Size()}
 
 	return ret, nil
 }
