@@ -143,18 +143,20 @@ func readReadingSparseLayoutsArray() {
 	// Slice only rows 1, 2 and cols 2, 3, 4
 	subArray := []int32{1, 2, 2, 4}
 
-	// Prepare the vector that will hold the result
-	maxElements, err := array.MaxBufferElements(subArray)
-	checkError(err)
-	data := make([]uint32, maxElements["a"][1])
-	rows := make([]int32, maxElements["rows"][1])
-	cols := make([]int32, maxElements["cols"][1])
-
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
 	err = query.SetSubArray(subArray)
 	checkError(err)
+
+	// Prepare the vector that will hold the result
+	bufferElements, err := query.EstimateBufferElements()
+	checkError(err)
+
+	data := make([]uint32, bufferElements["a"][1])
+	rows := make([]int32, bufferElements["rows"][1])
+	cols := make([]int32, bufferElements["cols"][1])
+
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
@@ -164,19 +166,29 @@ func readReadingSparseLayoutsArray() {
 	_, err = query.SetBuffer("cols", cols)
 	checkError(err)
 
-	// Submit the query and close the array.
-	err = query.Submit()
-	checkError(err)
+	var queryStatus tiledb.QueryStatus
 
-	// Print out the results.
-	elements, err := query.ResultBufferElements()
-	checkError(err)
-	resultNum := elements["a"][1]
-	for r := 0; r < int(resultNum); r++ {
-		i := rows[r]
-		j := cols[r]
-		a := data[r]
-		fmt.Printf("Cell (%d, %d) has data %d\n", i, j, a)
+	for { // Submit the query and close the array.
+		err = query.Submit()
+		checkError(err)
+
+		queryStatus, err = query.Status()
+		checkError(err)
+
+		// Print out the results.
+		elements, err := query.ResultBufferElements()
+		checkError(err)
+		resultNum := elements["a"][1]
+		for r := 0; r < int(resultNum); r++ {
+			i := rows[r]
+			j := cols[r]
+			a := data[r]
+			fmt.Printf("Cell (%d, %d) has data %d\n", i, j, a)
+		}
+
+		if queryStatus != tiledb.TILEDB_INCOMPLETE {
+			break
+		}
 	}
 
 	err = array.Close()

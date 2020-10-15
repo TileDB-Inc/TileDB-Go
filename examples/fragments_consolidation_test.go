@@ -209,12 +209,12 @@ func readFragmentsConsolidationArray() {
 	checkError(err)
 
 	// Prepare the vector that will hold the result
-	maxElMap, err := array.MaxBufferElements(subArray)
+	bufferElements, err := query.EstimateBufferElements()
 	checkError(err)
 
-	data := make([]int32, maxElMap["a"][1])
-	rows := make([]int32, maxElMap["rows"][1])
-	cols := make([]int32, maxElMap["cols"][1])
+	data := make([]int32, bufferElements["a"][1])
+	rows := make([]int32, bufferElements["rows"][1])
+	cols := make([]int32, bufferElements["cols"][1])
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)

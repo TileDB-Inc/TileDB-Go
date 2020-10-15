@@ -38,8 +38,9 @@
 package examples
 
 import (
-	tiledb "github.com/TileDB-Inc/TileDB-Go"
 	"os"
+
+	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
 // Name of array.
@@ -135,9 +136,9 @@ func readStatsArray() {
 	checkError(err)
 
 	// Prepare the vector that will hold the result
-	maxElMap, err := array.MaxBufferElements(subArray)
+	bufferElements, err := query.EstimateBufferElements()
 	checkError(err)
-	data := make([]int32, maxElMap["a"][1])
+	data := make([]int32, bufferElements["a"][1])
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)

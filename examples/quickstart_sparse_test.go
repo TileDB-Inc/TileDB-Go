@@ -41,6 +41,7 @@ package examples
 import (
 	"fmt"
 	"os"
+	"unsafe"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
@@ -129,19 +130,10 @@ func readSparseArray() {
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
 
-	buffD1R := make([]int32, 3)
-	buffD2R := make([]int32, 3)
-	buffAR := make([]uint32, 3)
-
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
-	_, err = query.SetBuffer("rows", buffD1R)
-	checkError(err)
-	_, err = query.SetBuffer("cols", buffD2R)
-	checkError(err)
-	_, err = query.SetBuffer("a", buffAR)
-	checkError(err)
+
 	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
 	checkError(err)
 	err = query.AddRange(0, int32(1), int32(2))
@@ -150,7 +142,26 @@ func readSparseArray() {
 	checkError(err)
 
 	size, err := query.EstResultSize("a")
-	fmt.Printf("Estimated query size in bytes: %d\n", *size)
+	checkError(err)
+	fmt.Printf("Estimated query size in bytes for attribute 'a': %d\n", *size)
+	buffAR := make([]uint32, (*size)/uint64(unsafe.Sizeof(int32(0))))
+
+	size, err = query.EstResultSize("rows")
+	checkError(err)
+	fmt.Printf("Estimated query size in bytes for dimension 'rows': %d\n", *size)
+	buffD1R := make([]int32, (*size)/uint64(unsafe.Sizeof(int32(0))))
+
+	size, err = query.EstResultSize("cols")
+	checkError(err)
+	fmt.Printf("Estimated query size in bytes for dimension 'cols': %d\n", *size)
+	buffD2R := make([]int32, (*size)/uint64(unsafe.Sizeof(int32(0))))
+
+	_, err = query.SetBuffer("rows", buffD1R)
+	checkError(err)
+	_, err = query.SetBuffer("cols", buffD2R)
+	checkError(err)
+	_, err = query.SetBuffer("a", buffAR)
+	checkError(err)
 
 	// Submit the query and close the array.
 	err = query.Submit()
@@ -177,7 +188,9 @@ func ExampleSparseArray() {
 		checkError(err)
 	}
 
-	// Output: Estimated query size in bytes: 12
+	// Output: Estimated query size in bytes for attribute 'a': 12
+	// Estimated query size in bytes for dimension 'rows': 12
+	// Estimated query size in bytes for dimension 'cols': 12
 	// Cell (1, 1) has data 1
 	// Cell (2, 3) has data 3
 	// Cell (2, 4) has data 2

@@ -205,17 +205,6 @@ func TestArray(t *testing.T) {
 	assert.Nil(t, nonEmptyDomainFromIndex)
 	assert.True(t, isEmpty)
 
-	// Get MaxBufferSize, which is 0 because array is empty
-	maxBufferSize, err := array.MaxBufferSize("a1", []int8{1, 6})
-	assert.Nil(t, err)
-	assert.Zero(t, maxBufferSize)
-
-	// Get MaxBufferSizeVar, which is 0 because array is empty
-	maxBufferOffSize, maxBufferValSize, err := array.MaxBufferSizeVar("a2", []int8{1, 6})
-	assert.Nil(t, err)
-	assert.Zero(t, maxBufferOffSize)
-	assert.Zero(t, maxBufferValSize)
-
 	// Close the array
 	err = array.Close()
 	assert.Nil(t, err)
@@ -293,17 +282,6 @@ func TestArrayEncryption(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Nil(t, nonEmptyDomain)
 	assert.True(t, isEmpty)
-
-	// Get MaxBufferSize, which is 0 because array is empty
-	maxBufferSize, err := array.MaxBufferSize("a1", []int8{1, 6})
-	assert.Nil(t, err)
-	assert.Zero(t, maxBufferSize)
-
-	// Get MaxBufferSizeVar, which is 0 because array is empty
-	maxBufferOffSize, maxBufferValSize, err := array.MaxBufferSizeVar("a2", []int8{1, 6})
-	assert.Nil(t, err)
-	assert.Zero(t, maxBufferOffSize)
-	assert.Zero(t, maxBufferValSize)
 
 	// Close the array
 	err = array.Close()
