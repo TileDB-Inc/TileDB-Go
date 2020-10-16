@@ -1,0 +1,45 @@
+# Go
+# Build your Go project.
+# Add steps that test, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/go
+
+trigger:
+  batch: true
+  branches:
+    include:
+      - master
+  paths:
+    exclude:
+      - README.md
+      - LICENSE
+      - .gitignore
+
+pr:
+  autoCancel: true
+  branches:
+    include:
+      - master
+  paths:
+    exclude:
+      - README.md
+      - LICENSE
+      - .gitignore
+
+variables:
+  GOPATH: '$(Pipeline.Workspace)/go'
+
+stages:
+  - stage: Linux_Test
+    jobs:
+      - template: templates/azure/jobs/test.yml
+        parameters:
+          pool:
+            vmImage: 'ubuntu-18.04'
+          os: 'linux'
+  - stage: Mac_Test
+    jobs:
+      - template: templates/azure/jobs/test.yml
+        parameters:
+          pool:
+            vmImage: 'macos-10.14'
+          os: 'macos'

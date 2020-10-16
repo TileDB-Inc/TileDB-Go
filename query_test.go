@@ -1289,8 +1289,6 @@ func TestQueryWrite(t *testing.T) {
 	assert.Equal(t, len(bufferA4), elementsCopied)
 
 	_, _, err = query.SetBufferVar("a4", offsetBufferA4, bufferA4)
-	// Immediately set bufferA4 to nil to validate underlying array is not GC'ed
-	bufferA4 = nil
 	assert.Nil(t, err)
 
 	bufferA5 := "hello" + "world"

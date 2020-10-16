@@ -128,10 +128,13 @@ func (d *Datatype) FromString(s string) error {
 }
 
 // DatatypeFromString converts from a datatype string to enum
-func DatatypeFromString(s string) Datatype {
+func DatatypeFromString(s string) (Datatype, error) {
 	var d Datatype
-	d.FromString(s)
-	return d
+	err := d.FromString(s)
+	if err != nil {
+		return TILEDB_ANY, err
+	}
+	return d, nil
 }
 
 // ReflectKind returns the reflect kind given a datatype

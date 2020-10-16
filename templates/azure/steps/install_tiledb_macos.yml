@@ -1,0 +1,7 @@
+# Install TileDB in a system location
+steps:
+  - script: |
+      set -e -x
+      curl --location -o tiledb.tar.gz https://github.com/TileDB-Inc/TileDB/releases/download/2.0.8/tiledb-macos-2.0.8-db41376-full.tar.gz \
+        && sudo tar -C /usr/local -xf tiledb.tar.gz
+    displayName: 'Install TileDB'

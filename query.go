@@ -22,7 +22,6 @@ type Query struct {
 	tiledbQuery          *C.tiledb_query_t
 	array                *Array
 	context              *Context
-	uri                  string
 	buffers              []interface{}
 	bufferMutex          sync.Mutex
 	resultBufferElements map[string][2]*uint64
@@ -36,7 +35,7 @@ type RangeLimits struct {
 
 // MarshalJSON implements the Marshaler interface for RangeLimits
 func (r RangeLimits) MarshalJSON() ([]byte, error) {
-	rangeLimitMap := make(map[string]interface{}, 0)
+	rangeLimitMap := make(map[string]interface{})
 	rangeLimitMap["end"] = r.end
 	rangeLimitMap["start"] = r.start
 
@@ -75,7 +74,7 @@ func NewQuery(ctx *Context, array *Array) (*Query, error) {
 		query.Free()
 	})
 
-	query.resultBufferElements = make(map[string][2]*uint64, 0)
+	query.resultBufferElements = make(map[string][2]*uint64)
 
 	return &query, nil
 }
@@ -1209,7 +1208,7 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 // second is number of elements in the data buffer. For fixed sized attributes
 // (and coordinates), the first is always 0.
 func (q *Query) ResultBufferElements() (map[string][2]uint64, error) {
-	elements := make(map[string][2]uint64, 0)
+	elements := make(map[string][2]uint64)
 
 	// Will need the schema to infer data type size for attributes
 	schema, err := q.array.Schema()
@@ -1756,16 +1755,16 @@ is the maximum number of elements for that attribute in the given subarray.
 */
 func (q *Query) EstimateBufferElements() (map[string][2]uint64, error) {
 	// Build map
-	ret := make(map[string][2]uint64, 0)
+	ret := make(map[string][2]uint64)
 	// Get schema
 	schema, err := q.array.Schema()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+		return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
 	}
 
 	attributes, err := schema.Attributes()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+		return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
 	}
 	// Loop through each attribute
 	for _, attribute := range attributes {
@@ -1773,23 +1772,27 @@ func (q *Query) EstimateBufferElements() (map[string][2]uint64, error) {
 		// Check if attribute is variable attribute or not
 		cellValNum, err := attribute.CellValNum()
 		if err != nil {
-			return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+			return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
 		}
 
 		// Get datatype size to convert byte lengths to needed buffer sizes
 		dataType, err := attribute.Type()
+		if err != nil {
+			return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
+		}
+
 		dataTypeSize := dataType.Size()
 
 		// Get attribute name
 		name, err := attribute.Name()
 		if err != nil {
-			return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+			return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
 		}
 
 		if cellValNum == TILEDB_VAR_NUM {
 			bufferOffsetSize, bufferValSize, err := q.EstResultSizeVar(name)
 			if err != nil {
-				return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+				return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
 			}
 			// Set sizes for attribute in return map
 			ret[name] = [2]uint64{
@@ -1798,7 +1801,7 @@ func (q *Query) EstimateBufferElements() (map[string][2]uint64, error) {
 		} else {
 			bufferValSize, err := q.EstResultSize(name)
 			if err != nil {
-				return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+				return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
 			}
 			ret[name] = [2]uint64{0, *bufferValSize / dataTypeSize}
 		}
@@ -1807,7 +1810,7 @@ func (q *Query) EstimateBufferElements() (map[string][2]uint64, error) {
 	// Handle coordinates
 	domain, err := schema.Domain()
 	if err != nil {
-		return nil, fmt.Errorf("Could not get domain for MaxBufferElements: %s", err)
+		return nil, fmt.Errorf("Could not get domain for EstimateBufferElements: %s", err)
 	}
 
 	ndims, err := domain.NDim()
