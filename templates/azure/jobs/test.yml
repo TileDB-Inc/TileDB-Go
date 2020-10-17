@@ -6,6 +6,8 @@ jobs:
           go.version: '1.13'
         GoVersion_1_14:
           go.version: '1.14'
+        GoVersion_1_15:
+          go.version: '1.15'
 
     pool:
       vmImage: 'ubuntu-18.04'
