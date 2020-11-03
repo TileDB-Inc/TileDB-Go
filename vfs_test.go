@@ -26,9 +26,9 @@ func TestVFS(t *testing.T) {
 	}
 
 	tmpFilePath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_vfs" + string(os.PathSeparator) + "file_test"
-	defer os.Remove(tmpPath)
-	if _, err = os.Stat(tmpPath); err == nil {
-		os.Remove(tmpPath)
+	defer os.Remove(tmpFilePath)
+	if _, err = os.Stat(tmpFilePath); err == nil {
+		os.Remove(tmpFilePath)
 	}
 
 	isFile, err := vfs.IsFile(tmpPath)
@@ -65,6 +65,22 @@ func TestVFS(t *testing.T) {
 	dirSize, err := vfs.DirSize(tmpPath)
 	assert.Nil(t, err)
 	assert.EqualValues(t, 3, dirSize)
+
+	// Calculate destination file path
+	dstTmpFilePath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_vfs" + string(os.PathSeparator) + "file_test_copy"
+	defer os.Remove(dstTmpFilePath)
+	if _, err = os.Stat(dstTmpFilePath); err == nil {
+		os.Remove(dstTmpFilePath)
+	}
+
+	// Copy file
+	err = vfs.CopyFile(tmpFilePath, dstTmpFilePath)
+	assert.Nil(t, err)
+	_, err = os.Stat(dstTmpFilePath)
+	assert.Nil(t, err)
+	if err == nil {
+		os.Remove(dstTmpFilePath)
+	}
 
 	// Remove File
 	err = vfs.RemoveFile(tmpFilePath)
