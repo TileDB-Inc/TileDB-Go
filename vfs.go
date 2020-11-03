@@ -284,6 +284,22 @@ func (v *VFS) MoveFile(oldURI string, newURI string) error {
 	return nil
 }
 
+// CopyFile renames a TileDB file from an old URI to a new URI.
+func (v *VFS) CopyFile(oldURI string, newURI string) error {
+	cOldURI := C.CString(oldURI)
+	defer C.free(unsafe.Pointer(cOldURI))
+	cNewURI := C.CString(newURI)
+	defer C.free(unsafe.Pointer(cNewURI))
+
+	ret := C.tiledb_vfs_copy_file(v.context.tiledbContext, v.tiledbVFS, cOldURI, cNewURI)
+
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error in copying file %s to %s: %s", oldURI, newURI, v.context.LastError())
+	}
+
+	return nil
+}
+
 // MoveDir menames a TileDB directory from an old URI to a new URI.
 func (v *VFS) MoveDir(oldURI string, newURI string) error {
 	cOldURI := C.CString(oldURI)
