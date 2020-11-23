@@ -9,8 +9,10 @@ package tiledb
 import "C"
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"reflect"
 	"runtime"
 	"unsafe"
 )
@@ -89,25 +91,148 @@ func (a *Attribute) SetCellValNum(val uint) error {
 
 // CellValNum returns number of values of one cell on this attribute.
 // For variable-sized attributes returns TILEDB_VAR_NUM.
-func (a *Attribute) CellValNum() (uint, error) {
+func (a *Attribute) CellValNum() (uint32, error) {
 	var cellValNum C.uint32_t
 	ret := C.tiledb_attribute_get_cell_val_num(a.context.tiledbContext, a.tiledbAttribute, &cellValNum)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("Error getting tiledb attribute cell val num: %s", a.context.LastError())
 	}
 
-	return uint(cellValNum), nil
+	return uint32(cellValNum), nil
 }
 
 // CellSize gets attribute cell size
-func (a *Attribute) CellSize() (uint, error) {
+func (a *Attribute) CellSize() (uint64, error) {
 	var cellSize C.uint64_t
 	ret := C.tiledb_attribute_get_cell_size(a.context.tiledbContext, a.tiledbAttribute, &cellSize)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("Error getting tiledb attribute cell size: %s", a.context.LastError())
 	}
 
-	return uint(cellSize), nil
+	return uint64(cellSize), nil
+}
+
+// Sets the default fill value for the input attribute. This value will
+// be used for the input attribute whenever querying (1) an empty cell in
+// a dense array, or (2) a non-empty cell (in either dense or sparse array)
+// when values on the input attribute are missing (e.g., if the user writes
+// a subset of the attributes in a write operation).
+// Applicable to var-sized attributes.
+// @note A call to `tiledb_attribute_cell_val_num` sets the fill value
+//      of the attribute to its default. Therefore, make sure you invoke
+//      `tiledb_attribute_set_fill_value` after deciding on the number
+//      of values this attribute will hold in each cell.
+// @note For fixed-sized attributes, the input `size` should be equal
+//      to the cell size.
+func (a *Attribute) SetFillValue(value interface{}) error {
+
+	if reflect.TypeOf(value).Kind() == reflect.Slice {
+		return errors.New("Unrecognized value type passed: Cannot be a slice")
+	}
+
+	valueType := reflect.TypeOf(value).Kind()
+
+	cellValNum, err := a.CellValNum()
+	if err != nil {
+		return err
+	}
+
+	attrDataType, err := a.Type()
+	if err != nil {
+		return err
+	}
+
+	var valueSize C.uint64_t
+	if cellValNum == uint32(TILEDB_VAR_NUM) {
+		valueSize = C.uint64_t(reflect.TypeOf(value).Size())
+	} else {
+		valueSize = C.uint64_t(attrDataType.Size() * uint64(cellValNum))
+	}
+
+	var ret C.int32_t
+	switch valueType {
+	case reflect.Int:
+		tmpValue := value.(int)
+		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
+	case reflect.Int8:
+		tmpValue := value.(int8)
+		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
+	case reflect.Int16:
+		tmpValue := value.(int16)
+		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
+	case reflect.Int32:
+		tmpValue := value.(int32)
+		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
+	case reflect.Int64:
+		tmpValue := value.(int64)
+		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
+	case reflect.Uint:
+		tmpValue := value.(uint)
+		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
+	case reflect.Uint8:
+		tmpValue := value.(uint8)
+		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
+	case reflect.Uint16:
+		tmpValue := value.(uint16)
+		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
+	case reflect.Uint32:
+		tmpValue := value.(uint32)
+		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
+	case reflect.Uint64:
+		tmpValue := value.(uint64)
+		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
+	case reflect.Float32:
+		tmpValue := value.(float32)
+		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
+	case reflect.Float64:
+		tmpValue := value.(float64)
+		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
+	case reflect.String:
+		stringValue := value.(string)
+		valueSize = C.uint64_t(len(stringValue))
+		cTmpValue := C.CString(stringValue)
+		defer C.free(unsafe.Pointer(cTmpValue))
+		if valueSize > 0 {
+			ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(cTmpValue), valueSize)
+		}
+	default:
+		valueInterfaceVal := reflect.ValueOf(value)
+		return fmt.Errorf("Unrecognized value type passed: %s", valueInterfaceVal.Kind().String())
+	}
+
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error filling attribute value: %s", a.context.LastError())
+	}
+
+	return nil
+}
+
+// Gets the default fill value for the input attribute. This value will
+// be used for the input attribute whenever querying (1) an empty cell in
+// a dense array, or (2) a non-empty cell (in either dense or sparse array)
+// when values on the input attribute are missing (e.g., if the user writes
+// a subset of the attributes in a write operation).
+// Applicable to both fixed-sized and var-sized attributes.
+func (a *Attribute) GetFillValue() (interface{}, uint64, error) {
+	var fillValueSize C.uint64_t
+	var cvalue unsafe.Pointer
+
+	ret := C.tiledb_attribute_get_fill_value(a.context.tiledbContext, a.tiledbAttribute, &cvalue, &fillValueSize)
+	if ret != C.TILEDB_OK {
+		return nil, 0, fmt.Errorf("Error getting tiledb attribute fill value: %s", a.context.LastError())
+	}
+
+	attrDataType, err := a.Type()
+	if err != nil {
+		return nil, 0, fmt.Errorf("Error getting tiledb attribute fill value: %s", a.context.LastError())
+	}
+
+	value, err := attrDataType.GetValue(1, cvalue)
+	if err != nil {
+		return nil, 0, fmt.Errorf("Error getting tiledb attribute fill value: %s", a.context.LastError())
+	}
+
+	return value, uint64(fillValueSize), nil
 }
 
 // Name returns name of attribute

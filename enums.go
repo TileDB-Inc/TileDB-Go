@@ -236,6 +236,147 @@ func (d Datatype) MakeSlice(numElements uint64) (interface{}, unsafe.Pointer, er
 	}
 }
 
+// GetValue gets value stored in a void pointer for this data type
+func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, error) {
+	var value interface{}
+	switch d {
+	case TILEDB_INT8:
+		if valueNum > 1 {
+			tmpValue := make([]int8, valueNum)
+			tmpslice := (*[1 << 46]C.int8_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = int8(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*int8)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_INT16:
+		if valueNum > 1 {
+			tmpValue := make([]int16, valueNum)
+			tmpslice := (*[1 << 46]C.int16_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = int16(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*int16)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_INT32:
+		if valueNum > 1 {
+			tmpValue := make([]int32, valueNum)
+			tmpslice := (*[1 << 46]C.int32_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = int32(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*int32)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_INT64:
+		if valueNum > 1 {
+			tmpValue := make([]int64, valueNum)
+			tmpslice := (*[1 << 46]C.int64_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = int64(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*int64)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_UINT8:
+		if valueNum > 1 {
+			tmpValue := make([]uint8, valueNum)
+			tmpslice := (*[1 << 46]C.uint8_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = uint8(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*uint8)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_UINT16:
+		if valueNum > 1 {
+			tmpValue := make([]uint16, valueNum)
+			tmpslice := (*[1 << 46]C.uint16_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = uint16(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*uint16)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_UINT32:
+		if valueNum > 1 {
+			tmpValue := make([]uint32, valueNum)
+			tmpslice := (*[1 << 46]C.uint32_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = uint32(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*uint32)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_UINT64:
+		if valueNum > 1 {
+			tmpValue := make([]uint64, valueNum)
+			tmpslice := (*[1 << 46]C.uint64_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = uint64(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*uint64)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_FLOAT32:
+		if valueNum > 1 {
+			tmpValue := make([]float32, valueNum)
+			tmpslice := (*[1 << 46]C.float)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = float32(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*float32)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_FLOAT64:
+		if valueNum > 1 {
+			tmpValue := make([]float64, valueNum)
+			tmpslice := (*[1 << 46]C.double)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = float64(s)
+			}
+			value = tmpValue
+		} else {
+			value = *(*float64)(unsafe.Pointer(cvalue))
+		}
+	case TILEDB_CHAR:
+		tmpslice := (*[1 << 46]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+		value = C.GoString(&tmpslice[0])[0:valueNum]
+	case TILEDB_STRING_ASCII:
+		tmpslice := (*[1 << 46]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+		value = C.GoString(&tmpslice[0])[0:valueNum]
+	case TILEDB_STRING_UTF8:
+		tmpslice := (*[1 << 46]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+		value = C.GoString(&tmpslice[0])[0:valueNum]
+	case TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK,
+		TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN,
+		TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US,
+		TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS,
+		TILEDB_DATETIME_AS:
+		if valueNum > 1 {
+			return nil, fmt.Errorf("Unrecognized value type: %d", d)
+		} else {
+			var timestamp interface{} = *(*int16)(unsafe.Pointer(cvalue))
+			value = GetTimeFromTimestamp(d, timestamp.(int64))
+		}
+	default:
+		return nil, fmt.Errorf("Unrecognized value type: %d", d)
+	}
+
+	return value, nil
+}
+
 // EncryptionType represents different encryption algorithms
 type EncryptionType uint8
 
