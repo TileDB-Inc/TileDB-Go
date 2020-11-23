@@ -99,6 +99,17 @@ func (a *Attribute) CellValNum() (uint, error) {
 	return uint(cellValNum), nil
 }
 
+// CellSize gets attribute cell size
+func (a *Attribute) CellSize() (uint, error) {
+	var cellSize C.uint64_t
+	ret := C.tiledb_attribute_get_cell_size(a.context.tiledbContext, a.tiledbAttribute, &cellSize)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("Error getting tiledb attribute cell size: %s", a.context.LastError())
+	}
+
+	return uint(cellSize), nil
+}
+
 // Name returns name of attribute
 func (a *Attribute) Name() (string, error) {
 	var cName *C.char
