@@ -1966,3 +1966,12 @@ func (q *Query) GetFragmentTimestampRange(num uint64) (*uint64, *uint64, error) 
 
 	return &t1, &t2, nil
 }
+
+func (q *Query) Array() (*Array, error) {
+	array := Array{context: q.context}
+	ret := C.tiledb_query_get_array(q.context.tiledbContext, q.tiledbQuery, &array.tiledbArray)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error getting array from query: %s", q.context.LastError())
+	}
+	return &array, nil
+}
