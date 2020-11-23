@@ -346,6 +346,21 @@ func TestQueryEffectiveBufferSize(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, arraySchema)
 
+	err = arraySchema.SetAllowsDups(true)
+	assert.Nil(t, err)
+
+	allowDups, err := arraySchema.GetAllowsDups()
+	assert.Nil(t, err)
+	assert.Equal(t, true, allowDups)
+
+	err = arraySchema.SetAllowsDups(false)
+	assert.Nil(t, err)
+
+	// Dense array, allowDups should be false
+	allowDups, err = arraySchema.GetAllowsDups()
+	assert.Nil(t, err)
+	assert.Equal(t, false, allowDups)
+
 	err = arraySchema.SetCellOrder(TILEDB_ROW_MAJOR)
 	assert.Nil(t, err)
 	err = arraySchema.SetTileOrder(TILEDB_ROW_MAJOR)
