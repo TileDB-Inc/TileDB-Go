@@ -186,7 +186,15 @@ func TestFullAttribute(t *testing.T) {
 
 	cellValNum, err := attribute.CellValNum()
 	assert.Nil(t, err)
-	assert.Equal(t, uint(10), cellValNum)
+	assert.Equal(t, uint32(10), cellValNum)
+
+	err = attribute.SetFillValue(12)
+	assert.Nil(t, err)
+
+	fillValue, valueSize, err := attribute.GetFillValue()
+	assert.Nil(t, err)
+	assert.Equal(t, int32(12), fillValue)
+	assert.Equal(t, uint64(40), valueSize)
 
 	// Temp path for testing dump
 	tmpPathDump := os.TempDir() + string(os.PathSeparator) + "tiledb_attribute_dump_test"

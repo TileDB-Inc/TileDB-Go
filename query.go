@@ -1842,7 +1842,7 @@ func (q *Query) EstimateBufferElements() (map[string][2]uint64, error) {
 			return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
 		}
 
-		if cellValNum == TILEDB_VAR_NUM {
+		if cellValNum == uint32(TILEDB_VAR_NUM) {
 			bufferOffsetSize, bufferValSize, err := q.EstResultSizeVar(name)
 			if err != nil {
 				return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
