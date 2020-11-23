@@ -122,6 +122,14 @@ func TestArraySchema(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "a1", attrName2)
 
+	hasAttr, err := arraySchema.HasAttribute("a1")
+	assert.Nil(t, err)
+	assert.Equal(t, true, hasAttr)
+
+	hasAttr, err = arraySchema.HasAttribute("a2")
+	assert.Nil(t, err)
+	assert.Equal(t, false, hasAttr)
+
 	// Set Capacity
 	err = arraySchema.SetCapacity(100)
 	assert.Nil(t, err)
