@@ -215,10 +215,10 @@ func (a *ArraySchema) SetAllowsDups(allowsDups bool) error {
 	return nil
 }
 
-// GetAllowsDups
+// AllowsDups
 // Gets whether the array can allow coordinate duplicates or not.
 // It should always be `0` for dense arrays.
-func (a *ArraySchema) GetAllowsDups() (bool, error) {
+func (a *ArraySchema) AllowsDups() (bool, error) {
 	var allowsDups C.int32_t
 	ret := C.tiledb_array_schema_get_allows_dups(a.context.tiledbContext, a.tiledbArraySchema, &allowsDups)
 	if ret != C.TILEDB_OK {

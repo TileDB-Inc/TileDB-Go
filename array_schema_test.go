@@ -94,7 +94,7 @@ func TestArraySchema(t *testing.T) {
 	assert.NotNil(t, arraySchema)
 
 	// Dense array, allowDups should be false
-	allowDups, err := arraySchema.GetAllowsDups()
+	allowDups, err := arraySchema.AllowsDups()
 	assert.Nil(t, err)
 	assert.Equal(t, false, allowDups)
 
