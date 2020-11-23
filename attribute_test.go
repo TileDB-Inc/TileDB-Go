@@ -179,6 +179,11 @@ func TestFullAttribute(t *testing.T) {
 	err = attribute.SetCellValNum(10)
 	assert.Nil(t, err)
 
+	// Get attribute cell size
+	cellSize, err := attribute.CellSize()
+	assert.Nil(t, err)
+	assert.EqualValues(t, 40, cellSize)
+
 	cellValNum, err := attribute.CellValNum()
 	assert.Nil(t, err)
 	assert.Equal(t, uint(10), cellValNum)
