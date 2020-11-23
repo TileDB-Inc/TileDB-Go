@@ -126,6 +126,10 @@ func (a *Attribute) CellSize() (uint64, error) {
 //      to the cell size.
 func (a *Attribute) SetFillValue(value interface{}) error {
 
+	if value == nil {
+		return errors.New("Unrecognized value type passed: Cannot be a nil")
+	}
+
 	if reflect.TypeOf(value).Kind() == reflect.Slice {
 		return errors.New("Unrecognized value type passed: Cannot be a slice")
 	}
