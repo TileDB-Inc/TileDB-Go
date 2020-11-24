@@ -93,6 +93,11 @@ func TestArraySchema(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, arraySchema)
 
+	// Dense array, allowDups should be false
+	allowDups, err := arraySchema.AllowsDups()
+	assert.Nil(t, err)
+	assert.Equal(t, false, allowDups)
+
 	// Crete attribute to add to schema
 	attribute, err := NewAttribute(context, "a1", TILEDB_INT32)
 	assert.Nil(t, err)

@@ -196,6 +196,42 @@ func (a *ArraySchema) HasAttribute(attrName string) (bool, error) {
 	return true, nil
 }
 
+// SetAllowsDups
+// Sets whether the array can allow coordinate duplicates or not.
+// Applicable only to sparse arrays (it errors out if set to `1` for dense
+// arrays).
+func (a *ArraySchema) SetAllowsDups(allowsDups bool) error {
+	allowsDupsInt := 0
+	if allowsDups {
+		allowsDupsInt = 1
+	}
+
+	ret := C.tiledb_array_schema_set_allows_dups(a.context.tiledbContext, a.tiledbArraySchema, C.int32_t(allowsDupsInt))
+
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error setting allows dups for schema: %s", a.context.LastError())
+	}
+
+	return nil
+}
+
+// AllowsDups
+// Gets whether the array can allow coordinate duplicates or not.
+// It should always be `0` for dense arrays.
+func (a *ArraySchema) AllowsDups() (bool, error) {
+	var allowsDups C.int32_t
+	ret := C.tiledb_array_schema_get_allows_dups(a.context.tiledbContext, a.tiledbArraySchema, &allowsDups)
+	if ret != C.TILEDB_OK {
+		return false, fmt.Errorf("Error getting allows dups for schema: %s", a.context.LastError())
+	}
+
+	if allowsDups == 0 {
+		return false, nil
+	}
+
+	return true, nil
+}
+
 // Attributes gets all attributes in the array.
 func (a *ArraySchema) Attributes() ([]*Attribute, error) {
 	attributes := make([]*Attribute, 0)
