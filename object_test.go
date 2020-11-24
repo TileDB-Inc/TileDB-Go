@@ -13,11 +13,20 @@ func TestObjectCreate(t *testing.T) {
 	assert.Nil(t, err)
 
 	// create temp group name
-	tmpObjectGroup := os.TempDir() + string(os.PathSeparator) + "tiledb_test_object_group"
+	tmpObjectGroup := os.TempDir() + string(os.PathSeparator) +
+		"tiledb_test_object_group"
 	// Cleanup group when test ends
 	defer os.RemoveAll(tmpObjectGroup)
 	if _, err = os.Stat(tmpObjectGroup); err == nil {
 		os.RemoveAll(tmpObjectGroup)
+	}
+
+	tmpObjectGroupMove := os.TempDir() + string(os.PathSeparator) +
+		"tiledb_test_object_group_move"
+	// Cleanup group when test ends
+	defer os.RemoveAll(tmpObjectGroupMove)
+	if _, err = os.Stat(tmpObjectGroupMove); err == nil {
+		os.RemoveAll(tmpObjectGroupMove)
 	}
 
 	// Create initial group
@@ -31,4 +40,10 @@ func TestObjectCreate(t *testing.T) {
 	objType, err := obj.Type()
 	assert.Nil(t, err)
 	assert.Equal(t, TILEDB_GROUP, objType)
+
+	err = obj.Move(tmpObjectGroupMove)
+	assert.Nil(t, err)
+
+	err = obj.Remove()
+	assert.Nil(t, err)
 }
