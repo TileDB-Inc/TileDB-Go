@@ -515,6 +515,16 @@ const (
 	TILEDB_ARRAY ObjectType = C.TILEDB_ARRAY
 )
 
+// WalkOrder
+type WalkOrder int8
+
+const (
+	// Pre-order traversal
+	TILEDB_PREORDER WalkOrder = C.TILEDB_PREORDER
+	// Post-order traversal
+	TILEDB_POSTORDER WalkOrder = C.TILEDB_POSTORDER
+)
+
 // TILEDB_VAR_NUM indicates variable sized attributes for cell values
 var TILEDB_VAR_NUM = uint(C.TILEDB_VAR_NUM)
 

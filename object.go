@@ -12,6 +12,8 @@ import (
 	"errors"
 	"fmt"
 	"unsafe"
+
+	pointer "github.com/mattn/go-pointer"
 )
 
 // Object implements "object" managemnt in TileDB
@@ -45,20 +47,76 @@ func (o *Object) Type() (ObjectType, error) {
 	return ObjectType(objectType), nil
 }
 
+type groupDefinition struct {
+	objectType ObjectType
+	path       string
+}
+
+// ObjectList defines the value of data returned by object iteration callback
+type ObjectList struct {
+	objectList []groupDefinition
+}
+
+//export objectsInPath
+func objectsInPath(path *C.cchar_t, objectType C.tiledb_object_t, data unsafe.Pointer) int32 {
+	objectData := pointer.Restore(data).(*ObjectList)
+
+	groupDefinition := groupDefinition{
+		objectType: ObjectType(objectType),
+		path:       C.GoString(path),
+	}
+
+	objectData.objectList = append(objectData.objectList, groupDefinition)
+
+	return 1
+}
+
 // Walk (iterates) over the TileDB objects contained in *path*. The traversal
 // is done recursively in the order defined by the user. The user provides
 // a callback function which is applied on each of the visited TileDB objects.
 // The iteration continues for as long the callback returns non-zero, and stops
 // when the callback returns 0. Note that this function ignores any object
 // (e.g., file or directory) that is not TileDB-related.
-func (o *Object) Walk() error {
-	return nil
+func (o *Object) Walk(walkOrder WalkOrder) (*ObjectList, error) {
+	cpath := C.CString(o.path)
+	defer C.free(unsafe.Pointer(cpath))
+
+	objectList := ObjectList{
+		objectList: []groupDefinition{},
+	}
+	data := pointer.Save(&objectList)
+
+	ret := C._tiledb_object_walk(o.context.tiledbContext, cpath,
+		C.tiledb_walk_order_t(walkOrder), unsafe.Pointer(data))
+
+	fmt.Println(objectList)
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Cannot walk in path %s: %s", o.path,
+			o.context.LastError())
+	}
+	return &objectList, nil
 }
 
 // Ls is similar to `tiledb_walk`, but now the function visits only the children
 // of `path` (it does not recursively continue to the children directories).
-func (o *Object) Ls() error {
-	return nil
+func (o *Object) Ls() (*ObjectList, error) {
+	cpath := C.CString(o.path)
+	defer C.free(unsafe.Pointer(cpath))
+
+	objectList := ObjectList{
+		objectList: []groupDefinition{},
+	}
+	data := pointer.Save(&objectList)
+
+	ret := C._tiledb_object_ls(o.context.tiledbContext, cpath,
+		unsafe.Pointer(data))
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Cannot walk in path %s: %s", o.path,
+			o.context.LastError())
+	}
+	return &objectList, nil
 }
 
 // Move moves a TileDB resource (group, array, key-value).
