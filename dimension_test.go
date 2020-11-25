@@ -23,12 +23,36 @@ func ExampleNewDimension() {
 	}
 
 	// Create Dimension
-	_, err = NewDimension(context, "test", []int32{1, 10}, int32(5))
+	dim, err := NewDimension(context, "test", []int32{1, 10}, int32(5))
 	if err != nil {
 		// Handle error
 		return
 	}
 
+	// Set Filter List
+	filter, err := NewFilter(context, TILEDB_FILTER_GZIP)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	filterList, err := NewFilterList(context)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	err = filterList.AddFilter(filter)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	err = dim.SetFilterList(filterList)
+	if err != nil {
+		// Handle error
+		return
+	}
 }
 
 // TestDimension tests creating a new dimension
@@ -58,6 +82,31 @@ func TestDimension(t *testing.T) {
 	datatype, err := dimension.Type()
 	assert.Nil(t, err)
 	assert.Equal(t, TILEDB_INT32, datatype)
+
+	// Get and set compressor
+	filter, err := NewFilter(context, TILEDB_FILTER_GZIP)
+	assert.Nil(t, err)
+	err = filter.SetOption(TILEDB_COMPRESSION_LEVEL, int32(5))
+	assert.Nil(t, err)
+	filterList, err := NewFilterList(context)
+	assert.Nil(t, err)
+	err = filterList.AddFilter(filter)
+	assert.Nil(t, err)
+	err = dimension.SetFilterList(filterList)
+	assert.Nil(t, err)
+
+	filterListReturn, err := dimension.FilterList()
+	assert.Nil(t, err)
+	assert.NotNil(t, filterListReturn)
+	filterReturn, err := filterListReturn.FilterFromIndex(0)
+	assert.Nil(t, err)
+	assert.NotNil(t, filterListReturn)
+	filterTypeReturn, err := filterReturn.Type()
+	assert.Nil(t, err)
+	assert.EqualValues(t, TILEDB_FILTER_GZIP, filterTypeReturn)
+	filterOption, err := filter.Option(TILEDB_COMPRESSION_LEVEL)
+	assert.Nil(t, err)
+	assert.EqualValues(t, int32(5), filterOption)
 
 	dimension.Free()
 }

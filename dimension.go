@@ -210,6 +210,26 @@ func (d *Dimension) Free() {
 	}
 }
 
+// SetFilterList sets the dimension filterList
+func (d *Dimension) SetFilterList(filterlist *FilterList) error {
+	ret := C.tiledb_dimension_set_filter_list(d.context.tiledbContext, d.tiledbDimension, filterlist.tiledbFilterList)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error setting tiledb dimension filter list: %s", d.context.LastError())
+	}
+	return nil
+}
+
+// FilterList returns a copy of the filter list for attribute
+func (d *Dimension) FilterList() (*FilterList, error) {
+	filterList := FilterList{context: d.context}
+	ret := C.tiledb_dimension_get_filter_list(d.context.tiledbContext, d.tiledbDimension, &filterList.tiledbFilterList)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error getting tiledb dimension filter list: %s", d.context.LastError())
+	}
+
+	return &filterList, nil
+}
+
 // SetCellValNum Sets the number of values per cell for a dimension.
 // If this is not used, the default is `1`.
 // This is inferred from the type parameter of the NewDimension
