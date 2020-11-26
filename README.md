@@ -12,7 +12,7 @@ free'ing of C heap allocated structures.
 ## Quick Links
 
 - Full Installation Docs: [https://docs.tiledb.com/installation](https://docs.tiledb.com/installation)
-- Quickstart: [https://docs.tiledb.com/quickstart](https://docs.tiledb.com/quickstart)
+- Quickstart: [https://docs.tiledb.com/quickstart](https://docs.tiledb.com/main/solutions/tiledb-embedded/installation/quick-install)
 - Full developer documentation for all APIs and integrations: [https://docs.tiledb.com](https://docs.tiledb.com)
 
 ## Installation
@@ -26,7 +26,7 @@ Currently the following platforms are supported:
 
 ### Prerequisites
 This package requires the TileDB shared library be installed and on the system path. See the
-[official TileDB installation instructions](https://docs.tiledb.com/installation)
+[official TileDB installation instructions](https://docs.tiledb.com/main/solutions/tiledb-embedded/installation)
 for installation methods. TileDB must be compiled with serialization support enabled.
 
 ### Go Installation
