@@ -23,6 +23,10 @@ type Buffer struct {
 func NewBuffer(context *Context) (*Buffer, error) {
 	buffer := Buffer{context: context}
 
+	if buffer.context == nil {
+		return nil, fmt.Errorf("Error creating tiledb buffer, context is nil")
+	}
+
 	ret := C.tiledb_buffer_alloc(buffer.context.tiledbContext, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb buffer: %s", buffer.context.LastError())
