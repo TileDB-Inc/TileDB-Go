@@ -1,0 +1,130 @@
+package tiledb
+
+/*
+#cgo LDFLAGS: -ltiledb
+#cgo linux LDFLAGS: -ldl
+#include <tiledb/tiledb.h>
+#include <stdlib.h>
+*/
+import "C"
+
+import (
+	"fmt"
+	"runtime"
+	"unsafe"
+)
+
+// ConfigIter Creates a config iterator object.
+type ConfigIter struct {
+	config           *Config
+	tiledbConfigIter *C.tiledb_config_iter_t
+}
+
+// NewConfigIter Creates an iterator for configuration. This can be used
+// only for reading. This sets the pointer to the first search item.
+func NewConfigIter(config *Config, prefix string) (*ConfigIter, error) {
+	ci := ConfigIter{config: config}
+	var err *C.tiledb_error_t
+	cprefix := C.CString(prefix)
+	defer C.free(unsafe.Pointer(cprefix))
+	C.tiledb_config_iter_alloc(config.tiledbConfig, cprefix, &ci.tiledbConfigIter, &err)
+	if err != nil {
+		var msg *C.char
+		defer C.free(unsafe.Pointer(msg))
+		C.tiledb_error_message(err, &msg)
+		defer C.tiledb_error_free(&err)
+		return nil, fmt.Errorf("error creating tiledb config iter: %s", C.GoString(msg))
+	}
+
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&ci, func(ci *ConfigIter) {
+		ci.Free()
+	})
+
+	return &ci, nil
+}
+
+// Free tiledb_config_iter_t that was allocated on heap in c
+func (ci *ConfigIter) Free() {
+	if ci.tiledbConfigIter != nil {
+		C.tiledb_config_iter_free(&ci.tiledbConfigIter)
+	}
+}
+
+// Here Retrieves the param and value for the item currently pointed by the
+// iterator
+func (ci *ConfigIter) Here() (*string, *string, error) {
+	var err *C.tiledb_error_t
+	var cparam, cvalue *C.char
+	C.tiledb_config_iter_here(ci.tiledbConfigIter, &cparam, &cvalue, &err)
+	if err != nil {
+		var msg *C.char
+		defer C.free(unsafe.Pointer(msg))
+		C.tiledb_error_message(err, &msg)
+		defer C.tiledb_error_free(&err)
+		return nil, nil, fmt.Errorf("error getting param, vakue from config iter: %s", C.GoString(msg))
+	}
+	param := C.GoString(cparam)
+	value := C.GoString(cvalue)
+	return &param, &value, nil
+}
+
+// Next Moves the iterator to the next item.
+func (ci *ConfigIter) Next() error {
+	var err *C.tiledb_error_t
+	C.tiledb_config_iter_next(ci.tiledbConfigIter, &err)
+	if err != nil {
+		var msg *C.char
+		defer C.free(unsafe.Pointer(msg))
+		C.tiledb_error_message(err, &msg)
+		defer C.tiledb_error_free(&err)
+		return fmt.Errorf("error moving to next ConfigItem from iter: %s", C.GoString(msg))
+	}
+	return nil
+}
+
+// Done Checks if the iterator is done.
+func (ci *ConfigIter) Done() (bool, error) {
+	var err *C.tiledb_error_t
+	var cDone C.int32_t
+	C.tiledb_config_iter_done(ci.tiledbConfigIter, &cDone, &err)
+	if err != nil {
+		var msg *C.char
+		defer C.free(unsafe.Pointer(msg))
+		C.tiledb_error_message(err, &msg)
+		defer C.tiledb_error_free(&err)
+		return false, fmt.Errorf("error moving to next ConfigItem from iter: %s", C.GoString(msg))
+	}
+	return int(cDone) == 1, nil
+}
+
+// IsDone Checks if the iterator is done.
+func (ci *ConfigIter) IsDone() bool {
+	var err *C.tiledb_error_t
+	var cDone C.int32_t
+	C.tiledb_config_iter_done(ci.tiledbConfigIter, &cDone, &err)
+	if err != nil {
+		var msg *C.char
+		defer C.free(unsafe.Pointer(msg))
+		C.tiledb_error_message(err, &msg)
+		defer C.tiledb_error_free(&err)
+		return false
+	}
+	return int(cDone) == 1
+}
+
+// Reset a config iterator.
+func (ci *ConfigIter) Reset(prefix string) error {
+	var err *C.tiledb_error_t
+	cprefix := C.CString(prefix)
+	defer C.free(unsafe.Pointer(cprefix))
+	C.tiledb_config_iter_reset(ci.config.tiledbConfig, ci.tiledbConfigIter, cprefix, &err)
+	if err != nil {
+		var msg *C.char
+		defer C.free(unsafe.Pointer(msg))
+		C.tiledb_error_message(err, &msg)
+		defer C.tiledb_error_free(&err)
+		return fmt.Errorf("error creating tiledb config iter: %s", C.GoString(msg))
+	}
+	return nil
+}
