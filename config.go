@@ -160,3 +160,11 @@ func (c *Config) Free() {
 		C.tiledb_config_free(&c.tiledbConfig)
 	}
 }
+
+// Iterate configuration
+// for iter, err := config.Iterate(); !iter.Done(); iter.Next(){
+//    param, value, err := iter.Here()
+// }
+func (c *Config) Iterate(prefix string) (*ConfigIter, error) {
+	return NewConfigIter(c, prefix)
+}

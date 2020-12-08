@@ -127,3 +127,54 @@ func TestFileConfig(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "10", val)
 }
+
+//TestConfigIter
+func TestConfigIter(t *testing.T) {
+	config, err := NewConfig()
+	assert.Nil(t, err)
+	assert.NotNil(t, config)
+
+	// Iterate the configuration
+	iter, err := config.Iterate("vfs.s3.")
+	assert.Nil(t, err)
+	assert.NotNil(t, iter)
+
+	for ; !iter.IsDone(); err = iter.Next() {
+		if err != nil {
+			// handle error from call to iter.Next()
+			return
+		}
+		// Get current param, value from iterator
+		param, value, err := iter.Here()
+		if err != nil {
+			// handle error
+			return
+		}
+		fmt.Printf("%s: %s\n", *param, *value)
+	}
+
+	// Output:
+	// aws_access_key_id:
+	// aws_secret_access_key:
+	// aws_session_token:
+	// ca_file:
+	// ca_path:
+	// connect_max_tries: 5
+	// connect_scale_factor: 25
+	// connect_timeout_ms: 3000
+	// endpoint_override:
+	// logging_level: Off
+	// max_parallel_ops: 4
+	// multipart_part_size: 5242880
+	// proxy_host:
+	// proxy_password:
+	// proxy_port: 0
+	// proxy_scheme: http
+	// proxy_username:
+	// region: us-east-1
+	// request_timeout_ms: 3000
+	// scheme: https
+	// use_multipart_upload: true
+	// use_virtual_addressing: true
+	// verify_ssl: true
+}
