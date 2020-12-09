@@ -11,6 +11,7 @@ import "C"
 
 import (
 	"fmt"
+	"io"
 	"runtime"
 	"strings"
 	"unsafe"
@@ -22,8 +23,12 @@ const arrayMetadataFolderName = "__meta"
 
 // VFSfh is a virtual file system file handler
 type VFSfh struct {
+	vfs         *VFS
 	tiledbVFSfh *C.tiledb_vfs_fh_t
 	context     *Context
+	offset      uint64
+	size        *uint64
+	uri         string
 }
 
 // Free a tiledb c vfs file handler
@@ -320,7 +325,7 @@ func (v *VFS) MoveDir(oldURI string, newURI string) error {
 func (v *VFS) Open(uri string, mode VFSMode) (*VFSfh, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	fh := &VFSfh{context: v.context}
+	fh := &VFSfh{context: v.context, uri: uri, vfs: v}
 	// Set finalizer for free C pointer on gc
 	runtime.SetFinalizer(fh, func(fh *VFSfh) {
 		fh.Free()
@@ -355,14 +360,12 @@ func (v *VFS) Close(fh *VFSfh) error {
 // Read part of a file
 func (v *VFS) Read(fh *VFSfh, offset uint64, nbytes uint64) ([]byte, error) {
 	bytes := make([]byte, nbytes)
-	cbuffer := C.CBytes(bytes)
+	cbuffer := unsafe.Pointer(&bytes[0])
 	ret := C.tiledb_vfs_read(v.context.tiledbContext, fh.tiledbVFSfh, C.uint64_t(offset), cbuffer, C.uint64_t(nbytes))
 
 	if ret != C.TILEDB_OK {
 		return []byte{}, fmt.Errorf("Unknown error in VFS.Read: %s", v.context.LastError())
 	}
-
-	bytes = C.GoBytes(cbuffer, C.int32_t(nbytes))
 
 	return bytes, nil
 }
@@ -461,4 +464,121 @@ func (v *VFS) NumOfFragmentsInPath(path string) (int, error) {
 	}
 
 	return numOfFragmentsData.NumOfFolders, nil
+}
+
+// Close a file. This is flushes the buffered data into the file when the file
+// was opened in write (or append) mode. It is particularly important to be
+// called after S3 writes, as otherwise the writes will not take effect.
+func (v *VFSfh) Close() error {
+
+	ret := C.tiledb_vfs_close(v.context.tiledbContext, v.tiledbVFSfh)
+
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Unknown error in VFS.Close: %s", v.context.LastError())
+	}
+
+	v.Free()
+	return nil
+}
+
+// Read part of a file
+func (v *VFSfh) Read(p []byte) (int, error) {
+	nbytes := uint64(len(p))
+
+	// If the size is empty, fetch it
+	if v.size == nil {
+		err := v.fetchAndSetSize()
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	// If the requested read size is beyond the limit, adjust bytes to read
+	if v.offset+nbytes > *v.size {
+		nbytes = *v.size - v.offset
+	}
+
+	if nbytes == 0 {
+		return 0, io.EOF
+	}
+
+	cbuffer := unsafe.Pointer(&p[0])
+	ret := C.tiledb_vfs_read(v.context.tiledbContext, v.tiledbVFSfh, C.uint64_t(v.offset), cbuffer, C.uint64_t(nbytes))
+
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("Unknown error in VFS.Read: %s", v.context.LastError())
+	}
+
+	v.offset += nbytes
+	return int(nbytes), nil
+}
+
+// Write the contents of a buffer into a file. Note that this function only
+// appends data at the end of the file. If the file does not exist,
+// it will be created
+func (v *VFSfh) Write(bytes []byte) (int, error) {
+	cbuffer := unsafe.Pointer(&bytes[0])
+	ret := C.tiledb_vfs_write(v.context.tiledbContext, v.tiledbVFSfh, cbuffer, C.uint64_t(len(bytes)))
+
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("Unknown error in VFS.Write: %s", v.context.LastError())
+	}
+
+	return len(bytes), nil
+}
+
+// Sync (flushes) a file.
+func (v *VFSfh) Sync() error {
+	ret := C.tiledb_vfs_sync(v.context.tiledbContext, v.tiledbVFSfh)
+
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Unknown error in VFS.Sync: %s", v.context.LastError())
+	}
+
+	return nil
+}
+
+// Seek to an offset
+func (v *VFSfh) Seek(offset int64, whence int) (int64, error) {
+	absOffset := uint64(offset)
+	if offset <= 0 {
+		absOffset = uint64(-1 * offset)
+	}
+	var origin uint64
+
+	switch whence {
+	case io.SeekStart:
+		origin = 0
+	case io.SeekCurrent:
+		origin = v.offset
+	case io.SeekEnd:
+		// If the size is empty, fetch it
+		if v.size == nil {
+			err := v.fetchAndSetSize()
+			if err != nil {
+				return -1, err
+			}
+		}
+		origin = *v.size
+	default:
+		return -1, fmt.Errorf("Unknown seek whence")
+	}
+
+	if (offset < 0 && absOffset > origin) ||
+		(offset >= 0 && absOffset > *v.size-origin) {
+		return -1, fmt.Errorf("Invalid offset")
+	}
+
+	v.offset = uint64(int64(origin) + offset)
+	return int64(v.offset), nil
+}
+
+func (v *VFSfh) fetchAndSetSize() error {
+	size, err := v.vfs.FileSize(v.uri)
+	if err != nil {
+		return err
+	}
+	v.size = &size
+
+	return nil
 }
