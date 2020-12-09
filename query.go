@@ -605,6 +605,7 @@ func (q *Query) AddRangeVar(dimIdx uint32, start interface{}, end interface{}) e
 // GetRange retrieves a specific range of the query subarray
 // along a given dimension.
 // Returns (start, end, error)
+// If start size or end size is 0 returns nil, nil, nil
 // Stride is not supported at the moment, always nil
 func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface{}, error) {
 	var pStart, pEnd, pStride unsafe.Pointer
@@ -654,6 +655,10 @@ func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface
 		if ret != C.TILEDB_OK {
 			return nil, nil, fmt.Errorf(
 				"Error retrieving query range: %s", q.context.LastError())
+		}
+
+		if startSize == 0 || endSize == 0 {
+			return nil, nil, nil
 		}
 
 		startData := make([]byte, startSize)
