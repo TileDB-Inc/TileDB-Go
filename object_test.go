@@ -83,6 +83,10 @@ func TestObjectArray(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, TILEDB_GROUP, objType)
 
+	objType, err = ObjectType(context, tmpArrayPath)
+	assert.Nil(t, err)
+	assert.Equal(t, TILEDB_ARRAY, objType)
+
 	objectList, err := ObjectWalk(context, groupPath, TILEDB_PREORDER)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(objectList.objectList))

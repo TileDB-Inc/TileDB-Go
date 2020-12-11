@@ -18,14 +18,19 @@ import (
 // ObjectType returns the object type
 // A TileDB "object" is currently either a TileDB array or a TileDB group.
 func ObjectType(ctx *Context, path string) (ObjectTypeEnum, error) {
+	if ctx == nil {
+		return TILEDB_INVALID, fmt.Errorf("error getting object type, context is nil")
+	}
+
 	var objectTypeEnum C.tiledb_object_t
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
 	ret := C.tiledb_object_type(ctx.tiledbContext, cpath, &objectTypeEnum)
 	if ret != C.TILEDB_OK {
-		return -1, fmt.Errorf("Cannot get object type from path %s: %s",
+		return TILEDB_INVALID, fmt.Errorf("Cannot get object type from path %s: %s",
 			path, ctx.LastError())
 	}
+
 	return ObjectTypeEnum(objectTypeEnum), nil
 }
 
@@ -60,6 +65,10 @@ func objectsInPath(path *C.cchar_t, objectTypeEnum C.tiledb_object_t, data unsaf
 // when the callback returns 0. Note that this function ignores any object
 // (e.g., file or directory) that is not TileDB-related.
 func ObjectWalk(ctx *Context, path string, walkOrder WalkOrder) (*ObjectList, error) {
+	if ctx == nil {
+		return nil, fmt.Errorf("error walking object, context is nil")
+	}
+
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
 
@@ -83,6 +92,10 @@ func ObjectWalk(ctx *Context, path string, walkOrder WalkOrder) (*ObjectList, er
 // ObjectLs is similar to `tiledb_walk`, but now the function visits only the children
 // of `path` (it does not recursively continue to the children directories).
 func ObjectLs(ctx *Context, path string) (*ObjectList, error) {
+	if ctx == nil {
+		return nil, fmt.Errorf("error listing object, context is nil")
+	}
+
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
 
@@ -104,6 +117,10 @@ func ObjectLs(ctx *Context, path string) (*ObjectList, error) {
 // ObjectMove moves a TileDB resource (group, array, key-value).
 // Param path is the new path to move to
 func ObjectMove(ctx *Context, path string, newPath string) error {
+	if ctx == nil {
+		return fmt.Errorf("error moving object, context is nil")
+	}
+
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
 	cnewPath := C.CString(newPath)
@@ -119,6 +136,10 @@ func ObjectMove(ctx *Context, path string, newPath string) error {
 
 // ObjectRemove deletes a TileDB resource (group, array, key-value).
 func ObjectRemove(ctx *Context, path string) error {
+	if ctx == nil {
+		return fmt.Errorf("error removing object, context is nil")
+	}
+
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
 	ret := C.tiledb_object_remove(ctx.tiledbContext, cpath)
