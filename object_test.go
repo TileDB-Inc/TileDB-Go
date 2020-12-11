@@ -2,6 +2,7 @@ package tiledb
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,38 +14,32 @@ func TestObjectCreate(t *testing.T) {
 	assert.Nil(t, err)
 
 	// create temp group name
-	tmpObjectGroup := os.TempDir() + string(os.PathSeparator) +
-		"tiledb_test_object_group"
+	groupPath := filepath.Join(os.TempDir(), "tiledb_test_object_group")
 	// Cleanup group when test ends
-	defer os.RemoveAll(tmpObjectGroup)
-	if _, err = os.Stat(tmpObjectGroup); err == nil {
-		os.RemoveAll(tmpObjectGroup)
+	defer os.RemoveAll(groupPath)
+	if _, err = os.Stat(groupPath); err == nil {
+		os.RemoveAll(groupPath)
 	}
 
-	tmpObjectGroupMove := os.TempDir() + string(os.PathSeparator) +
-		"tiledb_test_object_group_move"
+	groupPathNew := filepath.Join(os.TempDir(), "tiledb_test_object_group_move")
 	// Cleanup group when test ends
-	defer os.RemoveAll(tmpObjectGroupMove)
-	if _, err = os.Stat(tmpObjectGroupMove); err == nil {
-		os.RemoveAll(tmpObjectGroupMove)
+	defer os.RemoveAll(groupPathNew)
+	if _, err = os.Stat(groupPathNew); err == nil {
+		os.RemoveAll(groupPathNew)
 	}
 
 	// Create initial group
-	err = GroupCreate(context, tmpObjectGroup)
+	err = GroupCreate(context, groupPath)
 	assert.Nil(t, err)
 
-	obj, err := NewObject(context, tmpObjectGroup)
-	assert.Nil(t, err)
-	assert.NotNil(t, obj)
-
-	objType, err := obj.Type()
+	objType, err := ObjectType(context, groupPath)
 	assert.Nil(t, err)
 	assert.Equal(t, TILEDB_GROUP, objType)
 
-	err = obj.Move(tmpObjectGroupMove)
+	err = ObjectMove(context, groupPath, groupPathNew)
 	assert.Nil(t, err)
 
-	err = obj.Remove()
+	err = ObjectRemove(context, groupPathNew)
 	assert.Nil(t, err)
 }
 
@@ -54,25 +49,24 @@ func TestObjectArray(t *testing.T) {
 	assert.Nil(t, err)
 
 	// create temp group name
-	tmpObjectGroup := os.TempDir() + string(os.PathSeparator) +
-		"tiledb_test_object_group"
+	groupPath := filepath.Join(os.TempDir(), "tiledb_test_object_group")
 	// Cleanup group when test ends
-	defer os.RemoveAll(tmpObjectGroup)
-	if _, err = os.Stat(tmpObjectGroup); err == nil {
-		os.RemoveAll(tmpObjectGroup)
+	defer os.RemoveAll(groupPath)
+	if _, err = os.Stat(groupPath); err == nil {
+		os.RemoveAll(groupPath)
 	}
 
 	// Create initial group
-	err = GroupCreate(context, tmpObjectGroup)
+	err = GroupCreate(context, groupPath)
 	assert.Nil(t, err)
 
-	arrayGroup := tmpObjectGroup + string(os.PathSeparator) + "arrays"
+	arrayGroup := filepath.Join(groupPath, "arrays")
 
 	// Create the array group
 	err = GroupCreate(context, arrayGroup)
 	assert.Nil(t, err)
 
-	tmpArrayPath := arrayGroup + string(os.PathSeparator) + "tiledb_test_array"
+	tmpArrayPath := filepath.Join(arrayGroup, "tiledb_test_array")
 
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
@@ -85,22 +79,22 @@ func TestObjectArray(t *testing.T) {
 	err = array.Create(arraySchema)
 	assert.Nil(t, err)
 
-	obj, err := NewObject(context, tmpObjectGroup)
-	assert.Nil(t, err)
-	assert.NotNil(t, obj)
-
-	objType, err := obj.Type()
+	objType, err := ObjectType(context, groupPath)
 	assert.Nil(t, err)
 	assert.Equal(t, TILEDB_GROUP, objType)
 
-	objectList, err := obj.Walk(TILEDB_PREORDER)
+	objType, err = ObjectType(context, tmpArrayPath)
+	assert.Nil(t, err)
+	assert.Equal(t, TILEDB_ARRAY, objType)
+
+	objectList, err := ObjectWalk(context, groupPath, TILEDB_PREORDER)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(objectList.objectList))
-	assert.Equal(t, TILEDB_GROUP, objectList.objectList[0].objectType)
-	assert.Equal(t, TILEDB_ARRAY, objectList.objectList[1].objectType)
+	assert.Equal(t, TILEDB_GROUP, objectList.objectList[0].objectTypeEnum)
+	assert.Equal(t, TILEDB_ARRAY, objectList.objectList[1].objectTypeEnum)
 
-	objectList, err = obj.Ls()
+	objectList, err = ObjectLs(context, groupPath)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(objectList.objectList))
-	assert.Equal(t, TILEDB_GROUP, objectList.objectList[0].objectType)
+	assert.Equal(t, TILEDB_GROUP, objectList.objectList[0].objectTypeEnum)
 }
