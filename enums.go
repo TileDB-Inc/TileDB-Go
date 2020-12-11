@@ -503,16 +503,16 @@ const (
 	TILEDB_VFS_APPEND VFSMode = C.TILEDB_VFS_APPEND
 )
 
-// ObjectType
-type ObjectType int8
+// ObjectTypeEnum
+type ObjectTypeEnum int8
 
 const (
 	// Invalid object
-	TILEDB_INVALID ObjectType = C.TILEDB_INVALID
+	TILEDB_INVALID ObjectTypeEnum = C.TILEDB_INVALID
 	// Group object
-	TILEDB_GROUP ObjectType = C.TILEDB_GROUP
+	TILEDB_GROUP ObjectTypeEnum = C.TILEDB_GROUP
 	// Array object
-	TILEDB_ARRAY ObjectType = C.TILEDB_ARRAY
+	TILEDB_ARRAY ObjectTypeEnum = C.TILEDB_ARRAY
 )
 
 // WalkOrder
