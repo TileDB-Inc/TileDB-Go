@@ -112,7 +112,7 @@ func (a *Attribute) CellSize() (uint64, error) {
 	return uint64(cellSize), nil
 }
 
-// Sets the default fill value for the input attribute. This value will
+// SetFillValue Sets the default fill value for the input attribute. This value will
 // be used for the input attribute whenever querying (1) an empty cell in
 // a dense array, or (2) a non-empty cell (in either dense or sparse array)
 // when values on the input attribute are missing (e.g., if the user writes
@@ -211,7 +211,110 @@ func (a *Attribute) SetFillValue(value interface{}) error {
 	return nil
 }
 
-// Gets the default fill value for the input attribute. This value will
+// SetFillValueNullable Sets the default fill value for the input attribute. This value will
+// be used for the input attribute whenever querying (1) an empty cell in
+// a dense array, or (2) a non-empty cell (in either dense or sparse array)
+// when values on the input attribute are missing (e.g., if the user writes
+// a subset of the attributes in a write operation).
+// Applicable to var-sized attributes.
+// @note A call to `tiledb_attribute_cell_val_num` sets the fill value
+//      of the attribute to its default. Therefore, make sure you invoke
+//      `tiledb_attribute_set_fill_value` after deciding on the number
+//      of values this attribute will hold in each cell.
+// @note For fixed-sized attributes, the input `size` should be equal
+//      to the cell size.
+func (a *Attribute) SetFillValueNullable(value interface{}, nullable bool) error {
+
+	if value == nil {
+		return errors.New("Unrecognized value type passed: Cannot be a nil")
+	}
+
+	if reflect.TypeOf(value).Kind() == reflect.Slice {
+		return errors.New("Unrecognized value type passed: Cannot be a slice")
+	}
+
+	valueType := reflect.TypeOf(value).Kind()
+
+	cellValNum, err := a.CellValNum()
+	if err != nil {
+		return err
+	}
+
+	attrDataType, err := a.Type()
+	if err != nil {
+		return err
+	}
+
+	var valueSize C.uint64_t
+	if cellValNum == uint32(TILEDB_VAR_NUM) {
+		valueSize = C.uint64_t(reflect.TypeOf(value).Size())
+	} else {
+		valueSize = C.uint64_t(attrDataType.Size() * uint64(cellValNum))
+	}
+
+	var ret C.int32_t
+	var cNullable C.uint8_t
+	if nullable {
+		cNullable = 1
+	}
+	switch valueType {
+	case reflect.Int:
+		tmpValue := value.(int)
+		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cNullable)
+	case reflect.Int8:
+		tmpValue := value.(int8)
+		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cNullable)
+	case reflect.Int16:
+		tmpValue := value.(int16)
+		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cNullable)
+	case reflect.Int32:
+		tmpValue := value.(int32)
+		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cNullable)
+	case reflect.Int64:
+		tmpValue := value.(int64)
+		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cNullable)
+	case reflect.Uint:
+		tmpValue := value.(uint)
+		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cNullable)
+	case reflect.Uint8:
+		tmpValue := value.(uint8)
+		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cNullable)
+	case reflect.Uint16:
+		tmpValue := value.(uint16)
+		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cNullable)
+	case reflect.Uint32:
+		tmpValue := value.(uint32)
+		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cNullable)
+	case reflect.Uint64:
+		tmpValue := value.(uint64)
+		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cNullable)
+	case reflect.Float32:
+		tmpValue := value.(float32)
+		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cNullable)
+	case reflect.Float64:
+		tmpValue := value.(float64)
+		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cNullable)
+	case reflect.String:
+		stringValue := value.(string)
+		valueSize = C.uint64_t(len(stringValue))
+		cTmpValue := C.CString(stringValue)
+		defer C.free(unsafe.Pointer(cTmpValue))
+		if valueSize > 0 {
+			ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(cTmpValue), valueSize, cNullable)
+		}
+	default:
+		valueInterfaceVal := reflect.ValueOf(value)
+		return fmt.Errorf("Unrecognized value type passed: %s", valueInterfaceVal.Kind().String())
+	}
+
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error filling attribute value: %s", a.context.LastError())
+	}
+
+	return nil
+}
+
+// GetFillValue Gets the default fill value for the input attribute. This value will
 // be used for the input attribute whenever querying (1) an empty cell in
 // a dense array, or (2) a non-empty cell (in either dense or sparse array)
 // when values on the input attribute are missing (e.g., if the user writes
@@ -237,6 +340,35 @@ func (a *Attribute) GetFillValue() (interface{}, uint64, error) {
 	}
 
 	return value, uint64(fillValueSize), nil
+}
+
+// GetFillValueNullable Gets the default fill value for the input attribute. This value will
+// be used for the input attribute whenever querying (1) an empty cell in
+// a dense array, or (2) a non-empty cell (in either dense or sparse array)
+// when values on the input attribute are missing (e.g., if the user writes
+// a subset of the attributes in a write operation).
+// Applicable to both fixed-sized and var-sized attributes.
+func (a *Attribute) GetFillValueNullable() (interface{}, uint64, bool, error) {
+	var fillValueSize C.uint64_t
+	var cvalue unsafe.Pointer
+	var cNullable C.uint8_t
+
+	ret := C.tiledb_attribute_get_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, &cvalue, &fillValueSize, &cNullable)
+	if ret != C.TILEDB_OK {
+		return nil, 0, false, fmt.Errorf("Error getting tiledb attribute fill value: %s", a.context.LastError())
+	}
+
+	attrDataType, err := a.Type()
+	if err != nil {
+		return nil, 0, false, fmt.Errorf("Error getting tiledb attribute fill value: %s", a.context.LastError())
+	}
+
+	value, err := attrDataType.GetValue(1, cvalue)
+	if err != nil {
+		return nil, 0, false, fmt.Errorf("Error getting tiledb attribute fill value: %s", a.context.LastError())
+	}
+
+	return value, uint64(fillValueSize), cNullable == 1, nil
 }
 
 // Name returns name of attribute
@@ -295,4 +427,29 @@ func (a *Attribute) Dump(path string) error {
 		return fmt.Errorf("Error dumping attribute to file %s: %s", path, a.context.LastError())
 	}
 	return nil
+}
+
+// SetNullable Sets if the attribute is nullable or not.
+func (a *Attribute) SetNullable(nullable bool) error {
+	var cNullable C.uint8_t
+	if nullable {
+		cNullable = 1
+	}
+	ret := C.tiledb_attribute_set_nullable(a.context.tiledbContext,
+		a.tiledbAttribute, cNullable)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error setting tiledb attribute nullable: %s", a.context.LastError())
+	}
+	return nil
+}
+
+// Nullable returns if the attribute is nullable or not.
+func (a *Attribute) Nullable() (bool, error) {
+	var nullable C.uint8_t
+	ret := C.tiledb_attribute_get_nullable(a.context.tiledbContext, a.tiledbAttribute, &nullable)
+	if ret != C.TILEDB_OK {
+		return false, fmt.Errorf("Error getting tiledb attribute nullable: %s", a.context.LastError())
+	}
+
+	return nullable == 1, nil
 }
