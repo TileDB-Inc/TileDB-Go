@@ -192,7 +192,7 @@ func getRange() {
 }
 
 // ExampleRange shows an example of creation, writing of a dense array
-// and useage of range functions
+// and usage of range functions
 func ExampleRange() {
 	createRangeArray()
 	writeRangeArray()
