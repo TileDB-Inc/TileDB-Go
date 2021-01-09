@@ -146,7 +146,7 @@ func printResultsVariableLength(
 	a1Data []byte,
 	a2Off []uint64,
 	a2Data []int32,
-	resultElMap map[string][2]uint64) {
+	resultElMap map[string][3]uint64) {
 
 	// Get the string sizes
 	resultElA1Off := resultElMap["a1"][0]
