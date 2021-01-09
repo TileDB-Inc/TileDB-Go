@@ -155,7 +155,7 @@ func printResultsReadingIncomplete(
 	a1Data []int32,
 	a2Off []uint64,
 	a2Data []byte,
-	resultElMap map[string][2]uint64) {
+	resultElMap map[string][3]uint64) {
 	fmt.Println("Printing results...")
 
 	// Get the string sizes

@@ -64,6 +64,8 @@ as such the below table reference which versions are compatible.
 | 0.8.4             | >=1.7.3        |
 | 0.8.5             | >=1.7.3        |
 | 0.9.0             | 2.0.X          |
+| 0.10.0            | 2.1.X          |
+| 0.11.0            | 2.2.X          |
 
 
 ## Missing Functionality

@@ -1615,5 +1615,179 @@ func TestSparseQueryWrite(t *testing.T) {
 	assert.Equal(t, true, hasResults)
 
 	// Validate read buffers equal original write buffers
-	assert.EqualValues(t, bufferA1, readBufferA1)
+	assert.ElementsMatch(t, bufferA1, readBufferA1)
+}
+
+// TestSparseQueryWriteNullable validates a sparse array can be written to and read from
+func TestSparseQueryWriteNullable(t *testing.T) {
+	// Create configuration
+	config, err := NewConfig()
+	assert.Nil(t, err)
+
+	// Test context with config
+	context, err := NewContext(config)
+	assert.Nil(t, err)
+
+	// Test create dimension
+
+	dimension, err := NewDimension(context, "dim1", []int8{0, 9}, int8(10))
+	assert.Nil(t, err)
+	assert.NotNil(t, dimension)
+
+	// Test creating domain
+	domain, err := NewDomain(context)
+	assert.Nil(t, err)
+	assert.NotNil(t, domain)
+
+	// Add dimension
+	err = domain.AddDimensions(dimension)
+	assert.Nil(t, err)
+
+	// Create array schema
+	arraySchema, err := NewArraySchema(context, TILEDB_SPARSE)
+	assert.Nil(t, err)
+	assert.NotNil(t, arraySchema)
+
+	// Crete attribute to add to schema
+	attribute, err := NewAttribute(context, "a1", TILEDB_INT32)
+	assert.Nil(t, err)
+	assert.NotNil(t, attribute)
+
+	// Set Attribute nullable
+	err = attribute.SetNullable(true)
+	assert.Nil(t, err)
+
+	// Add Attribute
+	err = arraySchema.AddAttributes(attribute)
+	assert.Nil(t, err)
+
+	// Set Domain
+	err = arraySchema.SetDomain(domain)
+	assert.Nil(t, err)
+
+	err = arraySchema.SetCellOrder(TILEDB_ROW_MAJOR)
+	assert.Nil(t, err)
+
+	err = arraySchema.SetTileOrder(TILEDB_ROW_MAJOR)
+	assert.Nil(t, err)
+
+	// Validate Schema
+	err = arraySchema.Check()
+	assert.Nil(t, err)
+
+	// create temp group name
+	tmpArrayPath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_sparse_array"
+	// Cleanup group when test ends
+	defer os.RemoveAll(tmpArrayPath)
+	if _, err = os.Stat(tmpArrayPath); err == nil {
+		os.RemoveAll(tmpArrayPath)
+	}
+	// Create new array struct
+	array, err := NewArray(context, tmpArrayPath)
+	assert.Nil(t, err)
+	assert.NotNil(t, array)
+
+	// Create array on disk
+	err = array.Create(arraySchema)
+	assert.Nil(t, err)
+
+	// Open array for writting
+	err = array.Open(TILEDB_WRITE)
+	assert.Nil(t, err)
+
+	// Create write query
+	query, err := NewQuery(context, array)
+	assert.Nil(t, err)
+	assert.NotNil(t, query)
+
+	// Set write layout
+	assert.Nil(t, query.SetLayout(TILEDB_UNORDERED))
+
+	// Create write buffers
+	bufferA1 := []int32{1, 2, 3}
+	bufferA1Validity := []uint8{1, 1, 0}
+	_, _, err = query.SetBufferNullable("a1", bufferA1, bufferA1Validity)
+	assert.Nil(t, err)
+
+	// Set coordinates, since test is 1d, this is subarray
+	subArray := []int8{0, 1, 2}
+	_, err = query.SetBuffer("dim1", subArray)
+	assert.Nil(t, err)
+
+	// Submit write query
+	err = query.Submit()
+	assert.Nil(t, err)
+
+	// Validate status, since query was used this is should be complete
+	status, err := query.Status()
+	assert.Nil(t, err)
+	assert.Equal(t, TILEDB_COMPLETED, status)
+
+	// Validate query type
+	queryType, err := query.Type()
+	assert.Nil(t, err)
+	assert.Equal(t, TILEDB_WRITE, queryType)
+
+	// Finalize Write
+	err = query.Finalize()
+	assert.Nil(t, err)
+	// Close and prepare to read
+	err = array.Close()
+	assert.Nil(t, err)
+
+	// Reopen array for reading
+	err = array.Open(TILEDB_READ)
+	assert.Nil(t, err)
+
+	query, err = NewQuery(context, array)
+	assert.Nil(t, err)
+	assert.NotNil(t, query)
+
+	// Set read subarray to only data that was written
+	err = query.AddRange(0, 0, 3)
+	assert.Nil(t, err)
+
+	// Set coordinates, since test is 1d, this is subarray
+	_, err = query.SetBuffer("dim1", subArray)
+	assert.Nil(t, err)
+
+	bufferElements, err := query.EstimateBufferElements()
+	assert.Nil(t, err)
+	assert.Equal(t, uint64(0), bufferElements["a1"][0])
+	assert.Equal(t, uint64(3), bufferElements["a1"][1])
+	assert.Equal(t, uint64(3), bufferElements["a1"][2])
+
+	// Set empty buffers for reading
+	readBufferA1 := make([]int32, 4)
+	readBufferA1Validity := make([]uint8, 3)
+	_, _, err = query.SetBufferNullable("a1", readBufferA1, readBufferA1Validity)
+	assert.Nil(t, err)
+
+	// Set read layout
+	err = query.SetLayout(TILEDB_ROW_MAJOR)
+	assert.Nil(t, err)
+
+	// Submit read query async
+	err = query.Submit()
+	assert.Nil(t, err)
+
+	status, err = query.Status()
+	assert.Nil(t, err)
+	assert.Equal(t, TILEDB_COMPLETED, status)
+
+	// Validate query type
+	queryType, err = query.Type()
+	assert.Nil(t, err)
+	assert.Equal(t, TILEDB_READ, queryType)
+
+	// Results should be returned
+	hasResults, err := query.HasResults()
+	assert.Nil(t, err)
+	assert.Equal(t, true, hasResults)
+
+	// Validate read buffers equal original write buffers
+	// First two values of A1 should match, and the 3rd is null so don't bother checking
+	assert.EqualValues(t, bufferA1[0], readBufferA1[0])
+	assert.EqualValues(t, bufferA1[1], readBufferA1[1])
+	assert.ElementsMatch(t, bufferA1Validity, readBufferA1Validity)
 }
