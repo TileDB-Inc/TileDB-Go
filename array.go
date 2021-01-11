@@ -577,52 +577,87 @@ func (a *Array) NonEmptyDomainVarFromIndex(dimIdx uint) (*NonEmptyDomain, bool, 
 	return nonEmptyDomain, false, nil
 }
 
-// NonEmptyDomainFromName retrieves the non-empty domain from an array for a
-// given fixed-sized dimension name
-// Returns the bounding coordinates for the dimension
-func (a *Array) NonEmptyDomainFromName(dimName string) (*NonEmptyDomain, bool, error) {
+func (a Array) GetNonEmptyDomainSliceFromIndex(dimIdx uint) (*Dimension, interface{}, unsafe.Pointer, error) {
 	schema, err := a.Schema()
 	if err != nil {
-		return nil, false, err
+		return nil, nil, nil, err
 	}
 
 	domain, err := schema.Domain()
 	if err != nil {
-		return nil, false, err
+		return nil, nil, nil, err
 	}
 
-	hasDim, err := domain.HasDimension(dimName)
+	dimension, err := domain.DimensionFromIndex(dimIdx)
 	if err != nil {
-		return nil, false, err
-	}
-
-	if !hasDim {
-		return nil, false, fmt.Errorf("Dimension: %s was not found in domain", dimName)
-	}
-
-	dimension, err := domain.DimensionFromName(dimName)
-	if err != nil {
-		return nil, false, fmt.Errorf("Could not get dimension: %s", dimName)
+		return nil, nil, nil, fmt.Errorf("Could not get dimension: %d", dimIdx)
 	}
 
 	dimensionType, err := dimension.Type()
 	if err != nil {
-		return nil, false, err
+		return nil, nil, nil, err
 	}
 
 	tmpDimension, tmpDimensionPtr, err := dimensionType.MakeSlice(uint64(2))
 	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return dimension, tmpDimension, tmpDimensionPtr, nil
+}
+
+func (a Array) GetNonEmptyDomainSliceFromName(dimName string) (*Dimension, interface{}, unsafe.Pointer, error) {
+	schema, err := a.Schema()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	domain, err := schema.Domain()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	hasDim, err := domain.HasDimension(dimName)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	if !hasDim {
+		return nil, nil, nil, fmt.Errorf("Dimension: %s was not found in domain", dimName)
+	}
+
+	dimension, err := domain.DimensionFromName(dimName)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("Could not get dimension: %s", dimName)
+	}
+
+	dimensionType, err := dimension.Type()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	tmpDimension, tmpDimensionPtr, err := dimensionType.MakeSlice(uint64(2))
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return dimension, tmpDimension, tmpDimensionPtr, nil
+}
+
+// NonEmptyDomainFromIndex retrieves the non-empty domain from an array for a
+// given fixed-sized dimension index.
+// Returns the bounding coordinates for the dimension
+func (a *Array) NonEmptyDomainFromIndex(dimIdx uint) (*NonEmptyDomain, bool, error) {
+	dimension, tmpDimension, tmpDimensionPtr, err := a.GetNonEmptyDomainSliceFromIndex(dimIdx)
+	if err != nil {
 		return nil, false, err
 	}
 
-	cDimName := C.CString(dimName)
-	defer C.free(unsafe.Pointer(cDimName))
-
 	var isEmpty C.int32_t
-	ret := C.tiledb_array_get_non_empty_domain_from_name(
+	ret := C.tiledb_array_get_non_empty_domain_from_index(
 		a.context.tiledbContext,
 		a.tiledbArray,
-		cDimName,
+		(C.uint32_t)(dimIdx),
 		tmpDimensionPtr, &isEmpty)
 	if ret != C.TILEDB_OK {
 		return nil, false, fmt.Errorf("Error in getting non empty domain for dimension: %s", a.context.LastError())
@@ -640,40 +675,23 @@ func (a *Array) NonEmptyDomainFromName(dimName string) (*NonEmptyDomain, bool, e
 	return nonEmptyDomain, false, nil
 }
 
-// NonEmptyDomainFromIndex retrieves the non-empty domain from an array for a
-// given fixed-sized dimension index.
+// NonEmptyDomainFromName retrieves the non-empty domain from an array for a
+// given fixed-sized dimension name
 // Returns the bounding coordinates for the dimension
-func (a *Array) NonEmptyDomainFromIndex(dimIdx uint) (*NonEmptyDomain, bool, error) {
-	schema, err := a.Schema()
+func (a *Array) NonEmptyDomainFromName(dimName string) (*NonEmptyDomain, bool, error) {
+	dimension, tmpDimension, tmpDimensionPtr, err := a.GetNonEmptyDomainSliceFromName(dimName)
 	if err != nil {
 		return nil, false, err
 	}
 
-	domain, err := schema.Domain()
-	if err != nil {
-		return nil, false, err
-	}
-
-	dimension, err := domain.DimensionFromIndex(dimIdx)
-	if err != nil {
-		return nil, false, fmt.Errorf("Could not get dimension: %d", dimIdx)
-	}
-
-	dimensionType, err := dimension.Type()
-	if err != nil {
-		return nil, false, err
-	}
-
-	tmpDimension, tmpDimensionPtr, err := dimensionType.MakeSlice(uint64(2))
-	if err != nil {
-		return nil, false, err
-	}
+	cDimName := C.CString(dimName)
+	defer C.free(unsafe.Pointer(cDimName))
 
 	var isEmpty C.int32_t
-	ret := C.tiledb_array_get_non_empty_domain_from_index(
+	ret := C.tiledb_array_get_non_empty_domain_from_name(
 		a.context.tiledbContext,
 		a.tiledbArray,
-		(C.uint32_t)(dimIdx),
+		cDimName,
 		tmpDimensionPtr, &isEmpty)
 	if ret != C.TILEDB_OK {
 		return nil, false, fmt.Errorf("Error in getting non empty domain for dimension: %s", a.context.LastError())
