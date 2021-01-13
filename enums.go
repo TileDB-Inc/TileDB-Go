@@ -450,6 +450,8 @@ const (
 	TILEDB_GLOBAL_ORDER Layout = C.TILEDB_GLOBAL_ORDER
 	// TILEDB_UNORDERED Unordered layout
 	TILEDB_UNORDERED Layout = C.TILEDB_UNORDERED
+	// TILEDB_HILBERT Hilbert layout
+	TILEDB_HILBERT Layout = C.TILEDB_HILBERT
 )
 
 // QueryStatus status of a query
