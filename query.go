@@ -662,16 +662,13 @@ func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{
 	return &bufferSize, &bufferValiditySize, nil
 }
 
-// AddRange adds a 1D range along a subarray dimension, which is in the form
-// (start, end, stride). The datatype of the range components must be the same
-// as the type of the domain of the array in the query.
-// The stride is currently unsupported and set to nil.
-func (q *Query) AddRange(dimIdx uint32, start interface{}, end interface{}) error {
+func getStartAndEndBuffers(start interface{}, end interface{}) (
+	unsafe.Pointer, unsafe.Pointer, error) {
 	startReflectValue := reflect.ValueOf(start)
 	endReflectValue := reflect.ValueOf(end)
 
 	if startReflectValue.Kind() != endReflectValue.Kind() {
-		return fmt.Errorf(
+		return nil, nil, fmt.Errorf(
 			"The datatype of the range components must be the same as the type, start was: %s, end was: %s",
 			startReflectValue.Kind().String(), endReflectValue.Kind().String())
 	}
@@ -744,13 +741,48 @@ func (q *Query) AddRange(dimIdx uint32, start interface{}, end interface{}) erro
 		startBuffer = unsafe.Pointer(&tStart)
 		endBuffer = unsafe.Pointer(&tEnd)
 	default:
-		return fmt.Errorf("Unrecognized type of range component passed: %s",
+		return nil, nil, fmt.Errorf("Unrecognized type of range component passed: %s",
 			startType.String())
+	}
+
+	return startBuffer, endBuffer, nil
+}
+
+// AddRange adds a 1D range along a subarray dimension, which is in the form
+// (start, end, stride). The datatype of the range components must be the same
+// as the type of the domain of the array in the query.
+// The stride is currently unsupported and set to nil.
+func (q *Query) AddRange(dimIdx uint32, start interface{}, end interface{}) error {
+	startBuffer, endBuffer, err := getStartAndEndBuffers(start, end)
+	if err != nil {
+		return err
 	}
 
 	ret := C.tiledb_query_add_range(
 		q.context.tiledbContext, q.tiledbQuery,
 		(C.uint32_t)(dimIdx), startBuffer, endBuffer, nil)
+
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf(
+			"Error adding query range: %s", q.context.LastError())
+	}
+
+	return nil
+}
+
+// AddRangeByName adds a 1D range along a subarray dimension, which is in the form
+// (start, end, stride). The datatype of the range components must be the same
+// as the type of the domain of the array in the query.
+// The stride is currently unsupported and set to nil.
+func (q *Query) AddRangeByName(dimName string, start interface{}, end interface{}) error {
+	startBuffer, endBuffer, err := getStartAndEndBuffers(start, end)
+	if err != nil {
+		return err
+	}
+
+	ret := C.tiledb_query_add_range_by_name(
+		q.context.tiledbContext, q.tiledbQuery,
+		(C.CString)(dimName), startBuffer, endBuffer, nil)
 
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf(
@@ -813,6 +845,87 @@ func (q *Query) AddRangeVar(dimIdx uint32, start interface{}, end interface{}) e
 		ret := C.tiledb_query_add_range_var(
 			q.context.tiledbContext, q.tiledbQuery,
 			(C.uint32_t)(dimIdx), startBuffer, (C.uint64_t)(startSize), endBuffer, (C.uint64_t)(endSize))
+
+		if ret != C.TILEDB_OK {
+			return fmt.Errorf(
+				"Error adding query range var: %s", q.context.LastError())
+		}
+	case reflect.Uint16:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Uint32:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Uint64:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Float32:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Float64:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	default:
+		return fmt.Errorf("Unrecognized type of range component passed: %s",
+			startType.String())
+	}
+
+	return nil
+}
+
+// AddRangeVarByName adds a range applicable to variable-sized dimensions
+// Applicable only to string dimensions
+func (q *Query) AddRangeVarByName(dimName string, start interface{}, end interface{}) error {
+	startReflectValue := reflect.ValueOf(start)
+	endReflectValue := reflect.ValueOf(end)
+
+	if startReflectValue.Kind() != reflect.Slice {
+		return fmt.Errorf("Start buffer passed must be a slice that is pre"+
+			"-allocated, type passed was: %s", startReflectValue.Kind().String())
+	}
+
+	if endReflectValue.Kind() != reflect.Slice {
+		return fmt.Errorf("End buffer passed must be a slice that is pre"+
+			"-allocated, type passed was: %s", endReflectValue.Kind().String())
+	}
+
+	startSize := uint64(startReflectValue.Len())
+	endSize := uint64(endReflectValue.Len())
+
+	var startBuffer unsafe.Pointer
+	var endBuffer unsafe.Pointer
+
+	startReflectType := reflect.TypeOf(start)
+	startType := startReflectType.Elem().Kind()
+
+	switch startType {
+	case reflect.Int:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Int8:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Int16:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Int32:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Int64:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Uint:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Uint8:
+		tStart := start.([]uint8)
+		tEnd := end.([]uint8)
+		startBuffer = unsafe.Pointer(&(tStart[0]))
+		endBuffer = unsafe.Pointer(&(tEnd[0]))
+
+		ret := C.tiledb_query_add_range_var_by_name(
+			q.context.tiledbContext, q.tiledbQuery,
+			(C.CString)(dimName), startBuffer, (C.uint64_t)(startSize), endBuffer, (C.uint64_t)(endSize))
 
 		if ret != C.TILEDB_OK {
 			return fmt.Errorf(
@@ -967,6 +1080,132 @@ func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface
 	return start, end, nil
 }
 
+// GetRange retrieves a specific range of the query subarray
+// along a given dimension.
+// Returns (start, end, error)
+// If start size or end size is 0 returns nil, nil, nil
+// Stride is not supported at the moment, always nil
+func (q *Query) GetRangeFromName(dimName string, rangeNum uint64) (interface{}, interface{}, error) {
+	var pStart, pEnd, pStride unsafe.Pointer
+
+	// Based on the type we fill in the interface{} objects for start, end
+	var start, end interface{}
+
+	// We need to infer the datatype of the dimension represented by index
+	// dimIdx. That said:
+	// Get array schema
+	schema, err := q.array.Schema()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Get the domain object
+	domain, err := schema.Domain()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Use the index to retrieve the dimension object
+	dimension, err := domain.DimensionFromName((dimName))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Finally get the dimension's type
+	datatype, err := dimension.Type()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	cellValNum, err := dimension.CellValNum()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if cellValNum == TILEDB_VAR_NUM {
+
+		var startSize, endSize C.uint64_t
+
+		ret := C.tiledb_query_get_range_var_size_from_name(
+			q.context.tiledbContext, q.tiledbQuery,
+			(C.CString)(dimName), (C.uint64_t)(rangeNum), &startSize, &endSize)
+
+		if ret != C.TILEDB_OK {
+			return nil, nil, fmt.Errorf(
+				"Error retrieving query range: %s", q.context.LastError())
+		}
+
+		if startSize == 0 || endSize == 0 {
+			return nil, nil, nil
+		}
+
+		startData := make([]byte, startSize)
+		endData := make([]byte, endSize)
+
+		ret = C.tiledb_query_get_range_var_from_name(
+			q.context.tiledbContext, q.tiledbQuery,
+			(C.CString)(dimName), (C.uint64_t)(rangeNum), unsafe.Pointer(&startData[0]), unsafe.Pointer(&endData[0]))
+
+		if ret != C.TILEDB_OK {
+			return nil, nil, fmt.Errorf(
+				"Error retrieving query range: %s", q.context.LastError())
+		}
+
+		start = startData
+		end = endData
+
+	} else {
+		ret := C.tiledb_query_get_range_from_name(
+			q.context.tiledbContext, q.tiledbQuery,
+			(C.CString)(dimName), (C.uint64_t)(rangeNum), &pStart, &pEnd, &pStride)
+
+		if ret != C.TILEDB_OK {
+			return nil, nil, fmt.Errorf(
+				"Error retrieving query range: %s", q.context.LastError())
+		}
+
+		switch datatype {
+		case TILEDB_INT8:
+			start = *(*int8)(unsafe.Pointer(pStart))
+			end = *(*int8)(unsafe.Pointer(pEnd))
+		case TILEDB_INT16:
+			start = *(*int16)(unsafe.Pointer(pStart))
+			end = *(*int16)(unsafe.Pointer(pEnd))
+		case TILEDB_INT32:
+			start = *(*int32)(unsafe.Pointer(pStart))
+			end = *(*int32)(unsafe.Pointer(pEnd))
+		case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS:
+			start = *(*int64)(unsafe.Pointer(pStart))
+			end = *(*int64)(unsafe.Pointer(pEnd))
+		case TILEDB_UINT8:
+			start = *(*uint8)(unsafe.Pointer(pStart))
+			end = *(*uint8)(unsafe.Pointer(pEnd))
+		case TILEDB_UINT16:
+			start = *(*uint16)(unsafe.Pointer(pStart))
+			end = *(*uint16)(unsafe.Pointer(pEnd))
+		case TILEDB_UINT32:
+			start = *(*uint32)(unsafe.Pointer(pStart))
+			end = *(*uint32)(unsafe.Pointer(pEnd))
+		case TILEDB_UINT64:
+			start = *(*uint64)(unsafe.Pointer(pStart))
+			end = *(*uint64)(unsafe.Pointer(pEnd))
+		case TILEDB_FLOAT32:
+			start = *(*float32)(unsafe.Pointer(pStart))
+			end = *(*float32)(unsafe.Pointer(pEnd))
+		case TILEDB_FLOAT64:
+			start = *(*float64)(unsafe.Pointer(pStart))
+			end = *(*float64)(unsafe.Pointer(pEnd))
+		case TILEDB_STRING_ASCII:
+			start = *(*uint8)(unsafe.Pointer(pStart))
+			end = *(*uint8)(unsafe.Pointer(pEnd))
+		default:
+			return nil, nil, fmt.Errorf("Unrecognized dimension type: %d", datatype)
+		}
+	}
+
+	return start, end, nil
+}
+
 // GetRangeVar exists for continuinity with other TileDB APIs
 // GetRange in Golang supports the variable length attribute also
 // The function retrieves a specific range of the query subarray
@@ -974,6 +1213,15 @@ func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface
 // Returns (start, end, error)
 func (q *Query) GetRangeVar(dimIdx uint32, rangeNum uint64) (interface{}, interface{}, error) {
 	return q.GetRange(dimIdx, rangeNum)
+}
+
+// GetRangeVarFromName exists for continuinity with other TileDB APIs
+// GetRange in Golang supports the variable length attribute also
+// The function retrieves a specific range of the query subarray
+// along a given dimension.
+// Returns (start, end, error)
+func (q *Query) GetRangeVarFromName(dimName string, rangeNum uint64) (interface{}, interface{}, error) {
+	return q.GetRangeFromName(dimName, rangeNum)
 }
 
 // GetRanges gets the number of dimensions from the array under current query
@@ -1046,6 +1294,23 @@ func (q *Query) GetRangeNum(dimIdx uint32) (*uint64, error) {
 	ret := C.tiledb_query_get_range_num(
 		q.context.tiledbContext, q.tiledbQuery,
 		(C.uint32_t)(dimIdx), (*C.uint64_t)(unsafe.Pointer(&rangeNum)))
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf(
+			"Error retrieving query range num: %s", q.context.LastError())
+	}
+
+	return &rangeNum, nil
+}
+
+// GetRangeNumFromName retrieves the number of ranges of the query subarray
+// along a given dimension.
+func (q *Query) GetRangeNumFromName(dimName string) (*uint64, error) {
+	var rangeNum uint64
+
+	ret := C.tiledb_query_get_range_num_from_name(
+		q.context.tiledbContext, q.tiledbQuery,
+		(C.CString)(dimName), (*C.uint64_t)(unsafe.Pointer(&rangeNum)))
 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf(

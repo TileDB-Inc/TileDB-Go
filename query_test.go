@@ -723,6 +723,71 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	assert.EqualValues(t, [3]uint64{0, 1, 0}, elements["rows"])
 	assert.EqualValues(t, [3]uint64{0, 1, 0}, elements["cols"])
 
+	err = query.Finalize()
+	assert.Nil(t, err)
+	err = array.Close()
+	assert.Nil(t, err)
+
+	// Reopen the array
+	err = array.Open(TILEDB_READ)
+	assert.Nil(t, err)
+
+	// Prepare the query for add / get ranges by name
+	query, err = NewQuery(context, array)
+	assert.Nil(t, err)
+	assert.NotNil(t, query)
+
+	err = query.AddRangeByName("rows", rowsRange[0], rowsRange[1])
+	assert.Nil(t, err)
+	err = query.AddRangeByName("cols", colsRange[0], colsRange[1])
+	assert.Nil(t, err)
+	err = query.SetLayout(TILEDB_ROW_MAJOR)
+	assert.Nil(t, err)
+	offsetBufferSize, effectiveBufferSize, err = query.SetBufferVar("a1",
+		a1OffRead, a1DataRead)
+	assert.Nil(t, err)
+	assert.NotNil(t, query)
+	_, err = query.SetBuffer("rows", rowsRead)
+	assert.Nil(t, err)
+	_, err = query.SetBuffer("cols", colsRead)
+	assert.Nil(t, err)
+
+	// Get Range for rows
+	rangeStart, rangeEnd, err = query.GetRangeFromName("rows", 0)
+	assert.Nil(t, err)
+	assert.EqualValues(t, rowsRange[0], rangeStart)
+	assert.EqualValues(t, rowsRange[1], rangeEnd)
+
+	// Get Range for cols
+	rangeStart, rangeEnd, err = query.GetRangeFromName("cols", 0)
+	assert.Nil(t, err)
+	assert.EqualValues(t, colsRange[0], rangeStart)
+	assert.EqualValues(t, colsRange[1], rangeEnd)
+
+	// Submit the query
+	err = query.Submit()
+	assert.Nil(t, err)
+
+	err = query.Finalize()
+	assert.Nil(t, err)
+
+	// Data buffer contains "ccc", has size of 4
+	assert.EqualValues(t, len(a1DataRead), 4)
+
+	// Only after submit is the *offsetBufferSize available
+	// Offset size is expected to be 1*sizeof(uint64)
+	assert.EqualValues(t, *offsetBufferSize, 8)
+
+	// Only after submit is the *effectiveBufferSize available
+	// "ccc" indeed has effective buffer size of 3
+	assert.EqualValues(t, *effectiveBufferSize, 3)
+
+	elements, err = query.ResultBufferElements()
+	assert.Nil(t, err)
+	assert.EqualValues(t, [3]uint64{1, 3, 0}, elements["a1"])
+	assert.EqualValues(t, [3]uint64{0, 1, 0}, elements["rows"])
+	assert.EqualValues(t, [3]uint64{0, 1, 0}, elements["cols"])
+
 	query.Free()
 }
 
@@ -884,6 +949,57 @@ func TestQueryEffectiveBufferSizeStrings(t *testing.T) {
 	assert.EqualValues(t, *effectiveBufferSize, 2)
 
 	elements, err := query.ResultBufferElements()
+	assert.Nil(t, err)
+	assert.EqualValues(t, [3]uint64{1, 2, 0}, elements["a1"])
+	assert.EqualValues(t, [3]uint64{1, 2, 0}, elements["rows"])
+
+	err = query.Finalize()
+	assert.Nil(t, err)
+	err = array.Close()
+	assert.Nil(t, err)
+
+	// Re open the array
+	err = array.Open(TILEDB_READ)
+	assert.Nil(t, err)
+
+	// Prepare the query
+	query, err = NewQuery(context, array)
+	assert.Nil(t, err)
+	assert.NotNil(t, query)
+
+	err = query.AddRangeVarByName("rows", rowsRange[0], rowsRange[1])
+	assert.Nil(t, err)
+	err = query.SetLayout(TILEDB_ROW_MAJOR)
+	assert.Nil(t, err)
+	offsetBufferSize, effectiveBufferSize, err = query.SetBufferVar("a1",
+		a1OffRead, a1DataRead)
+	assert.Nil(t, err)
+	assert.NotNil(t, query)
+	_, _, err = query.SetBufferVar("rows", rowsOffRead, rowsRead)
+	assert.Nil(t, err)
+
+	// Get Range
+	rangeStart, rangeEnd, err = query.GetRangeFromName("rows", 0)
+	assert.Nil(t, err)
+	assert.EqualValues(t, rowsRange[0], rangeStart)
+	assert.EqualValues(t, rowsRange[1], rangeEnd)
+
+	// Submit the query
+	err = query.Submit()
+	assert.Nil(t, err)
+
+	// Data buffer contains "ccc", has size of 4
+	assert.EqualValues(t, len(a1DataRead), 4)
+
+	// Only after submit is the *offsetBufferSize available
+	// Offset size is expected to be 1*sizeof(uint64)
+	assert.EqualValues(t, *offsetBufferSize, 8)
+
+	// Only after submit is the *effectiveBufferSize available
+	// "ccc" indeed has effective buffer size of 3
+	assert.EqualValues(t, *effectiveBufferSize, 2)
+
+	elements, err = query.ResultBufferElements()
 	assert.Nil(t, err)
 	assert.EqualValues(t, [3]uint64{1, 2, 0}, elements["a1"])
 	assert.EqualValues(t, [3]uint64{1, 2, 0}, elements["rows"])
