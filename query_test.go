@@ -1791,3 +1791,82 @@ func TestSparseQueryWriteNullable(t *testing.T) {
 	assert.EqualValues(t, bufferA1[1], readBufferA1[1])
 	assert.ElementsMatch(t, bufferA1Validity, readBufferA1Validity)
 }
+
+// TestSparseQueryWriteHilbertLayout shows that Hilbert order is not applicable
+// to queries queries
+func TestSparseQueryWriteHilbertLayout(t *testing.T) {
+	config, err := NewConfig()
+	assert.Nil(t, err)
+	context, err := NewContext(config)
+	assert.Nil(t, err)
+	dimension, err := NewDimension(context, "dim1", []int8{0, 9}, int8(10))
+	assert.Nil(t, err)
+	assert.NotNil(t, dimension)
+	domain, err := NewDomain(context)
+	assert.Nil(t, err)
+	assert.NotNil(t, domain)
+	err = domain.AddDimensions(dimension)
+	assert.Nil(t, err)
+	arraySchema, err := NewArraySchema(context, TILEDB_SPARSE)
+	assert.Nil(t, err)
+	assert.NotNil(t, arraySchema)
+	attribute, err := NewAttribute(context, "a1", TILEDB_INT32)
+	assert.Nil(t, err)
+	assert.NotNil(t, attribute)
+	err = arraySchema.AddAttributes(attribute)
+	assert.Nil(t, err)
+	err = arraySchema.SetDomain(domain)
+	assert.Nil(t, err)
+	err = arraySchema.SetCellOrder(TILEDB_HILBERT)
+	assert.Nil(t, err)
+	err = arraySchema.Check()
+	assert.Nil(t, err)
+	tmpArrayPath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_sparse_array"
+	defer os.RemoveAll(tmpArrayPath)
+	if _, err = os.Stat(tmpArrayPath); err == nil {
+		os.RemoveAll(tmpArrayPath)
+	}
+	array, err := NewArray(context, tmpArrayPath)
+	assert.Nil(t, err)
+	assert.NotNil(t, array)
+	err = array.Create(arraySchema)
+	assert.Nil(t, err)
+
+	// Write query
+	err = array.Open(TILEDB_WRITE)
+	assert.Nil(t, err)
+	query, err := NewQuery(context, array)
+	assert.Nil(t, err)
+	assert.NotNil(t, query)
+	bufferA1 := []int32{1, 2}
+	_, err = query.SetBuffer("a1", bufferA1)
+	assert.Nil(t, err)
+	subArray := []int8{0, 1}
+	_, err = query.SetBuffer("dim1", subArray)
+	assert.Nil(t, err)
+	// Set write layout
+	// Hilbert order not applicable to write queries
+	assert.NotNil(t, query.SetLayout(TILEDB_HILBERT))
+	err = query.Finalize()
+	assert.Nil(t, err)
+	err = array.Close()
+	assert.Nil(t, err)
+
+	// Read query
+	err = array.Open(TILEDB_READ)
+	assert.Nil(t, err)
+	query, err = NewQuery(context, array)
+	assert.Nil(t, err)
+	assert.NotNil(t, query)
+	bufferA1 = make([]int32, 2)
+	_, err = query.SetBuffer("a1", bufferA1)
+	assert.Nil(t, err)
+	subArray = make([]int8, 2)
+	_, err = query.SetBuffer("dim1", subArray)
+	assert.Nil(t, err)
+	// Set write layout
+	// Hilbert order not applicable to write queries
+	assert.NotNil(t, query.SetLayout(TILEDB_HILBERT))
+	err = query.Finalize()
+	assert.Nil(t, err)
+}
