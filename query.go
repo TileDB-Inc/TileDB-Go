@@ -2098,16 +2098,14 @@ func (q *Query) BufferSizeVarNullable(attributeName string) (uint64, uint64, uin
 		return 0, 0, 0, err
 	}
 
-	domain, err := schema.Domain()
+	attribute, err := schema.AttributeFromName(attributeName)
 	if err != nil {
-		return 0, 0, 0, fmt.Errorf("Could not get domain from array schema for BufferSizeVarNullable: %s", err)
+		return 0, 0, 0, fmt.Errorf("Could not get attribute %s for BufferSizeVarNullable", attributeName)
 	}
 
-	if attributeName == TILEDB_COORDS {
-		datatype, err = domain.Type()
-		if err != nil {
-			return 0, 0, 0, err
-		}
+	datatype, err = attribute.Type()
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("Could not get attributeType for BufferSizeVarNullable: %s", attributeName)
 	}
 
 	dataTypeSize := datatype.Size()
@@ -2233,16 +2231,14 @@ func (q *Query) BufferSizeNullable(attributeName string) (uint64, uint64, error)
 		return 0, 0, err
 	}
 
-	domain, err := schema.Domain()
+	attribute, err := schema.AttributeFromName(attributeName)
 	if err != nil {
-		return 0, 0, fmt.Errorf("Could not get domain from array schema for BufferSizeNullable: %s", err)
+		return 0, 0, fmt.Errorf("Could not get attribute %s for BufferSizeNullable", attributeName)
 	}
 
-	if attributeName == TILEDB_COORDS {
-		datatype, err = domain.Type()
-		if err != nil {
-			return 0, 0, err
-		}
+	datatype, err = attribute.Type()
+	if err != nil {
+		return 0, 0, fmt.Errorf("Could not get attributeType for BufferSizeNullable: %s", attributeName)
 	}
 
 	dataTypeSize := datatype.Size()
