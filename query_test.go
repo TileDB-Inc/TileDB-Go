@@ -546,9 +546,18 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, attribute2)
 
+	err = attribute2.SetCellValNum(TILEDB_VAR_NUM)
+	assert.Nil(t, err)
+
+	err = attribute2.SetNullable(true)
+	assert.Nil(t, err)
+
 	attribute3, err := NewAttribute(context, "a3", TILEDB_STRING_ASCII)
 	assert.Nil(t, err)
 	assert.NotNil(t, attribute3)
+
+	err = attribute3.SetNullable(true)
+	assert.Nil(t, err)
 
 	// Set a1 to be variable length
 	err = attribute.SetCellValNum(TILEDB_VAR_NUM)
