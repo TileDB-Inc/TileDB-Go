@@ -576,6 +576,11 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	colsWrite := []int64{1, 1, 2}
 	a1DataWrite := []byte("abbccc")
 	a1OffWrite := []uint64{0, 1, 3}
+	a2DataWrite := []byte("abbcccdddd")
+	a2OffWrite := []uint64{0, 1, 3, 6}
+	a2Validity := []uint8{1, 1, 1, 0}
+	a3DataWrite := []byte("abcd")
+	a3Validity := []uint8{1, 1, 1, 0}
 
 	// Create array on disk
 	err = array.Create(arraySchema)
@@ -594,6 +599,10 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	assert.Nil(t, err)
 	_, err = query.SetBuffer("cols", colsWrite)
 	assert.Nil(t, err)
+	_, _, _, err = query.SetBufferVarNullable("a2", a2OffWrite, a2DataWrite, a2Validity)
+	assert.Nil(t, err)
+	_, _, err = query.SetBufferNullable("a3", a3DataWrite, a3Validity)
+	assert.Nil(t, err)
 
 	// Check the buffer sizes
 	offsetSize, dataSize, err := query.BufferSizeVar("a1")
@@ -606,6 +615,15 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	dataSize, err = query.BufferSize("cols")
 	assert.Nil(t, err)
 	assert.Equal(t, len(colsWrite), int(dataSize))
+	offsetSize, dataSize, validitySize, err := query.BufferSizeVarNullable("a2")
+	assert.Nil(t, err)
+	assert.Equal(t, len(a2OffWrite), int(offsetSize))
+	assert.Equal(t, len(a2DataWrite), int(dataSize))
+	assert.Equal(t, len(a2Validity), int(validitySize))
+	dataSize, validitySize, err = query.BufferSizeNullable("a3")
+	assert.Nil(t, err)
+	assert.Equal(t, len(a3DataWrite), int(dataSize))
+	assert.Equal(t, len(a3Validity), int(validitySize))
 
 	// Perform the write, finalize and close the array.
 	err = query.Submit()
