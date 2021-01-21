@@ -2091,7 +2091,7 @@ func (q *Query) BufferSizeVar(attributeOrDimension string) (uint64, uint64, erro
 }
 
 // BufferSizeVarNullable returns the size (in num elements) of the backing C buffers for the given variable-length nullable attribute
-func (q *Query) BufferSizeVarNullable(attributeOrDimension string) (uint64, uint64, uint64, error) {
+func (q *Query) BufferSizeVarNullable(attributeName string) (uint64, uint64, uint64, error) {
 	var datatype Datatype
 	schema, err := q.array.Schema()
 	if err != nil {
@@ -2103,7 +2103,7 @@ func (q *Query) BufferSizeVarNullable(attributeOrDimension string) (uint64, uint
 		return 0, 0, 0, fmt.Errorf("Could not get domain from array schema for BufferSizeVarNullable: %s", err)
 	}
 
-	if attributeOrDimension == TILEDB_COORDS {
+	if attributeName == TILEDB_COORDS {
 		datatype, err = domain.Type()
 		if err != nil {
 			return 0, 0, 0, err
@@ -2114,7 +2114,7 @@ func (q *Query) BufferSizeVarNullable(attributeOrDimension string) (uint64, uint
 	offsetTypeSize := TILEDB_UINT64.Size()
 	validityTypeSize := TILEDB_UINT8.Size()
 
-	cattributeNameOrDimension := C.CString(attributeOrDimension)
+	cattributeNameOrDimension := C.CString(attributeName)
 	defer C.free(unsafe.Pointer(cattributeNameOrDimension))
 
 	var ret C.int32_t
@@ -2126,7 +2126,7 @@ func (q *Query) BufferSizeVarNullable(attributeOrDimension string) (uint64, uint
 	var validityByteMapSize *C.uint64_t
 	ret = C.tiledb_query_get_buffer_var_nullable(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize, &validityByteMap, &validityByteMapSize)
 	if ret != C.TILEDB_OK {
-		return 0, 0, 0, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeOrDimension, q.context.LastError())
+		return 0, 0, 0, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeName, q.context.LastError())
 	}
 
 	var offsetNumElements uint64
@@ -2226,7 +2226,7 @@ func (q *Query) BufferSize(attributeNameOrDimension string) (uint64, error) {
 }
 
 // BufferSizeNullable returns the size (in num elements) of the backing C buffer for the given nullable attribute
-func (q *Query) BufferSizeNullable(attributeNameOrDimension string) (uint64, uint64, error) {
+func (q *Query) BufferSizeNullable(attributeName string) (uint64, uint64, error) {
 	var datatype Datatype
 	schema, err := q.array.Schema()
 	if err != nil {
@@ -2238,7 +2238,7 @@ func (q *Query) BufferSizeNullable(attributeNameOrDimension string) (uint64, uin
 		return 0, 0, fmt.Errorf("Could not get domain from array schema for BufferSizeNullable: %s", err)
 	}
 
-	if attributeNameOrDimension == TILEDB_COORDS {
+	if attributeName == TILEDB_COORDS {
 		datatype, err = domain.Type()
 		if err != nil {
 			return 0, 0, err
@@ -2248,7 +2248,7 @@ func (q *Query) BufferSizeNullable(attributeNameOrDimension string) (uint64, uin
 	dataTypeSize := datatype.Size()
 	validityTypeSize := TILEDB_UINT8.Size()
 
-	cattributeNameOrDimension := C.CString(attributeNameOrDimension)
+	cattributeNameOrDimension := C.CString(attributeName)
 	defer C.free(unsafe.Pointer(cattributeNameOrDimension))
 
 	var ret C.int32_t
@@ -2258,7 +2258,7 @@ func (q *Query) BufferSizeNullable(attributeNameOrDimension string) (uint64, uin
 	var validityByteMapSize *C.uint64_t
 	ret = C.tiledb_query_get_buffer_nullable(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &cbuffer, &cbufferSize, &validityByteMap, &validityByteMapSize)
 	if ret != C.TILEDB_OK {
-		return 0, 0, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeNameOrDimension, q.context.LastError())
+		return 0, 0, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeName, q.context.LastError())
 	}
 
 	var dataNumElements uint64
