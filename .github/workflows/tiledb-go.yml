@@ -1,0 +1,92 @@
+name: TileDB-Go
+
+on:
+  push:
+    tags: [ v* ]
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+# Jobs run in parallel
+  Go_fmt:
+    name: format
+    runs-on: ubuntu-18.04
+    steps:
+      # Checks out repository
+      - uses: actions/checkout@v2
+
+      # Checks TileDB-Go formatting
+      - name: Checks formatting of TileDB-Go code
+        run: ./.github/scripts/format.sh
+        shell: bash
+
+  golangci:
+    name: lint
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+
+    # Downloads TileDB-Core from release assets and install
+    - name: Run TileDB install script
+      run: ./.github/scripts/install_tiledb_linux.sh
+      shell: bash
+
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v2
+      with:
+        # Required: the version of golangci-lint is required and must be
+        # specified without patch version: we always use the latest patch version.
+        version: v1.29
+
+  Linux_Test:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        # Will be checking following versions
+        go: [1.13, 1.14, 1.15]
+    steps:
+    # Checks out repository
+    - uses: actions/checkout@v2
+
+    # Downloads TileDB-Core from release assets and install
+    - name: Run TileDB install script
+      run: ./.github/scripts/install_tiledb_linux.sh
+      shell: bash
+
+    # Following action sets up Go and uses the strategy matrix to test on
+    # specific versions
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go }}
+
+    # Tests TileDB-Go
+    - name: Test TileDB-Go
+      run: go test -v ./...
+
+  Macos_Test:
+    runs-on: macos-10.15
+    strategy:
+      matrix:
+        # Will be checking following versions
+        go: [1.13, 1.14, 1.15]
+    steps:
+    # Checks out repository
+    - uses: actions/checkout@v2
+
+    # Downloads TileDB-Core from release assets and install
+    - name: Run TileDB install script
+      run: ./.github/scripts/install_tiledb_macos.sh
+      shell: bash
+
+    # Following action sets up Go and uses the strategy matrix to test on
+    # specific versions
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go }}
+
+    # Tests TileDB-Go
+    - name: Test TileDB-Go
+      run: go test -v ./...
