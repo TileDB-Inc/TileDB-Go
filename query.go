@@ -2090,6 +2090,67 @@ func (q *Query) BufferSizeVar(attributeOrDimension string) (uint64, uint64, erro
 	return offsetNumElements, dataNumElements, nil
 }
 
+// BufferSizeVarNullable returns the size (in num elements) of the backing C buffers for the given variable-length nullable attribute
+func (q *Query) BufferSizeVarNullable(attributeName string) (uint64, uint64, uint64, error) {
+	var datatype Datatype
+	schema, err := q.array.Schema()
+	if err != nil {
+		return 0, 0, 0, err
+	}
+
+	attribute, err := schema.AttributeFromName(attributeName)
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("Could not get attribute %s for BufferSizeVarNullable", attributeName)
+	}
+
+	datatype, err = attribute.Type()
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("Could not get attributeType for BufferSizeVarNullable: %s", attributeName)
+	}
+
+	dataTypeSize := datatype.Size()
+	offsetTypeSize := TILEDB_UINT64.Size()
+	validityTypeSize := TILEDB_UINT8.Size()
+
+	cattributeNameOrDimension := C.CString(attributeName)
+	defer C.free(unsafe.Pointer(cattributeNameOrDimension))
+
+	var ret C.int32_t
+	var cbufferSize *C.uint64_t
+	var cbuffer unsafe.Pointer
+	var coffsetsSize *C.uint64_t
+	var coffsets *C.uint64_t
+	var validityByteMap *C.uint8_t
+	var validityByteMapSize *C.uint64_t
+	ret = C.tiledb_query_get_buffer_var_nullable(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize, &validityByteMap, &validityByteMapSize)
+	if ret != C.TILEDB_OK {
+		return 0, 0, 0, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeName, q.context.LastError())
+	}
+
+	var offsetNumElements uint64
+	if coffsetsSize == nil {
+		offsetNumElements = 0
+	} else {
+		offsetNumElements = uint64(*coffsetsSize) / offsetTypeSize
+	}
+
+	var dataNumElements uint64
+	if cbufferSize == nil {
+		dataNumElements = 0
+	} else {
+		dataNumElements = uint64(*cbufferSize) / dataTypeSize
+	}
+
+	var validityNumElements uint64
+	if validityByteMap == nil {
+		validityNumElements = 0
+	} else {
+		validityNumElements = uint64(*validityByteMapSize) / validityTypeSize
+	}
+
+	return offsetNumElements, dataNumElements, validityNumElements, nil
+}
+
 // BufferSize returns the size (in num elements) of the backing C buffer for the given attribute
 func (q *Query) BufferSize(attributeNameOrDimension string) (uint64, error) {
 	var datatype Datatype
@@ -2160,6 +2221,57 @@ func (q *Query) BufferSize(attributeNameOrDimension string) (uint64, error) {
 	}
 
 	return dataNumElements, nil
+}
+
+// BufferSizeNullable returns the size (in num elements) of the backing C buffer for the given nullable attribute
+func (q *Query) BufferSizeNullable(attributeName string) (uint64, uint64, error) {
+	var datatype Datatype
+	schema, err := q.array.Schema()
+	if err != nil {
+		return 0, 0, err
+	}
+
+	attribute, err := schema.AttributeFromName(attributeName)
+	if err != nil {
+		return 0, 0, fmt.Errorf("Could not get attribute %s for BufferSizeNullable", attributeName)
+	}
+
+	datatype, err = attribute.Type()
+	if err != nil {
+		return 0, 0, fmt.Errorf("Could not get attributeType for BufferSizeNullable: %s", attributeName)
+	}
+
+	dataTypeSize := datatype.Size()
+	validityTypeSize := TILEDB_UINT8.Size()
+
+	cattributeNameOrDimension := C.CString(attributeName)
+	defer C.free(unsafe.Pointer(cattributeNameOrDimension))
+
+	var ret C.int32_t
+	var cbufferSize *C.uint64_t
+	var cbuffer unsafe.Pointer
+	var validityByteMap *C.uint8_t
+	var validityByteMapSize *C.uint64_t
+	ret = C.tiledb_query_get_buffer_nullable(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &cbuffer, &cbufferSize, &validityByteMap, &validityByteMapSize)
+	if ret != C.TILEDB_OK {
+		return 0, 0, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeName, q.context.LastError())
+	}
+
+	var dataNumElements uint64
+	if cbufferSize == nil {
+		dataNumElements = 0
+	} else {
+		dataNumElements = uint64(*cbufferSize) / dataTypeSize
+	}
+
+	var validityNumElements uint64
+	if validityByteMap == nil {
+		validityNumElements = 0
+	} else {
+		validityNumElements = uint64(*validityByteMapSize) / validityTypeSize
+	}
+
+	return dataNumElements, validityNumElements, nil
 }
 
 // SetLayout sets the layout of the cells to be written or read

@@ -542,12 +542,35 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, attribute)
 
+	attribute2, err := NewAttribute(context, "a2", TILEDB_STRING_ASCII)
+	assert.Nil(t, err)
+	assert.NotNil(t, attribute2)
+
+	err = attribute2.SetCellValNum(TILEDB_VAR_NUM)
+	assert.Nil(t, err)
+
+	err = attribute2.SetNullable(true)
+	assert.Nil(t, err)
+
+	attribute3, err := NewAttribute(context, "a3", TILEDB_STRING_ASCII)
+	assert.Nil(t, err)
+	assert.NotNil(t, attribute3)
+
+	err = attribute3.SetNullable(true)
+	assert.Nil(t, err)
+
 	// Set a1 to be variable length
 	err = attribute.SetCellValNum(TILEDB_VAR_NUM)
 	assert.Nil(t, err)
 
 	// Add Attribute
 	err = arraySchema.AddAttributes(attribute)
+	assert.Nil(t, err)
+
+	err = arraySchema.AddAttributes(attribute2)
+	assert.Nil(t, err)
+
+	err = arraySchema.AddAttributes(attribute3)
 	assert.Nil(t, err)
 
 	// Set Domain
@@ -576,6 +599,11 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	colsWrite := []int64{1, 1, 2}
 	a1DataWrite := []byte("abbccc")
 	a1OffWrite := []uint64{0, 1, 3}
+	a2DataWrite := []byte("bccddd")
+	a2OffWrite := []uint64{0, 1, 3}
+	a2Validity := []uint8{1, 1, 0}
+	a3DataWrite := []byte("abc")
+	a3Validity := []uint8{1, 1, 0}
 
 	// Create array on disk
 	err = array.Create(arraySchema)
@@ -594,6 +622,10 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	assert.Nil(t, err)
 	_, err = query.SetBuffer("cols", colsWrite)
 	assert.Nil(t, err)
+	_, _, _, err = query.SetBufferVarNullable("a2", a2OffWrite, a2DataWrite, a2Validity)
+	assert.Nil(t, err)
+	_, _, err = query.SetBufferNullable("a3", a3DataWrite, a3Validity)
+	assert.Nil(t, err)
 
 	// Check the buffer sizes
 	offsetSize, dataSize, err := query.BufferSizeVar("a1")
@@ -606,6 +638,15 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	dataSize, err = query.BufferSize("cols")
 	assert.Nil(t, err)
 	assert.Equal(t, len(colsWrite), int(dataSize))
+	offsetSize, dataSize, validitySize, err := query.BufferSizeVarNullable("a2")
+	assert.Nil(t, err)
+	assert.Equal(t, len(a2OffWrite), int(offsetSize))
+	assert.Equal(t, len(a2DataWrite), int(dataSize))
+	assert.Equal(t, len(a2Validity), int(validitySize))
+	dataSize, validitySize, err = query.BufferSizeNullable("a3")
+	assert.Nil(t, err)
+	assert.Equal(t, len(a3DataWrite), int(dataSize))
+	assert.Equal(t, len(a3Validity), int(validitySize))
 
 	// Perform the write, finalize and close the array.
 	err = query.Submit()
