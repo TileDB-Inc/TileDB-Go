@@ -1122,26 +1122,26 @@ func TestQueryReadEmpty(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Set buffer to incorrect type, should err
-	bufferA1Bad := make([]int8, 2)
+	bufferA1Bad := make([]int8, 4)
 	_, err = query.SetBuffer("a1", bufferA1Bad)
 	assert.NotNil(t, err)
 
 	// Create read buffers
-	bufferA1 := make([]int32, 2)
+	bufferA1 := make([]int32, 4)
 	_, err = query.SetBuffer("a1", bufferA1)
 	assert.Nil(t, err)
 
-	bufferA2 := make([]byte, 2)
+	bufferA2 := make([]byte, 4)
 	_, err = query.SetBuffer("a2", bufferA2)
 	assert.Nil(t, err)
 
-	bufferA3 := make([]float32, 5)
-	offsetBufferA3 := make([]uint64, 3)
+	bufferA3 := make([]float32, 10)
+	offsetBufferA3 := make([]uint64, 6)
 	_, _, err = query.SetBufferVar("a3", offsetBufferA3, bufferA3)
 	assert.Nil(t, err)
 
-	bufferA4 := make([]byte, 4)
-	offsetBufferA4 := make([]uint64, 4)
+	bufferA4 := make([]byte, 8)
+	offsetBufferA4 := make([]uint64, 8)
 	_, _, err = query.SetBufferVar("a4", offsetBufferA4, bufferA4)
 	assert.Nil(t, err)
 
@@ -1151,17 +1151,17 @@ func TestQueryReadEmpty(t *testing.T) {
 	// Submit query
 	assert.Nil(t, query.Submit())
 
-	// Validate status, since array was empty this is should be incomplete
+	// Validate status, since array was empty this should be completed
 	status, err := query.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, TILEDB_INCOMPLETE, status)
+	assert.Equal(t, TILEDB_COMPLETED, status)
 
 	// Validate query type
 	queryType, err := query.Type()
 	assert.Nil(t, err)
 	assert.Equal(t, TILEDB_READ, queryType)
 
-	// Has results because array it empty
+	// Has results
 	hasResults, err := query.HasResults()
 	assert.Nil(t, err)
 	assert.Equal(t, true, hasResults)
