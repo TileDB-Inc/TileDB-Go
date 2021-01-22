@@ -1161,7 +1161,7 @@ func TestQueryReadEmpty(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, TILEDB_READ, queryType)
 
-	// Has results
+	// Has results since dense arrays always return the fill-in values
 	hasResults, err := query.HasResults()
 	assert.Nil(t, err)
 	assert.Equal(t, true, hasResults)
