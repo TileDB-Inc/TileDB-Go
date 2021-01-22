@@ -599,11 +599,11 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	colsWrite := []int64{1, 1, 2}
 	a1DataWrite := []byte("abbccc")
 	a1OffWrite := []uint64{0, 1, 3}
-	a2DataWrite := []byte("abbcccdddd")
-	a2OffWrite := []uint64{0, 1, 3, 6}
-	a2Validity := []uint8{1, 1, 1, 0}
-	a3DataWrite := []byte("abcd")
-	a3Validity := []uint8{1, 1, 1, 0}
+	a2DataWrite := []byte("bccddd")
+	a2OffWrite := []uint64{0, 1, 3}
+	a2Validity := []uint8{1, 1, 0}
+	a3DataWrite := []byte("abc")
+	a3Validity := []uint8{1, 1, 0}
 
 	// Create array on disk
 	err = array.Create(arraySchema)
