@@ -492,9 +492,9 @@ func TestQueryEffectiveBufferSize(t *testing.T) {
 
 	elements, err := query.ResultBufferElements()
 	assert.Nil(t, err)
-	assert.EqualValues(t, elements["a1"], [2]uint64{1, 3})
-	assert.EqualValues(t, elements["rows"], [2]uint64{0, 1})
-	assert.EqualValues(t, elements["cols"], [2]uint64{0, 1})
+	assert.EqualValues(t, [3]uint64{1, 3, 0}, elements["a1"])
+	assert.EqualValues(t, [3]uint64{0, 1, 0}, elements["rows"])
+	assert.EqualValues(t, [3]uint64{0, 1, 0}, elements["cols"])
 
 	query.Free()
 }
@@ -678,9 +678,9 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 
 	elements, err := query.ResultBufferElements()
 	assert.Nil(t, err)
-	assert.EqualValues(t, elements["a1"], [2]uint64{1, 3})
-	assert.EqualValues(t, elements["rows"], [2]uint64{0, 1})
-	assert.EqualValues(t, elements["cols"], [2]uint64{0, 1})
+	assert.EqualValues(t, [3]uint64{1, 3, 0}, elements["a1"])
+	assert.EqualValues(t, [3]uint64{0, 1, 0}, elements["rows"])
+	assert.EqualValues(t, [3]uint64{0, 1, 0}, elements["cols"])
 
 	query.Free()
 }
@@ -844,8 +844,8 @@ func TestQueryEffectiveBufferSizeStrings(t *testing.T) {
 
 	elements, err := query.ResultBufferElements()
 	assert.Nil(t, err)
-	assert.EqualValues(t, [2]uint64{1, 2}, elements["a1"])
-	assert.EqualValues(t, [2]uint64{1, 2}, elements["rows"])
+	assert.EqualValues(t, [3]uint64{1, 2, 0}, elements["a1"])
+	assert.EqualValues(t, [3]uint64{1, 2, 0}, elements["rows"])
 
 	query.Free()
 }
@@ -1020,9 +1020,9 @@ func TestQueryEffectiveBufferSizeStringsHeterogeneous(t *testing.T) {
 
 	elements, err := query.ResultBufferElements()
 	assert.Nil(t, err)
-	assert.EqualValues(t, [2]uint64{1, 3}, elements["a1"])
-	assert.EqualValues(t, [2]uint64{1, 1}, elements["rows"])
-	assert.EqualValues(t, [2]uint64{0, 1}, elements["cols"])
+	assert.EqualValues(t, [3]uint64{1, 3, 0}, elements["a1"])
+	assert.EqualValues(t, [3]uint64{1, 1, 0}, elements["rows"])
+	assert.EqualValues(t, [3]uint64{0, 1, 0}, elements["cols"])
 
 	query.Free()
 }
@@ -1151,20 +1151,20 @@ func TestQueryReadEmpty(t *testing.T) {
 	// Submit query
 	assert.Nil(t, query.Submit())
 
-	// Validate status, since query was used this is should be complete
+	// Validate status, since array was empty this is should be incomplete
 	status, err := query.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, TILEDB_COMPLETED, status)
+	assert.Equal(t, TILEDB_INCOMPLETE, status)
 
 	// Validate query type
 	queryType, err := query.Type()
 	assert.Nil(t, err)
 	assert.Equal(t, TILEDB_READ, queryType)
 
-	// No results because query it empty
+	// Has results because array it empty
 	hasResults, err := query.HasResults()
 	assert.Nil(t, err)
-	assert.Equal(t, false, hasResults)
+	assert.Equal(t, true, hasResults)
 
 }
 

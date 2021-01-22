@@ -1768,8 +1768,8 @@ func (q *Query) ResultBufferElements() (map[string][3]uint64, error) {
 			}
 
 			validityElements := uint64(0)
-			if v[0] != nil {
-				// The attribute is variable lenght
+			if v[2] != nil {
+				// The attribute is nullable
 				validityElements = (*v[2]) / uint64(unsafe.Sizeof(uint8(0)))
 			}
 
