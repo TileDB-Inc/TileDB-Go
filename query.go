@@ -2265,7 +2265,7 @@ func (q *Query) BufferSizeNullable(attributeName string) (uint64, uint64, error)
 	}
 
 	var validityNumElements uint64
-	if validityByteMap == nil {
+	if validityByteMapSize == nil {
 		validityNumElements = 0
 	} else {
 		validityNumElements = uint64(*validityByteMapSize) / validityTypeSize
