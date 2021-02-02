@@ -1263,6 +1263,25 @@ func TestQueryWrite(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, attribute5)
 
+	// Crete attribute to add to schema
+	attribute6, err := NewAttribute(context, "a6", TILEDB_CHAR)
+	assert.Nil(t, err)
+	assert.NotNil(t, attribute5)
+
+	err = attribute6.SetNullable(true)
+	assert.Nil(t, err)
+
+	attribute7, err := NewAttribute(context, "a7", TILEDB_CHAR)
+	assert.Nil(t, err)
+	assert.NotNil(t, attribute7)
+
+	err = attribute7.SetNullable(true)
+	assert.Nil(t, err)
+
+	// Set a7 to be variable length
+	err = attribute7.SetCellValNum(TILEDB_VAR_NUM)
+	assert.Nil(t, err)
+
 	// Set a3 to be variable length
 	err = attribute3.SetCellValNum(TILEDB_VAR_NUM)
 	assert.Nil(t, err)
@@ -1276,7 +1295,7 @@ func TestQueryWrite(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Add Attribute
-	err = arraySchema.AddAttributes(attribute, attribute2, attribute3, attribute4, attribute5)
+	err = arraySchema.AddAttributes(attribute, attribute2, attribute3, attribute4, attribute5, attribute6, attribute7)
 	assert.Nil(t, err)
 
 	// Set Domain
@@ -1357,8 +1376,39 @@ func TestQueryWrite(t *testing.T) {
 	bufferA5Bytes := []byte(bufferA5)
 
 	_, _, err = query.SetBufferVar("a5", offsetBufferA5, bufferA5Bytes)
-	// Immediately set bufferA5 to nil to validate underlying array is not GC'ed
-	//bufferA5 = nil
+	assert.Nil(t, err)
+
+	bufferA6 := []byte("ab")
+	validityBufferA6 := []uint8{0, 1}
+	_, _, err = query.SetBufferNullable("a6", bufferA6, validityBufferA6)
+	assert.Nil(t, err)
+
+	bufferA6Comparison := make([]byte, len(bufferA6))
+	elementsCopied = copy(bufferA6Comparison, bufferA6)
+	assert.Equal(t, len(bufferA6), elementsCopied)
+	assert.EqualValues(t, bufferA6, bufferA6Comparison)
+
+	bufferA6ValidityComparison := make([]uint8, len(validityBufferA6))
+	elementsCopied = copy(bufferA6ValidityComparison, validityBufferA6)
+	assert.Equal(t, len(bufferA6), elementsCopied)
+	assert.EqualValues(t, bufferA6ValidityComparison, validityBufferA6)
+
+	bufferA7 := "hello" + "world"
+	offsetBufferA7 := []uint64{0, 5}
+	validityBufferA7 := []uint8{0, 1}
+	bufferA7Bytes := []byte(bufferA7)
+	_, _, _, err = query.SetBufferVarNullable("a7", offsetBufferA7, bufferA7Bytes, validityBufferA7)
+	assert.Nil(t, err)
+
+	bufferA7Comparison := make([]byte, len(bufferA7))
+	elementsCopied = copy(bufferA7Comparison, bufferA7)
+	assert.Equal(t, len(bufferA7), elementsCopied)
+	assert.EqualValues(t, bufferA7, bufferA7Comparison)
+
+	bufferA7ValidityComparison := make([]byte, len(validityBufferA7))
+	elementsCopied = copy(bufferA7ValidityComparison, validityBufferA7)
+	assert.Equal(t, len(validityBufferA7), elementsCopied)
+	assert.EqualValues(t, validityBufferA7, bufferA7ValidityComparison)
 	assert.Nil(t, err)
 
 	// Submit write query
@@ -1439,6 +1489,17 @@ func TestQueryWrite(t *testing.T) {
 	_, _, err = query.SetBufferVar("a5", readOffsetBufferA5, readBufferA5)
 	assert.Nil(t, err)
 
+	readBufferA6 := make([]byte, 2)
+	readValidityBufferA6 := make([]uint8, 2)
+	_, _, err = query.SetBufferNullable("a6", readBufferA6, readValidityBufferA6)
+	assert.Nil(t, err)
+
+	readBufferA7 := make([]byte, 10)
+	readOffsetBufferA7 := make([]uint64, 2)
+	readValidityBufferA7 := make([]uint8, 2)
+	_, _, _, err = query.SetBufferVarNullable("a7", readOffsetBufferA7, readBufferA7, readValidityBufferA7)
+	assert.Nil(t, err)
+
 	// Set read layout
 	err = query.SetLayout(TILEDB_ROW_MAJOR)
 	assert.Nil(t, err)
@@ -1472,6 +1533,8 @@ func TestQueryWrite(t *testing.T) {
 	assert.EqualValues(t, bufferA3, readBufferA3)
 	assert.EqualValues(t, bufferA4Comparison, readBufferA4)
 	assert.EqualValues(t, bufferA5Comparison, readBufferA5)
+	assert.EqualValues(t, bufferA6Comparison, readBufferA6)
+	assert.EqualValues(t, bufferA7Comparison, readBufferA7)
 
 	bufferA1InterfaceGet, err := query.Buffer("a1")
 	assert.Nil(t, err)
@@ -1486,6 +1549,17 @@ func TestQueryWrite(t *testing.T) {
 	assert.Nil(t, err)
 	assert.EqualValues(t, bufferA5Comparison, bufferA5InterfaceGet.([]byte))
 	assert.EqualValues(t, offsetBufferA5, offsetsBufferA5Get)
+
+	bufferA6InterfaceGet, bufferA6ValidityGet, err := query.BufferNullable("a6")
+	assert.Nil(t, err)
+	assert.EqualValues(t, bufferA6Comparison, bufferA6InterfaceGet.([]byte))
+	assert.EqualValues(t, bufferA6ValidityComparison, bufferA6ValidityGet)
+
+	offsetsBufferA7Get, bufferA7InterfaceGet, bufferA7ValidityGet, err := query.BufferVarNullable("a7")
+	assert.Nil(t, err)
+	assert.EqualValues(t, bufferA7Comparison, bufferA7InterfaceGet.([]byte))
+	assert.EqualValues(t, offsetBufferA7, offsetsBufferA7Get)
+	assert.EqualValues(t, bufferA7ValidityComparison, bufferA7ValidityGet)
 
 	query.Free()
 }
