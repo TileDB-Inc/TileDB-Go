@@ -142,7 +142,7 @@ func TestFragmentInfo(t *testing.T) {
 
 	version, err := fI.GetVersion(0)
 	assert.Nil(t, err)
-	assert.Equal(t, uint32(7), version)
+	assert.Greater(t, version, uint32(0))
 
 	hasConsolidatedMetadata, err := fI.HasConsolidatedMetadata(0)
 	assert.Nil(t, err)
@@ -260,7 +260,7 @@ func TestFragmentInfoEncryption(t *testing.T) {
 
 	version, err := fI.GetVersion(0)
 	assert.Nil(t, err)
-	assert.Equal(t, uint32(7), version)
+	assert.Greater(t, version, uint32(0))
 
 	hasConsolidatedMetadata, err := fI.HasConsolidatedMetadata(0)
 	assert.Nil(t, err)
