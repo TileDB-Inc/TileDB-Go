@@ -162,6 +162,12 @@ func getRangeNum() {
 
 	fmt.Printf("Number of ranges across dimension 0 is: %d\n", *rangeNum)
 
+	// Try using valid dim name
+	rangeNum, err = query.GetRangeNumFromName("rows")
+	checkError(err)
+
+	fmt.Printf("Number of ranges across dimension `rows` is: %d\n", *rangeNum)
+
 	err = array.Close()
 	checkError(err)
 }
@@ -209,6 +215,7 @@ func ExampleRange() {
 	// Output: Error adding query range: [TileDB::Dimension] Error: Range [1065353216, 1077936128] is out of domain bounds [1, 4] on dimension 'rows'
 	// Error adding query range: [TileDB::Query] Error: Cannot add range; Invalid dimension index
 	// Number of ranges across dimension 0 is: 1
+	// Number of ranges across dimension `rows` is: 1
 	// Range start for dimension 0, range 0 is: 1
 	// Range end for dimension 0, range 0 is: 4
 }
