@@ -56,6 +56,55 @@ func TestStats(t *testing.T) {
 	err = StatsDump(tmpPath)
 	assert.NotNil(t, err)
 
+	// Get statistics as string
+	stats, err := Stats()
+	assert.Nil(t, err)
+	assert.NotEmpty(t, stats)
+
+	// Disable statistics
+	err = StatsDisable()
+	assert.Nil(t, err)
+}
+
+// Test statistics
+func TestStatsRaw(t *testing.T) {
+	// Enable statistics
+	err := StatsEnable()
+	assert.Nil(t, err)
+
+	// Reset all internal counters to 0
+	err = StatsReset()
+	assert.Nil(t, err)
+
+	// Dump raw (json) statistics to stdout
+	err = StatsRawDumpSTDOUT()
+	assert.Nil(t, err)
+
+	tmpPath := os.TempDir() + string(os.PathSeparator) + "tiledb_stats_test"
+	// Cleanup group when test ends
+	defer os.RemoveAll(tmpPath)
+	if _, err = os.Stat(tmpPath); err == nil {
+		os.RemoveAll(tmpPath)
+	}
+
+	// Dump raw (json) statistics to file
+	err = StatsRawDump(tmpPath)
+	assert.Nil(t, err)
+
+	// Validate dumped file is non-empty
+	fileInfo, err := os.Stat(tmpPath)
+	assert.Nil(t, err)
+	assert.NotZero(t, fileInfo.Size())
+
+	// Dump raw (json) statistics to existing file should error
+	err = StatsRawDump(tmpPath)
+	assert.NotNil(t, err)
+
+	// Get raw (json) statistics as string
+	stats, err := StatsRaw()
+	assert.Nil(t, err)
+	assert.NotEmpty(t, stats)
+
 	// Disable statistics
 	err = StatsDisable()
 	assert.Nil(t, err)
