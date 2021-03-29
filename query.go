@@ -784,7 +784,7 @@ func (q *Query) AddRangeByName(dimName string, start interface{}, end interface{
 	cDimName := C.CString(dimName)
 	defer C.free(unsafe.Pointer(cDimName))
 
-	ret := C.tiledb_query_add_range_by_name(q.context.tiledbContext, 
+	ret := C.tiledb_query_add_range_by_name(q.context.tiledbContext,
 		q.tiledbQuery, cDimName, startBuffer, endBuffer, nil)
 
 	if ret != C.TILEDB_OK {
