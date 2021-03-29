@@ -28,7 +28,7 @@ type Dimension struct {
 // NewDimension alloc a new dimension
 func NewDimension(context *Context, name string, domain interface{}, extent interface{}) (*Dimension, error) {
 	dimension := Dimension{context: context}
-	var cname *C.char = C.CString(name)
+	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
 
 	if reflect.TypeOf(domain).Kind() != reflect.Slice {
@@ -182,7 +182,7 @@ func NewDimension(context *Context, name string, domain interface{}, extent inte
 // NewStringDimension alloc a new string dimension
 func NewStringDimension(context *Context, name string) (*Dimension, error) {
 	dimension := Dimension{context: context}
-	var cname *C.char = C.CString(name)
+	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
 
 	var datatype Datatype

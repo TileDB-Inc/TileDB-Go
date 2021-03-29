@@ -329,7 +329,7 @@ func (fI *FragmentInfo) GetNonEmptyDomainVarSizeFromName(fid uint32, did string)
 	uint64, uint64, error) {
 	var cStart C.uint64_t
 	var cEnd C.uint64_t
-	var cDid *C.char = C.CString(did)
+	cDid := C.CString(did)
 	defer C.free(unsafe.Pointer(cDid))
 
 	ret := C.tiledb_fragment_info_get_non_empty_domain_var_size_from_name(fI.context.tiledbContext,
@@ -433,7 +433,7 @@ func (fI *FragmentInfo) GetNonEmptyDomainVarFromName(fid uint32, did string) (*N
 	var cStartSize C.uint64_t
 	var cEndSize C.uint64_t
 
-	var cDid *C.char = C.CString(did)
+	cDid := C.CString(did)
 	defer C.free(unsafe.Pointer(cDid))
 
 	ret := C.tiledb_fragment_info_get_non_empty_domain_var_size_from_name(fI.context.tiledbContext,
