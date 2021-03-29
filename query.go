@@ -22,6 +22,7 @@ type Query struct {
 	tiledbQuery          *C.tiledb_query_t
 	array                *Array
 	context              *Context
+	config               *Config
 	buffers              []interface{}
 	bufferMutex          sync.Mutex
 	resultBufferElements map[string][3]*uint64
@@ -1080,7 +1081,7 @@ func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface
 	return start, end, nil
 }
 
-// GetRange retrieves a specific range of the query subarray
+// GetRangeFromName retrieves a specific range of the query subarray
 // along a given dimension.
 // Returns (start, end, error)
 // If start size or end size is 0 returns nil, nil, nil
@@ -3222,6 +3223,7 @@ func (q *Query) GetFragmentTimestampRange(num uint64) (*uint64, *uint64, error) 
 	return &t1, &t2, nil
 }
 
+// Array returns array used by query
 func (q *Query) Array() (*Array, error) {
 	array := Array{context: q.context}
 	ret := C.tiledb_query_get_array(q.context.tiledbContext, q.tiledbQuery, &array.tiledbArray)
@@ -3229,4 +3231,16 @@ func (q *Query) Array() (*Array, error) {
 		return nil, fmt.Errorf("Error getting array from query: %s", q.context.LastError())
 	}
 	return &array, nil
+}
+
+// SetConfig config on query
+func (q *Query) SetConfig(config *Config) error {
+	q.config = config
+
+	ret := C.tiledb_query_set_config(q.context.tiledbContext, q.tiledbQuery, q.config.tiledbConfig)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error setting config on query: %s", q.context.LastError())
+	}
+
+	return nil
 }
