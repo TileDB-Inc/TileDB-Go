@@ -34,7 +34,6 @@ func NewContext(config *Config) (*Context, error) {
 	}
 	if err != nil {
 		var msg *C.char
-		defer C.free(unsafe.Pointer(msg))
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("Error creating tiledb context: %s", C.GoString(msg))
@@ -91,7 +90,6 @@ func (c *Context) LastError() error {
 
 	if err != nil {
 		var msg *C.char
-		defer C.free(unsafe.Pointer(msg))
 		defer C.tiledb_error_free(&err)
 		ret := C.tiledb_error_message(err, &msg)
 		if ret == C.TILEDB_OOM {

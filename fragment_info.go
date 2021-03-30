@@ -97,7 +97,6 @@ func (fI *FragmentInfo) GetFragmentNum() (uint32, error) {
 // fid is the index of the fragment of interest.
 func (fI *FragmentInfo) GetFragmentURI(fid uint32) (string, error) {
 	var curi *C.char
-	defer C.free(unsafe.Pointer(curi))
 	C.tiledb_fragment_info_get_fragment_uri(fI.context.tiledbContext,
 		fI.tiledbFragmentInfo, C.uint32_t(fid), &curi)
 	uri := C.GoString(curi)
@@ -587,7 +586,6 @@ func (fI *FragmentInfo) GetToVacuumNum() (uint32, error) {
 // fid is the index of the fragment of interest.
 func (fI *FragmentInfo) GetToVacuumURI(fid uint32) (string, error) {
 	var curi *C.char
-	defer C.free(unsafe.Pointer(curi))
 	C.tiledb_fragment_info_get_to_vacuum_uri(fI.context.tiledbContext,
 		fI.tiledbFragmentInfo, C.uint32_t(fid), &curi)
 	uri := C.GoString(curi)

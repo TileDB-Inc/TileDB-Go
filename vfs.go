@@ -73,7 +73,6 @@ func NewVFS(context *Context, config *Config) (*VFS, error) {
 	C.tiledb_vfs_alloc(context.tiledbContext, config.tiledbConfig, &vfs.tiledbVFS)
 	if err != nil {
 		var msg *C.char
-		defer C.free(unsafe.Pointer(msg))
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("Error creating tiledb context: %s", C.GoString(msg))

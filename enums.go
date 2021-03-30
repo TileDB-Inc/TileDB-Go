@@ -99,7 +99,6 @@ const (
 // String returns string representation
 func (d Datatype) String() string {
 	var cname *C.char
-	defer C.free(unsafe.Pointer(cname))
 	C.tiledb_datatype_to_str(C.tiledb_datatype_t(d), &cname)
 	return C.GoString(cname)
 }
