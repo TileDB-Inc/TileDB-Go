@@ -23,21 +23,18 @@ type Config struct {
 func NewConfig() (*Config, error) {
 	var config Config
 	var err *C.tiledb_error_t
+	defer C.tiledb_error_free(&err)
 	C.tiledb_config_alloc(&config.tiledbConfig, &err)
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&config, func(config *Config) {
-		config.Free()
-	})
-
 	if err != nil {
 		var msg *C.char
 		defer C.free(unsafe.Pointer(msg))
 		C.tiledb_error_message(err, &msg)
-		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("Error creating tiledb config: %s", C.GoString(msg))
 	}
-
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&config, func(config *Config) {
+		config.Free()
+	})
 	return &config, nil
 }
 
