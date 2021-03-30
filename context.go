@@ -62,7 +62,7 @@ func (c *Context) Free() {
 
 // Config retrieves a copy of the config from context
 func (c *Context) Config() (*Config, error) {
-	config := &Config{}
+	config := Config{}
 	ret := C.tiledb_ctx_get_config(c.tiledbContext, &config.tiledbConfig)
 
 	if ret == C.TILEDB_OOM {
@@ -76,7 +76,7 @@ func (c *Context) Config() (*Config, error) {
 		config.Free()
 	})
 
-	return config, nil
+	return &config, nil
 }
 
 // LastError returns the last error from this context
