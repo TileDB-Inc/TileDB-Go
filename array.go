@@ -256,6 +256,10 @@ func (a *Array) Schema() (*ArraySchema, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting schema for tiledb array: %s", a.context.LastError())
 	}
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&arraySchema, func(arraySchema *ArraySchema) {
+		arraySchema.Free()
+	})
 	return &arraySchema, nil
 }
 

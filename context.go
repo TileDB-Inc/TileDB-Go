@@ -62,7 +62,7 @@ func (c *Context) Free() {
 
 // Config retrieves a copy of the config from context
 func (c *Context) Config() (*Config, error) {
-	config := &Config{}
+	config := Config{}
 	ret := C.tiledb_ctx_get_config(c.tiledbContext, &config.tiledbConfig)
 
 	if ret == C.TILEDB_OOM {
@@ -71,7 +71,12 @@ func (c *Context) Config() (*Config, error) {
 		return nil, fmt.Errorf("Unknown error in GetConfig")
 	}
 
-	return config, nil
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&config, func(config *Config) {
+		config.Free()
+	})
+
+	return &config, nil
 }
 
 // LastError returns the last error from this context

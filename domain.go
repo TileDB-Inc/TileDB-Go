@@ -75,7 +75,14 @@ func (d *Domain) DimensionFromIndex(index uint) (*Dimension, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting tiledb dimension by index for domain: %s", d.context.LastError())
 	}
-	return &Dimension{tiledbDimension: dim, context: d.context}, nil
+
+	dimension := Dimension{tiledbDimension: dim, context: d.context}
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&dimension, func(dimension *Dimension) {
+		dimension.Free()
+	})
+
+	return &dimension, nil
 }
 
 // DimensionFromName retrieves a dimension object from a domain by name (key)
@@ -87,7 +94,12 @@ func (d *Domain) DimensionFromName(name string) (*Dimension, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting tiledb dimension by name for domain: %s", d.context.LastError())
 	}
-	return &Dimension{tiledbDimension: dim, context: d.context}, nil
+	dimension := Dimension{tiledbDimension: dim, context: d.context}
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&dimension, func(dimension *Dimension) {
+		dimension.Free()
+	})
+	return &dimension, nil
 }
 
 // AddDimensions adds one or more dimensions to a domain

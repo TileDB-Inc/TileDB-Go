@@ -1268,6 +1268,7 @@ func (q *Query) GetRanges() (map[string][]RangeLimits, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		// Get name from dimension
 		name, err := dimension.Name()
 		if err != nil {
@@ -3244,6 +3245,10 @@ func (q *Query) Array() (*Array, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting array from query: %s", q.context.LastError())
 	}
+
+	runtime.SetFinalizer(&array, func(array *Array) {
+		array.Free()
+	})
 	return &array, nil
 }
 
