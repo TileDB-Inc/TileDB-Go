@@ -379,7 +379,6 @@ func (a *Attribute) GetFillValueNullable() (interface{}, uint64, bool, error) {
 // Name returns name of attribute
 func (a *Attribute) Name() (string, error) {
 	var cName *C.char
-	defer C.free(unsafe.Pointer(cName))
 	ret := C.tiledb_attribute_get_name(a.context.tiledbContext, a.tiledbAttribute, &cName)
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("Error getting tiledb attribute name: %s", a.context.LastError())

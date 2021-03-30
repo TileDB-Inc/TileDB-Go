@@ -26,7 +26,6 @@ func NewConfig() (*Config, error) {
 	C.tiledb_config_alloc(&config.tiledbConfig, &err)
 	if err != nil {
 		var msg *C.char
-		defer C.free(unsafe.Pointer(msg))
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("Error creating tiledb config: %s", C.GoString(msg))
@@ -50,7 +49,6 @@ func (c *Config) Set(param string, value string) error {
 
 	if err != nil {
 		var msg *C.char
-		defer C.free(unsafe.Pointer(msg))
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
 		return fmt.Errorf("Error setting %s:%s in config: %s", param, value, C.GoString(msg))
@@ -63,14 +61,12 @@ func (c *Config) Set(param string, value string) error {
 func (c *Config) Get(param string) (string, error) {
 	var err *C.tiledb_error_t
 	var val *C.char
-	defer C.free(unsafe.Pointer(val))
 	cparam := C.CString(param)
 	defer C.free(unsafe.Pointer(cparam))
 	C.tiledb_config_get(c.tiledbConfig, cparam, &val, &err)
 
 	if err != nil {
 		var msg *C.char
-		defer C.free(unsafe.Pointer(msg))
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
 		return "", fmt.Errorf("Error getting %s in config: %s", param, C.GoString(msg))
@@ -90,7 +86,6 @@ func (c *Config) Unset(param string) error {
 
 	if err != nil {
 		var msg *C.char
-		defer C.free(unsafe.Pointer(msg))
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
 		return fmt.Errorf("Error unsetting %s in config: %s", param, C.GoString(msg))
@@ -108,7 +103,6 @@ func (c *Config) SaveToFile(file string) error {
 
 	if err != nil {
 		var msg *C.char
-		defer C.free(unsafe.Pointer(msg))
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
 		return fmt.Errorf("Error saving config from file %s: %s", file, C.GoString(msg))
@@ -129,7 +123,6 @@ func LoadConfig(uri string) (*Config, error) {
 	C.tiledb_config_alloc(&config.tiledbConfig, &err)
 	if err != nil {
 		var msg *C.char
-		defer C.free(unsafe.Pointer(msg))
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("Error loading tiledb config: %s", C.GoString(msg))
@@ -140,7 +133,6 @@ func LoadConfig(uri string) (*Config, error) {
 	C.tiledb_config_load_from_file(config.tiledbConfig, curi, &err)
 	if err != nil {
 		var msg *C.char
-		defer C.free(unsafe.Pointer(msg))
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("Error loading config from file %s: %s", uri, C.GoString(msg))

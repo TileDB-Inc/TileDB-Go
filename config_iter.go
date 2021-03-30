@@ -30,7 +30,6 @@ func NewConfigIter(config *Config, prefix string) (*ConfigIter, error) {
 	C.tiledb_config_iter_alloc(config.tiledbConfig, cprefix, &ci.tiledbConfigIter, &err)
 	if err != nil {
 		var msg *C.char
-		defer C.free(unsafe.Pointer(msg))
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("error creating tiledb config iter: %s", C.GoString(msg))
@@ -56,13 +55,9 @@ func (ci *ConfigIter) Free() {
 func (ci *ConfigIter) Here() (*string, *string, error) {
 	var err *C.tiledb_error_t
 	var cparam, cvalue *C.char
-	defer C.free(unsafe.Pointer(cparam))
-	defer C.free(unsafe.Pointer(cvalue))
-
 	C.tiledb_config_iter_here(ci.tiledbConfigIter, &cparam, &cvalue, &err)
 	if err != nil {
 		var msg *C.char
-		defer C.free(unsafe.Pointer(msg))
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
 		return nil, nil, fmt.Errorf("error getting param, vakue from config iter: %s", C.GoString(msg))
@@ -78,7 +73,6 @@ func (ci *ConfigIter) Next() error {
 	C.tiledb_config_iter_next(ci.tiledbConfigIter, &err)
 	if err != nil {
 		var msg *C.char
-		defer C.free(unsafe.Pointer(msg))
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
 		return fmt.Errorf("error moving to next ConfigItem from iter: %s", C.GoString(msg))
@@ -93,7 +87,6 @@ func (ci *ConfigIter) Done() (bool, error) {
 	C.tiledb_config_iter_done(ci.tiledbConfigIter, &cDone, &err)
 	if err != nil {
 		var msg *C.char
-		defer C.free(unsafe.Pointer(msg))
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
 		return false, fmt.Errorf("error moving to next ConfigItem from iter: %s", C.GoString(msg))
@@ -108,7 +101,6 @@ func (ci *ConfigIter) IsDone() bool {
 	C.tiledb_config_iter_done(ci.tiledbConfigIter, &cDone, &err)
 	if err != nil {
 		var msg *C.char
-		defer C.free(unsafe.Pointer(msg))
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
 		return false
@@ -124,7 +116,6 @@ func (ci *ConfigIter) Reset(prefix string) error {
 	C.tiledb_config_iter_reset(ci.config.tiledbConfig, ci.tiledbConfigIter, cprefix, &err)
 	if err != nil {
 		var msg *C.char
-		defer C.free(unsafe.Pointer(msg))
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
 		return fmt.Errorf("error creating tiledb config iter: %s", C.GoString(msg))

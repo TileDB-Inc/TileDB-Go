@@ -716,8 +716,6 @@ func (a *Array) NonEmptyDomainFromName(dimName string) (*NonEmptyDomain, bool, e
 // URI returns the array's uri
 func (a *Array) URI() (string, error) {
 	var curi *C.char
-	defer C.free(unsafe.Pointer(curi))
-
 	C.tiledb_array_get_uri(a.context.tiledbContext, a.tiledbArray, &curi)
 	uri := C.GoString(curi)
 	if uri == "" {
@@ -1001,7 +999,6 @@ func (a *Array) GetMetadataFromIndex(index uint64) (*ArrayMetadata, error) {
 // in full
 func (a *Array) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*ArrayMetadata, error) {
 	var cKey *C.char
-	defer C.free(unsafe.Pointer(cKey))
 
 	var cIndex C.uint64_t = C.uint64_t(index)
 	var cType C.tiledb_datatype_t

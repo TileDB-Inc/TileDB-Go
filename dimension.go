@@ -263,7 +263,6 @@ func (d *Dimension) CellValNum() (uint, error) {
 // Name returns the name of the dimension
 func (d *Dimension) Name() (string, error) {
 	var cName *C.char
-	defer C.free(unsafe.Pointer(cName))
 	ret := C.tiledb_dimension_get_name(d.context.tiledbContext, d.tiledbDimension, &cName)
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("Error getting tiledb dimension name: %s", d.context.LastError())
