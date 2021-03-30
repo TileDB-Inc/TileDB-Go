@@ -34,7 +34,7 @@ type Attribute struct {
 // NewAttribute alloc a new attribute
 func NewAttribute(context *Context, name string, datatype Datatype) (*Attribute, error) {
 	attribute := Attribute{context: context}
-	var cname *C.char = C.CString(name)
+	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
 
 	ret := C.tiledb_attribute_alloc(context.tiledbContext, cname, C.tiledb_datatype_t(datatype), &attribute.tiledbAttribute)

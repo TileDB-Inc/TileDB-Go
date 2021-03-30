@@ -104,8 +104,9 @@ func (d *Domain) AddDimensions(dimensions ...*Dimension) error {
 // HasDimension returns true if dimension: `dimName` is part of the domain
 func (d *Domain) HasDimension(dimName string) (bool, error) {
 	var hasDim C.int32_t
-	dName := C.CString(dimName)
-	ret := C.tiledb_domain_has_dimension(d.context.tiledbContext, d.tiledbDomain, dName, &hasDim)
+	cDimName := C.CString(dimName)
+	defer C.free(unsafe.Pointer(cDimName))
+	ret := C.tiledb_domain_has_dimension(d.context.tiledbContext, d.tiledbDomain, cDimName, &hasDim)
 	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("Error finding dimension %s in domain: %s", dimName, d.context.LastError())
 	}

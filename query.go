@@ -781,9 +781,11 @@ func (q *Query) AddRangeByName(dimName string, start interface{}, end interface{
 		return err
 	}
 
-	ret := C.tiledb_query_add_range_by_name(
-		q.context.tiledbContext, q.tiledbQuery,
-		(C.CString)(dimName), startBuffer, endBuffer, nil)
+	cDimName := C.CString(dimName)
+	defer C.free(unsafe.Pointer(cDimName))
+
+	ret := C.tiledb_query_add_range_by_name(q.context.tiledbContext,
+		q.tiledbQuery, cDimName, startBuffer, endBuffer, nil)
 
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf(
@@ -924,9 +926,12 @@ func (q *Query) AddRangeVarByName(dimName string, start interface{}, end interfa
 		startBuffer = unsafe.Pointer(&(tStart[0]))
 		endBuffer = unsafe.Pointer(&(tEnd[0]))
 
+		cDimName := C.CString(dimName)
+		defer C.free(unsafe.Pointer(cDimName))
+
 		ret := C.tiledb_query_add_range_var_by_name(
-			q.context.tiledbContext, q.tiledbQuery,
-			(C.CString)(dimName), startBuffer, (C.uint64_t)(startSize), endBuffer, (C.uint64_t)(endSize))
+			q.context.tiledbContext, q.tiledbQuery, cDimName, startBuffer,
+			(C.uint64_t)(startSize), endBuffer, (C.uint64_t)(endSize))
 
 		if ret != C.TILEDB_OK {
 			return fmt.Errorf(
@@ -1123,13 +1128,16 @@ func (q *Query) GetRangeFromName(dimName string, rangeNum uint64) (interface{}, 
 		return nil, nil, err
 	}
 
+	cDimName := C.CString(dimName)
+	defer C.free(unsafe.Pointer(cDimName))
+
 	if cellValNum == TILEDB_VAR_NUM {
 
 		var startSize, endSize C.uint64_t
 
 		ret := C.tiledb_query_get_range_var_size_from_name(
-			q.context.tiledbContext, q.tiledbQuery,
-			(C.CString)(dimName), (C.uint64_t)(rangeNum), &startSize, &endSize)
+			q.context.tiledbContext, q.tiledbQuery, cDimName,
+			(C.uint64_t)(rangeNum), &startSize, &endSize)
 
 		if ret != C.TILEDB_OK {
 			return nil, nil, fmt.Errorf(
@@ -1144,8 +1152,8 @@ func (q *Query) GetRangeFromName(dimName string, rangeNum uint64) (interface{}, 
 		endData := make([]byte, endSize)
 
 		ret = C.tiledb_query_get_range_var_from_name(
-			q.context.tiledbContext, q.tiledbQuery,
-			(C.CString)(dimName), (C.uint64_t)(rangeNum), unsafe.Pointer(&startData[0]), unsafe.Pointer(&endData[0]))
+			q.context.tiledbContext, q.tiledbQuery, cDimName,
+			(C.uint64_t)(rangeNum), unsafe.Pointer(&startData[0]), unsafe.Pointer(&endData[0]))
 
 		if ret != C.TILEDB_OK {
 			return nil, nil, fmt.Errorf(
@@ -1156,9 +1164,12 @@ func (q *Query) GetRangeFromName(dimName string, rangeNum uint64) (interface{}, 
 		end = endData
 
 	} else {
+		cDimName := C.CString(dimName)
+		defer C.free(unsafe.Pointer(cDimName))
+
 		ret := C.tiledb_query_get_range_from_name(
-			q.context.tiledbContext, q.tiledbQuery,
-			(C.CString)(dimName), (C.uint64_t)(rangeNum), &pStart, &pEnd, &pStride)
+			q.context.tiledbContext, q.tiledbQuery, cDimName,
+			(C.uint64_t)(rangeNum), &pStart, &pEnd, &pStride)
 
 		if ret != C.TILEDB_OK {
 			return nil, nil, fmt.Errorf(
@@ -1309,9 +1320,12 @@ func (q *Query) GetRangeNum(dimIdx uint32) (*uint64, error) {
 func (q *Query) GetRangeNumFromName(dimName string) (*uint64, error) {
 	var rangeNum uint64
 
+	cDimName := C.CString(dimName)
+	defer C.free(unsafe.Pointer(cDimName))
+
 	ret := C.tiledb_query_get_range_num_from_name(
-		q.context.tiledbContext, q.tiledbQuery,
-		(C.CString)(dimName), (*C.uint64_t)(unsafe.Pointer(&rangeNum)))
+		q.context.tiledbContext, q.tiledbQuery, cDimName,
+		(*C.uint64_t)(unsafe.Pointer(&rangeNum)))
 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf(

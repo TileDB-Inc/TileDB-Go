@@ -183,8 +183,9 @@ func (a *ArraySchema) AttributeFromName(attrName string) (*Attribute, error) {
 // HasAttribute returns true if attribute: `attrName` is part of the schema
 func (a *ArraySchema) HasAttribute(attrName string) (bool, error) {
 	var hasAttr C.int32_t
-	aName := C.CString(attrName)
-	ret := C.tiledb_array_schema_has_attribute(a.context.tiledbContext, a.tiledbArraySchema, aName, &hasAttr)
+	cAttrName := C.CString(attrName)
+	defer C.free(unsafe.Pointer(cAttrName))
+	ret := C.tiledb_array_schema_has_attribute(a.context.tiledbContext, a.tiledbArraySchema, cAttrName, &hasAttr)
 	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("Error finding attribute %s in schema: %s", attrName, a.context.LastError())
 	}
