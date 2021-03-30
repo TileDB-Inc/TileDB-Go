@@ -227,6 +227,11 @@ func (d *Dimension) FilterList() (*FilterList, error) {
 		return nil, fmt.Errorf("Error getting tiledb dimension filter list: %s", d.context.LastError())
 	}
 
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&filterList, func(filterList *FilterList) {
+		filterList.Free()
+	})
+
 	return &filterList, nil
 }
 

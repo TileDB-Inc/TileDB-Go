@@ -106,6 +106,10 @@ func (v *VFS) Config() (*Config, error) {
 		return nil, fmt.Errorf("Unknown error in GetConfig")
 	}
 
+	runtime.SetFinalizer(&config, func(config *Config) {
+		config.Free()
+	})
+
 	return config, nil
 }
 

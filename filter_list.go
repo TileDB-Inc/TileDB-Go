@@ -89,6 +89,10 @@ func (f *FilterList) FilterFromIndex(index uint32) (*Filter, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error fetching filter for index %d from tiledb FilterList: %s", index, f.context.LastError())
 	}
+
+	runtime.SetFinalizer(&filter, func(filter *Filter) {
+		filter.Free()
+	})
 	return &filter, nil
 }
 

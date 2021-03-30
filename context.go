@@ -71,6 +71,11 @@ func (c *Context) Config() (*Config, error) {
 		return nil, fmt.Errorf("Unknown error in GetConfig")
 	}
 
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&config, func(config *Config) {
+		config.Free()
+	})
+
 	return config, nil
 }
 

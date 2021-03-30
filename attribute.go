@@ -74,6 +74,11 @@ func (a *Attribute) FilterList() (*FilterList, error) {
 		return nil, fmt.Errorf("Error getting tiledb attribute filter list: %s", a.context.LastError())
 	}
 
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&filterList, func(filterList *FilterList) {
+		filterList.Free()
+	})
+
 	return &filterList, nil
 }
 
