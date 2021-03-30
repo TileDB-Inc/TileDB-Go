@@ -56,6 +56,9 @@ func (ci *ConfigIter) Free() {
 func (ci *ConfigIter) Here() (*string, *string, error) {
 	var err *C.tiledb_error_t
 	var cparam, cvalue *C.char
+	defer C.free(unsafe.Pointer(cparam))
+	defer C.free(unsafe.Pointer(cvalue))
+
 	C.tiledb_config_iter_here(ci.tiledbConfigIter, &cparam, &cvalue, &err)
 	if err != nil {
 		var msg *C.char

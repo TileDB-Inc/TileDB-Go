@@ -3205,6 +3205,7 @@ func (q *Query) GetFragmentNum() (*uint32, error) {
 // GetFragmentURI returns uri for a fragment
 func (q *Query) GetFragmentURI(num uint64) (*string, error) {
 	var cURI *C.char
+	defer C.free(unsafe.Pointer(cURI))
 
 	ret := C.tiledb_query_get_fragment_uri(
 		q.context.tiledbContext,
