@@ -28,7 +28,7 @@ func NewConfig() (*Config, error) {
 		var msg *C.char
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return nil, fmt.Errorf("Error creating tiledb config: %s", C.GoString(msg))
+		return nil, fmt.Errorf("error creating tiledb config: %s", C.GoString(msg))
 	}
 	// Set finalizer for free C pointer on gc
 	runtime.SetFinalizer(&config, func(config *Config) {
@@ -51,7 +51,7 @@ func (c *Config) Set(param string, value string) error {
 		var msg *C.char
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return fmt.Errorf("Error setting %s:%s in config: %s", param, value, C.GoString(msg))
+		return fmt.Errorf("error setting %s:%s in config: %s", param, value, C.GoString(msg))
 	}
 
 	return nil
@@ -69,7 +69,7 @@ func (c *Config) Get(param string) (string, error) {
 		var msg *C.char
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return "", fmt.Errorf("Error getting %s in config: %s", param, C.GoString(msg))
+		return "", fmt.Errorf("error getting %s in config: %s", param, C.GoString(msg))
 	}
 
 	value := C.GoString(val)
@@ -88,7 +88,7 @@ func (c *Config) Unset(param string) error {
 		var msg *C.char
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return fmt.Errorf("Error unsetting %s in config: %s", param, C.GoString(msg))
+		return fmt.Errorf("error unsetting %s in config: %s", param, C.GoString(msg))
 	}
 
 	return nil
@@ -105,7 +105,7 @@ func (c *Config) SaveToFile(file string) error {
 		var msg *C.char
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return fmt.Errorf("Error saving config from file %s: %s", file, C.GoString(msg))
+		return fmt.Errorf("error saving config from file %s: %s", file, C.GoString(msg))
 	}
 
 	return nil
@@ -115,7 +115,7 @@ func (c *Config) SaveToFile(file string) error {
 func LoadConfig(uri string) (*Config, error) {
 
 	if uri == "" {
-		return nil, fmt.Errorf("Error loading tiledb config: passed uri is empty")
+		return nil, fmt.Errorf("error loading tiledb config: passed uri is empty")
 	}
 
 	var config Config
@@ -125,7 +125,7 @@ func LoadConfig(uri string) (*Config, error) {
 		var msg *C.char
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return nil, fmt.Errorf("Error loading tiledb config: %s", C.GoString(msg))
+		return nil, fmt.Errorf("error loading tiledb config: %s", C.GoString(msg))
 	}
 
 	curi := C.CString(uri)
@@ -135,7 +135,7 @@ func LoadConfig(uri string) (*Config, error) {
 		var msg *C.char
 		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return nil, fmt.Errorf("Error loading config from file %s: %s", uri, C.GoString(msg))
+		return nil, fmt.Errorf("error loading config from file %s: %s", uri, C.GoString(msg))
 	}
 
 	// Set finalizer for free C pointer on gc

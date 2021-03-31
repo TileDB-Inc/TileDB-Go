@@ -34,10 +34,11 @@ jobs:
 
     - name: golangci-lint
       uses: golangci/golangci-lint-action@v2
+      continue-on-error: true
       with:
         # Required: the version of golangci-lint is required and must be
         # specified without patch version: we always use the latest patch version.
-        version: v1.29
+        version: v1.35.2
 
   Linux_Test:
     runs-on: ubuntu-18.04
@@ -63,7 +64,7 @@ jobs:
 
     # Tests TileDB-Go
     - name: Test TileDB-Go
-      run: go test -v ./...
+      run: go test -v $(go list ./... | grep -v /cmd/)
 
   Macos_Test:
     runs-on: macos-10.15
@@ -89,4 +90,32 @@ jobs:
 
     # Tests TileDB-Go
     - name: Test TileDB-Go
-      run: go test -v ./...
+      run: go test -v $(go list ./... | grep -v /cmd/)
+
+  Linux_Address_Sanitizer:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        # Will be checking following versions
+        go: [1.15]
+    steps:
+    # Checks out repository
+    - uses: actions/checkout@v2
+
+    # Downloads TileDB-Core from release assets and install
+    - name: Run TileDB install script
+      run: ./.github/scripts/install_tiledb_linux_debug.sh
+      shell: bash
+
+    # Following action sets up Go and uses the strategy matrix to test on
+    # specific versions
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go }}
+
+    # Tests TileDB-Go
+    - name: Running examples using address sanitizer flags
+      continue-on-error: true
+      run: ./.github/scripts/build_with_sanitizer_and_run.sh
+      shell: bash

@@ -26,17 +26,14 @@ type Context struct {
 // If the configuration passed is null it is created with default config
 func NewContext(config *Config) (*Context, error) {
 	var context Context
-	var err *C.tiledb_error_t
+	var ret C.int32_t
 	if config != nil {
-		C.tiledb_ctx_alloc(config.tiledbConfig, &context.tiledbContext)
+		ret = C.tiledb_ctx_alloc(config.tiledbConfig, &context.tiledbContext)
 	} else {
-		C.tiledb_ctx_alloc(nil, &context.tiledbContext)
+		ret = C.tiledb_ctx_alloc(nil, &context.tiledbContext)
 	}
-	if err != nil {
-		var msg *C.char
-		C.tiledb_error_message(err, &msg)
-		defer C.tiledb_error_free(&err)
-		return nil, fmt.Errorf("Error creating tiledb context: %s", C.GoString(msg))
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error creating tiledb context: %s", context.LastError())
 	}
 
 	// Set finalizer for free C pointer on gc
@@ -44,9 +41,9 @@ func NewContext(config *Config) (*Context, error) {
 		context.Free()
 	})
 
-	err1 := context.setDefaultTags()
+	err := context.setDefaultTags()
 	if err != nil {
-		return nil, fmt.Errorf("Error creating tiledb context: %s", err1.Error())
+		return nil, fmt.Errorf("error creating tiledb context: %s", err.Error())
 	}
 
 	return &context, nil
