@@ -6,60 +6,31 @@ import (
 	"unsafe"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
+	"github.com/TileDB-Inc/TileDB-Go/array_wrapper"
 )
 
 // Name of array.
 var sparseArrayName = "quickstart_sparse"
 
 func createSparseArray() {
-	// Create a TileDB context.
-	ctx, err := tiledb.NewContext(nil)
-	checkError(err)
-	defer ctx.Free()
+	dimMap := make(map[string]array_wrapper.DimensionDetail)
+	dimMap["rows"] = array_wrapper.DimensionDetail{
+		Domain: []int32{1, 4},
+		Extent: int32(4),
+	}
+	dimMap["cols"] = array_wrapper.DimensionDetail{
+		Domain: []int32{1, 4},
+		Extent: int32(4),
+	}
 
-	// The array will be 4x4 with dimensions "rows" and "cols",
-	// with domain [1,4].
-	domain, err := tiledb.NewDomain(ctx)
-	checkError(err)
-	defer domain.Free()
-
-	rowDim, err := tiledb.NewDimension(ctx, "rows", []int32{1, 4}, int32(4))
-	checkError(err)
-	defer rowDim.Free()
-
-	colDim, err := tiledb.NewDimension(ctx, "cols", []int32{1, 4}, int32(4))
-	checkError(err)
-	defer colDim.Free()
-
-	err = domain.AddDimensions(rowDim, colDim)
-	checkError(err)
-
-	// The array will be sparse.
-	schema, err := tiledb.NewArraySchema(ctx, tiledb.TILEDB_SPARSE)
-	checkError(err)
-	defer schema.Free()
-
-	err = schema.SetDomain(domain)
-	checkError(err)
-	err = schema.SetCellOrder(tiledb.TILEDB_ROW_MAJOR)
-	checkError(err)
-	err = schema.SetTileOrder(tiledb.TILEDB_ROW_MAJOR)
-	checkError(err)
-
-	// Add a single attribute "a" so each (i,j) cell can store an integer.
-	a, err := tiledb.NewAttribute(ctx, "a", tiledb.TILEDB_UINT32)
-	checkError(err)
-	defer a.Free()
-
-	err = schema.AddAttributes(a)
-	checkError(err)
+	attrMap := make(map[string]array_wrapper.AttributeDetail)
+	attrMap["a"] = array_wrapper.AttributeDetail{
+		Datatype: tiledb.TILEDB_UINT32,
+	}
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
-	checkError(err)
-	defer array.Free()
-
-	err = array.Create(schema)
+	_, err := array_wrapper.NewSparseArray(sparseArrayName,
+		tiledb.TILEDB_ROW_MAJOR, tiledb.TILEDB_ROW_MAJOR, dimMap, attrMap)
 	checkError(err)
 }
 
