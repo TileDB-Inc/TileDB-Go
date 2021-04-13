@@ -469,6 +469,13 @@ const (
 	TILEDB_UNINITIALIZED QueryStatus = C.TILEDB_UNINITIALIZED
 )
 
+// String returns string representation
+func (q QueryStatus) String() string {
+	var cname *C.char
+	C.tiledb_query_status_to_str(C.tiledb_query_status_t(q), &cname)
+	return C.GoString(cname)
+}
+
 // QueryType read or write query
 type QueryType int8
 
