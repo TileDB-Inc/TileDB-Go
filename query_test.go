@@ -651,6 +651,7 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	// Perform the write, finalize and close the array.
 	err = query.Submit()
 	assert.Nil(t, err)
+
 	err = query.Finalize()
 	assert.Nil(t, err)
 	err = array.Close()
@@ -658,6 +659,14 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 
 	err = array.Open(TILEDB_READ)
 	assert.Nil(t, err)
+
+	nonEmptyDomainMap, err := array.NonEmptyDomainMap()
+	assert.Nil(t, err)
+	assert.EqualValues(t, 2, len(nonEmptyDomainMap))
+	rowNonEmptyDomain := nonEmptyDomainMap["rows"].([]int32)
+	colNonEmptyDomain := nonEmptyDomainMap["rows"].([]int32)
+	assert.EqualValues(t, []int32{1, 2}, rowNonEmptyDomain)
+	assert.EqualValues(t, []int32{1, 2}, colNonEmptyDomain)
 
 	// Read value at cell 2, 2
 	rowsRange := []int32{2, 2}
@@ -955,12 +964,19 @@ func TestQueryEffectiveBufferSizeStrings(t *testing.T) {
 
 	err = query.Finalize()
 	assert.Nil(t, err)
+
 	err = array.Close()
 	assert.Nil(t, err)
 
 	// Re open the array
 	err = array.Open(TILEDB_READ)
 	assert.Nil(t, err)
+
+	nonEmptyDomainMap, err := array.NonEmptyDomainMap()
+	assert.Nil(t, err)
+	assert.EqualValues(t, 1, len(nonEmptyDomainMap))
+	rowNonEmptyDomain := nonEmptyDomainMap["rows"].([]string)
+	assert.EqualValues(t, []string{"a", "c"}, rowNonEmptyDomain)
 
 	// Prepare the query
 	query, err = NewQuery(context, array)

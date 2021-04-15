@@ -395,6 +395,94 @@ func (a *Array) NonEmptyDomain() ([]NonEmptyDomain, bool, error) {
 	return nonEmptyDomains, isDomainEmpty, nil
 }
 
+// NonEmptyDomainMap returns a map[string]interface{} where key is the
+// dimension name and value is the non empty domain for the given dimension or
+// the empty interface. It covers both var-sized and non-var-sized dimensions
+func (a *Array) NonEmptyDomainMap() (map[string]interface{}, error) {
+	schema, err := a.Schema()
+	if err != nil {
+		return nil, err
+	}
+
+	domain, err := schema.Domain()
+	if err != nil {
+		return nil, err
+	}
+
+	ndims, err := domain.NDim()
+	if err != nil {
+		return nil, err
+	}
+
+	nonEmptyDomainMap := make(map[string]interface{})
+	for dimIdx := uint(0); dimIdx < ndims; dimIdx++ {
+		dimension, err := domain.DimensionFromIndex(dimIdx)
+		if err != nil {
+			return nil, err
+		}
+
+		dimensionName, err := dimension.Name()
+		if err != nil {
+			return nil, err
+		}
+
+		dimensionType, err := dimension.Type()
+		if err != nil {
+			return nil, err
+		}
+
+		cellValNum, err := dimension.CellValNum()
+		if err != nil {
+			return nil, err
+		}
+
+		if cellValNum == uint(TILEDB_VAR_NUM) {
+			nonEmptyDomain, isEmpty, err := a.NonEmptyDomainVarFromName(dimensionName)
+			if err != nil {
+				return nil, err
+			}
+
+			if isEmpty {
+				var empty interface{}
+				nonEmptyDomainMap[dimensionName] = empty
+			} else {
+				nonEmptyDomainMap[nonEmptyDomain.DimensionName] = nonEmptyDomain.Bounds
+			}
+
+		} else {
+			tmpDimension, tmpDimensionPtr, err := dimensionType.MakeSlice(uint64(2))
+			if err != nil {
+				return nil, err
+			}
+
+			var isEmpty C.int32_t
+			ret := C.tiledb_array_get_non_empty_domain_from_index(
+				a.context.tiledbContext,
+				a.tiledbArray,
+				(C.uint32_t)(dimIdx),
+				tmpDimensionPtr, &isEmpty)
+			if ret != C.TILEDB_OK {
+				return nil, fmt.Errorf("error in getting non empty domain for dimension: %s", a.context.LastError())
+			}
+
+			if isEmpty == 1 {
+				var empty interface{}
+				nonEmptyDomainMap[dimensionName] = empty
+			} else {
+				// If at least one domain for a dimension is empty the union of domains is non-empty
+				nonEmptyDomain, err := getNonEmptyDomainForDim(dimension, tmpDimension)
+				if err != nil {
+					return nil, err
+				}
+				nonEmptyDomainMap[nonEmptyDomain.DimensionName] = nonEmptyDomain.Bounds
+			}
+		}
+
+	}
+
+	return nonEmptyDomainMap, nil
+}
+
 // NonEmptyDomainVarFromName retrieves the non-empty domain from an array for a
 // given var-sized dimension name. Supports only TILEDB_STRING_ASCII type
 // Returns the bounding coordinates for the dimension
@@ -421,7 +509,7 @@ func (a *Array) NonEmptyDomainVarFromName(dimName string) (*NonEmptyDomain, bool
 
 	dimension, err := domain.DimensionFromName(dimName)
 	if err != nil {
-		return nil, false, fmt.Errorf("Could not get dimension: %s", dimName)
+		return nil, false, fmt.Errorf("could not get dimension: %s", dimName)
 	}
 
 	dimType, err := dimension.Type()
@@ -450,7 +538,7 @@ func (a *Array) NonEmptyDomainVarFromName(dimName string) (*NonEmptyDomain, bool
 		&cendSize,
 		&isEmpty)
 	if ret != C.TILEDB_OK {
-		return nil, false, fmt.Errorf("Error in getting non empty domain size for dimension %s for array: %s", dimName, a.context.LastError())
+		return nil, false, fmt.Errorf("error in getting non empty domain size for dimension %s for array: %s", dimName, a.context.LastError())
 	}
 
 	if isEmpty == 1 {
@@ -479,7 +567,7 @@ func (a *Array) NonEmptyDomainVarFromName(dimName string) (*NonEmptyDomain, bool
 		cend,
 		&isEmpty)
 	if ret != C.TILEDB_OK {
-		return nil, false, fmt.Errorf("Error in getting non empty domain for dimension %s for array: %s", dimName, a.context.LastError())
+		return nil, false, fmt.Errorf("error in getting non empty domain for dimension %s for array: %s", dimName, a.context.LastError())
 	}
 
 	if isEmpty == 1 {
