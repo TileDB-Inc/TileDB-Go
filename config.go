@@ -160,3 +160,11 @@ func (c *Config) Free() {
 func (c *Config) Iterate(prefix string) (*ConfigIter, error) {
 	return NewConfigIter(c, prefix)
 }
+
+// Cmp Compare two configs
+func (c *Config) Cmp(other *Config) bool {
+	var equal C.uint8_t
+	C.tiledb_config_compare(c.tiledbConfig, other.tiledbConfig, &equal)
+
+	return equal == 1
+}

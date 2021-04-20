@@ -3263,3 +3263,22 @@ func (q *Query) SetConfig(config *Config) error {
 
 	return nil
 }
+
+// Config get config on query
+func (q *Query) Config() (*Config, error) {
+	config := Config{}
+	ret := C.tiledb_query_get_config(q.context.tiledbContext, q.tiledbQuery, &config.tiledbConfig)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error getting config from query: %s", q.context.LastError())
+	}
+
+	runtime.SetFinalizer(&config, func(config *Config) {
+		config.Free()
+	})
+
+	if q.config == nil {
+		q.config = &config
+	}
+
+	return &config, nil
+}
