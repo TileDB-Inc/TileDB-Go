@@ -40,7 +40,7 @@ To install these bindings you can use `go get`:
 To install package test dependencies:
 
 ```bash
-go get -vt github.com/TileDB-Inc/TileDB-Go
+go get -v -t github.com/TileDB-Inc/TileDB-Go
 ```
 
 Package tests can be run with:
