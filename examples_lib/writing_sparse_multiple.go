@@ -62,9 +62,9 @@ func createMultipleWritesSparseArray() {
 	checkError(err)
 }
 
-func execQueryUnordered(ctx *tiledb.Context, array *tiledb.Array,
+func execQueryUnordered(tdbCtx *tiledb.Context, array *tiledb.Array,
 	data []int32, buffD1 []int32, buffD2 []int32) {
-	query, err := tiledb.NewQuery(ctx, array)
+	query, err := tiledb.NewQuery(tdbCtx, array)
 	checkError(err)
 	defer query.Free()
 

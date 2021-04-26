@@ -25,8 +25,8 @@ type Domain struct {
 }
 
 // NewDomain alloc a new domainuration
-func NewDomain(ctx *Context) (*Domain, error) {
-	domain := Domain{context: ctx}
+func NewDomain(tdbCtx *Context) (*Domain, error) {
+	domain := Domain{context: tdbCtx}
 	ret := C.tiledb_domain_alloc(domain.context.tiledbContext, &domain.tiledbDomain)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb domain: %s", domain.context.LastError())

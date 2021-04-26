@@ -31,10 +31,10 @@ type FragmentInfo struct {
 
 // NewFragmentInfo alloc a new fragment info for a given array and fetches all
 // the fragment information for that array.
-func NewFragmentInfo(ctx *Context, uri string) (*FragmentInfo, error) {
+func NewFragmentInfo(tdbCtx *Context, uri string) (*FragmentInfo, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	fI := FragmentInfo{context: ctx, uri: uri}
+	fI := FragmentInfo{context: tdbCtx, uri: uri}
 	ret := C.tiledb_fragment_info_alloc(fI.context.tiledbContext,
 		curi, &fI.tiledbFragmentInfo)
 	if ret != C.TILEDB_OK {

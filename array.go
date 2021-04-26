@@ -51,10 +51,10 @@ type NonEmptyDomain struct {
 }
 
 // NewArray alloc a new array
-func NewArray(ctx *Context, uri string) (*Array, error) {
+func NewArray(tdbCtx *Context, uri string) (*Array, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	array := Array{context: ctx, uri: uri}
+	array := Array{context: tdbCtx, uri: uri}
 	ret := C.tiledb_array_alloc(array.context.tiledbContext, curi, &array.tiledbArray)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb array: %s", array.context.LastError())

@@ -56,7 +56,7 @@ This means multiple read and write queries to the same array can be made
 concurrently (in TileDB, only consolidation requires an exclusive lock for
 a short period of time).
 */
-func NewQuery(ctx *Context, array *Array) (*Query, error) {
+func NewQuery(tdbCtx *Context, array *Array) (*Query, error) {
 	if array == nil {
 		return nil, fmt.Errorf("Error creating tiledb query: passed array is nil")
 	}
@@ -66,7 +66,7 @@ func NewQuery(ctx *Context, array *Array) (*Query, error) {
 		return nil, fmt.Errorf("Error getting QueryType from passed array %s", err)
 	}
 
-	query := Query{context: ctx, array: array}
+	query := Query{context: tdbCtx, array: array}
 	ret := C.tiledb_query_alloc(query.context.tiledbContext, array.tiledbArray, C.tiledb_query_type_t(queryType), &query.tiledbQuery)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb query: %s", query.context.LastError())
