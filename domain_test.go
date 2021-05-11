@@ -23,7 +23,7 @@ func ExampleNewDomain() {
 	}
 
 	// Create Dimension
-	dimension, err := NewDimension(context, "test", []int32{1, 10}, int32(5))
+	dimension, err := NewDimension(context, "test", TILEDB_INT32, []int32{1, 10}, int32(5))
 	if err != nil {
 		// Handle error
 		return
@@ -55,7 +55,7 @@ func TestDomain(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Test create dimension
-	dimension, err := NewDimension(context, "test", []int32{1, 10}, int32(5))
+	dimension, err := NewDimension(context, "test", TILEDB_INT32, []int32{1, 10}, int32(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 

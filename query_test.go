@@ -24,7 +24,7 @@ func ExampleNewQuery() {
 	}
 
 	// Test create dimension
-	dimension, err := NewDimension(context, "dim1", []int8{0, 9}, int8(10))
+	dimension, err := NewDimension(context, "dim1", TILEDB_INT8, []int8{0, 9}, int8(10))
 	if err != nil {
 		// Handle error
 		return
@@ -323,12 +323,12 @@ func TestQueryEffectiveBufferSize(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Test create row dimension
-	rowDim, err := NewDimension(context, "rows", []int32{1, 4}, int32(2))
+	rowDim, err := NewDimension(context, "rows", TILEDB_INT32, []int32{1, 4}, int32(2))
 	assert.Nil(t, err)
 	assert.NotNil(t, rowDim)
 
 	// Test create row dimension
-	colDim, err := NewDimension(context, "cols", []int32{1, 4}, int32(2))
+	colDim, err := NewDimension(context, "cols", TILEDB_INT32, []int32{1, 4}, int32(2))
 	assert.Nil(t, err)
 	assert.NotNil(t, colDim)
 
@@ -509,12 +509,12 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Test create row dimension
-	rowDim, err := NewDimension(context, "rows", []int32{1, 4}, int32(2))
+	rowDim, err := NewDimension(context, "rows", TILEDB_INT32, []int32{1, 4}, int32(2))
 	assert.Nil(t, err)
 	assert.NotNil(t, rowDim)
 
 	// Test create row dimension
-	colDim, err := NewDimension(context, "cols", []int64{1, 4}, int64(2))
+	colDim, err := NewDimension(context, "cols", TILEDB_INT64, []int64{1, 4}, int64(2))
 	assert.Nil(t, err)
 	assert.NotNil(t, colDim)
 
@@ -1038,7 +1038,7 @@ func TestQueryEffectiveBufferSizeStringsHeterogeneous(t *testing.T) {
 	assert.NotNil(t, rowDim)
 
 	// Test create row dimension
-	colDim, err := NewDimension(context, "cols", []int64{1, 4}, int64(2))
+	colDim, err := NewDimension(context, "cols", TILEDB_INT64, []int64{1, 4}, int64(2))
 	assert.Nil(t, err)
 	assert.NotNil(t, colDim)
 
@@ -1211,7 +1211,7 @@ func TestQueryReadEmpty(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Test create dimension
-	dimension, err := NewDimension(context, "dim1", []int8{1, 10}, int8(5))
+	dimension, err := NewDimension(context, "dim1", TILEDB_INT8, []int8{1, 10}, int8(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 
@@ -1352,7 +1352,7 @@ func TestQueryWrite(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Test create dimension
-	dimension, err := NewDimension(context, "dim1", []int8{0, 9}, int8(10))
+	dimension, err := NewDimension(context, "dim1", TILEDB_INT8, []int8{0, 9}, int8(10))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 
@@ -1708,7 +1708,7 @@ func TestSparseQueryWrite(t *testing.T) {
 
 	// Test create dimension
 
-	dimension, err := NewDimension(context, "dim1", []int8{0, 9}, int8(10))
+	dimension, err := NewDimension(context, "dim1", TILEDB_INT8, []int8{0, 9}, int8(10))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 
@@ -1877,7 +1877,7 @@ func TestSparseQueryWriteNullable(t *testing.T) {
 
 	// Test create dimension
 
-	dimension, err := NewDimension(context, "dim1", []int8{0, 9}, int8(10))
+	dimension, err := NewDimension(context, "dim1", TILEDB_INT8, []int8{0, 9}, int8(10))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 
@@ -2046,7 +2046,7 @@ func TestSparseQueryWriteHilbertLayout(t *testing.T) {
 	assert.Nil(t, err)
 	context, err := NewContext(config)
 	assert.Nil(t, err)
-	dimension, err := NewDimension(context, "dim1", []int8{0, 9}, int8(10))
+	dimension, err := NewDimension(context, "dim1", TILEDB_INT8, []int8{0, 9}, int8(10))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 	domain, err := NewDomain(context)
@@ -2128,12 +2128,12 @@ func TestQueryConfig(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Test create row dimension
-	rowDim, err := NewDimension(context, "rows", []int32{1, 4}, int32(2))
+	rowDim, err := NewDimension(context, "rows", TILEDB_INT32, []int32{1, 4}, int32(2))
 	assert.Nil(t, err)
 	assert.NotNil(t, rowDim)
 
 	// Test create row dimension
-	colDim, err := NewDimension(context, "cols", []int32{1, 4}, int32(2))
+	colDim, err := NewDimension(context, "cols", TILEDB_INT32, []int32{1, 4}, int32(2))
 	assert.Nil(t, err)
 	assert.NotNil(t, colDim)
 

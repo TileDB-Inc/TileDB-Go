@@ -23,7 +23,7 @@ func ExampleNewDimension() {
 	}
 
 	// Create Dimension
-	dim, err := NewDimension(context, "test", []int32{1, 10}, int32(5))
+	dim, err := NewDimension(context, "test", TILEDB_INT32, []int32{1, 10}, int32(5))
 	if err != nil {
 		// Handle error
 		return
@@ -66,12 +66,12 @@ func TestDimension(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Dimension will error due to extent and domain having different datatypes
-	dimension, err := NewDimension(context, "test", []int32{1, 10}, 5)
+	dimension, err := NewDimension(context, "test", TILEDB_INT32, []int32{1, 10}, 5)
 	assert.NotNil(t, err)
 	assert.Nil(t, dimension)
 
 	// Create dimension
-	dimension, err = NewDimension(context, "test", []int32{1, 10}, int32(5))
+	dimension, err = NewDimension(context, "test", TILEDB_INT32, []int32{1, 10}, int32(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 
@@ -121,11 +121,11 @@ func TestDimensionDomainTypes(t *testing.T) {
 	context, err := NewContext(config)
 	assert.Nil(t, err)
 
-	dimension, err := NewDimension(context, "test", []int{1, 10}, int(5))
+	dimension, err := NewDimension(context, "test", TILEDB_INT64, []int64{1, 10}, int64(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 
-	dimension, err = NewDimension(context, "test", []int8{1, 10}, int8(5))
+	dimension, err = NewDimension(context, "test", TILEDB_INT8, []int8{1, 10}, int8(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 	domain, err := dimension.Domain()
@@ -139,7 +139,7 @@ func TestDimensionDomainTypes(t *testing.T) {
 	assert.NotNil(t, extent)
 	assert.EqualValues(t, int8(5), extent)
 
-	dimension, err = NewDimension(context, "test", []int16{1, 10}, int16(5))
+	dimension, err = NewDimension(context, "test", TILEDB_INT16, []int16{1, 10}, int16(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 	// Test getting domain
@@ -153,7 +153,7 @@ func TestDimensionDomainTypes(t *testing.T) {
 	assert.NotNil(t, extent)
 	assert.EqualValues(t, int16(5), extent)
 
-	dimension, err = NewDimension(context, "test", []int32{1, 10}, int32(5))
+	dimension, err = NewDimension(context, "test", TILEDB_INT32, []int32{1, 10}, int32(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 	// Test getting domain
@@ -167,7 +167,7 @@ func TestDimensionDomainTypes(t *testing.T) {
 	assert.NotNil(t, extent)
 	assert.EqualValues(t, int32(5), extent)
 
-	dimension, err = NewDimension(context, "test", []int64{1, 10}, int64(5))
+	dimension, err = NewDimension(context, "test", TILEDB_INT64, []int64{1, 10}, int64(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 	// Test getting domain
@@ -181,11 +181,11 @@ func TestDimensionDomainTypes(t *testing.T) {
 	assert.NotNil(t, extent)
 	assert.EqualValues(t, int64(5), extent)
 
-	dimension, err = NewDimension(context, "test", []uint{1, 10}, uint(5))
+	dimension, err = NewDimension(context, "test", TILEDB_UINT64, []uint64{1, 10}, uint64(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 
-	dimension, err = NewDimension(context, "test", []uint8{1, 10}, uint8(5))
+	dimension, err = NewDimension(context, "test", TILEDB_UINT8, []uint8{1, 10}, uint8(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 	// Test getting domain
@@ -199,7 +199,7 @@ func TestDimensionDomainTypes(t *testing.T) {
 	assert.NotNil(t, extent)
 	assert.EqualValues(t, uint8(5), extent)
 
-	dimension, err = NewDimension(context, "test", []uint16{1, 10}, uint16(5))
+	dimension, err = NewDimension(context, "test", TILEDB_UINT16, []uint16{1, 10}, uint16(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 	// Test getting domain
@@ -213,7 +213,7 @@ func TestDimensionDomainTypes(t *testing.T) {
 	assert.NotNil(t, extent)
 	assert.EqualValues(t, uint16(5), extent)
 
-	dimension, err = NewDimension(context, "test", []uint32{1, 10}, uint32(5))
+	dimension, err = NewDimension(context, "test", TILEDB_UINT32, []uint32{1, 10}, uint32(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 	// Test getting domain
@@ -227,7 +227,7 @@ func TestDimensionDomainTypes(t *testing.T) {
 	assert.NotNil(t, extent)
 	assert.EqualValues(t, uint32(5), extent)
 
-	dimension, err = NewDimension(context, "test", []uint64{1, 10}, uint64(5))
+	dimension, err = NewDimension(context, "test", TILEDB_UINT64, []uint64{1, 10}, uint64(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 	// Test getting domain
@@ -241,7 +241,7 @@ func TestDimensionDomainTypes(t *testing.T) {
 	assert.NotNil(t, extent)
 	assert.EqualValues(t, uint64(5), extent)
 
-	dimension, err = NewDimension(context, "test", []float32{1, 10}, float32(5))
+	dimension, err = NewDimension(context, "test", TILEDB_FLOAT32, []float32{1, 10}, float32(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 	// Test getting domain
@@ -255,7 +255,7 @@ func TestDimensionDomainTypes(t *testing.T) {
 	assert.NotNil(t, extent)
 	assert.EqualValues(t, float32(5), extent)
 
-	dimension, err = NewDimension(context, "test", []float64{1, 10}, float64(5))
+	dimension, err = NewDimension(context, "test", TILEDB_FLOAT64, []float64{1, 10}, float64(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 	// Test getting domain

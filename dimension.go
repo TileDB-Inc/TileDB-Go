@@ -13,6 +13,7 @@ import (
 	"os"
 	"reflect"
 	"runtime"
+	"strconv"
 	"unsafe"
 )
 
@@ -79,7 +80,12 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		tmpExtent := (extent.(int16))
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_INT32:
-		if domainType != reflect.Int32 {
+		if domainType != reflect.Int32 && domainType != reflect.Int {
+			domainTypeMatchDatatype = false
+			break
+		}
+		if domainType == reflect.Int && strconv.IntSize == 64 {
+			// User asked for Int64 if size of int on platform is 64 bit
 			domainTypeMatchDatatype = false
 			break
 		}
@@ -90,7 +96,12 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		tmpExtent := (extent.(int32))
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS:
-		if domainType != reflect.Int64 {
+		if domainType != reflect.Int64 && domainType != reflect.Int {
+			domainTypeMatchDatatype = false
+			break
+		}
+		if domainType == reflect.Int && strconv.IntSize == 32 {
+			// User asked for Int32 if size of int on platform is 32 bit
 			domainTypeMatchDatatype = false
 			break
 		}
@@ -123,7 +134,12 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		tmpExtent := (extent.(uint16))
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_UINT32:
-		if domainType != reflect.Uint32 {
+		if domainType != reflect.Uint32 && domainType != reflect.Uint {
+			domainTypeMatchDatatype = false
+			break
+		}
+		if domainType == reflect.Uint && strconv.IntSize == 64 {
+			// User asked for Uint64 if size of int on platform is 64 bit
 			domainTypeMatchDatatype = false
 			break
 		}
@@ -134,7 +150,12 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		tmpExtent := (extent.(uint32))
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_UINT64:
-		if domainType != reflect.Uint64 {
+		if domainType != reflect.Uint64 && domainType != reflect.Uint {
+			domainTypeMatchDatatype = false
+			break
+		}
+		if domainType == reflect.Uint && strconv.IntSize == 32 {
+			// User asked for Uint32 if size of int on platform is 32 bit
 			domainTypeMatchDatatype = false
 			break
 		}

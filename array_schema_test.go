@@ -23,7 +23,7 @@ func ExampleNewArraySchema() {
 	}
 
 	// Create Dimension
-	dimension, err := NewDimension(context, "test", []int32{1, 10}, 5)
+	dimension, err := NewDimension(context, "test", TILEDB_INT32, []int32{1, 10}, 5)
 	if err != nil {
 		// Handle error
 		return
@@ -75,7 +75,7 @@ func TestArraySchema(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Test create dimension
-	dimension, err := NewDimension(context, "dim1", []int32{1, 10}, int32(5))
+	dimension, err := NewDimension(context, "dim1", TILEDB_INT32, []int32{1, 10}, int32(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 
@@ -246,10 +246,10 @@ func TestArraySchemaInt32Hilbert(t *testing.T) {
 	assert.Nil(t, err)
 	context, err := NewContext(config)
 	assert.Nil(t, err)
-	d1, err := NewDimension(context, "d1", []int32{0, 100}, int32(5))
+	d1, err := NewDimension(context, "d1", TILEDB_INT32, []int32{0, 100}, int32(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, d1)
-	d2, err := NewDimension(context, "d2", []int32{0, 200}, int32(5))
+	d2, err := NewDimension(context, "d2", TILEDB_INT32, []int32{0, 200}, int32(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, d1)
 	domain, err := NewDomain(context)
@@ -282,10 +282,10 @@ func TestArraySchemaInt32DenseHilbert(t *testing.T) {
 	assert.Nil(t, err)
 	context, err := NewContext(config)
 	assert.Nil(t, err)
-	d1, err := NewDimension(context, "d1", []int32{0, 100}, int32(5))
+	d1, err := NewDimension(context, "d1", TILEDB_INT32, []int32{0, 100}, int32(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, d1)
-	d2, err := NewDimension(context, "d2", []int32{0, 200}, int32(5))
+	d2, err := NewDimension(context, "d2", TILEDB_INT32, []int32{0, 200}, int32(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, d1)
 	domain, err := NewDomain(context)
@@ -322,10 +322,10 @@ func TestArraySchemaInt32NegativeDomainHilbert(t *testing.T) {
 	assert.Nil(t, err)
 	context, err := NewContext(config)
 	assert.Nil(t, err)
-	d1, err := NewDimension(context, "d1", []int32{-50, 50}, int32(5))
+	d1, err := NewDimension(context, "d1", TILEDB_INT32, []int32{-50, 50}, int32(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, d1)
-	d2, err := NewDimension(context, "d2", []int32{-100, 100}, int32(5))
+	d2, err := NewDimension(context, "d2", TILEDB_INT32, []int32{-100, 100}, int32(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, d1)
 	domain, err := NewDomain(context)
@@ -358,10 +358,10 @@ func TestArraySchemaFloat32Hilbert(t *testing.T) {
 	assert.Nil(t, err)
 	context, err := NewContext(config)
 	assert.Nil(t, err)
-	d1, err := NewDimension(context, "d1", []float32{0.0, 1.0}, float32(0.01))
+	d1, err := NewDimension(context, "d1", TILEDB_FLOAT32, []float32{0.0, 1.0}, float32(0.01))
 	assert.Nil(t, err)
 	assert.NotNil(t, d1)
-	d2, err := NewDimension(context, "d2", []float32{0.0, 2.0}, float32(0.01))
+	d2, err := NewDimension(context, "d2", TILEDB_FLOAT32, []float32{0.0, 2.0}, float32(0.01))
 	assert.Nil(t, err)
 	assert.NotNil(t, d1)
 	domain, err := NewDomain(context)

@@ -2,7 +2,7 @@ package main
 
 // void __lsan_do_leak_check(void);
 //
-import "C"
+// import "C"
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
 func main() {
