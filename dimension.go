@@ -13,7 +13,6 @@ import (
 	"os"
 	"reflect"
 	"runtime"
-	"strconv"
 	"unsafe"
 )
 
@@ -26,7 +25,7 @@ type Dimension struct {
 }
 
 // NewDimension alloc a new dimension
-func NewDimension(context *Context, name string, domain interface{}, extent interface{}) (*Dimension, error) {
+func NewDimension(context *Context, name string, datatype Datatype, domain interface{}, extent interface{}) (*Dimension, error) {
 	dimension := Dimension{context: context}
 	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
@@ -46,115 +45,121 @@ func NewDimension(context *Context, name string, domain interface{}, extent inte
 		return nil, fmt.Errorf("Domaing and extent do not have the same data types. Domain: %s, Extent: %s", domainType.String(), extentType.String())
 	}
 
-	var datatype Datatype
+	// Domain data type need to match datatype passed
+	domainTypeMatchDatatype := true
+
 	var ret C.int32_t
 	// Convert domain to type then to void*
 	var cdomain unsafe.Pointer
 	// Convert extent to type then to void*
 	var cextent unsafe.Pointer
-	// Switch on domain type to create void* for domain and extent.
+	// Switch on datatype type to create void* for domain and extent.
 	// Extent has already checked to be same type as domain so this is safe
-	switch domainType {
-	case reflect.Int:
-		// Check size of int on platform
-		if strconv.IntSize == 32 {
-			datatype = TILEDB_INT32
-		} else {
-			datatype = TILEDB_INT64
+	switch datatype {
+	case TILEDB_INT8:
+		if domainType != reflect.Int8 {
+			domainTypeMatchDatatype = false
+			break
 		}
-		// Create domain void*
-		tmpDomain := domain.([]int)
-		cdomain = unsafe.Pointer(&tmpDomain[0])
-		// Create extent void*
-		tmpExtent := (extent.(int))
-		cextent = unsafe.Pointer(&tmpExtent)
-	case reflect.Int8:
-		datatype = TILEDB_INT8
 		// Create domain void*
 		tmpDomain := domain.([]int8)
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
 		tmpExtent := (extent.(int8))
 		cextent = unsafe.Pointer(&tmpExtent)
-	case reflect.Int16:
-		datatype = TILEDB_INT16
+	case TILEDB_INT16:
+		if domainType != reflect.Int16 {
+			domainTypeMatchDatatype = false
+			break
+		}
 		// Create domain void*
 		tmpDomain := domain.([]int16)
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
 		tmpExtent := (extent.(int16))
 		cextent = unsafe.Pointer(&tmpExtent)
-	case reflect.Int32:
-		datatype = TILEDB_INT32
+	case TILEDB_INT32:
+		if domainType != reflect.Int32 {
+			domainTypeMatchDatatype = false
+			break
+		}
 		// Create domain void*
 		tmpDomain := domain.([]int32)
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
 		tmpExtent := (extent.(int32))
 		cextent = unsafe.Pointer(&tmpExtent)
-	case reflect.Int64:
-		datatype = TILEDB_INT64
+	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS:
+		if domainType != reflect.Int64 {
+			domainTypeMatchDatatype = false
+			break
+		}
 		// Create domain void*
 		tmpDomain := domain.([]int64)
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
 		tmpExtent := (extent.(int64))
 		cextent = unsafe.Pointer(&tmpExtent)
-	case reflect.Uint:
-		// Check size of uint on platform
-		if strconv.IntSize == 32 {
-			datatype = TILEDB_UINT32
-		} else {
-			datatype = TILEDB_UINT64
+	case TILEDB_UINT8:
+		if domainType != reflect.Uint8 {
+			domainTypeMatchDatatype = false
+			break
 		}
-		// Create domain void*
-		tmpDomain := domain.([]uint)
-		cdomain = unsafe.Pointer(&tmpDomain[0])
-		// Create extent void*
-		tmpExtent := (extent.(uint))
-		cextent = unsafe.Pointer(&tmpExtent)
-	case reflect.Uint8:
-		datatype = TILEDB_UINT8
 		// Create domain void*
 		tmpDomain := domain.([]uint8)
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
 		tmpExtent := (extent.(uint8))
 		cextent = unsafe.Pointer(&tmpExtent)
-	case reflect.Uint16:
-		datatype = TILEDB_UINT16
+	case TILEDB_UINT16:
+		if domainType != reflect.Uint16 {
+			domainTypeMatchDatatype = false
+			break
+		}
 		// Create domain void*
 		tmpDomain := domain.([]uint16)
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
 		tmpExtent := (extent.(uint16))
 		cextent = unsafe.Pointer(&tmpExtent)
-	case reflect.Uint32:
-		datatype = TILEDB_UINT32
+	case TILEDB_UINT32:
+		if domainType != reflect.Uint32 {
+			domainTypeMatchDatatype = false
+			break
+		}
 		// Create domain void*
 		tmpDomain := domain.([]uint32)
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
 		tmpExtent := (extent.(uint32))
 		cextent = unsafe.Pointer(&tmpExtent)
-	case reflect.Uint64:
-		datatype = TILEDB_UINT64
+	case TILEDB_UINT64:
+		if domainType != reflect.Uint64 {
+			domainTypeMatchDatatype = false
+			break
+		}
 		// Create domain void*
 		tmpDomain := domain.([]uint64)
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
 		tmpExtent := (extent.(uint64))
 		cextent = unsafe.Pointer(&tmpExtent)
-	case reflect.Float32:
-		datatype = TILEDB_FLOAT32
+	case TILEDB_FLOAT32:
+		if domainType != reflect.Float32 {
+			domainTypeMatchDatatype = false
+			break
+		}
 		// Create domain void*
 		tmpDomain := domain.([]float32)
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
 		tmpExtent := (extent.(float32))
 		cextent = unsafe.Pointer(&tmpExtent)
-	case reflect.Float64:
-		datatype = TILEDB_FLOAT64
+	case TILEDB_FLOAT64:
+		if domainType != reflect.Float64 {
+			domainTypeMatchDatatype = false
+			break
+		}
 		// Create domain void*
 		tmpDomain := domain.([]float64)
 		cdomain = unsafe.Pointer(&tmpDomain[0])
@@ -162,13 +167,17 @@ func NewDimension(context *Context, name string, domain interface{}, extent inte
 		tmpExtent := (extent.(float64))
 		cextent = unsafe.Pointer(&tmpExtent)
 	default:
-		return nil, fmt.Errorf("Unrecognized domain type passed: %s", domainInterfaceVal.Index(0).Kind().String())
+		return nil, fmt.Errorf("Unrecognized datatype passed: %s", datatype.String())
+	}
+
+	if !domainTypeMatchDatatype {
+		return nil, fmt.Errorf("domain and datatype do not have the same data types. Domain: %s, Datatype: %s", domainType.String(), datatype.String())
 	}
 
 	ret = C.tiledb_dimension_alloc(context.tiledbContext, cname, C.tiledb_datatype_t(datatype), cdomain, cextent, &dimension.tiledbDimension)
 
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error creating tiledb dimension: %s", context.LastError())
+		return nil, fmt.Errorf("error creating tiledb dimension: %s", context.LastError())
 	}
 
 	// Set finalizer for free C pointer on gc
