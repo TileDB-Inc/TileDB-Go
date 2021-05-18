@@ -22,12 +22,12 @@ func createAsyncArray() {
 	checkError(err)
 	defer domain.Free()
 
-	rowDim, err := tiledb.NewDimension(ctx, "rows", []int32{1, 4},
+	rowDim, err := tiledb.NewDimension(ctx, "rows", tiledb.TILEDB_INT32, []int32{1, 4},
 		int32(2))
 	checkError(err)
 	defer rowDim.Free()
 
-	colDim, err := tiledb.NewDimension(ctx, "cols", []int32{1, 4},
+	colDim, err := tiledb.NewDimension(ctx, "cols", tiledb.TILEDB_INT32, []int32{1, 4},
 		int32(2))
 	checkError(err)
 	defer colDim.Free()

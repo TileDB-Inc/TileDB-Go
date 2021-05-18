@@ -21,12 +21,12 @@ func createStatsArray(rowTileExtent uint32, colTileExtent uint32) {
 	defer domain.Free()
 
 	rowDim, err := tiledb.NewDimension(ctx,
-		"rows", []uint32{1, 12000}, rowTileExtent)
+		"rows", tiledb.TILEDB_UINT32, []uint32{1, 12000}, rowTileExtent)
 	checkError(err)
 	defer rowDim.Free()
 
 	colDim, err := tiledb.NewDimension(ctx,
-		"cols", []uint32{1, 12000}, colTileExtent)
+		"cols", tiledb.TILEDB_UINT32, []uint32{1, 12000}, colTileExtent)
 	checkError(err)
 	defer colDim.Free()
 

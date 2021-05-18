@@ -25,11 +25,11 @@ func createVariableLengthArray() {
 	checkError(err)
 	defer domain.Free()
 
-	rowDim, err := tiledb.NewDimension(ctx, "rows", []int32{1, 4}, int32(rowsVariableLengthTileExtent))
+	rowDim, err := tiledb.NewDimension(ctx, "rows", tiledb.TILEDB_INT32, []int32{1, 4}, int32(rowsVariableLengthTileExtent))
 	checkError(err)
 	defer rowDim.Free()
 
-	colDim, err := tiledb.NewDimension(ctx, "cols", []int32{1, 4}, int32(colsVariableLengthTileExtent))
+	colDim, err := tiledb.NewDimension(ctx, "cols", tiledb.TILEDB_INT32, []int32{1, 4}, int32(colsVariableLengthTileExtent))
 	checkError(err)
 	defer colDim.Free()
 

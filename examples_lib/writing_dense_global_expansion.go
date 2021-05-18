@@ -22,9 +22,9 @@ func createDenseGlobalExpansionArray() {
 	checkError(err)
 	defer domain.Free()
 
-	rowDim, err := tiledb.NewDimension(ctx, "rows", []int32{1, 4}, int32(2))
+	rowDim, err := tiledb.NewDimension(ctx, "rows", tiledb.TILEDB_INT32, []int32{1, 4}, int32(2))
 	checkError(err)
-	colDim, err := tiledb.NewDimension(ctx, "cols", []int32{1, 3}, int32(2))
+	colDim, err := tiledb.NewDimension(ctx, "cols", tiledb.TILEDB_INT32, []int32{1, 3}, int32(2))
 	checkError(err)
 	err = domain.AddDimensions(rowDim, colDim)
 	checkError(err)

@@ -22,11 +22,11 @@ func createSparseHeterDimArray() {
 	checkError(err)
 	defer domain.Free()
 
-	d1, err := tiledb.NewDimension(ctx, "d1", []float32{1.0, 20.0}, float32(5.0))
+	d1, err := tiledb.NewDimension(ctx, "d1", tiledb.TILEDB_FLOAT32, []float32{1.0, 20.0}, float32(5.0))
 	checkError(err)
 	defer d1.Free()
 
-	d2, err := tiledb.NewDimension(ctx, "d2", []int64{1, 30}, int64(5))
+	d2, err := tiledb.NewDimension(ctx, "d2", tiledb.TILEDB_INT64, []int64{1, 30}, int64(5))
 	checkError(err)
 	defer d2.Free()
 

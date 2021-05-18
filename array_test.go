@@ -25,7 +25,7 @@ func ExampleNewArray() {
 	}
 
 	// Create Dimension
-	dimension, err := NewDimension(context, "test", []int32{1, 10}, 5)
+	dimension, err := NewDimension(context, "test", TILEDB_INT32, []int32{1, 10}, 5)
 	if err != nil {
 		// Handle error
 		return
@@ -81,7 +81,7 @@ func ExampleNewArray() {
 // TestArray tests creating a new dimension
 func buildArraySchema(context *Context, t *testing.T) *ArraySchema {
 	// Test create dimension
-	dimension, err := NewDimension(context, "dim1", []int8{1, 10}, int8(5))
+	dimension, err := NewDimension(context, "dim1", TILEDB_INT8, []int8{1, 10}, int8(5))
 	assert.Nil(t, err)
 	assert.NotNil(t, dimension)
 

@@ -23,7 +23,7 @@ func createVacuumSparseArray() {
 	checkError(err)
 	defer domain.Free()
 
-	dDim, err := tiledb.NewDimension(ctx, "d", []int32{1, 4}, int32(4))
+	dDim, err := tiledb.NewDimension(ctx, "d", tiledb.TILEDB_INT32, []int32{1, 4}, int32(4))
 	checkError(err)
 	defer dDim.Free()
 
