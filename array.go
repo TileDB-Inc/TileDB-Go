@@ -296,7 +296,9 @@ func getNonEmptyDomainForDim(dimension *Dimension, dimensionSlice interface{}) (
 	case TILEDB_INT32:
 		tmpDimension := dimensionSlice.([]int32)
 		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []int32{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_INT64:
+	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY,
+		TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US,
+		TILEDB_DATETIME_NS, TILEDB_DATETIME_AS, TILEDB_DATETIME_FS, TILEDB_DATETIME_PS:
 		tmpDimension := dimensionSlice.([]int64)
 		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []int64{tmpDimension[0], tmpDimension[1]}}
 	case TILEDB_UINT8:
