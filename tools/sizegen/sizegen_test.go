@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -50,10 +51,12 @@ func TestGoldens(t *testing.T) {
 
 func TestBadPackages(t *testing.T) {
 	t.Parallel()
+	tmpdir := temp(t)
+	defer os.RemoveAll(tmpdir)
 	cases := [][]string{
-		{"--out=/at-the-root.go"}, // no params
-		{"--out=package-name-is/invalid.go"},
-		{"--out=/some/valid/path.go", "--pkg=invalid-package"},
+		{fmt.Sprintf("--out=%cat-the-root.go", filepath.Separator)},
+		{"--out=" + filepath.Join(tmpdir, "package-name-is", "invalid.go")},
+		{"--out=" + filepath.Join(tmpdir, "some", "valid", "path.go"), "--pkg=invalid-package"},
 	}
 	for _, c := range cases {
 		t.Run(strings.Join(c, " "), func(t *testing.T) {
@@ -79,7 +82,7 @@ func TestBadName(t *testing.T) {
 	tmpdir := temp(t)
 	defer os.RemoveAll(tmpdir)
 
-	cmd := exec.Command("go", "run", ".", "--out", "fakefile.go", "--suffix=I have spaces")
+	cmd := exec.Command("go", "run", ".", "--out", filepath.Join(tmpdir, "fakefile.go"), "--suffix=I have spaces")
 	output, err := cmd.CombinedOutput()
 	outstr := string(output)
 	t.Log(outstr)
