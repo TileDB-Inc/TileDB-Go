@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"go/format"
+	"go/parser"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,6 +16,7 @@ var (
 	outFlag = flag.String("out", "", "The file to write the output to. The package name is derived from the path to this file.")
 	pkgFlag = flag.String("pkg", "", "The package name to write to. If not present, uses the directory name.")
 	expFlag = flag.Bool("export", false, "True if the symbols should be exported (capital name); false otherwise.")
+	sufFlag = flag.String("suffix", "Bytes", "The suffix to place on each size's name, e.g. Uint8Suffix.")
 
 	kinds = []string{
 		// Architecture-dependent types.
@@ -44,15 +46,12 @@ var (
 )
 
 // name constructs the name of the constant for the given type.
-func name(typ string, exported bool) string {
+func name(typ string, suf string, exported bool) string {
 	if exported {
 		typ = strings.Title(typ)
 	}
-	return typ + "Bytes"
+	return typ + suf
 }
-
-// kindBytes is the name of the variable used for the kind-to-byte mapping.
-const kindBytes = "kindBytes"
 
 func main() {
 	flag.Parse()
@@ -71,13 +70,19 @@ func main() {
 		pkgDir := filepath.Dir(absPath)
 		pkgName = filepath.Base(pkgDir)
 	}
-	_, err := format.Source([]byte("package " + pkgName))
-	if err != nil {
+
+	if _, err := format.Source([]byte("package " + pkgName)); err != nil {
 		fmt.Fprintf(os.Stderr, "%q is an invalid package name\n", pkgName)
-		os.Exit(1)
+		os.Exit(2)
 	}
 
-	dirty := generate(pkgName, *expFlag)
+	sampleName := name("Thing", *sufFlag, false)
+	if _, err := parser.ParseExpr(sampleName); err != nil {
+		fmt.Fprintf(os.Stderr, "%q is an invalid suffix\n", *sufFlag)
+		os.Exit(2)
+	}
+
+	dirty := generate(pkgName, *sufFlag, *expFlag)
 	clean, err := format.Source([]byte(dirty))
 	if err != nil {
 		// This should never happen, so panic.
@@ -95,7 +100,7 @@ func main() {
 	}
 }
 
-func generate(pkgName string, export bool) string {
+func generate(pkgName, suffix string, export bool) string {
 	// Build the two arrays we use to populate the generated file.
 
 	// The array of WhateverBytes = uint64(...)
@@ -104,14 +109,14 @@ func generate(pkgName string, export bool) string {
 	var kindMap []string
 	for _, literal := range kinds {
 		kind := strings.Split(literal, "(")[0]
-		constName := name(kind, export)
+		constName := name(kind, suffix, export)
 		constArray = append(constArray, fmt.Sprintf("%s = uint64(unsafe.Sizeof(%s))", constName, literal))
 		kindMap = append(kindMap, fmt.Sprintf("reflect.%s: %s,", strings.Title(kind), constName))
 	}
 	for _, pair := range aliases {
 		split := strings.Split(pair, "=")
 		alias, canon := split[0], split[1]
-		constArray = append(constArray, fmt.Sprintf("%s=%s", name(alias, export), name(canon, export)))
+		constArray = append(constArray, fmt.Sprintf("%s=%s", name(alias, suffix, export), name(canon, suffix, export)))
 	}
 
 	out := []string{
@@ -130,18 +135,15 @@ func generate(pkgName string, export bool) string {
 
 	out = append(out, constArray...)
 
-	kb := kindBytes
-	if export {
-		kb = strings.Title(kb)
-	}
+	mapName := name("kind", suffix, export)
 
 	out = append(
 		out,
 		")",
 		"",
-		fmt.Sprintf("// %s maps each numeric reflect.Kind to the number of bytes it takes.", kb),
+		fmt.Sprintf("// %s maps each numeric reflect.Kind to the number of bytes it takes.", mapName),
 		"// Non-numeric kinds and aliases are not included.",
-		fmt.Sprintf("var %s = map[reflect.Kind]uint64 {", kb),
+		fmt.Sprintf("var %s = map[reflect.Kind]uint64 {", mapName),
 	)
 	out = append(out, kindMap...)
 	out = append(

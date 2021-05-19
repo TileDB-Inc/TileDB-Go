@@ -5,6 +5,7 @@ import (
 	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
+	"github.com/TileDB-Inc/TileDB-Go/bytesizes"
 )
 
 // Name of array.
@@ -114,12 +115,12 @@ func readVacuumSparseArray() {
 	size, err := query.EstResultSize("a")
 	checkError(err)
 	fmt.Printf("Estimated query size in bytes for attribute 'a': %d\n", *size)
-	buffA := make([]int32, (*size)/tiledb.Int32Bytes)
+	buffA := make([]int32, (*size)/bytesizes.Int32)
 
 	size, err = query.EstResultSize("d")
 	checkError(err)
 	fmt.Printf("Estimated query size in bytes for dimension 'd': %d\n", *size)
-	buffD := make([]int32, (*size)/tiledb.Int32Bytes)
+	buffD := make([]int32, (*size)/bytesizes.Int32)
 
 	_, err = query.SetBuffer("d", buffD)
 	checkError(err)

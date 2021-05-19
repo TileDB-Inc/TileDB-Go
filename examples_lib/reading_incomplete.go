@@ -5,6 +5,7 @@ import (
 	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
+	"github.com/TileDB-Inc/TileDB-Go/bytesizes"
 )
 
 // Name of array.
@@ -156,7 +157,7 @@ func printResultsReadingIncomplete(
 	}
 
 	resultA2DataSize := resultElMap["a2"][1] *
-		tiledb.ByteBytes
+		bytesizes.Byte
 	a2StrSizes = append(a2StrSizes,
 		resultA2DataSize-a2Off[resultElA2Off-1])
 

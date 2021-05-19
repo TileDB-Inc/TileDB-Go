@@ -17,29 +17,23 @@ func TestGoldens(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		filename string
-		pkgname  string
-		export   bool
+		params   []string
 	}{
-		{"defaults.txt", "", false},
-		{"custom.txt", "custompkg", true},
+		{"defaults.txt", nil},
+		{"custom.txt", []string{"--pkg", "custompkg", "--export", "--suffix=B0nkeyKong"}},
 	}
 	for _, c := range cases {
 		c := c
 		t.Run(c.filename, func(t *testing.T) {
 			t.Parallel()
-			tmpdir, err := ioutil.TempDir("", "sizegen")
-			if err != nil {
-				t.Fatalf("could not create tempdir: %v", err)
-			}
+			tmpdir := temp(t)
 			outdir := filepath.Join(tmpdir, "testdata")
 			if err := os.Mkdir(outdir, 0770); err != nil {
 				t.Fatalf("could not create test subdir: %v", err)
 			}
 			out := filepath.Join(outdir, c.filename)
-			args := []string{"run", binary, "--out", out, "--pkg", c.pkgname}
-			if c.export {
-				args = append(args, "--export=true")
-			}
+			args := []string{"run", binary, "--out", out}
+			args = append(args, c.params...)
 			cmd := exec.Command("go", args...)
 			if err := cmd.Run(); err != nil {
 				t.Fatalf("error executing case %v: %v", c, err)
@@ -80,12 +74,27 @@ func TestBadPackages(t *testing.T) {
 	}
 }
 
+func TestBadName(t *testing.T) {
+	t.Parallel()
+	tmpdir := temp(t)
+	defer os.RemoveAll(tmpdir)
+
+	cmd := exec.Command("go", "run", ".", "--out", "fakefile.go", "--suffix=I have spaces")
+	output, err := cmd.CombinedOutput()
+	outstr := string(output)
+	t.Log(outstr)
+	if err == nil {
+		t.Fatalf("expected error when writing a bad name")
+	}
+	if !strings.Contains(outstr, "invalid suffix") {
+		t.Fatalf("expected 'invalid suffix' error; got %v", outstr)
+	}
+}
+
 func TestCantWrite(t *testing.T) {
 	t.Parallel()
-	tmpdir, err := ioutil.TempDir("", "sizegen")
-	if err != nil {
-		t.Fatalf("could not create tempdir: %v", err)
-	}
+	tmpdir := temp(t)
+	defer os.RemoveAll(tmpdir)
 	// The 'somepkg' directory is never created.
 	fullPath := filepath.Join(tmpdir, "somepkg", "filename.go")
 	cmd := exec.Command("go", "run", binary, "--out="+fullPath)
@@ -94,6 +103,14 @@ func TestCantWrite(t *testing.T) {
 	if err == nil {
 		t.Errorf("expected error writing to a missing directory")
 	}
+}
+
+func temp(t *testing.T) string {
+	tmpdir, err := ioutil.TempDir("", "sizegen")
+	if err != nil {
+		t.Fatalf("could not create tempdir: %v", err)
+	}
+	return tmpdir
 }
 
 func read(t *testing.T, f string) string {
