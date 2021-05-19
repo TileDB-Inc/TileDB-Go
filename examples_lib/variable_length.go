@@ -3,7 +3,6 @@ package examples_lib
 import (
 	"fmt"
 	"os"
-	"unsafe"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
@@ -96,7 +95,7 @@ func writeVariableLengthArray() {
 
 	a2Off := make([]uint64, 16)
 	for i := range a2ElOff {
-		a2Off[i] = a2ElOff[i] * uint64(unsafe.Sizeof(int32(0)))
+		a2Off[i] = a2ElOff[i] * tiledb.Int32Bytes
 	}
 
 	// Open the array for writing and create the query.
@@ -143,7 +142,7 @@ func printResultsVariableLength(
 	}
 
 	resultA1DataSize := resultElMap["a1"][1] *
-		uint64(unsafe.Sizeof(byte(0)))
+		tiledb.ByteBytes
 	a1StrSizes = append(a1StrSizes,
 		resultA1DataSize-a1Off[resultElA1Off-1])
 
@@ -160,7 +159,7 @@ func printResultsVariableLength(
 	var a2ElOff []uint64
 	resultElA2Off := resultElMap["a2"][0]
 	for i := 0; i < int(resultElA2Off); i++ {
-		a2ElOff = append(a2ElOff, a2Off[i]/uint64(unsafe.Sizeof(int32(0))))
+		a2ElOff = append(a2ElOff, a2Off[i]/tiledb.Int32Bytes)
 	}
 
 	// Get the number of elements per cell value

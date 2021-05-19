@@ -3,7 +3,6 @@ package examples_lib
 import (
 	"fmt"
 	"os"
-	"unsafe"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
@@ -157,7 +156,7 @@ func printResultsReadingIncomplete(
 	}
 
 	resultA2DataSize := resultElMap["a2"][1] *
-		uint64(unsafe.Sizeof(byte(0)))
+		tiledb.ByteBytes
 	a2StrSizes = append(a2StrSizes,
 		resultA2DataSize-a2Off[resultElA2Off-1])
 

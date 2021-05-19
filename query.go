@@ -17,6 +17,8 @@ import (
 	"unsafe"
 )
 
+//go:generate go run ./tools/sizegen --out generated_sizes.go --pkg tiledb --export
+
 // Query construct and execute read/write queries on a tiledb Array
 type Query struct {
 	tiledbQuery          *C.tiledb_query_t
@@ -303,7 +305,7 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 	switch bufferType {
 	case reflect.Int:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int(0)))
+		bufferSize = bufferSize * IntBytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]int)
 		// Store slice so underlying array is not gc'ed
@@ -311,7 +313,7 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int8:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int8(0)))
+		bufferSize = bufferSize * Int8Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]int8)
 		// Store slice so underlying array is not gc'ed
@@ -319,7 +321,7 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int16:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int16(0)))
+		bufferSize = bufferSize * Int16Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]int16)
 		// Store slice so underlying array is not gc'ed
@@ -327,7 +329,7 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int32:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int32(0)))
+		bufferSize = bufferSize * Int32Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]int32)
 		// Store slice so underlying array is not gc'ed
@@ -335,7 +337,7 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int64:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int64(0)))
+		bufferSize = bufferSize * Int64Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]int64)
 		// Store slice so underlying array is not gc'ed
@@ -343,7 +345,7 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint(0)))
+		bufferSize = bufferSize * UintBytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint)
 		// Store slice so underlying array is not gc'ed
@@ -351,7 +353,7 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint8:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint8(0)))
+		bufferSize = bufferSize * Uint8Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint8)
 		// Store slice so underlying array is not gc'ed
@@ -359,7 +361,7 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint16:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint16(0)))
+		bufferSize = bufferSize * Uint16Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint16)
 		// Store slice so underlying array is not gc'ed
@@ -367,7 +369,7 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint32:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint32(0)))
+		bufferSize = bufferSize * Uint32Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint32)
 		// Store slice so underlying array is not gc'ed
@@ -375,7 +377,7 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint64:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint64(0)))
+		bufferSize = bufferSize * Uint64Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint64)
 		// Store slice so underlying array is not gc'ed
@@ -383,7 +385,7 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Float32:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(float32(0)))
+		bufferSize = bufferSize * Float32Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]float32)
 		// Store slice so underlying array is not gc'ed
@@ -391,7 +393,7 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Float64:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(float64(0)))
+		bufferSize = bufferSize * Float64Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]float64)
 		// Store slice so underlying array is not gc'ed
@@ -534,7 +536,7 @@ func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{
 	switch bufferType {
 	case reflect.Int:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int(0)))
+		bufferSize = bufferSize * IntBytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]int)
 		// Store slice so underlying array is not gc'ed
@@ -542,7 +544,7 @@ func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int8:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int8(0)))
+		bufferSize = bufferSize * Int8Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]int8)
 		// Store slice so underlying array is not gc'ed
@@ -550,7 +552,7 @@ func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int16:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int16(0)))
+		bufferSize = bufferSize * Int16Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]int16)
 		// Store slice so underlying array is not gc'ed
@@ -558,7 +560,7 @@ func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int32:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int32(0)))
+		bufferSize = bufferSize * Int32Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]int32)
 		// Store slice so underlying array is not gc'ed
@@ -566,7 +568,7 @@ func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int64:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int64(0)))
+		bufferSize = bufferSize * Int64Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]int64)
 		// Store slice so underlying array is not gc'ed
@@ -574,7 +576,7 @@ func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint(0)))
+		bufferSize = bufferSize * UintBytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint)
 		// Store slice so underlying array is not gc'ed
@@ -582,7 +584,7 @@ func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint8:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint8(0)))
+		bufferSize = bufferSize * Uint8Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint8)
 		// Store slice so underlying array is not gc'ed
@@ -590,7 +592,7 @@ func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint16:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint16(0)))
+		bufferSize = bufferSize * Uint16Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint16)
 		// Store slice so underlying array is not gc'ed
@@ -598,7 +600,7 @@ func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint32:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint32(0)))
+		bufferSize = bufferSize * Uint32Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint32)
 		// Store slice so underlying array is not gc'ed
@@ -606,7 +608,7 @@ func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint64:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint64(0)))
+		bufferSize = bufferSize * Uint64Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint64)
 		// Store slice so underlying array is not gc'ed
@@ -614,7 +616,7 @@ func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Float32:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(float32(0)))
+		bufferSize = bufferSize * Float32Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]float32)
 		// Store slice so underlying array is not gc'ed
@@ -622,7 +624,7 @@ func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Float64:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(float64(0)))
+		bufferSize = bufferSize * Float64Bytes
 		// Create buffer void*
 		tmpBuffer := buffer.([]float64)
 		// Store slice so underlying array is not gc'ed
@@ -637,7 +639,7 @@ func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{
 	cAttributeOrDimension := C.CString(attributeOrDimension)
 	defer C.free(unsafe.Pointer(cAttributeOrDimension))
 
-	bufferValiditySize := uint64(len(bufferValidity)) * uint64(unsafe.Sizeof(uint8(0)))
+	bufferValiditySize := uint64(len(bufferValidity)) * Uint8Bytes
 	if bufferValiditySize == uint64(0) {
 		return nil, nil, fmt.Errorf("Validity slice has no length, " +
 			"offset slices are required to be initialized before reading or writting")
@@ -1736,7 +1738,7 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 			"buffers are required to be initialized before reading or writting")
 	}
 
-	offsetSize := uint64(len(offset)) * uint64(unsafe.Sizeof(uint64(0)))
+	offsetSize := uint64(len(offset)) * Uint64Bytes
 
 	if offsetSize == uint64(0) {
 		return nil, nil, fmt.Errorf("Offset slice has no length, " +
@@ -1756,7 +1758,7 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 	switch bufferType {
 	case reflect.Int:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int(0)))
+		bufferSize = bufferSize * IntBytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]int)
@@ -1765,7 +1767,7 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int8:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int8(0)))
+		bufferSize = bufferSize * Int8Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]int8)
@@ -1774,7 +1776,7 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int16:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int16(0)))
+		bufferSize = bufferSize * Int16Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]int16)
@@ -1783,7 +1785,7 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int32:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int32(0)))
+		bufferSize = bufferSize * Int32Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]int32)
@@ -1792,7 +1794,7 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int64:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int64(0)))
+		bufferSize = bufferSize * Int64Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]int64)
@@ -1801,7 +1803,7 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint(0)))
+		bufferSize = bufferSize * UintBytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint)
@@ -1810,7 +1812,7 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint8:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint8(0)))
+		bufferSize = bufferSize * Uint8Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint8)
@@ -1819,7 +1821,7 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint16:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint16(0)))
+		bufferSize = bufferSize * Uint16Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint16)
@@ -1828,7 +1830,7 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint32:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint32(0)))
+		bufferSize = bufferSize * Uint32Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint32)
@@ -1837,7 +1839,7 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint64:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint64(0)))
+		bufferSize = bufferSize * Uint64Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint64)
@@ -1846,7 +1848,7 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Float32:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(float32(0)))
+		bufferSize = bufferSize * Float32Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]float32)
@@ -1855,7 +1857,7 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Float64:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(float64(0)))
+		bufferSize = bufferSize * Float64Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]float64)
@@ -1989,14 +1991,14 @@ func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint6
 			"buffers are required to be initialized before reading or writting")
 	}
 
-	offsetSize := uint64(len(offset)) * uint64(unsafe.Sizeof(uint64(0)))
+	offsetSize := uint64(len(offset)) * Uint64Bytes
 
 	if offsetSize == uint64(0) {
 		return nil, nil, nil, fmt.Errorf("Offset slice has no length, " +
 			"offset slices are required to be initialized before reading or writting")
 	}
 
-	bufferValiditySize := uint64(len(bufferValidity)) * uint64(unsafe.Sizeof(uint8(0)))
+	bufferValiditySize := uint64(len(bufferValidity)) * Uint8Bytes
 	if bufferValiditySize == uint64(0) {
 		return nil, nil, nil, fmt.Errorf("Validity slice has no length, " +
 			"nullable slices are required to be initialized before reading or writting")
@@ -2016,7 +2018,7 @@ func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint6
 	switch bufferType {
 	case reflect.Int:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int(0)))
+		bufferSize = bufferSize * IntBytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]int)
@@ -2025,7 +2027,7 @@ func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint6
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int8:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int8(0)))
+		bufferSize = bufferSize * Int8Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]int8)
@@ -2034,7 +2036,7 @@ func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint6
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int16:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int16(0)))
+		bufferSize = bufferSize * Int16Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]int16)
@@ -2043,7 +2045,7 @@ func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint6
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int32:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int32(0)))
+		bufferSize = bufferSize * Int32Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]int32)
@@ -2052,7 +2054,7 @@ func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint6
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int64:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(int64(0)))
+		bufferSize = bufferSize * Int64Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]int64)
@@ -2061,7 +2063,7 @@ func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint6
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint(0)))
+		bufferSize = bufferSize * UintBytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint)
@@ -2070,7 +2072,7 @@ func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint6
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint8:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint8(0)))
+		bufferSize = bufferSize * Uint8Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint8)
@@ -2079,7 +2081,7 @@ func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint6
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint16:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint16(0)))
+		bufferSize = bufferSize * Uint16Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint16)
@@ -2088,7 +2090,7 @@ func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint6
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint32:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint32(0)))
+		bufferSize = bufferSize * Uint32Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint32)
@@ -2097,7 +2099,7 @@ func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint6
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint64:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(uint64(0)))
+		bufferSize = bufferSize * Uint64Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]uint64)
@@ -2106,7 +2108,7 @@ func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint6
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Float32:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(float32(0)))
+		bufferSize = bufferSize * Float32Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]float32)
@@ -2115,7 +2117,7 @@ func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint6
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Float64:
 		// Set buffersize
-		bufferSize = bufferSize * uint64(unsafe.Sizeof(float64(0)))
+		bufferSize = bufferSize * Float64Bytes
 
 		// Create buffer void*
 		tmpBuffer := buffer.([]float64)
@@ -2192,13 +2194,13 @@ func (q *Query) ResultBufferElements() (map[string][3]uint64, error) {
 			offsetElements := uint64(0)
 			if v[0] != nil {
 				// The attribute is variable lenght
-				offsetElements = (*v[0]) / uint64(unsafe.Sizeof(uint64(0)))
+				offsetElements = (*v[0]) / Uint64Bytes
 			}
 
 			validityElements := uint64(0)
 			if v[2] != nil {
 				// The attribute is nullable
-				validityElements = (*v[2]) / uint64(unsafe.Sizeof(uint8(0)))
+				validityElements = (*v[2]) / Uint8Bytes
 			}
 
 			hasDim, err := domain.HasDimension(attributeOrDimension)
@@ -3101,7 +3103,7 @@ func (q *Query) EstimateBufferElements() (map[string][3]uint64, error) {
 				ret[name] = [3]uint64{
 					*bufferOffsetSize / uint64(C.TILEDB_OFFSET_SIZE),
 					*bufferValSize / dataTypeSize,
-					*bufferValiditySize / uint64(unsafe.Sizeof(uint8(0)))}
+					*bufferValiditySize / Uint8Bytes}
 			} else {
 				bufferOffsetSize, bufferValSize, err := q.EstResultSizeVar(name)
 				if err != nil {
@@ -3120,7 +3122,7 @@ func (q *Query) EstimateBufferElements() (map[string][3]uint64, error) {
 					return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
 				}
 				ret[name] = [3]uint64{0, *bufferValSize / dataTypeSize,
-					*bufferValiditySize / uint64(unsafe.Sizeof(uint8(0)))}
+					*bufferValiditySize / Uint8Bytes}
 			} else {
 				bufferValSize, err := q.EstResultSize(name)
 				if err != nil {

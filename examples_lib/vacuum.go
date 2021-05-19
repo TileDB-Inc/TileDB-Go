@@ -3,7 +3,6 @@ package examples_lib
 import (
 	"fmt"
 	"os"
-	"unsafe"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
@@ -115,12 +114,12 @@ func readVacuumSparseArray() {
 	size, err := query.EstResultSize("a")
 	checkError(err)
 	fmt.Printf("Estimated query size in bytes for attribute 'a': %d\n", *size)
-	buffA := make([]int32, (*size)/uint64(unsafe.Sizeof(int32(0))))
+	buffA := make([]int32, (*size)/tiledb.Int32Bytes)
 
 	size, err = query.EstResultSize("d")
 	checkError(err)
 	fmt.Printf("Estimated query size in bytes for dimension 'd': %d\n", *size)
-	buffD := make([]int32, (*size)/uint64(unsafe.Sizeof(int32(0))))
+	buffD := make([]int32, (*size)/tiledb.Int32Bytes)
 
 	_, err = query.SetBuffer("d", buffD)
 	checkError(err)
