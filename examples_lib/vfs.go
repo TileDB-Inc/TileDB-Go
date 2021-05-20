@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"unsafe"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
+	"github.com/TileDB-Inc/TileDB-Go/bytesizes"
 )
 
 var vfsFileName = "tiledb_vfs.bin"
@@ -164,11 +164,9 @@ func read() {
 	sizefFile, err := vfs.FileSize(vfsFileName)
 	checkError(err)
 
-	var f float32 = 0.0
-	sizeOfFloat32 := uint64(unsafe.Sizeof(f))
-	f1, err := vfs.Read(fh, 0, sizeOfFloat32)
+	f1, err := vfs.Read(fh, 0, bytesizes.Float32)
 	checkError(err)
-	s1, err := vfs.Read(fh, sizeOfFloat32, sizefFile-sizeOfFloat32)
+	s1, err := vfs.Read(fh, bytesizes.Float32, sizefFile-bytesizes.Float32)
 	checkError(err)
 
 	fmt.Println("Binary read:")

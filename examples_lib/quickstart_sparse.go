@@ -3,9 +3,9 @@ package examples_lib
 import (
 	"fmt"
 	"os"
-	"unsafe"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
+	"github.com/TileDB-Inc/TileDB-Go/bytesizes"
 )
 
 // Name of array.
@@ -132,17 +132,17 @@ func readSparseArray() {
 	size, err := query.EstResultSize("a")
 	checkError(err)
 	fmt.Printf("Estimated query size in bytes for attribute 'a': %d\n", *size)
-	buffAR := make([]uint32, (*size)/uint64(unsafe.Sizeof(int32(0))))
+	buffAR := make([]uint32, (*size)/bytesizes.Int32)
 
 	size, err = query.EstResultSize("rows")
 	checkError(err)
 	fmt.Printf("Estimated query size in bytes for dimension 'rows': %d\n", *size)
-	buffD1R := make([]int32, (*size)/uint64(unsafe.Sizeof(int32(0))))
+	buffD1R := make([]int32, (*size)/bytesizes.Int32)
 
 	size, err = query.EstResultSize("cols")
 	checkError(err)
 	fmt.Printf("Estimated query size in bytes for dimension 'cols': %d\n", *size)
-	buffD2R := make([]int32, (*size)/uint64(unsafe.Sizeof(int32(0))))
+	buffD2R := make([]int32, (*size)/bytesizes.Int32)
 
 	_, err = query.SetBuffer("rows", buffD1R)
 	checkError(err)
