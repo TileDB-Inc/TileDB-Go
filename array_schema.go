@@ -109,8 +109,8 @@ func (a *ArraySchema) UnmarshalJSON(b []byte) error {
 }
 
 // NewArraySchema alloc a new ArraySchema
-func NewArraySchema(ctx *Context, arrayType ArrayType) (*ArraySchema, error) {
-	arraySchema := ArraySchema{context: ctx}
+func NewArraySchema(tdbCtx *Context, arrayType ArrayType) (*ArraySchema, error) {
+	arraySchema := ArraySchema{context: tdbCtx}
 	ret := C.tiledb_array_schema_alloc(arraySchema.context.tiledbContext, C.tiledb_array_type_t(arrayType), &arraySchema.tiledbArraySchema)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb arraySchema: %s", arraySchema.context.LastError())

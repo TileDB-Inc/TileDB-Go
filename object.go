@@ -17,18 +17,18 @@ import (
 
 // ObjectType returns the object type
 // A TileDB "object" is currently either a TileDB array or a TileDB group.
-func ObjectType(ctx *Context, path string) (ObjectTypeEnum, error) {
-	if ctx == nil {
+func ObjectType(tdbCtx *Context, path string) (ObjectTypeEnum, error) {
+	if tdbCtx == nil {
 		return TILEDB_INVALID, fmt.Errorf("error getting object type, context is nil")
 	}
 
 	var objectTypeEnum C.tiledb_object_t
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
-	ret := C.tiledb_object_type(ctx.tiledbContext, cpath, &objectTypeEnum)
+	ret := C.tiledb_object_type(tdbCtx.tiledbContext, cpath, &objectTypeEnum)
 	if ret != C.TILEDB_OK {
 		return TILEDB_INVALID, fmt.Errorf("Cannot get object type from path %s: %s",
-			path, ctx.LastError())
+			path, tdbCtx.LastError())
 	}
 
 	return ObjectTypeEnum(objectTypeEnum), nil
@@ -64,8 +64,8 @@ func objectsInPath(path *C.cchar_t, objectTypeEnum C.tiledb_object_t, data unsaf
 // The iteration continues for as long the callback returns non-zero, and stops
 // when the callback returns 0. Note that this function ignores any object
 // (e.g., file or directory) that is not TileDB-related.
-func ObjectWalk(ctx *Context, path string, walkOrder WalkOrder) (*ObjectList, error) {
-	if ctx == nil {
+func ObjectWalk(tdbCtx *Context, path string, walkOrder WalkOrder) (*ObjectList, error) {
+	if tdbCtx == nil {
 		return nil, fmt.Errorf("error walking object, context is nil")
 	}
 
@@ -77,22 +77,22 @@ func ObjectWalk(ctx *Context, path string, walkOrder WalkOrder) (*ObjectList, er
 	}
 	data := pointer.Save(&objectList)
 
-	ret := C._tiledb_object_walk(ctx.tiledbContext, cpath,
+	ret := C._tiledb_object_walk(tdbCtx.tiledbContext, cpath,
 		C.tiledb_walk_order_t(walkOrder), unsafe.Pointer(data))
 
 	fmt.Println(objectList)
 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Cannot walk in path %s: %s", path,
-			ctx.LastError())
+			tdbCtx.LastError())
 	}
 	return &objectList, nil
 }
 
 // ObjectLs is similar to `tiledb_walk`, but now the function visits only the children
 // of `path` (it does not recursively continue to the children directories).
-func ObjectLs(ctx *Context, path string) (*ObjectList, error) {
-	if ctx == nil {
+func ObjectLs(tdbCtx *Context, path string) (*ObjectList, error) {
+	if tdbCtx == nil {
 		return nil, fmt.Errorf("error listing object, context is nil")
 	}
 
@@ -104,20 +104,20 @@ func ObjectLs(ctx *Context, path string) (*ObjectList, error) {
 	}
 	data := pointer.Save(&objectList)
 
-	ret := C._tiledb_object_ls(ctx.tiledbContext, cpath,
+	ret := C._tiledb_object_ls(tdbCtx.tiledbContext, cpath,
 		unsafe.Pointer(data))
 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Cannot walk in path %s: %s", path,
-			ctx.LastError())
+			tdbCtx.LastError())
 	}
 	return &objectList, nil
 }
 
 // ObjectMove moves a TileDB resource (group, array, key-value).
 // Param path is the new path to move to
-func ObjectMove(ctx *Context, path string, newPath string) error {
-	if ctx == nil {
+func ObjectMove(tdbCtx *Context, path string, newPath string) error {
+	if tdbCtx == nil {
 		return fmt.Errorf("error moving object, context is nil")
 	}
 
@@ -125,26 +125,26 @@ func ObjectMove(ctx *Context, path string, newPath string) error {
 	defer C.free(unsafe.Pointer(cpath))
 	cnewPath := C.CString(newPath)
 	defer C.free(unsafe.Pointer(cnewPath))
-	ret := C.tiledb_object_move(ctx.tiledbContext, cpath, cnewPath)
+	ret := C.tiledb_object_move(tdbCtx.tiledbContext, cpath, cnewPath)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Cannot move object from %s to %s: %s", path,
-			newPath, ctx.LastError())
+			newPath, tdbCtx.LastError())
 	}
 
 	return nil
 }
 
 // ObjectRemove deletes a TileDB resource (group, array, key-value).
-func ObjectRemove(ctx *Context, path string) error {
-	if ctx == nil {
+func ObjectRemove(tdbCtx *Context, path string) error {
+	if tdbCtx == nil {
 		return fmt.Errorf("error removing object, context is nil")
 	}
 
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
-	ret := C.tiledb_object_remove(ctx.tiledbContext, cpath)
+	ret := C.tiledb_object_remove(tdbCtx.tiledbContext, cpath)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Cannot delete object %s: %s", path, ctx.LastError())
+		return fmt.Errorf("Cannot delete object %s: %s", path, tdbCtx.LastError())
 	}
 	return nil
 }
