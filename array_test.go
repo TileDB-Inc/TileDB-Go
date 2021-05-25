@@ -293,3 +293,75 @@ func TestArrayEncryption(t *testing.T) {
 
 	array.Free()
 }
+
+func TestArray_OpenWithOptions(t *testing.T) {
+	t.Run("StartTime", func(t *testing.T) {
+		startTime := uint64(1621976364000)
+		a, cleanup, err := newTestArray(t)
+		if err != nil {
+			t.Fatalf("failed to create new test array: %v", err)
+		}
+		defer cleanup()
+		err = a.OpenWithOptions(TILEDB_READ, WithStartTimestamp(startTime))
+		assert.NoError(t, err)
+
+		got, err := a.OpenStartTimestamp()
+		assert.NoError(t, err)
+
+		assert.Equal(t, startTime, got)
+	})
+
+	t.Run("EndTime", func(t *testing.T) {
+		endTime := uint64(1621976364666)
+		a, cleanup, err := newTestArray(t)
+		if err != nil {
+			t.Fatalf("failed to create new test array: %v", err)
+		}
+		defer cleanup()
+		err = a.OpenWithOptions(TILEDB_READ, WithEndTimestamp(endTime))
+		assert.NoError(t, err)
+
+		got, err := a.OpenEndTimestamp()
+		assert.NoError(t, err)
+
+		assert.Equal(t, endTime, got)
+	})
+}
+
+func newTestArray(t *testing.T) (*Array, func(), error) {
+	// Create configuration
+	config, err := NewConfig()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Test context with config
+	context, err := NewContext(config)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// create temp group name
+	tmpArrayPath := path.Join(os.TempDir(), "tiledb_test_array")
+
+	array, err := NewArray(context, tmpArrayPath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	arraySchema := buildArraySchema(context, t)
+	// Create array on disk
+	err = array.Create(arraySchema)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Create new array struct
+	return array, func() {
+		// Cleanup group when test ends
+		os.RemoveAll(tmpArrayPath)
+		if _, err = os.Stat(tmpArrayPath); err == nil {
+			os.RemoveAll(tmpArrayPath)
+		}
+	}, nil
+}
