@@ -43,7 +43,7 @@ func TestNewBufferList(t *testing.T) {
 
 	numBuffers, err := bufferList.NumBuffers()
 	assert.Nil(t, err)
-	assert.Equal(t, uint(0), numBuffers)
+	assert.Equal(t, uint64(0), numBuffers)
 
 	totalSize, err := bufferList.TotalSize()
 	assert.Nil(t, err)

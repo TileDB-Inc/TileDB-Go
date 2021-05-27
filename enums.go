@@ -534,7 +534,7 @@ const (
 )
 
 // TILEDB_VAR_NUM indicates variable sized attributes for cell values
-var TILEDB_VAR_NUM = uint(C.TILEDB_VAR_NUM)
+var TILEDB_VAR_NUM = uint32(C.TILEDB_VAR_NUM)
 
 // TILEDB_COORDS A special name indicating the coordinates attribute.
 const TILEDB_COORDS = "__coords"

@@ -43,7 +43,7 @@ func (b *BufferList) Free() {
 }
 
 // NumBuffers returns number of buffers in the list
-func (b *BufferList) NumBuffers() (uint, error) {
+func (b *BufferList) NumBuffers() (uint64, error) {
 	var numBuffers C.uint64_t
 	ret := C.tiledb_buffer_list_get_num_buffers(b.context.tiledbContext, b.tiledbBufferList, &numBuffers)
 
@@ -51,7 +51,7 @@ func (b *BufferList) NumBuffers() (uint, error) {
 		return 0, fmt.Errorf("Error getting tiledb bufferList num buffers: %s", b.context.LastError())
 	}
 
-	return uint(numBuffers), nil
+	return uint64(numBuffers), nil
 }
 
 // GetBuffer returns a Buffer at the given index in the list
