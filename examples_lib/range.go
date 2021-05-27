@@ -8,7 +8,7 @@ import (
 )
 
 // Name of array.
-var rangeArrayName = "range_array"
+const rangeArrayName = "range_array"
 
 func createRangeArray() {
 	// Create a TileDB context.

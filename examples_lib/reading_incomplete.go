@@ -9,7 +9,7 @@ import (
 )
 
 // Name of array.
-var readingIncompleteArrayName = "reading_incomplete_array"
+const readingIncompleteArrayName = "reading_incomplete_array"
 
 func createReadingIncompleteArray() {
 	// Create a TileDB context.

@@ -8,7 +8,7 @@ import (
 )
 
 // Name of array.
-var densePaddingArrayName = "writing_dense_padding_array"
+const densePaddingArrayName = "writing_dense_padding_array"
 
 func createDensePaddingArray() {
 	// Create a TileDB context.

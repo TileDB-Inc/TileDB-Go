@@ -7,7 +7,7 @@ import (
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-var configFileName = "tiledb_config.txt"
+const configFileName = "tiledb_config.txt"
 
 func setGetConfigCtxVfs() {
 	// Create config objects

@@ -9,7 +9,7 @@ import (
 )
 
 // Name of array.
-var sparseArrayName = "quickstart_sparse"
+const sparseArrayName = "quickstart_sparse"
 
 func createSparseArray() {
 	// Create a TileDB context.

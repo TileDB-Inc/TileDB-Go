@@ -9,7 +9,7 @@ import (
 )
 
 // Name of array.
-var arrayMetadataArrayName = "metadata_array"
+const arrayMetadataArrayName = "metadata_array"
 
 func createArrayMetadataArray() {
 	// Create a TileDB context.

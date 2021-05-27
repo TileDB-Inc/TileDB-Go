@@ -8,7 +8,7 @@ import (
 )
 
 // Name of array.
-var multiAttributeArrayName = "multi_attribute_array"
+const multiAttributeArrayName = "multi_attribute_array"
 
 func createMultiAttributeArray() {
 	// Create a TileDB context.

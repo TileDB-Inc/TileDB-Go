@@ -8,7 +8,7 @@ import (
 )
 
 // Name of array.
-var sparseGlobalArrayName = "writing_sparse_global_array"
+const sparseGlobalArrayName = "writing_sparse_global_array"
 
 func createSparseGlobalArray() {
 	// Create a TileDB context.

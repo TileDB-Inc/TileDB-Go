@@ -8,7 +8,7 @@ import (
 )
 
 // Name of array.
-var denseSparseArrayName = "writing_dense_sparse_array"
+const denseSparseArrayName = "writing_dense_sparse_array"
 
 func createDenseSparseArray() {
 	// Create a TileDB context.

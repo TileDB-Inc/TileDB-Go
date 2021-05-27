@@ -10,7 +10,7 @@ import (
 	"github.com/TileDB-Inc/TileDB-Go/bytesizes"
 )
 
-var vfsFileName = "tiledb_vfs.bin"
+const vfsFileName = "tiledb_vfs.bin"
 
 func dirsFiles() {
 	// Create a TileDB context.

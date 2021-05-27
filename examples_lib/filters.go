@@ -8,7 +8,7 @@ import (
 )
 
 // Name of array.
-var filtersArrayName = "filters_array"
+const filtersArrayName = "filters_array"
 
 func createFilterArray() {
 	// Create a TileDB context.

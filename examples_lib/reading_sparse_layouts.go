@@ -8,7 +8,7 @@ import (
 )
 
 // Name of array.
-var readingSparseLayoutsArrayName = "reading_sparse_layouts_array"
+const readingSparseLayoutsArrayName = "reading_sparse_layouts_array"
 
 func createReadingSparseLayoutsArray() {
 	// Create a TileDB context.

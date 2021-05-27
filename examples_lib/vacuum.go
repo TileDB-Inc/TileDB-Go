@@ -9,7 +9,7 @@ import (
 )
 
 // Name of array.
-var vaccuumSparseArrayName = "vacuum_sparse"
+const vaccuumSparseArrayName = "vacuum_sparse"
 
 func createVacuumSparseArray() {
 	// Create a TileDB context.

@@ -8,7 +8,7 @@ import (
 )
 
 // Name of array.
-var fragmentsConsolidationArrayName = "fragments_consolidation_array"
+const fragmentsConsolidationArrayName = "fragments_consolidation_array"
 
 func createFragmentsConsolidationArray() {
 	// Create a TileDB context.

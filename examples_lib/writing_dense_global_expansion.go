@@ -8,7 +8,7 @@ import (
 )
 
 // Name of array.
-var denseGlobalExpansionName = "writing_dense_global_expansion_array"
+const denseGlobalExpansionName = "writing_dense_global_expansion_array"
 
 func createDenseGlobalExpansionArray() {
 	// Create a TileDB context.

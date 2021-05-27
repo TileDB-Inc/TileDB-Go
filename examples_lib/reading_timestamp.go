@@ -9,7 +9,7 @@ import (
 )
 
 // Name of array.
-var timestampArrayName = "timestamp_metadata"
+const timestampArrayName = "timestamp_metadata"
 
 func createTimestampArray() {
 	// Create a TileDB context.

@@ -8,7 +8,7 @@ import (
 )
 
 // Name of array.
-var multipleWritesSparseArrayName = "multiple_writes_sparse_array"
+const multipleWritesSparseArrayName = "multiple_writes_sparse_array"
 
 func createMultipleWritesSparseArray() {
 	// Create a TileDB context.

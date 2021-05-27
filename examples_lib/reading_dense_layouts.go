@@ -8,7 +8,7 @@ import (
 )
 
 // Name of array.
-var readingDenseLayoutsArrayName = "reading_dense_layouts_array"
+const readingDenseLayoutsArrayName = "reading_dense_layouts_array"
 
 func createReadingDenseLayoutsArray() {
 	// Create a TileDB context.

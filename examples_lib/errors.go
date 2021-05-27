@@ -10,10 +10,10 @@ import (
 )
 
 // Name of the group
-var groupName = "my_group"
+const groupName = "my_group"
 
 // Type of file system (e.g. file://, s3://)
-var fileSystem = "file://"
+const fileSystem = "file://"
 
 func RunErrors() {
 	// Get filename of current file

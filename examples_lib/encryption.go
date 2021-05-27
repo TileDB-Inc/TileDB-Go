@@ -8,10 +8,10 @@ import (
 )
 
 // Name of array.
-var encryptedArrayName = "encrypted_array"
+const encryptedArrayName = "encrypted_array"
 
 // The 256-bit encryption key, stored as a string for convenience.
-var encryption_key = "0123456789abcdeF0123456789abcdeF"
+const encryption_key = "0123456789abcdeF0123456789abcdeF"
 
 func createEncryptedArray() {
 	// Create a TileDB context.

@@ -8,7 +8,7 @@ import (
 )
 
 // Name of array.
-var asyncArrayName = "async_array"
+const asyncArrayName = "async_array"
 
 func createAsyncArray() {
 	// Create a TileDB context.

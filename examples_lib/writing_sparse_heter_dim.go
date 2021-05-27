@@ -8,7 +8,7 @@ import (
 )
 
 // Name of array.
-var heterArrayName = "writing_sparse_heter_dim"
+const heterArrayName = "writing_sparse_heter_dim"
 
 func createSparseHeterDimArray() {
 	// Create a TileDB context.

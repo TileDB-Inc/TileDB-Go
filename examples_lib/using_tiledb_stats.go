@@ -7,7 +7,7 @@ import (
 )
 
 // Name of array.
-var statsArrayName = "stats_array"
+const statsArrayName = "stats_array"
 
 func createStatsArray(rowTileExtent uint32, colTileExtent uint32) {
 	// Create a TileDB context.

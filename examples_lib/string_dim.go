@@ -8,7 +8,7 @@ import (
 )
 
 // Name of array.
-var stringDimArrayName = "string_dim"
+const stringDimArrayName = "string_dim"
 
 func createStringDimArray() {
 	// Create a TileDB context.

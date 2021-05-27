@@ -9,7 +9,7 @@ import (
 )
 
 // Name of array.
-var readRangeArrayName = "read_range_array"
+const readRangeArrayName = "read_range_array"
 
 func createReadRangeArray() {
 	// Create a TileDB context.

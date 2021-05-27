@@ -9,7 +9,7 @@ import (
 )
 
 // Name of array.
-var variableLengthArrayName = "variable_length_array"
+const variableLengthArrayName = "variable_length_array"
 
 const rowsVariableLengthTileExtent = 4
 const colsVariableLengthTileExtent = 4
