@@ -1,15 +1,10 @@
 package examples_lib
 
 import (
-	"os"
-
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-const statsArrayName = "stats_array"
-
-func createStatsArray(rowTileExtent uint32, colTileExtent uint32) {
+func createStatsArray(dir string, rowTileExtent uint32, colTileExtent uint32) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -54,7 +49,7 @@ func createStatsArray(rowTileExtent uint32, colTileExtent uint32) {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, statsArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -62,7 +57,7 @@ func createStatsArray(rowTileExtent uint32, colTileExtent uint32) {
 	checkError(err)
 }
 
-func writeStatsArray() {
+func writeStatsArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -74,7 +69,7 @@ func writeStatsArray() {
 	}
 
 	// Create the query
-	array, err := tiledb.NewArray(ctx, statsArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -99,14 +94,14 @@ func writeStatsArray() {
 	checkError(err)
 }
 
-func readStatsArray() {
+func readStatsArray(dir string) {
 	// Create TileDB context
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, statsArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -155,13 +150,10 @@ func readStatsArray() {
 }
 
 func RunUsingTileDBStats() {
-	createStatsArray(1, 12000)
-	writeStatsArray()
-	readStatsArray()
+	tmpDir := temp("using_tiledb_stats")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(statsArrayName); err == nil {
-		err = os.RemoveAll(statsArrayName)
-		checkError(err)
-	}
+	createStatsArray(tmpDir, 1, 12000)
+	writeStatsArray(tmpDir)
+	readStatsArray(tmpDir)
 }

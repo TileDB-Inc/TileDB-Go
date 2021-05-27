@@ -2,16 +2,12 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 	"github.com/TileDB-Inc/TileDB-Go/bytesizes"
 )
 
-// Name of array.
-const sparseArrayName = "quickstart_sparse"
-
-func createSparseArray() {
+func createSparseArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -55,7 +51,7 @@ func createSparseArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -63,7 +59,7 @@ func createSparseArray() {
 	checkError(err)
 }
 
-func writeSparseArray() {
+func writeSparseArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -74,7 +70,7 @@ func writeSparseArray() {
 	data := []uint32{1, 2, 3}
 
 	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -103,13 +99,13 @@ func writeSparseArray() {
 	checkError(err)
 }
 
-func readSparseArray() {
+func readSparseArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, sparseArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -166,13 +162,10 @@ func readSparseArray() {
 // RunSparseArray shows and example creation, writing and reading of a
 // sparse array
 func RunSparseArray() {
-	createSparseArray()
-	writeSparseArray()
-	readSparseArray()
+	tmpDir := temp("sparse_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(sparseArrayName); err == nil {
-		err = os.RemoveAll(sparseArrayName)
-		checkError(err)
-	}
+	createSparseArray(tmpDir)
+	writeSparseArray(tmpDir)
+	readSparseArray(tmpDir)
 }

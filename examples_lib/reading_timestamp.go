@@ -2,16 +2,12 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-const timestampArrayName = "timestamp_metadata"
-
-func createTimestampArray() {
+func createTimestampArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -54,7 +50,7 @@ func createTimestampArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, timestampArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -62,7 +58,7 @@ func createTimestampArray() {
 	checkError(err)
 }
 
-func writeTimestampArray(key string, value string, timestamp uint64, bias int32) {
+func writeTimestampArray(dir string, key string, value string, timestamp uint64, bias int32) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -72,7 +68,7 @@ func writeTimestampArray(key string, value string, timestamp uint64, bias int32)
 		1, 2 + bias, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
 	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, timestampArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -101,13 +97,13 @@ func writeTimestampArray(key string, value string, timestamp uint64, bias int32)
 	checkError(err)
 }
 
-func writeTimestampArrayMeta(key string, value string, timestamp uint64) {
+func writeTimestampArrayMeta(dir string, key string, value string, timestamp uint64) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Open the array for writing
-	array, err := tiledb.NewArray(ctx, timestampArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -120,13 +116,13 @@ func writeTimestampArrayMeta(key string, value string, timestamp uint64) {
 	checkError(err)
 }
 
-func readTimestampArray(timestamp uint64) {
+func readTimestampArray(dir string, timestamp uint64) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, timestampArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -175,44 +171,39 @@ func getTimestamp() uint64 {
 
 // RunTimestampArray shows timestamp correlation of written data and metadata
 func RunTimestampArray() {
-	createTimestampArray()
+	tmpDir1 := temp("timestamp_array_1")
+	defer cleanup(tmpDir1)
+
+	createTimestampArray(tmpDir1)
 	// Write data and metadata
 	t1 := getTimestamp()
-	writeTimestampArray("meta_key", "Write1", t1, 0)
+	writeTimestampArray(tmpDir1, "meta_key", "Write1", t1, 0)
 	time.Sleep(2000 * time.Millisecond)
 	// Write metadata only
 	t2 := getTimestamp()
-	writeTimestampArrayMeta("meta_key", "Write2", t2)
+	writeTimestampArrayMeta(tmpDir1, "meta_key", "Write2", t2)
 	time.Sleep(2000 * time.Millisecond)
 	// Write metadata only
 	t3 := getTimestamp()
-	writeTimestampArrayMeta("meta_key", "Write3", t3)
-	readTimestampArray(t1)
-	readTimestampArray(t2)
-	readTimestampArray(t3)
+	writeTimestampArrayMeta(tmpDir1, "meta_key", "Write3", t3)
+	readTimestampArray(tmpDir1, t1)
+	readTimestampArray(tmpDir1, t2)
+	readTimestampArray(tmpDir1, t3)
 
-	if _, err := os.Stat(timestampArrayName); err == nil {
-		err = os.RemoveAll(timestampArrayName)
-		checkError(err)
-	}
+	tmpDir2 := temp("timestamp_array_2")
+	defer cleanup(tmpDir2)
 
 	// Writing data and metadata
-	createTimestampArray()
+	createTimestampArray(tmpDir2)
 	t1 = getTimestamp()
-	writeTimestampArray("meta_key", "Write1", t1, 0)
+	writeTimestampArray(tmpDir2, "meta_key", "Write1", t1, 0)
 	time.Sleep(2000 * time.Millisecond)
 	t2 = getTimestamp()
-	writeTimestampArray("meta_key", "Write2", t2, 1)
+	writeTimestampArray(tmpDir2, "meta_key", "Write2", t2, 1)
 	time.Sleep(2000 * time.Millisecond)
 	t3 = getTimestamp()
-	writeTimestampArray("meta_key", "Write3", t3, 2)
-	readTimestampArray(t1)
-	readTimestampArray(t2)
-	readTimestampArray(t3)
-
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(timestampArrayName); err == nil {
-		err = os.RemoveAll(timestampArrayName)
-		checkError(err)
-	}
+	writeTimestampArray(tmpDir2, "meta_key", "Write3", t3, 2)
+	readTimestampArray(tmpDir2, t1)
+	readTimestampArray(tmpDir2, t2)
+	readTimestampArray(tmpDir2, t3)
 }

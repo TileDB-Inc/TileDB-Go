@@ -3,15 +3,11 @@ package examples_lib
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-const arrayMetadataArrayName = "metadata_array"
-
-func createArrayMetadataArray() {
+func createArrayMetadataArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -50,7 +46,7 @@ func createArrayMetadataArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, arrayMetadataArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 
 	err = array.Create(schema)
@@ -59,13 +55,13 @@ func createArrayMetadataArray() {
 	array.Free()
 }
 
-func writeArrayMetadata() {
+func writeArrayMetadata(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, arrayMetadataArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	defer array.Free()
 	checkError(err)
 	err = array.Open(tiledb.TILEDB_WRITE)
@@ -91,13 +87,13 @@ func writeArrayMetadata() {
 	checkError(err)
 }
 
-func readArrayMetadata() {
+func readArrayMetadata(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, arrayMetadataArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 	err = array.Open(tiledb.TILEDB_READ)
@@ -181,13 +177,13 @@ func readArrayMetadata() {
 	fmt.Println(string(jsonData))
 }
 
-func clearArrayMetadata() {
+func clearArrayMetadata(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for writing
-	array, err := tiledb.NewArray(ctx, arrayMetadataArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -221,14 +217,11 @@ func clearArrayMetadata() {
 // RunArrayMetadataArray shows and example creation, writing and reading of a
 // sparse array
 func RunArrayMetadataArray() {
-	createArrayMetadataArray()
-	writeArrayMetadata()
-	readArrayMetadata()
-	clearArrayMetadata()
+	tempDir := temp("metadata_array")
+	defer cleanup(tempDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(arrayMetadataArrayName); err == nil {
-		err = os.RemoveAll(arrayMetadataArrayName)
-		checkError(err)
-	}
+	createArrayMetadataArray(tempDir)
+	writeArrayMetadata(tempDir)
+	readArrayMetadata(tempDir)
+	clearArrayMetadata(tempDir)
 }

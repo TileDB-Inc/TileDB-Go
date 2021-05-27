@@ -2,15 +2,11 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-const readingSparseLayoutsArrayName = "reading_sparse_layouts_array"
-
-func createReadingSparseLayoutsArray() {
+func createReadingSparseLayoutsArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -54,7 +50,7 @@ func createReadingSparseLayoutsArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, readingSparseLayoutsArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -62,7 +58,7 @@ func createReadingSparseLayoutsArray() {
 	checkError(err)
 }
 
-func writeReadingSparseLayoutsArray() {
+func writeReadingSparseLayoutsArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -73,7 +69,7 @@ func writeReadingSparseLayoutsArray() {
 	data := []uint32{1, 2, 3, 4, 5, 6}
 
 	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, readingSparseLayoutsArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -102,13 +98,13 @@ func writeReadingSparseLayoutsArray() {
 	checkError(err)
 }
 
-func readReadingSparseLayoutsArray() {
+func readReadingSparseLayoutsArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, readingSparseLayoutsArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -184,13 +180,10 @@ func readReadingSparseLayoutsArray() {
 }
 
 func RunReadingSparseLayouts() {
-	createReadingSparseLayoutsArray()
-	writeReadingSparseLayoutsArray()
-	readReadingSparseLayoutsArray()
+	tmpDir := temp("reading_sparse_layouts_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(readingSparseLayoutsArrayName); err == nil {
-		err = os.RemoveAll(readingSparseLayoutsArrayName)
-		checkError(err)
-	}
+	createReadingSparseLayoutsArray(tmpDir)
+	writeReadingSparseLayoutsArray(tmpDir)
+	readReadingSparseLayoutsArray(tmpDir)
 }

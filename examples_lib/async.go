@@ -2,15 +2,11 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-const asyncArrayName = "async_array"
-
-func createAsyncArray() {
+func createAsyncArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -56,7 +52,7 @@ func createAsyncArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, asyncArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	err = array.Create(schema)
 	checkError(err)
@@ -64,7 +60,7 @@ func createAsyncArray() {
 	array.Free()
 }
 
-func writeAsyncArray() {
+func writeAsyncArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -75,7 +71,7 @@ func writeAsyncArray() {
 	data := []uint32{1, 2, 3, 4}
 
 	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, asyncArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -118,13 +114,13 @@ func writeAsyncArray() {
 	checkError(err)
 }
 
-func readAsyncArray() {
+func readAsyncArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, asyncArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -189,13 +185,10 @@ func readAsyncArray() {
 }
 
 func RunAsyncArray() {
-	createAsyncArray()
-	writeAsyncArray()
-	readAsyncArray()
+	tempDir := temp("async_array")
+	defer cleanup(tempDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(asyncArrayName); err == nil {
-		err = os.RemoveAll(asyncArrayName)
-		checkError(err)
-	}
+	createAsyncArray(tempDir)
+	writeAsyncArray(tempDir)
+	readAsyncArray(tempDir)
 }

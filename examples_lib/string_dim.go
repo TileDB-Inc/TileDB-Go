@@ -2,15 +2,11 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-const stringDimArrayName = "string_dim"
-
-func createStringDimArray() {
+func createStringDimArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -46,7 +42,7 @@ func createStringDimArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, stringDimArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -54,13 +50,13 @@ func createStringDimArray() {
 	checkError(err)
 }
 
-func writeStringDimArray() {
+func writeStringDimArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Open the array for writing
-	array, err := tiledb.NewArray(ctx, stringDimArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -93,13 +89,13 @@ func writeStringDimArray() {
 	checkError(err)
 }
 
-func readStringDimArray() {
+func readStringDimArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, stringDimArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -152,13 +148,10 @@ func readStringDimArray() {
 // RunStringDimArray shows an example of creation, writing and reading of a
 // sparse array with string dim
 func RunStringDimArray() {
-	createStringDimArray()
-	writeStringDimArray()
-	readStringDimArray()
+	tmpDir := temp("string_dim_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(stringDimArrayName); err == nil {
-		err = os.RemoveAll(stringDimArrayName)
-		checkError(err)
-	}
+	createStringDimArray(tmpDir)
+	writeStringDimArray(tmpDir)
+	readStringDimArray(tmpDir)
 }

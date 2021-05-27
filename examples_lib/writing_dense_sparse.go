@@ -2,15 +2,11 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-const denseSparseArrayName = "writing_dense_sparse_array"
-
-func createDenseSparseArray() {
+func createDenseSparseArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -54,7 +50,7 @@ func createDenseSparseArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, denseSparseArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -62,13 +58,13 @@ func createDenseSparseArray() {
 	checkError(err)
 }
 
-func writeDenseSparseArray() {
+func writeDenseSparseArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Open the array for writing, create the query
-	array, err := tiledb.NewArray(ctx, denseSparseArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -101,13 +97,13 @@ func writeDenseSparseArray() {
 	checkError(err)
 }
 
-func readDenseSparseArray() {
+func readDenseSparseArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, denseSparseArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -159,13 +155,10 @@ func readDenseSparseArray() {
 }
 
 func RunWritingDenseSparse() {
-	createDenseSparseArray()
-	writeDenseSparseArray()
-	readDenseSparseArray()
+	tmpDir := temp("writing_dense_sparse_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(denseSparseArrayName); err == nil {
-		err = os.RemoveAll(denseSparseArrayName)
-		checkError(err)
-	}
+	createDenseSparseArray(tmpDir)
+	writeDenseSparseArray(tmpDir)
+	readDenseSparseArray(tmpDir)
 }

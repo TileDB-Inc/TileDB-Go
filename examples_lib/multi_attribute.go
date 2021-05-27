@@ -2,15 +2,11 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-const multiAttributeArrayName = "multi_attribute_array"
-
-func createMultiAttributeArray() {
+func createMultiAttributeArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -62,7 +58,7 @@ func createMultiAttributeArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, multiAttributeArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -70,7 +66,7 @@ func createMultiAttributeArray() {
 	checkError(err)
 }
 
-func writeMultiAttributeArray() {
+func writeMultiAttributeArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -84,7 +80,7 @@ func writeMultiAttributeArray() {
 		13.1, 13.2, 14.1, 14.2, 15.1, 15.2, 16.1, 16.2}
 
 	// Create the query
-	array, err := tiledb.NewArray(ctx, multiAttributeArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -111,14 +107,14 @@ func writeMultiAttributeArray() {
 	checkError(err)
 }
 
-func readMultiAttributeArray() {
+func readMultiAttributeArray(dir string) {
 	// Create TileDB context
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, multiAttributeArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -167,14 +163,14 @@ func readMultiAttributeArray() {
 	fmt.Printf("\n")
 }
 
-func readMultiAttributeArraySubSelect() {
+func readMultiAttributeArraySubSelect(dir string) {
 	// Create TileDB context
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, multiAttributeArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -219,14 +215,11 @@ func readMultiAttributeArraySubSelect() {
 }
 
 func RunMultiAttributeArray() {
-	createMultiAttributeArray()
-	writeMultiAttributeArray()
-	readMultiAttributeArray()
-	readMultiAttributeArraySubSelect()
+	tmpDir := temp("multi_attribute_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(multiAttributeArrayName); err == nil {
-		err = os.RemoveAll(multiAttributeArrayName)
-		checkError(err)
-	}
+	createMultiAttributeArray(tmpDir)
+	writeMultiAttributeArray(tmpDir)
+	readMultiAttributeArray(tmpDir)
+	readMultiAttributeArraySubSelect(tmpDir)
 }

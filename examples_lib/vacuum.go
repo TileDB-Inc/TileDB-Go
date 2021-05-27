@@ -2,16 +2,12 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 	"github.com/TileDB-Inc/TileDB-Go/bytesizes"
 )
 
-// Name of array.
-const vaccuumSparseArrayName = "vacuum_sparse"
-
-func createVacuumSparseArray() {
+func createVacuumSparseArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -47,7 +43,7 @@ func createVacuumSparseArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, vaccuumSparseArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -55,13 +51,13 @@ func createVacuumSparseArray() {
 	checkError(err)
 }
 
-func writeVacuumSparseArray(buffD []int32, data []int32) {
+func writeVacuumSparseArray(dir string, buffD []int32, data []int32) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, vaccuumSparseArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -88,13 +84,13 @@ func writeVacuumSparseArray(buffD []int32, data []int32) {
 	checkError(err)
 }
 
-func readVacuumSparseArray() {
+func readVacuumSparseArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, vaccuumSparseArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -139,7 +135,7 @@ func readVacuumSparseArray() {
 	checkError(err)
 }
 
-func numFragments() int {
+func numFragments(dir string) int {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -155,30 +151,30 @@ func numFragments() int {
 	checkError(err)
 	defer vfs.Free()
 
-	num, err := vfs.NumOfFragmentsInPath(vaccuumSparseArrayName)
+	num, err := vfs.NumOfFragmentsInPath(dir)
 	checkError(err)
 
 	return num
 }
 
-func consolidateVacuum() {
+func consolidateVacuum(dir string) {
 	// Write some simple data to cells (1, 2)
 	buffD := []int32{1, 2}
 	data := []int32{1, 2}
-	writeVacuumSparseArray(buffD, data)
+	writeVacuumSparseArray(dir, buffD, data)
 
 	// Write some simple data to cell (3)
 	buffD = []int32{3}
 	data = []int32{3}
-	writeVacuumSparseArray(buffD, data)
+	writeVacuumSparseArray(dir, buffD, data)
 
-	readVacuumSparseArray()
+	readVacuumSparseArray(dir)
 
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, vaccuumSparseArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -186,7 +182,7 @@ func consolidateVacuum() {
 	checkError(err)
 	defer array.Close()
 
-	numOfFragments := numFragments()
+	numOfFragments := numFragments(dir)
 	fmt.Printf("Num of fragments after 2 writes before consolidate: %d\n", numOfFragments)
 
 	config, err := tiledb.NewConfig()
@@ -198,26 +194,23 @@ func consolidateVacuum() {
 	err = array.Consolidate(config)
 	checkError(err)
 
-	numOfFragments = numFragments()
+	numOfFragments = numFragments(dir)
 	fmt.Printf("Num of fragments after consolidate: %d\n", numOfFragments)
 
 	err = array.Vacuum(config)
 	checkError(err)
 
-	numOfFragments = numFragments()
+	numOfFragments = numFragments(dir)
 	fmt.Printf("Num of fragments after vacuum: %d\n", numOfFragments)
 
-	readVacuumSparseArray()
+	readVacuumSparseArray(dir)
 }
 
 // RunVacuumSparseArray shows ysage of array vacuum function
 func RunVacuumSparseArray() {
-	createVacuumSparseArray()
-	consolidateVacuum()
+	tmpDir := temp("vacuum_sparse_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(vaccuumSparseArrayName); err == nil {
-		err = os.RemoveAll(vaccuumSparseArrayName)
-		checkError(err)
-	}
+	createVacuumSparseArray(tmpDir)
+	consolidateVacuum(tmpDir)
 }

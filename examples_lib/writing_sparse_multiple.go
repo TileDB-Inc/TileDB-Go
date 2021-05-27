@@ -2,15 +2,11 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-const multipleWritesSparseArrayName = "multiple_writes_sparse_array"
-
-func createMultipleWritesSparseArray() {
+func createMultipleWritesSparseArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -54,7 +50,7 @@ func createMultipleWritesSparseArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, multipleWritesSparseArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -88,13 +84,13 @@ func execQueryUnordered(tdbCtx *tiledb.Context, array *tiledb.Array,
 	checkError(err)
 }
 
-func writeMultipleWritesSparseArray() {
+func writeMultipleWritesSparseArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Open the array for writing.
-	array, err := tiledb.NewArray(ctx, multipleWritesSparseArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -124,13 +120,13 @@ func writeMultipleWritesSparseArray() {
 	checkError(err)
 }
 
-func readMultipleWritesSparseArray() {
+func readMultipleWritesSparseArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, multipleWritesSparseArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -187,13 +183,10 @@ func readMultipleWritesSparseArray() {
 }
 
 func RunWritingSparseMultiple() {
-	createMultipleWritesSparseArray()
-	writeMultipleWritesSparseArray()
-	readMultipleWritesSparseArray()
+	tmpDir := temp("writing_sparse_multiple_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(multipleWritesSparseArrayName); err == nil {
-		err = os.RemoveAll(multipleWritesSparseArrayName)
-		checkError(err)
-	}
+	createMultipleWritesSparseArray(tmpDir)
+	writeMultipleWritesSparseArray(tmpDir)
+	readMultipleWritesSparseArray(tmpDir)
 }

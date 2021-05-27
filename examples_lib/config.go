@@ -2,7 +2,7 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
+	"path/filepath"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
@@ -303,6 +303,9 @@ func printDefault() {
 }
 
 func saveLoadConfig() {
+	dir := temp("tiledb_config")
+	defer cleanup(dir)
+	file := filepath.Join(dir, configFileName)
 	fmt.Println("Save and load config")
 
 	// Create config object
@@ -315,11 +318,11 @@ func saveLoadConfig() {
 	checkError(err)
 
 	// Save to disk
-	err = config.SaveToFile(configFileName)
+	err = config.SaveToFile(file)
 	checkError(err)
 
 	// Load config from file
-	newConfig, err := tiledb.LoadConfig(configFileName)
+	newConfig, err := tiledb.LoadConfig(file)
 	checkError(err)
 
 	// Print the retrieved value
@@ -327,10 +330,6 @@ func saveLoadConfig() {
 	checkError(err)
 	fmt.Printf("\"sm.tile_cache_size\" : \"%s\"\n",
 		smTileCacheSize)
-
-	// Clean up
-	err = os.RemoveAll(configFileName)
-	checkError(err)
 
 	newConfig.Free()
 }

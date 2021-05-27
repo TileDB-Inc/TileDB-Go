@@ -2,15 +2,11 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-const heterArrayName = "writing_sparse_heter_dim"
-
-func createSparseHeterDimArray() {
+func createSparseHeterDimArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -50,7 +46,7 @@ func createSparseHeterDimArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, heterArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -58,7 +54,7 @@ func createSparseHeterDimArray() {
 	checkError(err)
 }
 
-func writeSparseHeterDimArray() {
+func writeSparseHeterDimArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -69,7 +65,7 @@ func writeSparseHeterDimArray() {
 	buffA := []int32{1, 2, 3, 4}
 
 	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, heterArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -98,13 +94,13 @@ func writeSparseHeterDimArray() {
 	checkError(err)
 }
 
-func readSparseHeterDimArray() {
+func readSparseHeterDimArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, heterArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -159,13 +155,10 @@ func readSparseHeterDimArray() {
 // RunSparseHeterDimArray shows and example creation, writing and reading of
 // a sparse array using heterogeneus dimensions
 func RunSparseHeterDimArray() {
-	createSparseHeterDimArray()
-	writeSparseHeterDimArray()
-	readSparseHeterDimArray()
+	tmpDir := temp("sparse_heter_dim_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(heterArrayName); err == nil {
-		err = os.RemoveAll(heterArrayName)
-		checkError(err)
-	}
+	createSparseHeterDimArray(tmpDir)
+	writeSparseHeterDimArray(tmpDir)
+	readSparseHeterDimArray(tmpDir)
 }

@@ -2,15 +2,11 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-const densePaddingArrayName = "writing_dense_padding_array"
-
-func createDensePaddingArray() {
+func createDensePaddingArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -54,7 +50,7 @@ func createDensePaddingArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, densePaddingArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -62,7 +58,7 @@ func createDensePaddingArray() {
 	checkError(err)
 }
 
-func writeDensePaddingArray() {
+func writeDensePaddingArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -70,7 +66,7 @@ func writeDensePaddingArray() {
 	subarray := []int32{2, 3, 1, 2}
 
 	// Open the array for writing.
-	array, err := tiledb.NewArray(ctx, densePaddingArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -99,13 +95,13 @@ func writeDensePaddingArray() {
 	checkError(err)
 }
 
-func readDensePaddingArray() {
+func readDensePaddingArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, densePaddingArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -143,13 +139,10 @@ func readDensePaddingArray() {
 }
 
 func RunWritingDensePadding() {
-	createDensePaddingArray()
-	writeDensePaddingArray()
-	readDensePaddingArray()
+	tmpDir := temp("writing_dense_padding_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(densePaddingArrayName); err == nil {
-		err = os.RemoveAll(densePaddingArrayName)
-		checkError(err)
-	}
+	createDensePaddingArray(tmpDir)
+	writeDensePaddingArray(tmpDir)
+	readDensePaddingArray(tmpDir)
 }

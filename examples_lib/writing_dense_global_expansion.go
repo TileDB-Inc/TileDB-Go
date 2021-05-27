@@ -2,15 +2,11 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-const denseGlobalExpansionName = "writing_dense_global_expansion_array"
-
-func createDenseGlobalExpansionArray() {
+func createDenseGlobalExpansionArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -50,7 +46,7 @@ func createDenseGlobalExpansionArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, denseGlobalExpansionName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -58,7 +54,7 @@ func createDenseGlobalExpansionArray() {
 	checkError(err)
 }
 
-func writeDenseGlobalExpansionArray() {
+func writeDenseGlobalExpansionArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -66,7 +62,7 @@ func writeDenseGlobalExpansionArray() {
 	subarray := []int32{1, 4, 1, 2}
 
 	// Open the array for writing.
-	array, err := tiledb.NewArray(ctx, denseGlobalExpansionName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -95,7 +91,7 @@ func writeDenseGlobalExpansionArray() {
 	checkError(err)
 }
 
-func writeRowMajorDenseGlobalExpansionArray() {
+func writeRowMajorDenseGlobalExpansionArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -103,7 +99,7 @@ func writeRowMajorDenseGlobalExpansionArray() {
 	subarray := []int32{1, 4, 3, 3}
 
 	// Open the array for writing.
-	array, err := tiledb.NewArray(ctx, denseGlobalExpansionName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -131,13 +127,13 @@ func writeRowMajorDenseGlobalExpansionArray() {
 	checkError(err)
 }
 
-func readDenseGlobalExpansionArray() {
+func readDenseGlobalExpansionArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, denseGlobalExpansionName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -172,14 +168,11 @@ func readDenseGlobalExpansionArray() {
 }
 
 func RunWritingDenseGlobalExpansion() {
-	createDenseGlobalExpansionArray()
-	writeDenseGlobalExpansionArray()
-	writeRowMajorDenseGlobalExpansionArray()
-	readDenseGlobalExpansionArray()
+	tmpDir := temp("writing_dense_global_expansion_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(denseGlobalExpansionName); err == nil {
-		err = os.RemoveAll(denseGlobalExpansionName)
-		checkError(err)
-	}
+	createDenseGlobalExpansionArray(tmpDir)
+	writeDenseGlobalExpansionArray(tmpDir)
+	writeRowMajorDenseGlobalExpansionArray(tmpDir)
+	readDenseGlobalExpansionArray(tmpDir)
 }
