@@ -438,7 +438,7 @@ func (a *Array) NonEmptyDomainMap() (map[string]interface{}, error) {
 			return nil, err
 		}
 
-		if cellValNum == uint(TILEDB_VAR_NUM) {
+		if cellValNum == TILEDB_VAR_NUM {
 			nonEmptyDomain, isEmpty, err := a.NonEmptyDomainVarFromName(dimensionName)
 			if err != nil {
 				return nil, err

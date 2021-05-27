@@ -485,7 +485,7 @@ func (v *VFSfh) Close() error {
 }
 
 // Read part of a file
-func (v *VFSfh) Read(p []byte) (int, error) {
+func (v *VFSfh) Read(p []byte) (uint64, error) {
 	nbytes := uint64(len(p))
 
 	// If the size is empty, fetch it
@@ -513,7 +513,7 @@ func (v *VFSfh) Read(p []byte) (int, error) {
 	}
 
 	v.offset += nbytes
-	return int(nbytes), nil
+	return nbytes, nil
 }
 
 // Write the contents of a buffer into a file. Note that this function only

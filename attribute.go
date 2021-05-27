@@ -85,7 +85,7 @@ func (a *Attribute) FilterList() (*FilterList, error) {
 // SetCellValNum Sets the number of attribute values per cell.
 // This is inferred from the type parameter of the NewAttribute
 // function, but can also be set manually.
-func (a *Attribute) SetCellValNum(val uint) error {
+func (a *Attribute) SetCellValNum(val uint32) error {
 	ret := C.tiledb_attribute_set_cell_val_num(a.context.tiledbContext,
 		a.tiledbAttribute, C.uint32_t(val))
 	if ret != C.TILEDB_OK {
@@ -152,7 +152,7 @@ func (a *Attribute) SetFillValue(value interface{}) error {
 	}
 
 	var valueSize C.uint64_t
-	if cellValNum == uint32(TILEDB_VAR_NUM) {
+	if cellValNum == TILEDB_VAR_NUM {
 		valueSize = C.uint64_t(reflect.TypeOf(value).Size())
 	} else {
 		valueSize = C.uint64_t(attrDataType.Size() * uint64(cellValNum))
@@ -251,7 +251,7 @@ func (a *Attribute) SetFillValueNullable(value interface{}, valid bool) error {
 	}
 
 	var valueSize C.uint64_t
-	if cellValNum == uint32(TILEDB_VAR_NUM) {
+	if cellValNum == TILEDB_VAR_NUM {
 		valueSize = C.uint64_t(reflect.TypeOf(value).Size())
 	} else {
 		valueSize = C.uint64_t(attrDataType.Size() * uint64(cellValNum))

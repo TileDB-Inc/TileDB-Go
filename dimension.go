@@ -269,7 +269,7 @@ func (d *Dimension) FilterList() (*FilterList, error) {
 // If this is not used, the default is `1`.
 // This is inferred from the type parameter of the NewDimension
 // function, but can also be set manually.
-func (d *Dimension) SetCellValNum(val uint) error {
+func (d *Dimension) SetCellValNum(val uint32) error {
 	ret := C.tiledb_dimension_set_cell_val_num(d.context.tiledbContext,
 		d.tiledbDimension, C.uint32_t(val))
 	if ret != C.TILEDB_OK {
@@ -280,14 +280,14 @@ func (d *Dimension) SetCellValNum(val uint) error {
 
 // CellValNum returns number of values of one cell on this attribute.
 // For variable-sized attributes returns TILEDB_VAR_NUM.
-func (d *Dimension) CellValNum() (uint, error) {
+func (d *Dimension) CellValNum() (uint32, error) {
 	var cellValNum C.uint32_t
 	ret := C.tiledb_dimension_get_cell_val_num(d.context.tiledbContext, d.tiledbDimension, &cellValNum)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("Error getting tiledb dimension cell val num: %s", d.context.LastError())
 	}
 
-	return uint(cellValNum), nil
+	return uint32(cellValNum), nil
 }
 
 // Name returns the name of the dimension
