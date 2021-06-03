@@ -2,15 +2,11 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-var filtersArrayName = "filters_array"
-
-func createFilterArray() {
+func createFilterArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -97,7 +93,7 @@ func createFilterArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, filtersArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -105,7 +101,7 @@ func createFilterArray() {
 	checkError(err)
 }
 
-func writeFiltersArray() {
+func writeFiltersArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -117,7 +113,7 @@ func writeFiltersArray() {
 	dataA2 := []int32{-1, -2, -3}
 
 	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, filtersArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -148,13 +144,13 @@ func writeFiltersArray() {
 	checkError(err)
 }
 
-func readFiltersArray() {
+func readFiltersArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, filtersArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -213,13 +209,10 @@ func readFiltersArray() {
 // RunFiltersArray shows and example creation, writing and reading of a
 // sparse array
 func RunFiltersArray() {
-	createFilterArray()
-	writeFiltersArray()
-	readFiltersArray()
+	tmpDir := temp("filters_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(filtersArrayName); err == nil {
-		err = os.RemoveAll(filtersArrayName)
-		checkError(err)
-	}
+	createFilterArray(tmpDir)
+	writeFiltersArray(tmpDir)
+	readFiltersArray(tmpDir)
 }

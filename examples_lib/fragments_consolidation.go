@@ -2,15 +2,11 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-var fragmentsConsolidationArrayName = "fragments_consolidation_array"
-
-func createFragmentsConsolidationArray() {
+func createFragmentsConsolidationArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -52,7 +48,7 @@ func createFragmentsConsolidationArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, fragmentsConsolidationArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -60,7 +56,7 @@ func createFragmentsConsolidationArray() {
 	checkError(err)
 }
 
-func writeFragmentsConsolidationArray1() {
+func writeFragmentsConsolidationArray1(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -70,7 +66,7 @@ func writeFragmentsConsolidationArray1() {
 	subarray := []int32{1, 2, 1, 4}
 
 	// Create the query
-	array, err := tiledb.NewArray(ctx, fragmentsConsolidationArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -97,7 +93,7 @@ func writeFragmentsConsolidationArray1() {
 	checkError(err)
 }
 
-func writeFragmentsConsolidationArray2() {
+func writeFragmentsConsolidationArray2(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -107,7 +103,7 @@ func writeFragmentsConsolidationArray2() {
 	subarray := []int32{2, 3, 2, 3}
 
 	// Create the query
-	array, err := tiledb.NewArray(ctx, fragmentsConsolidationArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -134,7 +130,7 @@ func writeFragmentsConsolidationArray2() {
 	checkError(err)
 }
 
-func writeFragmentsConsolidationArray3() {
+func writeFragmentsConsolidationArray3(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
@@ -144,7 +140,7 @@ func writeFragmentsConsolidationArray3() {
 	data := []int32{201, 202}
 
 	// Create the query
-	array, err := tiledb.NewArray(ctx, fragmentsConsolidationArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -185,14 +181,14 @@ func writeFragmentsConsolidationArray3() {
 	checkError(err)
 }
 
-func readFragmentsConsolidationArray() {
+func readFragmentsConsolidationArray(dir string) {
 	// Create TileDB context
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, fragmentsConsolidationArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -248,15 +244,12 @@ func readFragmentsConsolidationArray() {
 }
 
 func RunFragmentsConsolidationArray() {
-	createFragmentsConsolidationArray()
-	writeFragmentsConsolidationArray1()
-	writeFragmentsConsolidationArray2()
-	writeFragmentsConsolidationArray3()
-	readFragmentsConsolidationArray()
+	tmpDir := temp("fragments_conslidation_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(fragmentsConsolidationArrayName); err == nil {
-		err = os.RemoveAll(fragmentsConsolidationArrayName)
-		checkError(err)
-	}
+	createFragmentsConsolidationArray(tmpDir)
+	writeFragmentsConsolidationArray1(tmpDir)
+	writeFragmentsConsolidationArray2(tmpDir)
+	writeFragmentsConsolidationArray3(tmpDir)
+	readFragmentsConsolidationArray(tmpDir)
 }

@@ -2,15 +2,11 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-var rangeArrayName = "range_array"
-
-func createRangeArray() {
+func createRangeArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -53,7 +49,7 @@ func createRangeArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, rangeArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -61,7 +57,7 @@ func createRangeArray() {
 	checkError(err)
 }
 
-func writeRangeArray() {
+func writeRangeArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -71,7 +67,7 @@ func writeRangeArray() {
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
 	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, rangeArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -96,13 +92,13 @@ func writeRangeArray() {
 	checkError(err)
 }
 
-func addRange() {
+func addRange(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, rangeArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -131,12 +127,12 @@ func addRange() {
 	checkError(err)
 }
 
-func getRangeNum() {
+func getRangeNum(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, rangeArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -165,13 +161,13 @@ func getRangeNum() {
 	checkError(err)
 }
 
-func getRange() {
+func getRange(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, rangeArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -198,15 +194,12 @@ func getRange() {
 // RunRange shows an example of creation, writing of a dense array
 // and usage of range functions
 func RunRange() {
-	createRangeArray()
-	writeRangeArray()
-	addRange()
-	getRangeNum()
-	getRange()
+	tmpDir := temp("range_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(rangeArrayName); err == nil {
-		err = os.RemoveAll(rangeArrayName)
-		checkError(err)
-	}
+	createRangeArray(tmpDir)
+	writeRangeArray(tmpDir)
+	addRange(tmpDir)
+	getRangeNum(tmpDir)
+	getRange(tmpDir)
 }

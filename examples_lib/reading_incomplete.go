@@ -2,16 +2,12 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 	"github.com/TileDB-Inc/TileDB-Go/bytesizes"
 )
 
-// Name of array.
-var readingIncompleteArrayName = "reading_incomplete_array"
-
-func createReadingIncompleteArray() {
+func createReadingIncompleteArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -65,7 +61,7 @@ func createReadingIncompleteArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, readingIncompleteArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -73,7 +69,7 @@ func createReadingIncompleteArray() {
 	checkError(err)
 }
 
-func writeReadingIncompleteArray() {
+func writeReadingIncompleteArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -86,7 +82,7 @@ func writeReadingIncompleteArray() {
 	a2Off := []uint64{0, 1, 3}
 
 	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, readingIncompleteArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -181,13 +177,13 @@ func printResultsReadingIncomplete(
 	}
 }
 
-func readReadingIncompleteArray() {
+func readReadingIncompleteArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, readingIncompleteArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -265,13 +261,10 @@ func readReadingIncompleteArray() {
 }
 
 func RunReadingIncompleteArray() {
-	createReadingIncompleteArray()
-	writeReadingIncompleteArray()
-	readReadingIncompleteArray()
+	tmpDir := temp("reading_incomplete_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(readingIncompleteArrayName); err == nil {
-		err = os.RemoveAll(readingIncompleteArrayName)
-		checkError(err)
-	}
+	createReadingIncompleteArray(tmpDir)
+	writeReadingIncompleteArray(tmpDir)
+	readReadingIncompleteArray(tmpDir)
 }

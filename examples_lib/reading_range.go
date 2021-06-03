@@ -3,15 +3,11 @@ package examples_lib
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-var readRangeArrayName = "read_range_array"
-
-func createReadRangeArray() {
+func createReadRangeArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -54,7 +50,7 @@ func createReadRangeArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, readRangeArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -62,7 +58,7 @@ func createReadRangeArray() {
 	checkError(err)
 }
 
-func writeRearRangeArray() {
+func writeRearRangeArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -72,7 +68,7 @@ func writeRearRangeArray() {
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
 	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, readRangeArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -97,13 +93,13 @@ func writeRearRangeArray() {
 	checkError(err)
 }
 
-func readReadRangeArray(dimIdx uint32) {
+func readReadRangeArray(dir string, dimIdx uint32) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, readRangeArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -163,18 +159,15 @@ func readReadRangeArray(dimIdx uint32) {
 // RunReadRangeArray shows and example creation, writing and range reading
 // of a dense array
 func RunReadRangeArray() {
-	createReadRangeArray()
-	writeRearRangeArray()
-	// Rows
-	readReadRangeArray(0)
-	// Columns
-	readReadRangeArray(1)
+	tmpDir := temp("read_range_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(readRangeArrayName); err == nil {
-		err = os.RemoveAll(readRangeArrayName)
-		checkError(err)
-	}
+	createReadRangeArray(tmpDir)
+	writeRearRangeArray(tmpDir)
+	// Rows
+	readReadRangeArray(tmpDir, 0)
+	// Columns
+	readReadRangeArray(tmpDir, 1)
 }
 
 //  1  2  3  4

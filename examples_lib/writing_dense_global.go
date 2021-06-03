@@ -2,15 +2,11 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-var denseGlobalArrayName = "writing_dense_global_array"
-
-func createDenseGlobalArray() {
+func createDenseGlobalArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -54,7 +50,7 @@ func createDenseGlobalArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, denseGlobalArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -62,7 +58,7 @@ func createDenseGlobalArray() {
 	checkError(err)
 }
 
-func writeDenseGlobalArray() {
+func writeDenseGlobalArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -70,7 +66,7 @@ func writeDenseGlobalArray() {
 	subarray := []int32{1, 4, 1, 2}
 
 	// Open the array for writing.
-	array, err := tiledb.NewArray(ctx, denseGlobalArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -107,13 +103,13 @@ func writeDenseGlobalArray() {
 	checkError(err)
 }
 
-func readDenseGlobalArray() {
+func readDenseGlobalArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, denseGlobalArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -148,13 +144,10 @@ func readDenseGlobalArray() {
 }
 
 func RunWritingDenseGlobal() {
-	createDenseGlobalArray()
-	writeDenseGlobalArray()
-	readDenseGlobalArray()
+	tmpDir := temp("writing_dense_global_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(denseGlobalArrayName); err == nil {
-		err = os.RemoveAll(denseGlobalArrayName)
-		checkError(err)
-	}
+	createDenseGlobalArray(tmpDir)
+	writeDenseGlobalArray(tmpDir)
+	readDenseGlobalArray(tmpDir)
 }

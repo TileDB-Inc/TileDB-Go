@@ -2,19 +2,15 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 	"github.com/TileDB-Inc/TileDB-Go/bytesizes"
 )
 
-// Name of array.
-var variableLengthArrayName = "variable_length_array"
-
 const rowsVariableLengthTileExtent = 4
 const colsVariableLengthTileExtent = 4
 
-func createVariableLengthArray() {
+func createVariableLengthArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -70,7 +66,7 @@ func createVariableLengthArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, variableLengthArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -78,7 +74,7 @@ func createVariableLengthArray() {
 	checkError(err)
 }
 
-func writeVariableLengthArray() {
+func writeVariableLengthArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -100,7 +96,7 @@ func writeVariableLengthArray() {
 	}
 
 	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, variableLengthArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -181,14 +177,14 @@ func printResultsVariableLength(
 	}
 }
 
-func readVariableLengthArray() {
+func readVariableLengthArray(dir string) {
 	// Create TileDB context
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, variableLengthArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -244,13 +240,10 @@ func readVariableLengthArray() {
 }
 
 func RunVariableLengthArray() {
-	createVariableLengthArray()
-	writeVariableLengthArray()
-	readVariableLengthArray()
+	tmpDir := temp("variable_length_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(variableLengthArrayName); err == nil {
-		err = os.RemoveAll(variableLengthArrayName)
-		checkError(err)
-	}
+	createVariableLengthArray(tmpDir)
+	writeVariableLengthArray(tmpDir)
+	readVariableLengthArray(tmpDir)
 }

@@ -2,15 +2,11 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-var sparseGlobalArrayName = "writing_sparse_global_array"
-
-func createSparseGlobalArray() {
+func createSparseGlobalArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -54,7 +50,7 @@ func createSparseGlobalArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, sparseGlobalArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -87,13 +83,13 @@ func execQueryGlobalOrder(tdbCtx *tiledb.Context, array *tiledb.Array,
 	checkError(err)
 }
 
-func writeSparseGlobalArray() {
+func writeSparseGlobalArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Open the array for writing.
-	array, err := tiledb.NewArray(ctx, sparseGlobalArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -114,13 +110,13 @@ func writeSparseGlobalArray() {
 	execQueryGlobalOrder(ctx, array, data2, buffD1, buffD2)
 }
 
-func readSparseGlobalArray() {
+func readSparseGlobalArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, sparseGlobalArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -177,13 +173,10 @@ func readSparseGlobalArray() {
 }
 
 func RunWritingSparseGlobal() {
-	createSparseGlobalArray()
-	writeSparseGlobalArray()
-	readSparseGlobalArray()
+	tmpDir := temp("writing_sparse_global_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(sparseGlobalArrayName); err == nil {
-		err = os.RemoveAll(sparseGlobalArrayName)
-		checkError(err)
-	}
+	createSparseGlobalArray(tmpDir)
+	writeSparseGlobalArray(tmpDir)
+	readSparseGlobalArray(tmpDir)
 }

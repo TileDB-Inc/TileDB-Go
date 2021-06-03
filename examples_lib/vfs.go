@@ -4,15 +4,15 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
-	"os"
+	"path/filepath"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 	"github.com/TileDB-Inc/TileDB-Go/bytesizes"
 )
 
-var vfsFileName = "tiledb_vfs.bin"
+const vfsFileName = "tiledb_vfs.bin"
 
-func dirsFiles() {
+func dirsFiles(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -28,11 +28,12 @@ func dirsFiles() {
 	checkError(err)
 	defer vfs.Free()
 
-	isDir, err := vfs.IsDir("dir_A")
+	dirA := filepath.Join(dir, "dir_A")
+	isDir, err := vfs.IsDir(dirA)
 	checkError(err)
 
 	if !isDir {
-		err = vfs.CreateDir("dir_A")
+		err = vfs.CreateDir(dirA)
 		checkError(err)
 		fmt.Println("Created 'dir_A'")
 	} else {
@@ -40,11 +41,12 @@ func dirsFiles() {
 	}
 
 	// Creating an (empty) file
-	isFile, err := vfs.IsFile("dir_A/file_A")
+	dirAFileA := filepath.Join(dirA, "file_A")
+	isFile, err := vfs.IsFile(dirAFileA)
 	checkError(err)
 
 	if !isFile {
-		err = vfs.Touch("dir_A/file_A")
+		err = vfs.Touch(dirAFileA)
 		checkError(err)
 		fmt.Println("Created empty file 'dir_A/file_A'")
 	} else {
@@ -52,20 +54,21 @@ func dirsFiles() {
 	}
 
 	// Getting the file size
-	fileSize, err := vfs.FileSize("dir_A/file_A")
+	fileSize, err := vfs.FileSize(dirAFileA)
 	checkError(err)
 	fmt.Printf("Size of file 'dir_A/file_A': %d\n", fileSize)
 
 	// Moving files (moving directories is similar)
+	dirAFileB := filepath.Join(dirA, "file_B")
 	fmt.Println("Moving file 'dir_A/file_A' to 'dir_A/file_B'")
-	err = vfs.MoveFile("dir_A/file_A", "dir_A/file_B")
+	err = vfs.MoveFile(dirAFileA, dirAFileB)
 	checkError(err)
 
 	// Deleting files and directories
 	fmt.Println("Deleting 'dir_A/file_B' and 'dir_A'")
-	err = vfs.RemoveFile("dir_A/file_B")
+	err = vfs.RemoveFile(dirAFileB)
 	checkError(err)
-	err = vfs.RemoveDir("dir_A")
+	err = vfs.RemoveDir(dirA)
 	checkError(err)
 }
 
@@ -82,7 +85,7 @@ func float32ToBytes(float float32) []byte {
 	return bytes
 }
 
-func write() {
+func write(dir string) {
 	// Create TileDB context
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -98,11 +101,13 @@ func write() {
 	checkError(err)
 	defer vfs.Free()
 
+	file := filepath.Join(dir, vfsFileName)
+
 	// Write binary data
-	fh1, err := vfs.Open(vfsFileName, tiledb.TILEDB_VFS_WRITE)
+	fh1, err := vfs.Open(file, tiledb.TILEDB_VFS_WRITE)
 	defer vfs.Close(fh1)
 	if err != nil {
-		fmt.Printf("Error opening file '%s'\n", vfsFileName)
+		fmt.Printf("Error opening file '%s'\n", file)
 	}
 
 	var f1 float32 = 153.0
@@ -113,10 +118,10 @@ func write() {
 	checkError(err)
 
 	// Write binary data again - this will overwrite the previous file
-	fh2, err := vfs.Open("tiledb_vfs.bin", tiledb.TILEDB_VFS_WRITE)
+	fh2, err := vfs.Open(file, tiledb.TILEDB_VFS_WRITE)
 	defer vfs.Close(fh2)
 	if err != nil {
-		fmt.Printf("Error opening file '%s' for write.\n", vfsFileName)
+		fmt.Printf("Error opening file '%s' for write.\n", file)
 	}
 
 	var f2 float32 = 153.1
@@ -127,10 +132,10 @@ func write() {
 	checkError(err)
 
 	// Append binary data to existing file (this will NOT work on S3)
-	fh3, err := vfs.Open("tiledb_vfs.bin", tiledb.TILEDB_VFS_APPEND)
+	fh3, err := vfs.Open(file, tiledb.TILEDB_VFS_APPEND)
 	defer vfs.Close(fh3)
 	if err != nil {
-		fmt.Printf("Error opening file '%s' for append.\n", vfsFileName)
+		fmt.Printf("Error opening file '%s' for append.\n", file)
 	}
 
 	s3 := "ghijkl"
@@ -138,7 +143,7 @@ func write() {
 	checkError(err)
 }
 
-func read() {
+func read(dir string) {
 	// Create TileDB context
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -154,14 +159,16 @@ func read() {
 	checkError(err)
 	defer vfs.Free()
 
+	file := filepath.Join(dir, vfsFileName)
+
 	// Read binary data
-	fh, err := vfs.Open("tiledb_vfs.bin", tiledb.TILEDB_VFS_READ)
+	fh, err := vfs.Open(file, tiledb.TILEDB_VFS_READ)
 	defer vfs.Close(fh)
 	if err != nil {
-		fmt.Printf("Error opening file '%s'\n", vfsFileName)
+		fmt.Printf("Error opening file '%s'\n", file)
 	}
 
-	sizefFile, err := vfs.FileSize(vfsFileName)
+	sizefFile, err := vfs.FileSize(file)
 	checkError(err)
 
 	f1, err := vfs.Read(fh, 0, bytesizes.Float32)
@@ -172,14 +179,13 @@ func read() {
 	fmt.Println("Binary read:")
 	fmt.Println(float32FromBytes(f1))
 	fmt.Println(string(s1))
-
-	// Clean up
-	err = os.RemoveAll(vfsFileName)
-	checkError(err)
 }
 
 func RunVfs() {
-	dirsFiles()
-	write()
-	read()
+	tmpDir := temp("VFS")
+	defer cleanup(tmpDir)
+
+	dirsFiles(tmpDir)
+	write(tmpDir)
+	read(tmpDir)
 }

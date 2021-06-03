@@ -2,15 +2,11 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-var readingDenseLayoutsArrayName = "reading_dense_layouts_array"
-
-func createReadingDenseLayoutsArray() {
+func createReadingDenseLayoutsArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -53,7 +49,7 @@ func createReadingDenseLayoutsArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, readingDenseLayoutsArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -61,7 +57,7 @@ func createReadingDenseLayoutsArray() {
 	checkError(err)
 }
 
-func writeReadingDenseLayoutsArray() {
+func writeReadingDenseLayoutsArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -71,7 +67,7 @@ func writeReadingDenseLayoutsArray() {
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
 	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, readingDenseLayoutsArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -96,13 +92,13 @@ func writeReadingDenseLayoutsArray() {
 	checkError(err)
 }
 
-func readReadingDenseLayoutsArray() {
+func readReadingDenseLayoutsArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, readingDenseLayoutsArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -164,13 +160,10 @@ func readReadingDenseLayoutsArray() {
 }
 
 func RunReadingDenseLayouts() {
-	createReadingDenseLayoutsArray()
-	writeReadingDenseLayoutsArray()
-	readReadingDenseLayoutsArray()
+	tmpDir := temp("reading_dense_layouts")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(readingDenseLayoutsArrayName); err == nil {
-		err = os.RemoveAll(readingDenseLayoutsArrayName)
-		checkError(err)
-	}
+	createReadingDenseLayoutsArray(tmpDir)
+	writeReadingDenseLayoutsArray(tmpDir)
+	readReadingDenseLayoutsArray(tmpDir)
 }

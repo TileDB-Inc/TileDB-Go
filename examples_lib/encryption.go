@@ -2,18 +2,14 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-var encryptedArrayName = "encrypted_array"
-
 // The 256-bit encryption key, stored as a string for convenience.
-var encryption_key = "0123456789abcdeF0123456789abcdeF"
+const encryption_key = "0123456789abcdeF0123456789abcdeF"
 
-func createEncryptedArray() {
+func createEncryptedArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -52,7 +48,7 @@ func createEncryptedArray() {
 	checkError(err)
 
 	// Create the (empty) encrypted array with AES-256-GCM.
-	array, err := tiledb.NewArray(ctx, encryptedArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -60,7 +56,7 @@ func createEncryptedArray() {
 	checkError(err)
 }
 
-func writeEncryptedArray() {
+func writeEncryptedArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -70,7 +66,7 @@ func writeEncryptedArray() {
 		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
 	// Open the array for writing and create the query.
-	array, err := tiledb.NewArray(ctx, encryptedArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -93,13 +89,13 @@ func writeEncryptedArray() {
 	checkError(err)
 }
 
-func readEncryptedArray() {
+func readEncryptedArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, encryptedArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -135,13 +131,10 @@ func readEncryptedArray() {
 }
 
 func RunEncryptedArray() {
-	createEncryptedArray()
-	writeEncryptedArray()
-	readEncryptedArray()
+	tempDir := temp("encrypted_array")
+	defer cleanup(tempDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(encryptedArrayName); err == nil {
-		err = os.RemoveAll(encryptedArrayName)
-		checkError(err)
-	}
+	createEncryptedArray(tempDir)
+	writeEncryptedArray(tempDir)
+	readEncryptedArray(tempDir)
 }

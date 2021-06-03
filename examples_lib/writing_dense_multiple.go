@@ -2,15 +2,11 @@ package examples_lib
 
 import (
 	"fmt"
-	"os"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
-// Name of array.
-var denseMultipleArrayName = "writing_dense_multiple_array"
-
-func createDenseMultipleArray() {
+func createDenseMultipleArray(dir string) {
 	// Create a TileDB context.
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
@@ -54,7 +50,7 @@ func createDenseMultipleArray() {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, denseMultipleArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -62,7 +58,7 @@ func createDenseMultipleArray() {
 	checkError(err)
 }
 
-func writeDenseMultipleArray1() {
+func writeDenseMultipleArray1(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -70,7 +66,7 @@ func writeDenseMultipleArray1() {
 	subarray := []int32{1, 2, 1, 2}
 
 	// Open the array for writing.
-	array, err := tiledb.NewArray(ctx, denseMultipleArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -98,7 +94,7 @@ func writeDenseMultipleArray1() {
 	checkError(err)
 }
 
-func writeDenseMultipleArray2() {
+func writeDenseMultipleArray2(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
@@ -106,7 +102,7 @@ func writeDenseMultipleArray2() {
 	subarray := []int32{2, 3, 1, 4}
 
 	// Open the array for writing.
-	array, err := tiledb.NewArray(ctx, denseMultipleArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -135,13 +131,13 @@ func writeDenseMultipleArray2() {
 	checkError(err)
 }
 
-func readDenseMultipleArray() {
+func readDenseMultipleArray(dir string) {
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	array, err := tiledb.NewArray(ctx, denseMultipleArrayName)
+	array, err := tiledb.NewArray(ctx, dir)
 	checkError(err)
 	defer array.Free()
 
@@ -179,14 +175,11 @@ func readDenseMultipleArray() {
 }
 
 func RunWritingDenseMultiple() {
-	createDenseMultipleArray()
-	writeDenseMultipleArray1()
-	writeDenseMultipleArray2()
-	readDenseMultipleArray()
+	tmpDir := temp("writing_dense_multiple_array")
+	defer cleanup(tmpDir)
 
-	// Cleanup example so unit tests are clean
-	if _, err := os.Stat(denseMultipleArrayName); err == nil {
-		err = os.RemoveAll(denseMultipleArrayName)
-		checkError(err)
-	}
+	createDenseMultipleArray(tmpDir)
+	writeDenseMultipleArray1(tmpDir)
+	writeDenseMultipleArray2(tmpDir)
+	readDenseMultipleArray(tmpDir)
 }
