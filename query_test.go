@@ -1999,7 +1999,7 @@ func TestSparseQueryWriteNullable(t *testing.T) {
 	assert.Equal(t, uint64(3), bufferElements["a1"][2])
 
 	// Set empty buffers for reading
-	readBufferA1 := make([]int32, 4)
+	readBufferA1 := make([]int32, 3)
 	readBufferA1Validity := make([]uint8, 3)
 	_, _, err = query.SetBufferNullable("a1", readBufferA1, readBufferA1Validity)
 	assert.Nil(t, err)
