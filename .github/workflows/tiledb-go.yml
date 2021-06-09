@@ -55,6 +55,11 @@ jobs:
       run: ./.github/scripts/install_tiledb_linux.sh
       shell: bash
 
+    # Downloads source code jemalloc from release assets, build and install
+    - name: Install jemalloc script
+      run: ./.github/scripts/install_jemalloc_linux.sh
+      shell: bash
+
     # Following action sets up Go and uses the strategy matrix to test on
     # specific versions
     - name: Set up Go
@@ -65,6 +70,10 @@ jobs:
     # Tests TileDB-Go
     - name: Test TileDB-Go
       run: go test -v $(go list ./... | grep -v /cmd/)
+
+    # Tests TileDB-Go MakeSlice with jemalloc
+    - name: Test Makeslice with jemalloc
+      run: go test -v -run ^ExampleDenseLargeArray$ github.com/TileDB-Inc/TileDB-Go/examples -tags jemalloc
 
   Macos_Test:
     runs-on: macos-10.15
@@ -81,6 +90,11 @@ jobs:
       run: ./.github/scripts/install_tiledb_macos.sh
       shell: bash
 
+    # Downloads source code jemalloc from release assets, build and install
+    - name: Install jemalloc script
+      run: ./.github/scripts/install_jemalloc_macos.sh
+      shell: bash
+
     # Following action sets up Go and uses the strategy matrix to test on
     # specific versions
     - name: Set up Go
@@ -91,6 +105,10 @@ jobs:
     # Tests TileDB-Go
     - name: Test TileDB-Go
       run: go test -v $(go list ./... | grep -v /cmd/)
+
+    # Tests TileDB-Go MakeSlice with jemalloc
+    - name: Test Makeslice with jemalloc
+      run: go test -v -run ^ExampleDenseLargeArray$ github.com/TileDB-Inc/TileDB-Go/examples -tags jemalloc
 
   Linux_Address_Sanitizer:
     runs-on: ubuntu-18.04
