@@ -154,25 +154,25 @@ func GetTimeFromTimestamp(datatype Datatype, timestamp int64) time.Time {
 	case TILEDB_DATETIME_DAY:
 		numOfSeconds := timestamp * secondsInDay
 		then = time.Unix(int64(numOfSeconds), 0)
-	case TILEDB_DATETIME_HR:
+	case TILEDB_DATETIME_HR, TILEDB_TIME_HR:
 		numOfSeconds := timestamp * secondsInHour
 		then = time.Unix(int64(numOfSeconds), 0)
-	case TILEDB_DATETIME_MIN:
+	case TILEDB_DATETIME_MIN, TILEDB_TIME_MIN:
 		numOfSeconds := timestamp * secondsInMin
 		then = time.Unix(int64(numOfSeconds), 0)
-	case TILEDB_DATETIME_SEC:
+	case TILEDB_DATETIME_SEC, TILEDB_TIME_SEC:
 		then = time.Unix(timestamp, 0)
-	case TILEDB_DATETIME_MS:
+	case TILEDB_DATETIME_MS, TILEDB_TIME_MS:
 		then = time.Unix(0, int64(timestamp*1000*1000))
-	case TILEDB_DATETIME_US:
+	case TILEDB_DATETIME_US, TILEDB_TIME_US:
 		then = time.Unix(0, int64(timestamp*1000))
-	case TILEDB_DATETIME_NS:
+	case TILEDB_DATETIME_NS, TILEDB_TIME_NS:
 		then = time.Unix(0, timestamp)
-	case TILEDB_DATETIME_PS:
+	case TILEDB_DATETIME_PS, TILEDB_TIME_PS:
 		then = time.Unix(0, int64(timestamp/1000))
-	case TILEDB_DATETIME_FS:
+	case TILEDB_DATETIME_FS, TILEDB_TIME_FS:
 		then = time.Unix(0, int64(timestamp/(1000*1000)))
-	case TILEDB_DATETIME_AS:
+	case TILEDB_DATETIME_AS, TILEDB_TIME_AS:
 		then = time.Unix(0, int64(timestamp/(1000*1000)))
 	}
 
