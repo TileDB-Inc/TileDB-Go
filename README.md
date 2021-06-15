@@ -66,6 +66,7 @@ as such the below table reference which versions are compatible.
 | 0.9.0             | 2.0.X          |
 | 0.10.0            | 2.1.X          |
 | 0.11.0            | 2.2.X          |
+| 0.12.0            | 2.3.X          |
 
 
 ## Missing Functionality
