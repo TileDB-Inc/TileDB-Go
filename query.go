@@ -2864,6 +2864,14 @@ func (q *Query) SetLayout(layout Layout) error {
 	return nil
 }
 
+// SetQueryCondition sets a query condition on a read query
+func (q *Query) SetQueryCondition(cond *QueryCondition) error {
+	if ret := C.tiledb_query_set_condition(q.context.tiledbContext, q.tiledbQuery, cond.cond); ret != C.TILEDB_OK {
+		return fmt.Errorf("Error getting config from query: %s", q.context.LastError())
+	}
+	return nil
+}
+
 // Finalize Flushes all internal state of a query object and finalizes the
 // query. This is applicable only to global layout writes. It has no effect
 // for any other query type.

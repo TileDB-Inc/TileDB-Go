@@ -504,6 +504,36 @@ const (
 	TILEDB_WRITE QueryType = C.TILEDB_WRITE
 )
 
+// QueryConditionOp operation type for a query condition
+type QueryConditionOp uint8
+
+const (
+	// TILEDB_QUERY_CONDITION_LT defines the query condition for a less than comparison
+	TILEDB_QUERY_CONDITION_LT QueryConditionOp = C.TILEDB_LT
+	// TILEDB_QUERY_CONDITION_LE defines the query condition for a less than or equal to comparison
+	TILEDB_QUERY_CONDITION_LE QueryConditionOp = C.TILEDB_LE
+	// TILEDB_QUERY_CONDITION_GT defines the query condition for a greater than comparison
+	TILEDB_QUERY_CONDITION_GT QueryConditionOp = C.TILEDB_GT
+	// TILEDB_QUERY_CONDITION_GE defines the query condition for a greater than or equal to comparison
+	TILEDB_QUERY_CONDITION_GE QueryConditionOp = C.TILEDB_GE
+	// TILEDB_QUERY_CONDITION_EQ defines the query condition for an equal to comparison
+	TILEDB_QUERY_CONDITION_EQ QueryConditionOp = C.TILEDB_EQ
+	// TILEDB_QUERY_CONDITION_NE defines the query condition for a not equal to comparison
+	TILEDB_QUERY_CONDITION_NE QueryConditionOp = C.TILEDB_NE
+)
+
+// QueryConditionCombinationOp operation type for a query condition combination
+type QueryConditionCombinationOp uint8
+
+const (
+	// TILEDB_QUERY_CONDITION_AND defines the query condition for an and combination
+	TILEDB_QUERY_CONDITION_AND QueryConditionCombinationOp = C.TILEDB_AND
+	// TILEDB_QUERY_CONDITION_AND defines the query condition for an or combination
+	TILEDB_QUERY_CONDITION_OR QueryConditionCombinationOp = C.TILEDB_OR
+	// TILEDB_QUERY_CONDITION_AND defines the query condition for a not combination
+	TILEDB_QUERY_CONDITION_NOT QueryConditionCombinationOp = C.TILEDB_NOT
+)
+
 // SerializationType how data is serialized
 type SerializationType int8
 
