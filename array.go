@@ -76,6 +76,55 @@ func (a *Array) Free() {
 	}
 }
 
+// ArrayOpenOptions define the flexibile parameters in which arrays can be opened with.
+type ArrayOpenOption func(tdbArray *Array) error
+
+// WithEndTimestamp sets the subsequent Open call to use the end_timestamp of the passed value.
+func WithEndTimestamp(endTimestamp uint64) ArrayOpenOption {
+	return func(tdbArray *Array) error {
+		ret := C.tiledb_array_set_open_timestamp_end(tdbArray.context.tiledbContext, tdbArray.tiledbArray, C.uint64_t(endTimestamp))
+		if ret != C.TILEDB_OK {
+			return fmt.Errorf("Error setting end timestamp option: %s", tdbArray.context.LastError())
+		}
+		return nil
+	}
+}
+
+// WithStartTimestamp sets the subsequent Open call to use the start_timestamp of the passed value.
+func WithStartTimestamp(startTimestamp uint64) ArrayOpenOption {
+	return func(tdbArray *Array) error {
+		ret := C.tiledb_array_set_open_timestamp_start(tdbArray.context.tiledbContext, tdbArray.tiledbArray, C.uint64_t(startTimestamp))
+		if ret != C.TILEDB_OK {
+			return fmt.Errorf("Error setting start timestamp option: %s", tdbArray.context.LastError())
+		}
+		return nil
+	}
+}
+
+/*
+	Open the array with options. The array is opened using a query type as input.
+	This is to indicate that queries created for this Array object will inherit
+	the query type. In other words, Array objects are opened to receive only one
+	type of query. They can always be closed and be re-opened with another query
+	type. Also there may be many different Array objects created and opened with
+	different query types. For instance, one may create and open an array object
+	array_read for reads and another one array_write for writes, and interleave
+	creation and submission of queries for both these array objects.
+*/
+func (a *Array) OpenWithOptions(queryType QueryType, opts ...ArrayOpenOption) error {
+	for _, opt := range opts {
+		if err := opt(a); err != nil {
+			return err
+		}
+	}
+
+	ret := C.tiledb_array_open(a.context.tiledbContext, a.tiledbArray, C.tiledb_query_type_t(queryType))
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error opening tiledb array for querying: %s", a.context.LastError())
+	}
+	return nil
+}
+
 /*
 Open the array. The array is opened using a query type as input.
 This is to indicate that queries created for this Array object will inherit
@@ -273,6 +322,26 @@ func (a *Array) QueryType() (QueryType, error) {
 	return QueryType(queryType), nil
 }
 
+// OpenStartTimestamp returns the current start_timestamp value of an open array
+func (a *Array) OpenStartTimestamp() (uint64, error) {
+	var start C.uint64_t
+	ret := C.tiledb_array_get_open_timestamp_start(a.context.tiledbContext, a.tiledbArray, &start)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("Error getting start timestamp for tiledb array: %s", a.context.LastError())
+	}
+	return uint64(start), nil
+}
+
+// OpenEndTimestamp returns the current end_timestamp value of an open array
+func (a *Array) OpenEndTimestamp() (uint64, error) {
+	var end C.uint64_t
+	ret := C.tiledb_array_get_open_timestamp_end(a.context.tiledbContext, a.tiledbArray, &end)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("Error getting end timestamp for tiledb array: %s", a.context.LastError())
+	}
+	return uint64(end), nil
+}
+
 // getNonEmptyDomainForDim creates a NonEmptyDomain from a generic dimension-typed slice
 func getNonEmptyDomainForDim(dimension *Dimension, dimensionSlice interface{}) (*NonEmptyDomain, error) {
 	dimensionType, err := dimension.Type()
@@ -298,7 +367,7 @@ func getNonEmptyDomainForDim(dimension *Dimension, dimensionSlice interface{}) (
 		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []int32{tmpDimension[0], tmpDimension[1]}}
 	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY,
 		TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US,
-		TILEDB_DATETIME_NS, TILEDB_DATETIME_AS, TILEDB_DATETIME_FS, TILEDB_DATETIME_PS:
+		TILEDB_DATETIME_NS, TILEDB_DATETIME_AS, TILEDB_DATETIME_FS, TILEDB_DATETIME_PS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
 		tmpDimension := dimensionSlice.([]int64)
 		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []int64{tmpDimension[0], tmpDimension[1]}}
 	case TILEDB_UINT8:

@@ -94,6 +94,24 @@ const (
 	TILEDB_DATETIME_FS Datatype = C.TILEDB_DATETIME_FS
 	// TILEDB_DATETIME_AS 64-bit signed integer representing as
 	TILEDB_DATETIME_AS Datatype = C.TILEDB_DATETIME_AS
+	// TILEDB_TIME_HR 64-bit signed integer representing hour
+	TILEDB_TIME_HR Datatype = C.TILEDB_TIME_HR
+	// TILEDB_TIME_MIN 64-bit signed integer representing minute
+	TILEDB_TIME_MIN Datatype = C.TILEDB_TIME_MIN
+	// TILEDB_TIME_SEC 64-bit signed integer representing second
+	TILEDB_TIME_SEC Datatype = C.TILEDB_TIME_SEC
+	// TILEDB_TIME_MS 64-bit signed integer representing ms
+	TILEDB_TIME_MS Datatype = C.TILEDB_TIME_MS
+	// TILEDB_TIME_US 64-bit signed integer representing us
+	TILEDB_TIME_US Datatype = C.TILEDB_TIME_US
+	// TILEDB_TIME_NS 64-bit signed integer representing ns
+	TILEDB_TIME_NS Datatype = C.TILEDB_TIME_NS
+	// TILEDB_TIME_PS 64-bit signed integer representing ps
+	TILEDB_TIME_PS Datatype = C.TILEDB_TIME_PS
+	// TILEDB_TIME_FS 64-bit signed integer representing fs
+	TILEDB_TIME_FS Datatype = C.TILEDB_TIME_FS
+	// TILEDB_TIME_AS 64-bit signed integer representing as
+	TILEDB_TIME_AS Datatype = C.TILEDB_TIME_AS
 )
 
 // String returns string representation
@@ -175,7 +193,7 @@ func (d Datatype) ReflectKind() reflect.Kind {
 		return reflect.Uint32
 	case TILEDB_ANY:
 		return reflect.Interface
-	case TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS:
+	case TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
 		return reflect.Int64
 	default:
 		return reflect.Interface
@@ -202,7 +220,7 @@ func (d Datatype) MakeSlice(numElements uint64) (interface{}, unsafe.Pointer, er
 		slice := make([]int32, numElements)
 		return slice, unsafe.Pointer(&slice[0]), nil
 
-	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS:
+	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
 		slice := make([]int64, numElements)
 		return slice, unsafe.Pointer(&slice[0]), nil
 
@@ -362,7 +380,7 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 		TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN,
 		TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US,
 		TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS,
-		TILEDB_DATETIME_AS:
+		TILEDB_DATETIME_AS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
 		if valueNum > 1 {
 			return nil, fmt.Errorf("Unrecognized value type: %d", d)
 		} else {
@@ -484,6 +502,36 @@ const (
 	TILEDB_READ QueryType = C.TILEDB_READ
 	// TILEDB_WRITE Write query
 	TILEDB_WRITE QueryType = C.TILEDB_WRITE
+)
+
+// QueryConditionOp operation type for a query condition
+type QueryConditionOp uint8
+
+const (
+	// TILEDB_QUERY_CONDITION_LT defines the query condition for a less than comparison
+	TILEDB_QUERY_CONDITION_LT QueryConditionOp = C.TILEDB_LT
+	// TILEDB_QUERY_CONDITION_LE defines the query condition for a less than or equal to comparison
+	TILEDB_QUERY_CONDITION_LE QueryConditionOp = C.TILEDB_LE
+	// TILEDB_QUERY_CONDITION_GT defines the query condition for a greater than comparison
+	TILEDB_QUERY_CONDITION_GT QueryConditionOp = C.TILEDB_GT
+	// TILEDB_QUERY_CONDITION_GE defines the query condition for a greater than or equal to comparison
+	TILEDB_QUERY_CONDITION_GE QueryConditionOp = C.TILEDB_GE
+	// TILEDB_QUERY_CONDITION_EQ defines the query condition for an equal to comparison
+	TILEDB_QUERY_CONDITION_EQ QueryConditionOp = C.TILEDB_EQ
+	// TILEDB_QUERY_CONDITION_NE defines the query condition for a not equal to comparison
+	TILEDB_QUERY_CONDITION_NE QueryConditionOp = C.TILEDB_NE
+)
+
+// QueryConditionCombinationOp operation type for a query condition combination
+type QueryConditionCombinationOp uint8
+
+const (
+	// TILEDB_QUERY_CONDITION_AND defines the query condition for an and combination
+	TILEDB_QUERY_CONDITION_AND QueryConditionCombinationOp = C.TILEDB_AND
+	// TILEDB_QUERY_CONDITION_AND defines the query condition for an or combination
+	TILEDB_QUERY_CONDITION_OR QueryConditionCombinationOp = C.TILEDB_OR
+	// TILEDB_QUERY_CONDITION_AND defines the query condition for a not combination
+	TILEDB_QUERY_CONDITION_NOT QueryConditionCombinationOp = C.TILEDB_NOT
 )
 
 // SerializationType how data is serialized

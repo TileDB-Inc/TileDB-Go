@@ -586,11 +586,13 @@ func (fI *FragmentInfo) GetToVacuumNum() (uint32, error) {
 // fid is the index of the fragment of interest.
 func (fI *FragmentInfo) GetToVacuumURI(fid uint32) (string, error) {
 	var curi *C.char
-	C.tiledb_fragment_info_get_to_vacuum_uri(fI.context.tiledbContext,
-		fI.tiledbFragmentInfo, C.uint32_t(fid), &curi)
+	ret := C.tiledb_fragment_info_get_to_vacuum_uri(fI.context.tiledbContext, fI.tiledbFragmentInfo, C.uint32_t(fid), &curi)
+	if ret != C.TILEDB_OK {
+		return "", fmt.Errorf("Error getting URI uri for fragment to vacuum: %s", fI.context.LastError())
+	}
 	uri := C.GoString(curi)
 	if uri == "" {
-		return uri, fmt.Errorf("Error getting URI for fragment %d to vacuum: uri is empty", fid)
+		return "", fmt.Errorf("Error getting URI for fragment %d to vacuum: uri is empty", fid)
 	}
 	return uri, nil
 }

@@ -1,5 +1,5 @@
 /**
- * @file   reading_timestamp_test.go
+ * @file   reading_query_conditions_test.go
  *
  * @section LICENSE
  *
@@ -41,32 +41,9 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-// ExampleTimestampArray shows timestamp correlation of written data and metadata
-func ExampleTimestampArray() {
-	examples_lib.RunTimestampArray()
-
-	// Output: Writing meta_key: Write1
-	// Writing meta_key: Write2
-	// Writing meta_key: Write3
-	// Writing meta_key: Write4
-	// Value: Write1
-	// [2 3 4 6 7 8]
-	// Value: Write2
-	// [2 3 4 6 7 8]
-	// Value: Write3
-	// [2 3 4 6 7 8]
-	// Value: Write4
-	// [2 3 4 6 7 8]
-	// Writing meta_key: Write1
-	// Writing meta_key: Write2
-	// Writing meta_key: Write3
-	// Writing meta_key: Write4
-	// Value: Write1
-	// [2 3 4 6 7 8]
-	// Value: Write2
-	// [3 3 4 6 7 8]
-	// Value: Write3
-	// [4 3 4 6 7 8]
-	// Value: Write4
-	// [5 3 4 6 7 8]
+// ExampleQueryConditionsArray shows how query conditions work
+func ExampleQueryConditionsArray() {
+	examples_lib.RunQueryConditionsArray()
+	// Output: Non-empty domain: [1,2], [1,4]
+	// Cell (1, 2) has data 2
 }

@@ -1341,8 +1341,8 @@ func TestQueryReadEmpty(t *testing.T) {
 
 }
 
-// TestQueryWrite validates a array can be written to and read from
-func TestQueryWrite(t *testing.T) {
+// TestDenseQueryWrite validates a array can be written to and read from
+func TestDenseQueryWrite(t *testing.T) {
 	// Create configuration
 	config, err := NewConfig()
 	assert.Nil(t, err)
@@ -1463,17 +1463,11 @@ func TestQueryWrite(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, query)
 
-	// Limit writting to subarray
 	err = query.SetSubArray([]int8{0, 1})
 	assert.Nil(t, err)
 
 	// Set write layout
 	assert.Nil(t, query.SetLayout(TILEDB_ROW_MAJOR))
-
-	// Create write buffers
-	bufferDim1 := []int8{4, 6}
-	_, err = query.SetBuffer("dim1", bufferDim1)
-	assert.Nil(t, err)
 
 	bufferA1 := []int32{1, 2}
 	_, err = query.SetBuffer("a1", bufferA1)
@@ -2005,7 +1999,7 @@ func TestSparseQueryWriteNullable(t *testing.T) {
 	assert.Equal(t, uint64(3), bufferElements["a1"][2])
 
 	// Set empty buffers for reading
-	readBufferA1 := make([]int32, 4)
+	readBufferA1 := make([]int32, 3)
 	readBufferA1Validity := make([]uint8, 3)
 	_, _, err = query.SetBufferNullable("a1", readBufferA1, readBufferA1Validity)
 	assert.Nil(t, err)

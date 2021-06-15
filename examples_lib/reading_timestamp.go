@@ -165,6 +165,55 @@ func readTimestampArray(dir string, timestamp uint64) {
 	fmt.Println(data)
 }
 
+func readTimestampArrayWithOptions(dir string, timestamp uint64) {
+	ctx, err := tiledb.NewContext(nil)
+	checkError(err)
+	defer ctx.Free()
+
+	// Prepare the array for reading
+	array, err := tiledb.NewArray(ctx, dir)
+	checkError(err)
+	defer array.Free()
+
+	err = array.OpenWithOptions(tiledb.TILEDB_READ, tiledb.WithEndTimestamp(timestamp))
+	checkError(err)
+	defer array.Close()
+
+	// Slice only rows 1, 2 and cols 2, 3, 4
+	subArray := []int32{1, 2, 2, 4}
+
+	// Prepare the vector that will hold the result (of size 6 elements)
+	data := make([]int32, 6)
+
+	// Prepare the query
+	query, err := tiledb.NewQuery(ctx, array)
+	checkError(err)
+	defer query.Free()
+
+	err = query.SetSubArray(subArray)
+	checkError(err)
+	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
+	checkError(err)
+	_, err = query.SetBuffer("a", data)
+	checkError(err)
+
+	// Submit the query and close the array.
+	err = query.Submit()
+	checkError(err)
+
+	_, _, value, err := array.GetMetadata("meta_key")
+	checkError(err)
+
+	// String can be retrieved:
+	fmt.Printf("Value: %v\n", value.(string))
+
+	err = query.Finalize()
+	checkError(err)
+
+	// Print out the results.
+	fmt.Println(data)
+}
+
 func getTimestamp() uint64 {
 	return uint64(time.Now().UTC().UnixNano() / 1000000)
 }
@@ -186,9 +235,14 @@ func RunTimestampArray() {
 	// Write metadata only
 	t3 := getTimestamp()
 	writeTimestampArrayMeta(tmpDir1, "meta_key", "Write3", t3)
+	time.Sleep(2000 * time.Millisecond)
+	// Write metadata only
+	t4 := getTimestamp()
+	writeTimestampArrayMeta(tmpDir1, "meta_key", "Write4", t4)
 	readTimestampArray(tmpDir1, t1)
 	readTimestampArray(tmpDir1, t2)
 	readTimestampArray(tmpDir1, t3)
+	readTimestampArrayWithOptions(tmpDir1, t4)
 
 	tmpDir2 := temp("timestamp_array_2")
 	defer cleanup(tmpDir2)
@@ -203,7 +257,11 @@ func RunTimestampArray() {
 	time.Sleep(2000 * time.Millisecond)
 	t3 = getTimestamp()
 	writeTimestampArray(tmpDir2, "meta_key", "Write3", t3, 2)
+	time.Sleep(2000 * time.Millisecond)
+	t4 = getTimestamp()
+	writeTimestampArray(tmpDir2, "meta_key", "Write4", t4, 3)
 	readTimestampArray(tmpDir2, t1)
 	readTimestampArray(tmpDir2, t2)
 	readTimestampArray(tmpDir2, t3)
+	readTimestampArray(tmpDir2, t4)
 }
