@@ -3292,3 +3292,18 @@ func (q *Query) Config() (*Config, error) {
 
 	return &config, nil
 }
+
+// Stats gets query stats for a query as a string
+func (q *Query) Stats() (string, error) {
+	var stats *C.char
+	if ret := C.tiledb_query_get_stats(q.context.tiledbContext, q.tiledbQuery, &stats); ret != C.TILEDB_OK {
+		return "", fmt.Errorf("Error getting stats from query: %s", q.context.LastError())
+	}
+
+	s := C.GoString(stats)
+	if ret := C.tiledb_stats_free_str(&stats); ret != C.TILEDB_OK {
+		return "", fmt.Errorf("Error freeing string from dumping stats to string")
+	}
+
+	return s, nil
+}
