@@ -40,6 +40,16 @@ func ExampleNewContext() {
 	}
 	// Output: true
 	fmt.Println(isS3Supported)
+
+	stats, err := context.Stats()
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	if len(stats) > 0 {
+		// Do something with stats
+	}
 }
 
 // TestNewContext tests setting a new context

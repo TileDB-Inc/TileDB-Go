@@ -311,6 +311,15 @@ func ExampleNewQuery() {
 		// Do something with read buffer
 	}
 
+	stats, err := query.Stats()
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	if len(stats) > 0 {
+		// Do something with stats
+	}
 }
 
 func TestQueryEffectiveBufferSize(t *testing.T) {
@@ -2294,6 +2303,200 @@ func TestQueryConfig(t *testing.T) {
 
 	// Offsets will be element count due to config setting of "sm.var_offsets.mode"
 	assert.EqualValues(t, 1, a1OffRead[1])
+
+	query.Free()
+}
+
+func TestQueryStats(t *testing.T) {
+	// Create configuration
+	config, err := NewConfig()
+	assert.Nil(t, err)
+
+	// Test context with config
+	context, err := NewContext(config)
+	assert.Nil(t, err)
+
+	// Test create row dimension
+	rowDim, err := NewDimension(context, "rows", TILEDB_INT32, []int32{1, 4}, int32(2))
+	assert.Nil(t, err)
+	assert.NotNil(t, rowDim)
+
+	// Test create row dimension
+	colDim, err := NewDimension(context, "cols", TILEDB_INT32, []int32{1, 4}, int32(2))
+	assert.Nil(t, err)
+	assert.NotNil(t, colDim)
+
+	// Test creating domain
+	domain, err := NewDomain(context)
+	assert.Nil(t, err)
+	assert.NotNil(t, domain)
+
+	// Add dimensions
+	err = domain.AddDimensions(rowDim, colDim)
+	assert.Nil(t, err)
+
+	// Create array schema
+	arraySchema, err := NewArraySchema(context, TILEDB_SPARSE)
+	assert.Nil(t, err)
+	assert.NotNil(t, arraySchema)
+
+	err = arraySchema.SetAllowsDups(true)
+	assert.Nil(t, err)
+
+	allowDups, err := arraySchema.AllowsDups()
+	assert.Nil(t, err)
+	assert.Equal(t, true, allowDups)
+
+	err = arraySchema.SetAllowsDups(false)
+	assert.Nil(t, err)
+
+	// Dense array, allowDups should be false
+	allowDups, err = arraySchema.AllowsDups()
+	assert.Nil(t, err)
+	assert.Equal(t, false, allowDups)
+
+	err = arraySchema.SetCellOrder(TILEDB_ROW_MAJOR)
+	assert.Nil(t, err)
+	err = arraySchema.SetTileOrder(TILEDB_ROW_MAJOR)
+	assert.Nil(t, err)
+
+	// Create attribute to add to schema
+	attribute, err := NewAttribute(context, "a1", TILEDB_STRING_ASCII)
+	assert.Nil(t, err)
+	assert.NotNil(t, attribute)
+
+	// Set a1 to be variable length
+	err = attribute.SetCellValNum(TILEDB_VAR_NUM)
+	assert.Nil(t, err)
+
+	// Add Attribute
+	err = arraySchema.AddAttributes(attribute)
+	assert.Nil(t, err)
+
+	// Set Domain
+	err = arraySchema.SetDomain(domain)
+	assert.Nil(t, err)
+
+	// Validate Schema
+	err = arraySchema.Check()
+	assert.Nil(t, err)
+
+	// create temp group name
+	tmpArrayPath := os.TempDir() + string(os.PathSeparator) +
+		"tiledb_effective_buffer_size_array_stats"
+	// Cleanup group when test ends
+	defer os.RemoveAll(tmpArrayPath)
+	if _, err = os.Stat(tmpArrayPath); err == nil {
+		os.RemoveAll(tmpArrayPath)
+	}
+	// Create new array struct
+	array, err := NewArray(context, tmpArrayPath)
+	assert.Nil(t, err)
+	assert.NotNil(t, array)
+
+	// Prepare some data for the array
+	buffD1 := []int32{1, 2, 2}
+	buffD2 := []int32{1, 1, 2}
+	a1DataWrite := []byte("abbccc")
+	a1OffWrite := []uint64{0, 1, 3}
+
+	// Create array on disk
+	err = array.Create(arraySchema)
+	assert.Nil(t, err)
+
+	err = array.Open(TILEDB_WRITE)
+	assert.Nil(t, err)
+	query, err := NewQuery(context, array)
+	assert.Nil(t, err)
+	assert.NotNil(t, query)
+	err = query.SetLayout(TILEDB_GLOBAL_ORDER)
+	assert.Nil(t, err)
+	_, _, err = query.SetBufferVar("a1", a1OffWrite, a1DataWrite)
+	assert.Nil(t, err)
+	_, err = query.SetBuffer("rows", buffD1)
+	assert.Nil(t, err)
+	_, err = query.SetBuffer("cols", buffD2)
+	assert.Nil(t, err)
+
+	// Check the buffer sizes
+	offsetSize, dataSize, err := query.BufferSizeVar("a1")
+	assert.Nil(t, err)
+	assert.Equal(t, len(a1OffWrite), int(offsetSize))
+	assert.Equal(t, len(a1DataWrite), int(dataSize))
+	rowsDataSize, err := query.BufferSize("rows")
+	assert.Nil(t, err)
+	assert.Equal(t, len(buffD1), int(rowsDataSize))
+	colsDataSize, err := query.BufferSize("cols")
+	assert.Nil(t, err)
+	assert.Equal(t, len(buffD2), int(colsDataSize))
+
+	// Perform the write, finalize and close the array.
+	err = query.Submit()
+	assert.Nil(t, err)
+	err = query.Finalize()
+	assert.Nil(t, err)
+	err = array.Close()
+	assert.Nil(t, err)
+
+	err = array.Open(TILEDB_READ)
+	assert.Nil(t, err)
+
+	// Read value at cell 2, 2
+	subArray := []int32{2, 2, 2, 2}
+
+	// Prepare buffers
+	rows := make([]int32, 2)
+	cols := make([]int32, 2)
+	// Allocate 4 bytes to store the read result
+	a1DataRead := make([]byte, 4)
+	a1OffRead := make([]uint64, 1)
+
+	// Prepare the query
+	query, err = NewQuery(context, array)
+	assert.Nil(t, err)
+	assert.NotNil(t, query)
+
+	err = query.SetSubArray(subArray)
+	assert.Nil(t, err)
+	err = query.SetLayout(TILEDB_ROW_MAJOR)
+	assert.Nil(t, err)
+	offsetBufferSize, effectiveBufferSize, err := query.SetBufferVar("a1",
+		a1OffRead, a1DataRead)
+	assert.Nil(t, err)
+	assert.NotNil(t, query)
+	_, err = query.SetBuffer("rows", rows)
+	assert.Nil(t, err)
+	_, err = query.SetBuffer("cols", cols)
+	assert.Nil(t, err)
+
+	// Submit the query
+	err = query.Submit()
+	assert.Nil(t, err)
+
+	// Data buffer contains "ccc", has size of 4
+	assert.EqualValues(t, len(a1DataRead), 4)
+
+	// Only after submit is the *offsetBufferSize available
+	// Offset size is expected to be 1*sizeof(uint64)
+	assert.EqualValues(t, *offsetBufferSize, 8)
+
+	// Only after submit is the *effectiveBufferSize available
+	// "ccc" indeed has effective buffer size of 3
+	assert.EqualValues(t, *effectiveBufferSize, 3)
+
+	elements, err := query.ResultBufferElements()
+	assert.Nil(t, err)
+	assert.EqualValues(t, [3]uint64{1, 3, 0}, elements["a1"])
+	assert.EqualValues(t, [3]uint64{0, 1, 0}, elements["rows"])
+	assert.EqualValues(t, [3]uint64{0, 1, 0}, elements["cols"])
+
+	stats, err := query.Stats()
+	assert.Nil(t, err)
+	assert.NotEmpty(t, stats, 0)
+
+	stats, err = query.context.Stats()
+	assert.Nil(t, err)
+	assert.NotEmpty(t, stats, 0)
 
 	query.Free()
 }

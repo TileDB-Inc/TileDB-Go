@@ -150,3 +150,18 @@ func (c *Context) setDefaultTags() error {
 
 	return nil
 }
+
+// Stats gets stats for a context as a string
+func (c *Context) Stats() (string, error) {
+	var stats *C.char
+	if ret := C.tiledb_ctx_get_stats(c.tiledbContext, &stats); ret != C.TILEDB_OK {
+		return "", fmt.Errorf("Error getting stats from context: %s", c.LastError())
+	}
+
+	s := C.GoString(stats)
+	if ret := C.tiledb_stats_free_str(&stats); ret != C.TILEDB_OK {
+		return "", fmt.Errorf("Error freeing string from dumping stats to string")
+	}
+
+	return s, nil
+}
