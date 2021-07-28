@@ -10,29 +10,37 @@ import (
 // ExampleNewContext example of creating a new context
 func ExampleNewContext() {
 
-	// Create Context with default configuration
+	// Create Context with default configuration:
 	context, err := NewContext(nil)
-
 	if err != nil {
 		// handle error
 		return
 	}
 
-	// Create a config
+	// Create a config and use it to create a new Context:
+	// (See ExampleConfig_Set for an example of setting config variables.)
 	config, err := NewConfig()
 	if err != nil {
 		// handle error
 		return
 	}
-
-	// Use created config to create a new Context
 	context, err = NewContext(config)
 	if err != nil {
 		// handle error
 		return
 	}
 
-	// Check if S3 is supported
+	// Create a context directly from a configuration map:
+	context, err = NewContextFromMap(map[string]string{
+		"sm.memory_budget":     "16GB",
+		"sm.memory_budget_var": "32GB",
+	})
+	if err != nil {
+		// handle error
+		return
+	}
+
+	// Check if S3 is supported:
 	isS3Supported, err := context.IsSupportedFS(TILEDB_S3)
 	if err != nil {
 		// handle error
@@ -69,28 +77,18 @@ func TestNewContext(t *testing.T) {
 	assert.NotNil(t, context)
 }
 
-// TestGetContextConfig tests setting a new context
+// TestGetContextConfig tests creating a new Context with config vars.
 func TestGetContextConfig(t *testing.T) {
-	// Create config and modify a default value
-	config, err := NewConfig()
+	// Create a context with a non-default value:
+	context, err := NewContextFromMap(map[string]string{
+		"sm.tile_cache_size": "10",
+	})
 	assert.Nil(t, err)
-	err = config.Set("sm.tile_cache_size", "10")
-	assert.Nil(t, err)
-
-	val, err := config.Get("sm.tile_cache_size")
-	assert.Nil(t, err)
-	assert.Equal(t, "10", val)
-
-	// Test context with config
-	context, err := NewContext(config)
-	assert.Nil(t, err)
-
-	// Get config
-	config2, err := context.Config()
+	config, err := context.Config()
 	assert.Nil(t, err)
 
 	// Validate config has setting changed
-	val, err = config2.Get("sm.tile_cache_size")
+	val, err := config.Get("sm.tile_cache_size")
 	assert.Nil(t, err)
 	assert.Equal(t, "10", val)
 }

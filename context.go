@@ -33,7 +33,7 @@ func NewContext(config *Config) (*Context, error) {
 		ret = C.tiledb_ctx_alloc(nil, &context.tiledbContext)
 	}
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error creating tiledb context: %s", context.LastError())
+		return nil, fmt.Errorf("error creating tiledb context: %w", context.LastError())
 	}
 
 	// Set finalizer for free C pointer on gc
@@ -43,10 +43,32 @@ func NewContext(config *Config) (*Context, error) {
 
 	err := context.setDefaultTags()
 	if err != nil {
-		return nil, fmt.Errorf("error creating tiledb context: %s", err.Error())
+		return nil, fmt.Errorf("error creating tiledb context: %w", err)
 	}
 
 	return &context, nil
+}
+
+// NewContextFromMap creates a TileDB context with the given configuration.
+// If the configuration passed is nil, it is created with the default config.
+// This is a shortcut for creating a *Config from the given map and
+// using it to create a new context.
+func NewContextFromMap(cfgMap map[string]string) (*Context, error) {
+	if cfgMap == nil {
+		return NewContext(nil)
+	}
+	config, err := NewConfig()
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range cfgMap {
+		if err := config.Set(k, v); err != nil {
+			// The value is not included in the error message in case it is sensitive,
+			// like a password or access key.
+			return nil, fmt.Errorf("error setting config value %q: %w", k, err)
+		}
+	}
+	return NewContext(config)
 }
 
 // Free tiledb_ctx_t that was allocated on heap in c
@@ -155,7 +177,7 @@ func (c *Context) setDefaultTags() error {
 func (c *Context) Stats() ([]byte, error) {
 	var stats *C.char
 	if ret := C.tiledb_ctx_get_stats(c.tiledbContext, &stats); ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting stats from context: %s", c.LastError())
+		return nil, fmt.Errorf("Error getting stats from context: %w", c.LastError())
 	}
 
 	s := C.GoString(stats)
