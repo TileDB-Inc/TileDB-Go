@@ -43,10 +43,6 @@ func SerializeArraySchema(schema *ArraySchema, serializationType SerializationTy
 // DeserializeArraySchema deserializes a new array schema from the given buffer
 func DeserializeArraySchema(buffer *Buffer, serializationType SerializationType, clientSide bool) (*ArraySchema, error) {
 	schema := ArraySchema{context: buffer.context}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&schema, func(arraySchema *ArraySchema) {
-		arraySchema.Free()
-	})
 
 	var cClientSide C.int32_t
 	if clientSide {
@@ -59,6 +55,14 @@ func DeserializeArraySchema(buffer *Buffer, serializationType SerializationType,
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error deserializing array schema: %s", schema.context.LastError())
 	}
+
+	// Set finalizer for free C pointer on gc
+	// This needs to happen *after* the tiledb_deserialize_array_schema call
+	// because that may leave the arraySchema with a non-nil pointer
+	// to already-freed memory.
+	runtime.SetFinalizer(&schema, func(arraySchema *ArraySchema) {
+		arraySchema.Free()
+	})
 
 	return &schema, nil
 }
