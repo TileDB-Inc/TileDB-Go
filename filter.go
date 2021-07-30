@@ -37,7 +37,11 @@ func NewFilter(context *Context, filterType FilterType) (*Filter, error) {
 	return &filter, nil
 }
 
-// Free c-alloc'ed data types
+// Free releases the internal TileDB core data that was allocated on the C heap.
+// It is automatically called when this object is garbage collected, but can be
+// called earlier to manually release memory if needed. Free is idempotent and
+// can safely be called many times on the same object; if it has already
+// been freed, it will not be freed again.
 func (f *Filter) Free() {
 	if f.tiledbFilter != nil {
 		C.tiledb_filter_free(&f.tiledbFilter)

@@ -58,7 +58,11 @@ func NewQueryConditionCombination(tdbCtx *Context, left *QueryCondition, op Quer
 	return &qc, nil
 }
 
-// Free tiledb_query_condition_t that was allocated on heap in c
+// Free releases the internal TileDB core data that was allocated on the C heap.
+// It is automatically called when this object is garbage collected, but can be
+// called earlier to manually release memory if needed. Free is idempotent and
+// can safely be called many times on the same object; if it has already
+// been freed, it will not be freed again.
 func (qc *QueryCondition) Free() {
 	if qc.cond != nil {
 		C.tiledb_query_condition_free(&qc.cond)
