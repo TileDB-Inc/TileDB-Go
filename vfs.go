@@ -31,7 +31,11 @@ type VFSfh struct {
 	uri         string
 }
 
-// Free a tiledb c vfs file handler
+// Free releases the internal TileDB core data that was allocated on the C heap.
+// It is automatically called when this object is garbage collected, but can be
+// called earlier to manually release memory if needed. Free is idempotent and
+// can safely be called many times on the same object; if it has already
+// been freed, it will not be freed again.
 func (v *VFSfh) Free() {
 	if v.tiledbVFSfh != nil {
 		C.tiledb_vfs_fh_free(&v.tiledbVFSfh)
@@ -86,7 +90,11 @@ func NewVFS(context *Context, config *Config) (*VFS, error) {
 	return &vfs, nil
 }
 
-// Free tiledb_vfs_t c structure that was allocated on the heap
+// Free releases the internal TileDB core data that was allocated on the C heap.
+// It is automatically called when this object is garbage collected, but can be
+// called earlier to manually release memory if needed. Free is idempotent and
+// can safely be called many times on the same object; if it has already
+// been freed, it will not be freed again.
 func (v *VFS) Free() {
 	if v.tiledbVFS != nil {
 		C.tiledb_vfs_free(&v.tiledbVFS)

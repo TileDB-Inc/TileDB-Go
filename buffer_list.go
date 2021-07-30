@@ -35,7 +35,11 @@ func NewBufferList(context *Context) (*BufferList, error) {
 	return &bufferList, nil
 }
 
-// Free c-alloc'ed data types
+// Free releases the internal TileDB core data that was allocated on the C heap.
+// It is automatically called when this object is garbage collected, but can be
+// called earlier to manually release memory if needed. Free is idempotent and
+// can safely be called many times on the same object; if it has already
+// been freed, it will not be freed again.
 func (b *BufferList) Free() {
 	if b.tiledbBufferList != nil {
 		C.tiledb_buffer_list_free(&b.tiledbBufferList)

@@ -50,7 +50,11 @@ func NewAttribute(context *Context, name string, datatype Datatype) (*Attribute,
 	return &attribute, nil
 }
 
-// Free tiledb_attribute_t that was allocated on heap in c
+// Free releases the internal TileDB core data that was allocated on the C heap.
+// It is automatically called when this object is garbage collected, but can be
+// called earlier to manually release memory if needed. Free is idempotent and
+// can safely be called many times on the same object; if it has already
+// been freed, it will not be freed again.
 func (a *Attribute) Free() {
 	if a.tiledbAttribute != nil {
 		C.tiledb_attribute_free(&a.tiledbAttribute)
