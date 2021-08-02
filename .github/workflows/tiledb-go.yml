@@ -45,7 +45,7 @@ jobs:
     strategy:
       matrix:
         # Will be checking following versions
-        go: [1.13, 1.14, 1.15]
+        go: ["1.15", "1.16"]
     steps:
     # Checks out repository
     - uses: actions/checkout@v2
@@ -71,7 +71,7 @@ jobs:
     strategy:
       matrix:
         # Will be checking following versions
-        go: [1.13, 1.14, 1.15]
+        go: ["1.15", "1.16"]
     steps:
     # Checks out repository
     - uses: actions/checkout@v2
