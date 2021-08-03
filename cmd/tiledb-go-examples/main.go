@@ -1,8 +1,10 @@
+// tiledb-go-examples runs all of TileDB's example code.
+//
+// If built with "-tags asan", it will also perform an ASAN check after running:
+//
+//     go run -tags asan ./cmd/tiledb-go-examples
 package main
 
-// void __lsan_do_leak_check(void);
-//
-// import "C"
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
 func main() {
@@ -38,5 +40,5 @@ func main() {
 	examples_lib.RunSparseHeterDimArray()
 	examples_lib.RunWritingSparseMultiple()
 
-	C.__lsan_do_leak_check()
+	maybeASAN()
 }
