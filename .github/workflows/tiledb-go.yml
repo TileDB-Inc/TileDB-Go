@@ -90,7 +90,7 @@ jobs:
 
     # Tests TileDB-Go
     - name: Test TileDB-Go
-      run: go test -v $(go list ./... | grep -v /cmd/)
+      run: go test ./...
 
   Linux_Address_Sanitizer:
     runs-on: ubuntu-18.04
@@ -117,5 +117,4 @@ jobs:
     # Tests TileDB-Go
     - name: Running examples using address sanitizer flags
       continue-on-error: true
-      run: ./.github/scripts/build_with_sanitizer_and_run.sh
-      shell: bash
+      run: go run -tags asan ./cmd/tiledb-go-examples
