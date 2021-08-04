@@ -25,6 +25,8 @@ jobs:
     name: lint
     runs-on: ubuntu-18.04
     steps:
+
+    # Checks out repository
     - uses: actions/checkout@v2
 
     # Downloads TileDB-Core from release assets and install
@@ -47,6 +49,7 @@ jobs:
         # Will be checking following versions
         go: ["1.15", "1.16"]
     steps:
+
     # Checks out repository
     - uses: actions/checkout@v2
 
@@ -62,9 +65,22 @@ jobs:
       with:
         go-version: ${{ matrix.go }}
 
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install dependencies
+      run: go get -t .
+
     # Tests TileDB-Go
     - name: Test TileDB-Go
-      run: go test -v $(go list ./... | grep -v /cmd/)
+      run: go test -v ./...
 
   Macos_Test:
     runs-on: macos-10.15
@@ -88,9 +104,22 @@ jobs:
       with:
         go-version: ${{ matrix.go }}
 
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/Library/Caches/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install dependencies
+      run: go get -t .
+
     # Tests TileDB-Go
     - name: Test TileDB-Go
-      run: go test ./...
+      run: go test -v ./...
 
   Linux_Address_Sanitizer:
     runs-on: ubuntu-18.04
@@ -113,6 +142,20 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go }}
+
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-asan
+        restore-keys: |
+          ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          ${{ runner.os }}-go-
+
+    - name: Install dependencies
+      run: go get -t .
 
     # Tests TileDB-Go
     - name: Running examples using address sanitizer flags
