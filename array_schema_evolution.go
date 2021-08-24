@@ -1,3 +1,6 @@
+//go:build experimental
+// +build experimental
+
 /**
  * @file   array_schema_experimental.go
  *
