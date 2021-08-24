@@ -86,7 +86,7 @@ func (ase *ArraySchemaEvolution) DropAttribute(name string) error {
 		ase.context.tiledbContext, ase.tiledbArraySchemaEvolution, cname)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error dropping tiledb attribute: %s",
-			ase.context.tiledbContext.LastError())
+			ase.context.LastError())
 	}
 
 	return nil
@@ -101,7 +101,7 @@ func (ase *ArraySchemaEvolution) Evolve(uri string) error {
 		ase.tiledbArraySchemaEvolution)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error evolving schema for array %s: %s", uri,
-			ase.context.tiledbContext.LastError())
+			ase.context.LastError())
 	}
 
 	return nil
