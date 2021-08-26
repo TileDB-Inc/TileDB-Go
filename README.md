@@ -6,7 +6,7 @@
 [![Build Status](https://dev.azure.com/TileDB-Inc/CI/_apis/build/status/TileDB-Inc.TileDB-Go?branchName=refs%2Fpull%2F123%2Fmerge)](https://dev.azure.com/TileDB-Inc/CI/_build/latest?definitionId=25&branchName=refs%2Fpull%2F123%2Fmerge)
 
 This package provides [TileDB](https://github.com/TileDB-Inc/TileDB) golang bindings via cgo. The bindings have been
-designed to be idomatic Go. `runtime.set_finalizer` is used to ensure proper
+designed to be idomatic Go. `runtime.SetFinalizer` is used to ensure proper
 free'ing of C heap allocated structures.
 
 ## Quick Links
