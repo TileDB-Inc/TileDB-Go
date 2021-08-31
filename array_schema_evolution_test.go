@@ -60,7 +60,8 @@ func TestArraySchemaEvolution(t *testing.T) {
 	err = arraySchema.Check()
 	require.NoError(t, err)
 
-	tmpArrayPath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_array"
+	// tmpArrayPath is the array URI
+	tmpArrayPath := path.Join(os.TempDir(), array_schema_evolution_name)
 	if _, err = os.Stat(tmpArrayPath); err == nil {
 		os.RemoveAll(tmpArrayPath)
 	}
@@ -95,7 +96,7 @@ func TestArraySchemaEvolution(t *testing.T) {
 	err = arraySchemaEvolution.DropAttribute("a1")
 	require.NoError(t, err)
 
-	err = arraySchemaEvolution.Evolve(array_schema_evolution_name)
+	err = arraySchemaEvolution.Evolve(tmpArrayPath)
 	require.NoError(t, err)
 
 	// Validate schema evolution changes
@@ -104,7 +105,7 @@ func TestArraySchemaEvolution(t *testing.T) {
 	defer ctx.Free()
 
 	// Prepare the array for reading
-	arr, err := NewArray(ctx, array_schema_evolution_name)
+	arr, err := NewArray(ctx, tmpArrayPath)
 	require.NoError(t, err)
 	defer array.Free()
 
