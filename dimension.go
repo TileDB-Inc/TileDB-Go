@@ -43,7 +43,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 	domainType := reflect.TypeOf(domain).Elem().Kind()
 	extentType := reflect.TypeOf(extent).Kind()
 	if extentType != domainType {
-		return nil, fmt.Errorf("Domain and extent do not have the same data types. Domain: %s, Extent: %s", domainType.String(), extentType.String())
+		return nil, fmt.Errorf("domain and extent do not have the same data types. Domain: %s, Extent: %s", domainType, extentType)
 	}
 
 	// Domain data type need to match datatype passed

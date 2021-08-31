@@ -1,15 +1,9 @@
 //go:build experimental
 // +build experimental
 
-/**
- * @file   array_schema_experimental.go
- *
- * @section DESCRIPTION
- *
- * This file declares Go bindings for experimental features in TileDB.
- * Experimental APIs to do not fall under the API compatibility guarantees and
- * might change between TileDB versions
- */
+// This file declares Go bindings for experimental features in TileDB.
+// Experimental APIs to do not fall under the API compatibility guarantees and
+// might change between TileDB versions
 
 package tiledb
 
@@ -22,6 +16,7 @@ package tiledb
 import "C"
 
 import (
+	"errors"
 	"fmt"
 	"runtime"
 	"unsafe"
@@ -39,7 +34,7 @@ func NewArraySchemaEvolution(tdbCtx *Context) (*ArraySchemaEvolution, error) {
 		arraySchemaEvolution.context.tiledbContext,
 		&arraySchemaEvolution.tiledbArraySchemaEvolution)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error creating tiledb arraySchemaEvolution: %s",
+		return nil, fmt.Errorf("error creating tiledb arraySchemaEvolution: %s",
 			arraySchemaEvolution.context.LastError())
 	}
 
@@ -52,7 +47,11 @@ func NewArraySchemaEvolution(tdbCtx *Context) (*ArraySchemaEvolution, error) {
 	return &arraySchemaEvolution, nil
 }
 
-// Free destroys an array schema evolution, freeing associated memory
+// Free releases the internal TileDB core data that was allocated on the C heap.
+// It is automatically called when this object is garbage collected, but can be
+// called earlier to manually release memory if needed. Free is idempotent and
+// can safely be called many times on the same object; if it has already
+// been freed, it will not be freed again.
 func (ase *ArraySchemaEvolution) Free() {
 	if ase.tiledbArraySchemaEvolution != nil {
 		C.tiledb_array_schema_evolution_free(&ase.tiledbArraySchemaEvolution)
@@ -61,19 +60,17 @@ func (ase *ArraySchemaEvolution) Free() {
 
 // AddAttribute adds an attribute to an array schema evolution.
 func (ase *ArraySchemaEvolution) AddAttribute(attribute *Attribute) error {
+	name, err := attribute.Name()
+	if err != nil {
+		return errors.New("cannot get name from attribute")
+	}
+
 	ret := C.tiledb_array_schema_evolution_add_attribute(
 		ase.context.tiledbContext, ase.tiledbArraySchemaEvolution,
 		attribute.tiledbAttribute)
-
-	name, err := attribute.Name()
-	if err != nil {
-		return fmt.Errorf("Cannot get name from attribute: %s",
-			ase.context.LastError())
-	}
-
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf(
-			"Error adding attribute %s to tiledb arraySchemaEvolution: %s",
+			"error adding attribute %s to tiledb arraySchemaEvolution: %s",
 			name, ase.context.LastError())
 	}
 
