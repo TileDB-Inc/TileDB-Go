@@ -96,7 +96,15 @@ func TestArraySchemaEvolution(t *testing.T) {
 	err = arraySchemaEvolution.DropAttribute("a1")
 	require.NoError(t, err)
 
-	err = arraySchemaEvolution.Evolve(tmpArrayPath)
+	buffer, err := SerializeArraySchemaEvolution(arraySchemaEvolution,
+		TILEDB_CAPNP, true)
+	require.NoError(t, err)
+
+	newArraySchemaEvolution, err := DeserializeArraySchemaEvolution(buffer,
+		TILEDB_CAPNP, true)
+	require.NoError(t, err)
+
+	err = newArraySchemaEvolution.Evolve(tmpArrayPath)
 	require.NoError(t, err)
 
 	// Validate schema evolution changes
