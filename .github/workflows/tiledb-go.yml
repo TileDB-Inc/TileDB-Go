@@ -11,7 +11,7 @@ jobs:
 # Jobs run in parallel
   Go_fmt:
     name: format
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       # Checks out repository
       - uses: actions/checkout@v2
@@ -23,7 +23,7 @@ jobs:
 
   golangci:
     name: lint
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
 
     # Checks out repository
@@ -43,7 +43,7 @@ jobs:
         version: v1.35.2
 
   Linux_Test:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         # Will be checking following versions
@@ -122,7 +122,7 @@ jobs:
       run: go test -v ./...
 
   Linux_Address_Sanitizer:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         # Will be checking following versions
