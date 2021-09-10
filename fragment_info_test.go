@@ -112,7 +112,7 @@ func TestFragmentInfo(t *testing.T) {
 
 	fragmentSize, err := fI.GetFragmentSize(0)
 	assert.Nil(t, err)
-	assert.Equal(t, uint64(2213), fragmentSize)
+	assert.Equal(t, uint64(2291), fragmentSize)
 
 	isDense, err := fI.GetDense(0)
 	assert.Nil(t, err)
@@ -230,7 +230,7 @@ func TestFragmentInfoEncryption(t *testing.T) {
 
 	fragmentSize, err := fI.GetFragmentSize(0)
 	assert.Nil(t, err)
-	assert.Equal(t, uint64(3994), fragmentSize)
+	assert.Equal(t, uint64(4072), fragmentSize)
 
 	isDense, err := fI.GetDense(0)
 	assert.Nil(t, err)
