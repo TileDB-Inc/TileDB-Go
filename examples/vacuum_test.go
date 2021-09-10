@@ -48,9 +48,9 @@ func ExampleVacuumSparseArray() {
 	// Cell (1) has data 1
 	// Cell (2) has data 2
 	// Cell (3) has data 3
-	// Num of fragments after 2 writes before consolidate: 2
-	// Num of fragments after consolidate: 3
-	// Num of fragments after vacuum: 1
+	// Num of fragments after 2 writes before consolidate: 3
+	// Num of fragments after consolidate: 4
+	// Num of fragments after vacuum: 2
 	// Estimated query size in bytes for attribute 'a': 12
 	// Estimated query size in bytes for dimension 'd': 12
 	// Cell (1) has data 1
