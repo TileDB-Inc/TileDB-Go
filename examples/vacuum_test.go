@@ -1,6 +1,3 @@
-//go:build !experimental
-// +build !experimental
-
 /**
  * @file   vacuum_test.go
  *
