@@ -110,7 +110,8 @@ func TestCantWrite(t *testing.T) {
 	}
 }
 
-func read(t *testing.T, f string) string {
+func read(t testing.TB, f string) string {
+	t.Helper()
 	in, err := ioutil.ReadFile(f)
 	if err != nil {
 		t.Fatalf("error opening %v: %v", f, err)

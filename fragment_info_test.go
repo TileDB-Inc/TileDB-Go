@@ -43,7 +43,7 @@ func TestFragmentInfoEncryption(t *testing.T) {
 	assert.Equal(t, uint64(4072), fragmentSize)
 }
 
-func testFragmentInfo(t *testing.T, context *Context) uint64 {
+func testFragmentInfo(t testing.TB, context *Context) uint64 {
 	// create temp group name
 	tmpArrayPath := t.TempDir()
 	// Create new array struct
@@ -144,7 +144,7 @@ func testFragmentInfo(t *testing.T, context *Context) uint64 {
 	return fragmentSize
 }
 
-func writeToArray(t *testing.T, context *Context, tmpArrayPath string) {
+func writeToArray(t testing.TB, context *Context, tmpArrayPath string) {
 	// Prepare some data for the array
 	a1 := []int32{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 	a2 := []byte{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'}

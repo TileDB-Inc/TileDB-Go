@@ -78,7 +78,7 @@ func ExampleNewArray() {
 }
 
 // TestArray tests creating a new dimension
-func buildArraySchema(context *Context, t *testing.T) *ArraySchema {
+func buildArraySchema(context *Context, t testing.TB) *ArraySchema {
 	// Test create dimension
 	dimension, err := NewDimension(context, "dim1", TILEDB_INT8, []int8{1, 10}, int8(5))
 	require.NoError(t, err)

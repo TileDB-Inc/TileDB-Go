@@ -7,11 +7,7 @@ import (
 )
 
 func TestDeserializeArraySchemaGC(t *testing.T) {
-	// Disable garbage collection for this test.
-	// TODO: Pull this out into a "disableGC" helper using t.Cleanup
-	// when we stop supporting Go 1.13.
-	was := debug.SetGCPercent(-1)
-	defer debug.SetGCPercent(was)
+	disableGC(t)
 
 	ctx, err := NewContext(nil)
 	if err != nil {
@@ -29,4 +25,11 @@ func TestDeserializeArraySchemaGC(t *testing.T) {
 	}
 	runtime.GC()
 	runtime.GC()
+}
+
+// disableGC disables garbage collection for the duration of a test.
+func disableGC(t testing.TB) {
+	t.Helper()
+	was := debug.SetGCPercent(-1)
+	t.Cleanup(func() { debug.SetGCPercent(was) })
 }
