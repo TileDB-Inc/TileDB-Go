@@ -2,6 +2,7 @@ package tiledb
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -193,12 +194,7 @@ func TestFullAttribute(t *testing.T) {
 	assert.Equal(t, uint64(40), valueSize)
 
 	// Temp path for testing dump
-	tmpPathDump := os.TempDir() + string(os.PathSeparator) + "tiledb_attribute_dump_test"
-	// Cleanup tmp file when test ends
-	defer os.RemoveAll(tmpPathDump)
-	if _, err = os.Stat(tmpPathDump); err == nil {
-		os.RemoveAll(tmpPathDump)
-	}
+	tmpPathDump := filepath.Join(t.TempDir(), "dumpfile")
 
 	// Test dumping to file
 	require.NoError(t, attribute.Dump(tmpPathDump))
@@ -285,12 +281,7 @@ func TestNullableAttribute(t *testing.T) {
 	assert.True(t, valid)
 
 	// Temp path for testing dump
-	tmpPathDump := os.TempDir() + string(os.PathSeparator) + "tiledb_attribute_dump_test"
-	// Cleanup tmp file when test ends
-	defer os.RemoveAll(tmpPathDump)
-	if _, err = os.Stat(tmpPathDump); err == nil {
-		os.RemoveAll(tmpPathDump)
-	}
+	tmpPathDump := filepath.Join(t.TempDir(), "dumpfile")
 
 	// Test dumping to file
 	require.NoError(t, attribute.Dump(tmpPathDump))

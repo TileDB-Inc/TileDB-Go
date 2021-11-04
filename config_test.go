@@ -2,7 +2,7 @@ package tiledb
 
 import (
 	"fmt"
-	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -106,11 +106,7 @@ func TestFileConfig(t *testing.T) {
 	assert.Equal(t, "10", val)
 
 	// Create temporary path for testing configuration writing/reading
-	tmpPath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_config"
-	defer os.Remove(tmpPath)
-	if _, err = os.Stat(tmpPath); err == nil {
-		os.Remove(tmpPath)
-	}
+	tmpPath := filepath.Join(t.TempDir(), "config")
 
 	require.NoError(t, config.SaveToFile(tmpPath))
 

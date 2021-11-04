@@ -2,6 +2,7 @@ package tiledb
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -206,13 +207,8 @@ func TestArraySchema(t *testing.T) {
 
 	require.NoError(t, arraySchema.Check())
 
-	// Temp path froo+= testing dump
-	tmpPathDump := os.TempDir() + string(os.PathSeparator) + "tiledb_array_schema_dump_test"
-	// Cleanup tmp file when test ends
-	defer os.RemoveAll(tmpPathDump)
-	if _, err = os.Stat(tmpPathDump); err == nil {
-		os.RemoveAll(tmpPathDump)
-	}
+	// Temp path for testing dump
+	tmpPathDump := filepath.Join(t.TempDir(), "dumpfile")
 
 	schemaType, err := arraySchema.Type()
 	require.NoError(t, err)

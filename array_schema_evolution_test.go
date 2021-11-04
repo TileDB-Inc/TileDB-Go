@@ -4,8 +4,6 @@
 package tiledb
 
 import (
-	"os"
-	"path"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -56,16 +54,11 @@ func TestArraySchemaEvolution(t *testing.T) {
 	require.NoError(t, arraySchema.Check())
 
 	// tmpArrayPath is the array URI
-	tmpArrayPath := path.Join(os.TempDir(), array_schema_evolution_name)
-	if _, err = os.Stat(tmpArrayPath); err == nil {
-		os.RemoveAll(tmpArrayPath)
-	}
+	tmpArrayPath := t.TempDir()
 
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
 	assert.NotNil(t, array)
-
-	defer os.RemoveAll(tmpArrayPath)
 
 	require.NoError(t, array.Create(arraySchema))
 

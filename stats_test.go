@@ -2,6 +2,7 @@ package tiledb
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -35,12 +36,7 @@ func TestStats(t *testing.T) {
 	// Dump statistics to stdout
 	require.NoError(t, StatsDumpSTDOUT())
 
-	tmpPath := os.TempDir() + string(os.PathSeparator) + "tiledb_stats_test"
-	// Cleanup group when test ends
-	defer os.RemoveAll(tmpPath)
-	if _, err = os.Stat(tmpPath); err == nil {
-		os.RemoveAll(tmpPath)
-	}
+	tmpPath := filepath.Join(t.TempDir(), "dump")
 
 	// Dump statistics to file
 	require.NoError(t, StatsDump(tmpPath))
@@ -74,12 +70,7 @@ func TestStatsRaw(t *testing.T) {
 	// Dump raw (json) statistics to stdout
 	require.NoError(t, StatsRawDumpSTDOUT())
 
-	tmpPath := os.TempDir() + string(os.PathSeparator) + "tiledb_stats_test"
-	// Cleanup group when test ends
-	defer os.RemoveAll(tmpPath)
-	if _, err = os.Stat(tmpPath); err == nil {
-		os.RemoveAll(tmpPath)
-	}
+	tmpPath := filepath.Join(t.TempDir(), "dump")
 
 	// Dump raw (json) statistics to file
 	require.NoError(t, StatsRawDump(tmpPath))

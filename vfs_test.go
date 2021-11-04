@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,17 +22,9 @@ func TestVFS(t *testing.T) {
 	vfs, err := NewVFS(context, config)
 	require.NoError(t, err)
 
-	tmpPath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_vfs"
-	defer os.Remove(tmpPath)
-	if _, err = os.Stat(tmpPath); err == nil {
-		os.Remove(tmpPath)
-	}
+	tmpPath := filepath.Join(t.TempDir(), "somedir")
 
-	tmpFilePath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_vfs" + string(os.PathSeparator) + "file_test"
-	defer os.Remove(tmpFilePath)
-	if _, err = os.Stat(tmpFilePath); err == nil {
-		os.Remove(tmpFilePath)
-	}
+	tmpFilePath := filepath.Join(tmpPath, "somefile")
 
 	isFile, err := vfs.IsFile(tmpPath)
 	require.NoError(t, err)
@@ -66,11 +59,7 @@ func TestVFS(t *testing.T) {
 	assert.EqualValues(t, 3, dirSize)
 
 	// Calculate destination file path
-	dstTmpFilePath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_vfs" + string(os.PathSeparator) + "file_test_copy"
-	defer os.Remove(dstTmpFilePath)
-	if _, err = os.Stat(dstTmpFilePath); err == nil {
-		os.Remove(dstTmpFilePath)
-	}
+	dstTmpFilePath := filepath.Join(t.TempDir(), "copy-dest")
 
 	// Copy file
 	require.NoError(t, vfs.CopyFile(tmpFilePath, dstTmpFilePath))
@@ -135,17 +124,9 @@ func TestVFSFH(t *testing.T) {
 	vfs, err := NewVFS(context, config)
 	require.NoError(t, err)
 
-	tmpPath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_vfs_fh"
-	defer os.Remove(tmpPath)
-	if _, err = os.Stat(tmpPath); err == nil {
-		os.Remove(tmpPath)
-	}
+	tmpPath := filepath.Join(t.TempDir(), "somedir")
 
-	tmpFilePath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_vfs_fh" + string(os.PathSeparator) + "file_test"
-	defer os.Remove(tmpFilePath)
-	if _, err = os.Stat(tmpFilePath); err == nil {
-		os.Remove(tmpFilePath)
-	}
+	tmpFilePath := filepath.Join(t.TempDir(), "somefile")
 
 	isFile, err := vfs.IsFile(tmpPath)
 	require.NoError(t, err)

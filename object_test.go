@@ -1,7 +1,6 @@
 package tiledb
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -15,19 +14,9 @@ func TestObjectCreate(t *testing.T) {
 	require.NoError(t, err)
 
 	// create temp group name
-	groupPath := filepath.Join(os.TempDir(), "tiledb_test_object_group")
-	// Cleanup group when test ends
-	defer os.RemoveAll(groupPath)
-	if _, err = os.Stat(groupPath); err == nil {
-		os.RemoveAll(groupPath)
-	}
+	groupPath := t.TempDir()
 
-	groupPathNew := filepath.Join(os.TempDir(), "tiledb_test_object_group_move")
-	// Cleanup group when test ends
-	defer os.RemoveAll(groupPathNew)
-	if _, err = os.Stat(groupPathNew); err == nil {
-		os.RemoveAll(groupPathNew)
-	}
+	groupPathNew := t.TempDir()
 
 	// Create initial group
 	require.NoError(t, GroupCreate(context, groupPath))
@@ -47,12 +36,7 @@ func TestObjectArray(t *testing.T) {
 	require.NoError(t, err)
 
 	// create temp group name
-	groupPath := filepath.Join(os.TempDir(), "tiledb_test_object_group")
-	// Cleanup group when test ends
-	defer os.RemoveAll(groupPath)
-	if _, err = os.Stat(groupPath); err == nil {
-		os.RemoveAll(groupPath)
-	}
+	groupPath := t.TempDir()
 
 	// Create initial group
 	require.NoError(t, GroupCreate(context, groupPath))

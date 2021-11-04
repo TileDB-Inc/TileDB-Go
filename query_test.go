@@ -118,12 +118,12 @@ func ExampleNewQuery() {
 	// create temp array name and path
 	// normal usage would be "my_array" uri
 	// Temp path is used here so unit test can clean up after itself
-	tmpArrayPath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_array"
-	// Cleanup group when test ends
-	defer os.RemoveAll(tmpArrayPath)
-	if _, err = os.Stat(tmpArrayPath); err == nil {
-		os.RemoveAll(tmpArrayPath)
+	tmpArrayPath, err := os.MkdirTemp("", "tiledb_test_array")
+	if err != nil {
+		// Handle error
+		return
 	}
+	defer os.RemoveAll(tmpArrayPath)
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	if err != nil {
@@ -389,13 +389,7 @@ func TestQueryEffectiveBufferSize(t *testing.T) {
 	require.NoError(t, arraySchema.Check())
 
 	// create temp group name
-	tmpArrayPath := os.TempDir() + string(os.PathSeparator) +
-		"tiledb_effective_buffer_size_array"
-	// Cleanup group when test ends
-	defer os.RemoveAll(tmpArrayPath)
-	if _, err = os.Stat(tmpArrayPath); err == nil {
-		os.RemoveAll(tmpArrayPath)
-	}
+	tmpArrayPath := t.TempDir()
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
@@ -561,13 +555,7 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	require.NoError(t, arraySchema.Check())
 
 	// create temp group name
-	tmpArrayPath := os.TempDir() + string(os.PathSeparator) +
-		"tiledb_effective_buffer_size_array_heterogeneous"
-	// Cleanup group when test ends
-	defer os.RemoveAll(tmpArrayPath)
-	if _, err = os.Stat(tmpArrayPath); err == nil {
-		os.RemoveAll(tmpArrayPath)
-	}
+	tmpArrayPath := t.TempDir()
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
@@ -808,13 +796,7 @@ func TestQueryEffectiveBufferSizeStrings(t *testing.T) {
 	require.NoError(t, arraySchema.Check())
 
 	// create temp group name
-	tmpArrayPath := os.TempDir() + string(os.PathSeparator) +
-		"tiledb_effective_buffer_size_array_strings"
-	// Cleanup group when test ends
-	defer os.RemoveAll(tmpArrayPath)
-	if _, err = os.Stat(tmpArrayPath); err == nil {
-		os.RemoveAll(tmpArrayPath)
-	}
+	tmpArrayPath := t.TempDir()
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
@@ -1013,13 +995,7 @@ func TestQueryEffectiveBufferSizeStringsHeterogeneous(t *testing.T) {
 	require.NoError(t, arraySchema.Check())
 
 	// create temp group name
-	tmpArrayPath := os.TempDir() + string(os.PathSeparator) +
-		"tiledb_effective_buffer_size_array_strings_heterogeneous"
-	// Cleanup group when test ends
-	defer os.RemoveAll(tmpArrayPath)
-	if _, err = os.Stat(tmpArrayPath); err == nil {
-		os.RemoveAll(tmpArrayPath)
-	}
+	tmpArrayPath := t.TempDir()
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
@@ -1180,12 +1156,7 @@ func TestQueryReadEmpty(t *testing.T) {
 	require.NoError(t, arraySchema.SetDomain(domain))
 
 	// create temp group name
-	tmpArrayPath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_array"
-	// Cleanup group when test ends
-	defer os.RemoveAll(tmpArrayPath)
-	if _, err = os.Stat(tmpArrayPath); err == nil {
-		os.RemoveAll(tmpArrayPath)
-	}
+	tmpArrayPath := t.TempDir()
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
@@ -1340,12 +1311,7 @@ func TestDenseQueryWrite(t *testing.T) {
 	require.NoError(t, arraySchema.Check())
 
 	// create temp group name
-	tmpArrayPath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_array"
-	// Cleanup group when test ends
-	defer os.RemoveAll(tmpArrayPath)
-	if _, err = os.Stat(tmpArrayPath); err == nil {
-		os.RemoveAll(tmpArrayPath)
-	}
+	tmpArrayPath := t.TempDir()
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
@@ -1629,12 +1595,7 @@ func TestSparseQueryWrite(t *testing.T) {
 	require.NoError(t, arraySchema.Check())
 
 	// create temp group name
-	tmpArrayPath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_sparse_array"
-	// Cleanup group when test ends
-	defer os.RemoveAll(tmpArrayPath)
-	if _, err = os.Stat(tmpArrayPath); err == nil {
-		os.RemoveAll(tmpArrayPath)
-	}
+	tmpArrayPath := t.TempDir()
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
@@ -1787,12 +1748,7 @@ func TestSparseQueryWriteNullable(t *testing.T) {
 	require.NoError(t, arraySchema.Check())
 
 	// create temp group name
-	tmpArrayPath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_sparse_array"
-	// Cleanup group when test ends
-	defer os.RemoveAll(tmpArrayPath)
-	if _, err = os.Stat(tmpArrayPath); err == nil {
-		os.RemoveAll(tmpArrayPath)
-	}
+	tmpArrayPath := t.TempDir()
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
@@ -1918,11 +1874,7 @@ func TestSparseQueryWriteHilbertLayout(t *testing.T) {
 	require.NoError(t, arraySchema.SetDomain(domain))
 	require.NoError(t, arraySchema.SetCellOrder(TILEDB_HILBERT))
 	require.NoError(t, arraySchema.Check())
-	tmpArrayPath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_sparse_array"
-	defer os.RemoveAll(tmpArrayPath)
-	if _, err = os.Stat(tmpArrayPath); err == nil {
-		os.RemoveAll(tmpArrayPath)
-	}
+	tmpArrayPath := t.TempDir()
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
 	assert.NotNil(t, array)
@@ -2028,13 +1980,7 @@ func TestQueryConfig(t *testing.T) {
 	require.NoError(t, arraySchema.Check())
 
 	// create temp group name
-	tmpArrayPath := os.TempDir() + string(os.PathSeparator) +
-		"tiledb_effective_buffer_size_array"
-	// Cleanup group when test ends
-	defer os.RemoveAll(tmpArrayPath)
-	if _, err = os.Stat(tmpArrayPath); err == nil {
-		os.RemoveAll(tmpArrayPath)
-	}
+	tmpArrayPath := t.TempDir()
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
@@ -2192,13 +2138,7 @@ func TestQueryStats(t *testing.T) {
 	require.NoError(t, arraySchema.Check())
 
 	// create temp group name
-	tmpArrayPath := os.TempDir() + string(os.PathSeparator) +
-		"tiledb_effective_buffer_size_array_stats"
-	// Cleanup group when test ends
-	defer os.RemoveAll(tmpArrayPath)
-	if _, err = os.Stat(tmpArrayPath); err == nil {
-		os.RemoveAll(tmpArrayPath)
-	}
+	tmpArrayPath := t.TempDir()
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)

@@ -1,8 +1,6 @@
 package tiledb
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -30,11 +28,10 @@ var testAttributeValues = struct {
 }
 
 func TestQueryCondition(t *testing.T) {
-	array, err := createBasicTestArray("test_query_condition")
+	array, err := createBasicTestArray(t, "test_query_condition")
 	if err != nil {
 		t.Errorf("failed to create basic test array: %s", err)
 	}
-	defer os.RemoveAll(array.uri)
 
 	if err := array.Open(TILEDB_READ); err != nil {
 		t.Errorf("failed to open test array for reading: %s", err)
@@ -248,7 +245,7 @@ func testQueryConditionBytes(t *testing.T, array *Array) {
 	}
 }
 
-func createBasicTestArray(identifier string) (*Array, error) {
+func createBasicTestArray(t testing.TB, identifier string) (*Array, error) {
 	// Create configuration
 	config, err := NewConfig()
 	if err != nil {
@@ -276,9 +273,7 @@ func createBasicTestArray(identifier string) (*Array, error) {
 	}
 
 	// create temp group name
-	tmpArrayPath := filepath.Join(os.TempDir(), identifier)
-	// remove path pre-emptively
-	os.RemoveAll(tmpArrayPath)
+	tmpArrayPath := t.TempDir()
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	if err != nil {
