@@ -33,8 +33,7 @@ func TestArraySchemaEvolution(t *testing.T) {
 	assert.NotNil(t, domain)
 
 	// Add dimension to domain
-	err = domain.AddDimensions(dimension)
-	require.NoError(t, err)
+	require.NoError(t, domain.AddDimensions(dimension))
 
 	arraySchema, err := NewArraySchema(context, TILEDB_DENSE)
 	require.NoError(t, err)
@@ -48,17 +47,13 @@ func TestArraySchemaEvolution(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, a2)
 
-	err = arraySchema.AddAttributes(a1, a2)
-	require.NoError(t, err)
+	require.NoError(t, arraySchema.AddAttributes(a1, a2))
 
-	err = arraySchema.SetCapacity(100)
-	require.NoError(t, err)
+	require.NoError(t, arraySchema.SetCapacity(100))
 
-	err = arraySchema.SetDomain(domain)
-	require.NoError(t, err)
+	require.NoError(t, arraySchema.SetDomain(domain))
 
-	err = arraySchema.Check()
-	require.NoError(t, err)
+	require.NoError(t, arraySchema.Check())
 
 	// tmpArrayPath is the array URI
 	tmpArrayPath := path.Join(os.TempDir(), array_schema_evolution_name)
@@ -72,11 +67,9 @@ func TestArraySchemaEvolution(t *testing.T) {
 
 	defer os.RemoveAll(tmpArrayPath)
 
-	err = array.Create(arraySchema)
-	require.NoError(t, err)
+	require.NoError(t, array.Create(arraySchema))
 
-	err = array.Close()
-	require.NoError(t, err)
+	require.NoError(t, array.Close())
 
 	arraySchemaEvolution, err := NewArraySchemaEvolution(context)
 	require.NoError(t, err)
@@ -85,16 +78,14 @@ func TestArraySchemaEvolution(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, a2)
 
-	err = arraySchemaEvolution.AddAttribute(a3)
-	require.NoError(t, err)
+	require.NoError(t, arraySchemaEvolution.AddAttribute(a3))
 
 	// Will fail when try to add an attribute which already has the name
 	err = arraySchemaEvolution.AddAttribute(a3)
 	require.Error(t, err)
 
 	// Remove atrribute a1
-	err = arraySchemaEvolution.DropAttribute("a1")
-	require.NoError(t, err)
+	require.NoError(t, arraySchemaEvolution.DropAttribute("a1"))
 
 	buffer, err := SerializeArraySchemaEvolution(arraySchemaEvolution,
 		TILEDB_CAPNP, true)
@@ -104,8 +95,7 @@ func TestArraySchemaEvolution(t *testing.T) {
 		TILEDB_CAPNP, true)
 	require.NoError(t, err)
 
-	err = newArraySchemaEvolution.Evolve(tmpArrayPath)
-	require.NoError(t, err)
+	require.NoError(t, newArraySchemaEvolution.Evolve(tmpArrayPath))
 
 	// Validate schema evolution changes
 	ctx, err := NewContext(nil)
@@ -117,8 +107,7 @@ func TestArraySchemaEvolution(t *testing.T) {
 	require.NoError(t, err)
 	defer array.Free()
 
-	err = arr.Open(TILEDB_READ)
-	require.NoError(t, err)
+	require.NoError(t, arr.Open(TILEDB_READ))
 
 	// Need to get the evolved schema
 	arrAchema, err := arr.Schema()
@@ -157,6 +146,5 @@ func TestArraySchemaEvolution(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "a3", attrName2)
 
-	err = arr.Close()
-	require.NoError(t, err)
+	require.NoError(t, arr.Close())
 }

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func ExampleNewBuffer() {
@@ -35,17 +36,17 @@ func ExampleNewBuffer() {
 // TestNewBuffer tests creating a new buffer
 func TestNewBuffer(t *testing.T) {
 	context, err := NewContext(nil)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	buffer, err := NewBuffer(context)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, buffer)
 
 	bytes, err := buffer.Data()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Nil(t, bytes)
 
 	datatype, err := buffer.Type()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, datatype, TILEDB_UINT8)
 }

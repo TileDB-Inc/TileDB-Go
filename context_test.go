@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // ExampleNewContext example of creating a new context
@@ -64,16 +65,16 @@ func ExampleNewContext() {
 func TestNewContext(t *testing.T) {
 	context, err := NewContext(nil)
 
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	// Test freeing c allocs
 	context.Free()
 
 	config, err := NewConfig()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	// Test context with config
 	context, err = NewContext(config)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, context)
 }
 
@@ -96,20 +97,20 @@ func TestGetContextConfig(t *testing.T) {
 	context, err := NewContextFromMap(map[string]string{
 		"sm.tile_cache_size": "10",
 	})
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	config, err := context.Config()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	// Validate config has setting changed
 	val, err := config.Get("sm.tile_cache_size")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "10", val)
 }
 
 // TestContextLastError tests retrieving the last error
 func TestContextLastError(t *testing.T) {
 	context, err := NewContext(nil)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	ctxErr := context.LastError()
 	assert.Nil(t, ctxErr)
 }
@@ -117,14 +118,13 @@ func TestContextLastError(t *testing.T) {
 // TestContextIsFSSupported tests if we can detect filesystem support properly
 func TestContextIsFSSupported(t *testing.T) {
 	context, err := NewContext(nil)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	_, ctxErr := context.IsSupportedFS(TILEDB_S3)
 	assert.Nil(t, ctxErr)
 }
 
 func TestContextSetTag(t *testing.T) {
 	context, err := NewContext(nil)
-	assert.Nil(t, err)
-	err = context.SetTag("key", "value")
-	assert.Nil(t, err)
+	require.NoError(t, err)
+	require.NoError(t, context.SetTag("key", "value"))
 }

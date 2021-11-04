@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Example usage of tiledb statistics
@@ -26,15 +27,13 @@ func ExampleStatsEnable() {
 func TestStats(t *testing.T) {
 	// Enable statistics
 	err := StatsEnable()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	// Reset all internal counters to 0
-	err = StatsReset()
-	assert.Nil(t, err)
+	require.NoError(t, StatsReset())
 
 	// Dump statistics to stdout
-	err = StatsDumpSTDOUT()
-	assert.Nil(t, err)
+	require.NoError(t, StatsDumpSTDOUT())
 
 	tmpPath := os.TempDir() + string(os.PathSeparator) + "tiledb_stats_test"
 	// Cleanup group when test ends
@@ -44,41 +43,36 @@ func TestStats(t *testing.T) {
 	}
 
 	// Dump statistics to file
-	err = StatsDump(tmpPath)
-	assert.Nil(t, err)
+	require.NoError(t, StatsDump(tmpPath))
 
 	// Validate dumped file is non-empty
 	fileInfo, err := os.Stat(tmpPath)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotZero(t, fileInfo.Size())
 
 	// Dump statistics to existing file should error
-	err = StatsDump(tmpPath)
-	assert.NotNil(t, err)
+	assert.Error(t, StatsDump(tmpPath))
 
 	// Get statistics as string
 	stats, err := Stats()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, stats)
 
 	// Disable statistics
-	err = StatsDisable()
-	assert.Nil(t, err)
+	require.NoError(t, StatsDisable())
 }
 
 // Test statistics
 func TestStatsRaw(t *testing.T) {
 	// Enable statistics
 	err := StatsEnable()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	// Reset all internal counters to 0
-	err = StatsReset()
-	assert.Nil(t, err)
+	require.NoError(t, StatsReset())
 
 	// Dump raw (json) statistics to stdout
-	err = StatsRawDumpSTDOUT()
-	assert.Nil(t, err)
+	require.NoError(t, StatsRawDumpSTDOUT())
 
 	tmpPath := os.TempDir() + string(os.PathSeparator) + "tiledb_stats_test"
 	// Cleanup group when test ends
@@ -88,24 +82,22 @@ func TestStatsRaw(t *testing.T) {
 	}
 
 	// Dump raw (json) statistics to file
-	err = StatsRawDump(tmpPath)
-	assert.Nil(t, err)
+	require.NoError(t, StatsRawDump(tmpPath))
 
 	// Validate dumped file is non-empty
 	fileInfo, err := os.Stat(tmpPath)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotZero(t, fileInfo.Size())
 
 	// Dump raw (json) statistics to existing file should error
 	err = StatsRawDump(tmpPath)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 
 	// Get raw (json) statistics as string
 	stats, err := StatsRaw()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, stats)
 
 	// Disable statistics
-	err = StatsDisable()
-	assert.Nil(t, err)
+	require.NoError(t, StatsDisable())
 }

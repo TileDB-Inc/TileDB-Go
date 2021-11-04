@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var testAttributeValues = struct {
@@ -61,28 +62,28 @@ func testQueryConditionInt32(t *testing.T, array *Array) {
 			a1DataRead := make([]int32, 3)
 			// Prepare the query
 			query, err := NewQuery(array.context, array)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			assert.NotNil(t, query)
 
 			_, err = query.SetBuffer("a1", a1DataRead)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			assert.NotNil(t, query)
 
 			qc, err := NewQueryCondition(array.context, "a1", c.op, c.opValue)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			err = query.SetQueryCondition(qc)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			err = query.SetLayout(TILEDB_ROW_MAJOR)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			// Submit the query
 			err = query.Submit()
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			// compare the elements in the buffer to the expected values
 			elements, err := query.ResultBufferElements()
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			for i := uint64(0); i < elements["a1"][1]; i++ {
 				assert.Equal(t, a1DataRead[i], c.expectedValues[i])
@@ -116,34 +117,34 @@ func testQueryConditionInt32(t *testing.T, array *Array) {
 			a1DataRead := make([]int32, 3)
 			// Prepare the query
 			query, err := NewQuery(array.context, array)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			assert.NotNil(t, query)
 
 			_, err = query.SetBuffer("a1", a1DataRead)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			assert.NotNil(t, query)
 
 			qc1, err := NewQueryCondition(array.context, "a1", c.op1, c.op1Value)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			qc2, err := NewQueryCondition(array.context, "a1", c.op2, c.op2Value)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			qc, err := NewQueryConditionCombination(array.context, qc1, c.combinationCondition, qc2)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			err = query.SetQueryCondition(qc)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			err = query.SetLayout(TILEDB_ROW_MAJOR)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			// Submit the query
 			err = query.Submit()
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			// compare the elements in the buffer to the expected values
 			elements, err := query.ResultBufferElements()
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			for i := uint64(0); i < elements["a1"][1]; i++ {
 				assert.Equal(t, a1DataRead[i], c.expectedValues[i])
@@ -169,28 +170,28 @@ func testQueryConditionTime(t *testing.T, array *Array) {
 			a3DataRead := make([]int64, 3)
 			// Prepare the query
 			query, err := NewQuery(array.context, array)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			assert.NotNil(t, query)
 
 			_, err = query.SetBuffer("a3", a3DataRead)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			assert.NotNil(t, query)
 			qc, err := NewQueryCondition(array.context, "a3", c.op, c.opValue)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			err = query.SetQueryCondition(qc)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			err = query.SetLayout(TILEDB_ROW_MAJOR)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			// Submit the query
 			err = query.Submit()
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			// compare the elements in the buffer to the expected values
 			elements, err := query.ResultBufferElements()
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			for i := uint64(0); i < elements["a3"][1]; i++ {
 				assert.Equal(t, a3DataRead[i], c.expectedValues[i])
@@ -217,27 +218,27 @@ func testQueryConditionBytes(t *testing.T, array *Array) {
 			a2OffsetRead := make([]uint64, 3)
 			// Prepare the query
 			query, err := NewQuery(array.context, array)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			assert.NotNil(t, query)
 
 			_, _, err = query.SetBufferVar("a2", a2OffsetRead, a2DataRead)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			assert.NotNil(t, query)
 			qc, err := NewQueryCondition(array.context, "a2", c.op, c.opValue)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			err = query.SetQueryCondition(qc)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			err = query.SetLayout(TILEDB_ROW_MAJOR)
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			// Submit the query
 			err = query.Submit()
-			assert.Nil(t, err)
+			require.NoError(t, err)
 			// compare the elements in the buffer to the expected values
 			elements, err := query.ResultBufferElements()
-			assert.Nil(t, err)
+			require.NoError(t, err)
 
 			for i := uint64(0); i < elements["a2"][1]; i++ {
 				assert.Equal(t, a2DataRead[i], c.expectedValues[i])
