@@ -40,6 +40,7 @@ package examples
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
 func ExampleFragmentsConsolidationArray() {
+	// extraneous comment
 	examples_lib.RunFragmentsConsolidationArray()
 
 	// Output: Num of fragments: 1
