@@ -404,6 +404,13 @@ const (
 	TILEDB_AES_256_GCM EncryptionType = C.TILEDB_AES_256_GCM
 )
 
+// String returns string representation
+func (encryptionType EncryptionType) String() string {
+	var ctype *C.char
+	C.tiledb_encryption_type_to_str(C.tiledb_encryption_type_t(encryptionType), &ctype)
+	return C.GoString(ctype)
+}
+
 // FilterType for attribute/coordinates/offsets filters
 type FilterType uint8
 
@@ -586,3 +593,4 @@ var TILEDB_VAR_NUM = uint32(C.TILEDB_VAR_NUM)
 
 // TILEDB_COORDS A special name indicating the coordinates attribute.
 const TILEDB_COORDS = "__coords"
+

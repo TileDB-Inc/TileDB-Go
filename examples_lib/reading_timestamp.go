@@ -72,7 +72,7 @@ func writeTimestampArray(dir string, key string, value string, timestamp uint64,
 	checkError(err)
 	defer array.Free()
 
-	err = array.OpenAt(tiledb.TILEDB_WRITE, timestamp)
+	err = array.OpenWithOptions(tiledb.TILEDB_WRITE, tiledb.WithEndTimestamp(timestamp))
 	checkError(err)
 	defer array.Close()
 
@@ -107,7 +107,7 @@ func writeTimestampArrayMeta(dir string, key string, value string, timestamp uin
 	checkError(err)
 	defer array.Free()
 
-	err = array.OpenAt(tiledb.TILEDB_WRITE, timestamp)
+	err = array.OpenWithOptions(tiledb.TILEDB_WRITE, tiledb.WithEndTimestamp(timestamp))
 	checkError(err)
 	defer array.Close()
 
@@ -126,7 +126,7 @@ func readTimestampArray(dir string, timestamp uint64) {
 	checkError(err)
 	defer array.Free()
 
-	err = array.OpenAt(tiledb.TILEDB_READ, timestamp)
+	err = array.OpenWithOptions(tiledb.TILEDB_READ, tiledb.WithEndTimestamp(timestamp))
 	checkError(err)
 	defer array.Close()
 

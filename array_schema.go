@@ -417,24 +417,6 @@ func LoadArraySchema(context *Context, path string) (*ArraySchema, error) {
 	return &a, nil
 }
 
-// LoadArraySchemaWithKey retrieves the schema of an encrypted array from the disk, creating an array schema struct.
-func LoadArraySchemaWithKey(context *Context, path string, encryptionType EncryptionType, key string) (*ArraySchema, error) {
-	ckey := unsafe.Pointer(C.CString(key))
-	defer C.free(ckey)
-	cpath := C.CString(path)
-	defer C.free(unsafe.Pointer(cpath))
-	a := ArraySchema{context: context}
-	ret := C.tiledb_array_schema_load_with_key(a.context.tiledbContext, cpath, C.tiledb_encryption_type_t(encryptionType), ckey, C.uint32_t(len(key)), &a.tiledbArraySchema)
-	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error in loading arraySchema with key from %s: %s", path, a.context.LastError())
-	}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&a, func(arraySchema *ArraySchema) {
-		arraySchema.Free()
-	})
-	return &a, nil
-}
-
 // DumpSTDOUT Dumps the array schema in ASCII format to stdout
 func (a *ArraySchema) DumpSTDOUT() error {
 	ret := C.tiledb_array_schema_dump(a.context.tiledbContext, a.tiledbArraySchema, C.stdout)

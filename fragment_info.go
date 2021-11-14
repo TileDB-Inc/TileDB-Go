@@ -25,8 +25,6 @@ type FragmentInfo struct {
 	context            *Context
 	uri                string
 	array              *Array
-	encryptionType     EncryptionType
-	encryptionKey      string
 }
 
 // NewFragmentInfo alloc a new fragment info for a given array and fetches all
@@ -66,22 +64,6 @@ func (fI *FragmentInfo) Load() error {
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error loading tiledb fragment info: %s", fI.context.LastError())
 	}
-	return nil
-}
-
-// LoadWithKey loads the fragment info from an encrypted array.
-func (fI *FragmentInfo) LoadWithKey(encryptionType EncryptionType, key string) error {
-	ckey := unsafe.Pointer(C.CString(key))
-	defer C.free(ckey)
-	ret := C.tiledb_fragment_info_load_with_key(fI.context.tiledbContext, fI.tiledbFragmentInfo,
-		C.tiledb_encryption_type_t(encryptionType), ckey, C.uint32_t(len(key)))
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error loading tiledb fragment info with key: %s", fI.context.LastError())
-	}
-
-	fI.encryptionType = encryptionType
-	fI.encryptionKey = key
-
 	return nil
 }
 
@@ -195,11 +177,7 @@ func (fI *FragmentInfo) getNonEmptyDomainSliceFromIndex(did uint32) (
 		return nil, nil, nil, err
 	}
 
-	if fI.encryptionKey != "" {
-		err = fI.array.OpenWithKey(TILEDB_READ, fI.encryptionType, fI.encryptionKey)
-	} else {
-		err = fI.array.Open(TILEDB_READ)
-	}
+	err = fI.array.Open(TILEDB_READ)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -224,11 +202,7 @@ func (fI *FragmentInfo) getNonEmptyDomainSliceFromName(did string) (
 		return nil, nil, nil, err
 	}
 
-	if fI.encryptionKey != "" {
-		err = fI.array.OpenWithKey(TILEDB_READ, fI.encryptionType, fI.encryptionKey)
-	} else {
-		err = fI.array.Open(TILEDB_READ)
-	}
+	err = fI.array.Open(TILEDB_READ)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -361,11 +335,7 @@ func (fI *FragmentInfo) GetNonEmptyDomainVarFromIndex(fid uint32, did uint32) (*
 		return nil, err
 	}
 
-	if fI.encryptionKey != "" {
-		err = fI.array.OpenWithKey(TILEDB_READ, fI.encryptionType, fI.encryptionKey)
-	} else {
-		err = fI.array.Open(TILEDB_READ)
-	}
+	err = fI.array.Open(TILEDB_READ)
 	if err != nil {
 		return nil, err
 	}
