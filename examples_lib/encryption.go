@@ -9,10 +9,25 @@ import (
 // The 256-bit encryption key, stored as a string for convenience.
 const encryption_key = "0123456789abcdeF0123456789abcdeF"
 
-func createEncryptedArray(dir string) {
-	// Create a TileDB context.
-	ctx, err := tiledb.NewContext(nil)
+func getContextConfiguredForEncryption() *tiledb.Context {
+	config, err := tiledb.NewConfig()
 	checkError(err)
+
+	err = config.Set("sm.encryption_type", tiledb.TILEDB_AES_256_GCM.String())
+	checkError(err)
+
+	err = config.Set("sm.encryption_key", encryption_key)
+	checkError(err)
+
+	// Create a TileDB context.
+	ctx, err := tiledb.NewContext(config)
+	checkError(err)
+
+	return ctx
+}
+
+func createEncryptedArray(dir string) {
+	ctx := getContextConfiguredForEncryption()
 	defer ctx.Free()
 
 	// The array will be 4x4 with dimensions "rows" and "cols", with domain [1,4].
@@ -52,13 +67,13 @@ func createEncryptedArray(dir string) {
 	checkError(err)
 	defer array.Free()
 
-	err = array.CreateWithKey(schema, tiledb.TILEDB_AES_256_GCM, encryption_key)
+	//err = array.CreateWithKey(schema, tiledb.TILEDB_AES_256_GCM, encryption_key)
+	err = array.Create(schema)
 	checkError(err)
 }
 
 func writeEncryptedArray(dir string) {
-	ctx, err := tiledb.NewContext(nil)
-	checkError(err)
+	ctx := getContextConfiguredForEncryption()
 	defer ctx.Free()
 
 	// Prepare some data for the array
@@ -70,8 +85,7 @@ func writeEncryptedArray(dir string) {
 	checkError(err)
 	defer array.Free()
 
-	err = array.OpenWithKey(tiledb.TILEDB_WRITE, tiledb.TILEDB_AES_256_GCM,
-		encryption_key)
+	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
 	defer array.Close()
 
@@ -90,8 +104,7 @@ func writeEncryptedArray(dir string) {
 }
 
 func readEncryptedArray(dir string) {
-	ctx, err := tiledb.NewContext(nil)
-	checkError(err)
+	ctx := getContextConfiguredForEncryption()
 	defer ctx.Free()
 
 	// Prepare the array for reading
@@ -99,8 +112,7 @@ func readEncryptedArray(dir string) {
 	checkError(err)
 	defer array.Free()
 
-	err = array.OpenWithKey(tiledb.TILEDB_READ, tiledb.TILEDB_AES_256_GCM,
-		encryption_key)
+	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
 	defer array.Close()
 
