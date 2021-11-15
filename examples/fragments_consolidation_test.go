@@ -43,20 +43,15 @@ func ExampleFragmentsConsolidationArray() {
 	examples_lib.RunFragmentsConsolidationArray()
 
 	// Output: Num of fragments: 1
-	// Cell (1, 1) has data 201
-	// Cell (1, 2) has data 2
-	// Cell (1, 3) has data 3
-	// Cell (1, 4) has data 4
-	// Cell (2, 1) has data 5
-	// Cell (2, 2) has data 101
-	// Cell (2, 3) has data 102
-	// Cell (2, 4) has data 8
-	// Cell (3, 1) has data -2147483648
-	// Cell (3, 2) has data 103
-	// Cell (3, 3) has data 104
-	// Cell (3, 4) has data 202
-	// Cell (4, 1) has data -2147483648
-	// Cell (4, 2) has data -2147483648
-	// Cell (4, 3) has data -2147483648
-	// Cell (4, 4) has data -2147483648
+	//Cell (1, 1) has data 201
+	//Cell (1, 2) has data 2
+	//Cell (1, 3) has data 3
+	//Cell (1, 4) has data 4
+	//Cell (2, 1) has data 5
+	//Cell (2, 2) has data 101
+	//Cell (2, 3) has data 102
+	//Cell (2, 4) has data 8
+	//Cell (3, 2) has data 103
+	//Cell (3, 3) has data 104
+	//Cell (3, 4) has data 202
 }

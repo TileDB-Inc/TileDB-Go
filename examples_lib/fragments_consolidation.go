@@ -28,7 +28,7 @@ func createFragmentsConsolidationArray(dir string) {
 	checkError(err)
 
 	// The array will be dense.
-	schema, err := tiledb.NewArraySchema(ctx, tiledb.TILEDB_DENSE)
+	schema, err := tiledb.NewArraySchema(ctx, tiledb.TILEDB_SPARSE)
 	checkError(err)
 	defer schema.Free()
 
@@ -62,8 +62,9 @@ func writeFragmentsConsolidationArray1(dir string) {
 	defer ctx.Free()
 
 	// Prepare some data for the array
+	buffD1 := []int32{1, 1, 1, 1, 2, 2, 2, 2}
+	buffD2 := []int32{1, 2, 3, 4, 1, 2, 3, 4}
 	data := []int32{1, 2, 3, 4, 5, 6, 7, 8}
-	subarray := []int32{1, 2, 1, 4}
 
 	// Create the query
 	array, err := tiledb.NewArray(ctx, dir)
@@ -78,11 +79,13 @@ func writeFragmentsConsolidationArray1(dir string) {
 	checkError(err)
 	defer query.Free()
 
-	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
+	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
+	checkError(err)
+	_, err = query.SetBuffer("rows", buffD1)
+	checkError(err)
+	_, err = query.SetBuffer("cols", buffD2)
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
-	checkError(err)
-	err = query.SetSubArray(subarray)
 	checkError(err)
 
 	// Perform the write and close the array.
@@ -99,8 +102,9 @@ func writeFragmentsConsolidationArray2(dir string) {
 	defer ctx.Free()
 
 	// Prepare some data for the array
+	buffD1 := []int32{2, 2, 3, 3}
+	buffD2 := []int32{2, 3, 2, 3}
 	data := []int32{101, 102, 103, 104}
-	subarray := []int32{2, 3, 2, 3}
 
 	// Create the query
 	array, err := tiledb.NewArray(ctx, dir)
@@ -115,11 +119,13 @@ func writeFragmentsConsolidationArray2(dir string) {
 	checkError(err)
 	defer query.Free()
 
-	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
+	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
+	checkError(err)
+	_, err = query.SetBuffer("rows", buffD1)
+	checkError(err)
+	_, err = query.SetBuffer("cols", buffD2)
 	checkError(err)
 	_, err = query.SetBuffer("a", data)
-	checkError(err)
-	err = query.SetSubArray(subarray)
 	checkError(err)
 
 	// Perform the write and close the array.
