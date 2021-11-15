@@ -9,25 +9,20 @@ import (
 // The 256-bit encryption key, stored as a string for convenience.
 const encryption_key = "0123456789abcdeF0123456789abcdeF"
 
-func getContextConfiguredForEncryption() *tiledb.Context {
-	config, err := tiledb.NewConfig()
+func buildContextConfiguredForEncryption() *tiledb.Context {
+
+	// Create a context directly from a configuration map:
+	context, err := tiledb.NewContextFromMap(map[string]string{
+		"sm.encryption_type": tiledb.TILEDB_AES_256_GCM.String(),
+		"sm.encryption_key":  encryption_key,
+	})
 	checkError(err)
 
-	err = config.Set("sm.encryption_type", tiledb.TILEDB_AES_256_GCM.String())
-	checkError(err)
-
-	err = config.Set("sm.encryption_key", encryption_key)
-	checkError(err)
-
-	// Create a TileDB context.
-	ctx, err := tiledb.NewContext(config)
-	checkError(err)
-
-	return ctx
+	return context
 }
 
 func createEncryptedArray(dir string) {
-	ctx := getContextConfiguredForEncryption()
+	ctx := buildContextConfiguredForEncryption()
 	defer ctx.Free()
 
 	// The array will be 4x4 with dimensions "rows" and "cols", with domain [1,4].
@@ -67,13 +62,12 @@ func createEncryptedArray(dir string) {
 	checkError(err)
 	defer array.Free()
 
-	//err = array.CreateWithKey(schema, tiledb.TILEDB_AES_256_GCM, encryption_key)
 	err = array.Create(schema)
 	checkError(err)
 }
 
 func writeEncryptedArray(dir string) {
-	ctx := getContextConfiguredForEncryption()
+	ctx := buildContextConfiguredForEncryption()
 	defer ctx.Free()
 
 	// Prepare some data for the array
@@ -104,7 +98,7 @@ func writeEncryptedArray(dir string) {
 }
 
 func readEncryptedArray(dir string) {
-	ctx := getContextConfiguredForEncryption()
+	ctx := buildContextConfiguredForEncryption()
 	defer ctx.Free()
 
 	// Prepare the array for reading
