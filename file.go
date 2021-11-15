@@ -24,6 +24,7 @@ import (
 type File struct {
 	tiledbFile *C.tiledb_file_t
 	context    *Context
+	config     *Config
 	uri        string
 }
 
@@ -58,59 +59,50 @@ func (f *File) Free() {
 	}
 }
 
-//TILEDB_EXPORT int32_t tiledb_file_set_config(
-//    tiledb_ctx_t* ctx, tiledb_file_t* file, tiledb_config_t* config);
+// SetConfig sets config on file
+func (f *File) SetConfig(config *Config) error {
+	f.config = config
 
-/**
- * Gets the file config.
- *
- * **Example:**
- *
- * @code{.c}
- * // Retrieve the file for the given array.
- * tiledb_config_t* config;
- * tiledb_file_get_config(ctx, file, config);
- * @endcode
- *
- * @param ctx The TileDB context.
- * @param file The file to set the config for.
- * @param config Set to the retrieved config.
- * @return `TILEDB_OK` for success and `TILEDB_ERR` for error.
- */
-//TILEDB_EXPORT int32_t tiledb_file_get_config(
-//    tiledb_ctx_t* ctx, tiledb_file_t* file, tiledb_config_t* config);
+	ret := C.tiledb_file_set_config(f.context.tiledbContext, f.tiledbFile, f.config.tiledbConfig)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error setting config on file: %s", f.context.LastError())
+	}
 
-/**
- *
- * Destroys an file object, freeing associated memory.
- *
- * **Example:**
- *
- * @code{.c}
- * tiledb_file_free(&file);
- * @endcode
- * @param file The file object to destroy
- */
-//TILEDB_EXPORT void tiledb_file_free(tiledb_file_t** file);
+	return nil
+}
 
-/**
- * Create a file array with default schema
- *
- * **Example:**
- *
- * @code{.c}
- * tiledb_file_t* file;
- * tiledb_file_alloc(ctx, "s3://tiledb_bucket/my_file", &file);
- * tiledb_file_create_default(ctx, file);
- * @endcode
- *
- * @param ctx The TileDB context.
- * @param file The tiledb_file_t to be created.
- * @param config Configuration parameters for the upgrade.
- * @return `TILEDB_OK` for success or `TILEDB_ERR` for error.
- */
-//TILEDB_EXPORT int32_t tiledb_file_create_default(
-//    tiledb_ctx_t* ctx, tiledb_file_t* file, tiledb_config_t* config);
+//// Config gets config from file
+//func (f *File) Config() (*Config, error) {
+//	config := Config{}
+//	ret := C.tiledb_file_get_config(f.context.tiledbContext, f.tiledbFile, &config.tiledbConfig)
+//	if ret != C.TILEDB_OK {
+//		return nil, fmt.Errorf("error getting config from file: %s", f.context.LastError())
+//	}
+//
+//	runtime.SetFinalizer(&config, func(config *Config) {
+//		config.Free()
+//	})
+//
+//	if f.config == nil {
+//		f.config = &config
+//	}
+//
+//	return &config, nil
+//}
+
+// CreateDefault creates a file array with default schema
+func (f *File) CreateDefault() error {
+	if f.config == nil {
+		return fmt.Errorf("error creating file with default schema: missing config")
+	}
+
+	ret := C.tiledb_file_create_default(f.context.tiledbContext, f.tiledbFile, f.config.tiledbConfig)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error creating file with default schema: %s", f.context.LastError())
+	}
+
+	return nil
+}
 
 /**
  * Create a file array using heuristics based on a file at provided URI

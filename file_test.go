@@ -32,6 +32,21 @@ func TestFile(t *testing.T) {
 	_, err = f.WriteString("simple text")
 	require.NoError(t, err)
 
-	_, err = NewFile(context, tmpFilePath)
+	tmpArrayPath := path.Join(os.TempDir(), "tiledb_test_array")
+	defer os.RemoveAll(tmpArrayPath)
+	if _, err = os.Stat(tmpArrayPath); err == nil {
+		os.RemoveAll(tmpArrayPath)
+	}
+
+	file, err := NewFile(context, tmpArrayPath)
+	require.NoError(t, err)
+
+	err = file.CreateDefault()
+	require.Error(t, err)
+
+	err = file.SetConfig(config)
+	require.NoError(t, err)
+
+	err = file.CreateDefault()
 	require.NoError(t, err)
 }
