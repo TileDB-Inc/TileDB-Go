@@ -593,4 +593,3 @@ var TILEDB_VAR_NUM = uint32(C.TILEDB_VAR_NUM)
 
 // TILEDB_COORDS A special name indicating the coordinates attribute.
 const TILEDB_COORDS = "__coords"
-
