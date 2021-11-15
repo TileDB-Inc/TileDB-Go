@@ -104,57 +104,34 @@ func (f *File) CreateDefault() error {
 	return nil
 }
 
-/**
- * Create a file array using heuristics based on a file at provided URI
- *
- * **Example:**
- *
- * @code{.c}
- * tiledb_file_t* file;
- * tiledb_file_alloc(ctx, "s3://tiledb_bucket/my_file", &file);
- * tiledb_file_create_from_uri(ctx, file, "input_file", NULL);
- * @endcode
- *
- * @param ctx The TileDB context.
- * @param file The file object.
- * @param input_uri URI to read file from
- * @param config TileDB Config for setting to create.
- * @return `TILEDB_OK` for success or `TILEDB_ERR` for error.
- */
-//TILEDB_EXPORT int32_t tiledb_file_create_from_uri(
-//    tiledb_ctx_t* ctx,
-//    tiledb_file_t* file,
-//    const char* input_uri,
-//    tiledb_config_t* config);
+func (f *File) CreateFromURI(uri string) error {
+	if f.config == nil {
+		return fmt.Errorf("error creating file from URI: missing config")
+	}
 
-/**
- * Create a file array using heuristics based on a file from provided VFS
- *
- * **Example:**
- *
- * @code{.c}
- * tiledb_file_t* file;
- * tiledb_file_alloc(ctx, "s3://tiledb_bucket/my_file", &file);
- *
- * tiledb_vfs_t vfs*;
- * tiledb_vfs_alloc(ctx, &vfs);
- * tiledb_vfs_fh_t *vfs_fh;
- * tiledb_vfs_open(ctx, vfs, "some_file", TILEDB_VFS_READ, &fh);
- * tiledb_file_create_from_vfs_fh(ctx, file, vfs_fh, NULL);
- *
- * @endcode
- *
- * @param ctx The TileDB context.
- * @param file The file object.
- * @param input vfs file handle to create from.
- * @param config TileDB Config for setting to create.
- * @return `TILEDB_OK` for success or `TILEDB_ERR` for error.
- */
-//TILEDB_EXPORT int32_t tiledb_file_create_from_vfs_fh(
-//    tiledb_ctx_t* ctx,
-//    tiledb_file_t* file,
-//    tiledb_vfs_fh_t* input,
-//    tiledb_config_t* config);
+	curi := C.CString(uri)
+
+	ret := C.tiledb_file_create_from_uri(f.context.tiledbContext, f.tiledbFile, curi, f.config.tiledbConfig)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error creating file from URI: %s", f.context.LastError())
+	}
+
+	return nil
+}
+
+func (f *File) CreateFromVFSFileHandler(vfsfh *VFSfh) error {
+	if f.config == nil {
+		return fmt.Errorf("error creating file from VFS: missing config")
+	}
+
+	ret := C.tiledb_file_create_from_vfs_fh(f.context.tiledbContext, f.tiledbFile, vfsfh.tiledbVFSfh, f.config.tiledbConfig)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error creating file from VFS file handler: %s", f.context.LastError())
+	}
+
+	return nil
+}
+
 
 /**
  * Read a file into the file array from the given FILE handle
