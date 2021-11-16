@@ -170,7 +170,7 @@ func TestArray(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Open array for reading At
-	err = array.OpenAt(TILEDB_READ, uint64(time.Now().UnixNano()/1000000))
+	err = array.OpenWithOptions(TILEDB_READ, WithEndTimestamp(uint64(time.Now().UnixNano()/1000000)))
 	assert.Nil(t, err)
 
 	// Get the array schema
@@ -217,9 +217,15 @@ func TestArray(t *testing.T) {
 }
 
 func TestArrayEncryption(t *testing.T) {
-	key := "unittestunittestunittestunittest"
+	encryption_key := "unittestunittestunittestunittest"
 	// Create configuration
 	config, err := NewConfig()
+	assert.Nil(t, err)
+
+	err = config.Set("sm.encryption_type", TILEDB_AES_256_GCM.String())
+	assert.Nil(t, err)
+
+	err = config.Set("sm.encryption_key", encryption_key)
 	assert.Nil(t, err)
 
 	// Test context with config
@@ -241,14 +247,14 @@ func TestArrayEncryption(t *testing.T) {
 	arraySchema := buildArraySchema(context, t)
 
 	// Create array on disk
-	err = array.CreateWithKey(arraySchema, TILEDB_AES_256_GCM, key)
+	err = array.Create(arraySchema)
 	assert.Nil(t, err)
 
 	//err = array.Consolidate()
 	//assert.Nil(t, err)
 
 	// Open array for reading
-	err = array.OpenWithKey(TILEDB_READ, TILEDB_AES_256_GCM, key)
+	err = array.Open(TILEDB_READ)
 	assert.Nil(t, err)
 
 	// Test re-opening
@@ -260,7 +266,7 @@ func TestArrayEncryption(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Open array for reading At
-	err = array.OpenAtWithKey(TILEDB_READ, TILEDB_AES_256_GCM, key, uint64(time.Now().UnixNano()/1000000))
+	err = array.OpenWithOptions(TILEDB_READ, WithEndTimestamp(uint64(time.Now().UnixNano()/1000000)))
 	assert.Nil(t, err)
 
 	// Get the array schema
@@ -287,7 +293,7 @@ func TestArrayEncryption(t *testing.T) {
 	err = array.Close()
 	assert.Nil(t, err)
 
-	arraySchemaLoaded, err := LoadArraySchemaWithKey(context, tmpArrayPath, TILEDB_AES_256_GCM, key)
+	arraySchemaLoaded, err := LoadArraySchema(context, tmpArrayPath)
 	assert.Nil(t, err)
 	assert.NotNil(t, arraySchemaLoaded)
 
