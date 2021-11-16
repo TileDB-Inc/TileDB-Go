@@ -11,7 +11,7 @@ free'ing of C heap allocated structures.
 
 ## Quick Links
 
-- Full Installation Docs: [https://docs.tiledb.com/main/solutions/tiledb-embedded/installation](https://docs.tiledb.com/main/solutions/tiledb-embedded/installation)
+- Full Installation Docs: [https://docs.tiledb.com/main/how-to/installation](https://docs.tiledb.com/main/how-to/installation)
 - Quickstart: [https://docs.tiledb.com/quickstart](https://docs.tiledb.com/main/solutions/tiledb-embedded/installation/quick-install)
 - Full developer documentation for all APIs and integrations: [https://docs.tiledb.com](https://docs.tiledb.com)
 
