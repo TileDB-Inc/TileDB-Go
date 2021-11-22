@@ -122,7 +122,7 @@ jobs:
       run: go test -v ./...
 
   Linux_Experimental_Test:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         # Will be checking following versions
