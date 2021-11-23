@@ -51,6 +51,11 @@ func (b *Buffer) Free() {
 	}
 }
 
+// Context exposes the internal TileDB context used to initialize the buffer
+func (b *Buffer) Context() *Context {
+	return b.context
+}
+
 // SetType sets buffer datatype
 func (b *Buffer) SetType(datatype Datatype) error {
 	ret := C.tiledb_buffer_set_type(b.context.tiledbContext, b.tiledbBuffer, C.tiledb_datatype_t(datatype))

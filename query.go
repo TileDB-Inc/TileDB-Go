@@ -97,6 +97,11 @@ func (q *Query) Free() {
 	}
 }
 
+// Context exposes the internal TileDB context used to initialize the query
+func (q *Query) Context() *Context {
+	return q.context
+}
+
 // SetSubArray Sets a subarray, defined in the order dimensions were added.
 // Coordinates are inclusive. For the case of writes, this is meaningful only
 // for dense arrays, and specifically dense writes.

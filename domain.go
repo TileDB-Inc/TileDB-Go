@@ -51,6 +51,11 @@ func (d *Domain) Free() {
 	}
 }
 
+// Context exposes the internal TileDB context used to initialize the domain
+func (d *Domain) Context() *Context {
+	return d.context
+}
+
 // Type returns a domains type deduced from dimensions
 func (d *Domain) Type() (Datatype, error) {
 	var datatype C.tiledb_datatype_t

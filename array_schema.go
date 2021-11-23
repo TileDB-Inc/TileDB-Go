@@ -59,6 +59,11 @@ func (a *ArraySchema) MarshalJSON() ([]byte, error) {
 	return cpy, nil
 }
 
+// Context exposes the internal TileDB context used to initialize the array schema
+func (a *ArraySchema) Context() *Context {
+	return a.context
+}
+
 // UnmarshalJSON marshal arraySchema struct to json using tiledb
 func (a *ArraySchema) UnmarshalJSON(b []byte) error {
 	var err error

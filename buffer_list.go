@@ -46,6 +46,11 @@ func (b *BufferList) Free() {
 	}
 }
 
+// Context exposes the internal TileDB context used to initialize the buffer list
+func (b *BufferList) Context() *Context {
+	return b.context
+}
+
 // NumBuffers returns number of buffers in the list
 func (b *BufferList) NumBuffers() (uint64, error) {
 	var numBuffers C.uint64_t

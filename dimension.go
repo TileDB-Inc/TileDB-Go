@@ -244,6 +244,11 @@ func (d *Dimension) Free() {
 	}
 }
 
+// Context exposes the internal TileDB context used to initialize the dimension
+func (d *Dimension) Context() *Context {
+	return d.context
+}
+
 // SetFilterList sets the dimension filterList
 func (d *Dimension) SetFilterList(filterlist *FilterList) error {
 	ret := C.tiledb_dimension_set_filter_list(d.context.tiledbContext, d.tiledbDimension, filterlist.tiledbFilterList)

@@ -42,6 +42,11 @@ func (v *VFSfh) Free() {
 	}
 }
 
+// Context exposes the internal TileDB context used to initialize the vfsh
+func (v *VFSfh) Context() *Context {
+	return v.context
+}
+
 // IsClosed checks a vfs file handler to see if it is closed. Return true if
 // file handler is closed, false if its not closed and error is non-nil on error
 func (v *VFSfh) IsClosed() (bool, error) {
@@ -99,6 +104,11 @@ func (v *VFS) Free() {
 	if v.tiledbVFS != nil {
 		C.tiledb_vfs_free(&v.tiledbVFS)
 	}
+}
+
+// Context exposes the internal TileDB context used to initialize the vfs
+func (v *VFS) Context() *Context {
+	return v.context
 }
 
 // Config retrieves a copy of the config from vfs
