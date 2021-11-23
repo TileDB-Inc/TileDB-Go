@@ -9,6 +9,7 @@ package tiledb
 import "C"
 
 import (
+	"errors"
 	"fmt"
 	"runtime"
 	"unsafe"
@@ -80,6 +81,15 @@ func (c *Context) Free() {
 	if c.tiledbContext != nil {
 		C.tiledb_ctx_free(&c.tiledbContext)
 	}
+}
+
+// CancelAllTasks cancels all currently executing tasks on the context
+func (c *Context) CancelAllTasks() error {
+	ret := C.tiledb_ctx_cancel_tasks(c.tiledbContext)
+	if ret != C.TILEDB_OK {
+		return errors.New("failed to cancel tasks")
+	}
+	return nil
 }
 
 // Config retrieves a copy of the config from context
