@@ -77,6 +77,19 @@ func TestNewContext(t *testing.T) {
 	assert.NotNil(t, context)
 }
 
+// TestNewContext tests setting a new context
+func TestCancelAllTasks(t *testing.T) {
+	config, err := NewConfig()
+	assert.Nil(t, err)
+
+	context, err := NewContext(config)
+	assert.Nil(t, err)
+	assert.NotNil(t, context)
+
+	// just call cancel with no tasks
+	assert.NoError(t, context.CancelAllTasks())
+}
+
 // TestGetContextConfig tests creating a new Context with config vars.
 func TestGetContextConfig(t *testing.T) {
 	// Create a context with a non-default value:
