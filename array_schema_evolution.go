@@ -58,6 +58,11 @@ func (ase *ArraySchemaEvolution) Free() {
 	}
 }
 
+// Context exposes the internal TileDB context used to initialize the array schema evolution
+func (ase *ArraySchemaEvolution) Context() *Context {
+	return ase.context
+}
+
 // AddAttribute adds an attribute to an array schema evolution.
 func (ase *ArraySchemaEvolution) AddAttribute(attribute *Attribute) error {
 	name, err := attribute.Name()

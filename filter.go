@@ -48,6 +48,11 @@ func (f *Filter) Free() {
 	}
 }
 
+// Context exposes the internal TileDB context used to initialize the filter
+func (f *Filter) Context() *Context {
+	return f.context
+}
+
 // Type returns the filter type
 func (f *Filter) Type() (FilterType, error) {
 	var filterType C.tiledb_filter_type_t

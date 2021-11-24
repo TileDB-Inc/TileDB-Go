@@ -69,6 +69,11 @@ func (qc *QueryCondition) Free() {
 	}
 }
 
+// Context exposes the internal TileDB context used to initialize the query condition
+func (qc *QueryCondition) Context() *Context {
+	return qc.context
+}
+
 func (qc *QueryCondition) initQueryCondition(attributeName string, value interface{}, op QueryConditionOp) error {
 	cname := C.CString(attributeName)
 	defer C.free(unsafe.Pointer(cname))

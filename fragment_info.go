@@ -58,6 +58,11 @@ func (fI *FragmentInfo) Free() {
 	}
 }
 
+// Context exposes the internal TileDB context used to initialize the fragment info
+func (fI *FragmentInfo) Context() *Context {
+	return fI.context
+}
+
 // Load loads the fragment info.
 func (fI *FragmentInfo) Load() error {
 	ret := C.tiledb_fragment_info_load(fI.context.tiledbContext, fI.tiledbFragmentInfo)

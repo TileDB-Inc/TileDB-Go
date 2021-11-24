@@ -61,6 +61,11 @@ func (a *Attribute) Free() {
 	}
 }
 
+// Context exposes the internal TileDB context used to initialize the attribute
+func (a *Attribute) Context() *Context {
+	return a.context
+}
+
 // SetFilterList sets the attribute filterList
 func (a *Attribute) SetFilterList(filterlist *FilterList) error {
 	ret := C.tiledb_attribute_set_filter_list(a.context.tiledbContext, a.tiledbAttribute, filterlist.tiledbFilterList)

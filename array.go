@@ -80,6 +80,11 @@ func (a *Array) Free() {
 	}
 }
 
+// Context exposes the internal TileDB context used to initialize the array
+func (a *Array) Context() *Context {
+	return a.context
+}
+
 // ArrayOpenOptions define the flexibile parameters in which arrays can be opened with.
 type ArrayOpenOption func(tdbArray *Array) error
 

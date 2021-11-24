@@ -47,6 +47,11 @@ func (f *FilterList) Free() {
 	}
 }
 
+// Context exposes the internal TileDB context used to initialize the filter list
+func (f *FilterList) Context() *Context {
+	return f.context
+}
+
 // AddFilter appends a filter to a filter list. Data is processed through
 // each filter in the order the filters were added.
 func (f *FilterList) AddFilter(filter *Filter) error {
