@@ -2,10 +2,11 @@ package tiledb
 
 import (
 	"fmt"
-	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func ExampleConfig_Set() {
@@ -44,7 +45,7 @@ func ExampleConfig_Get() {
 func TestNewConfig(t *testing.T) {
 	config, err := NewConfig()
 
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	config.Free()
 }
@@ -52,91 +53,81 @@ func TestNewConfig(t *testing.T) {
 //TestSettingConfig
 func TestSettingConfig(t *testing.T) {
 	config, err := NewConfig()
-	assert.Nil(t, err)
-	err = config.Set("sm.tile_cache_size", "fail")
-	assert.NotNil(t, err)
+	require.NoError(t, err)
+	assert.Error(t, config.Set("sm.tile_cache_size", "fail"))
 
-	err = config.Set("sm.tile_cache_size", "10")
-	assert.Nil(t, err)
+	require.NoError(t, config.Set("sm.tile_cache_size", "10"))
 
 	val, err := config.Get("sm.tile_cache_size")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "10", val)
 }
 
 //TestGettingConfig
 func TestGettingConfig(t *testing.T) {
 	config, err := NewConfig()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	val, err := config.Get("sm.tile_cache_size")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "10000000", val)
 
 	val, err = config.Get("sm.does_not_exists")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, val)
 }
 
 //TestUnSettingConfig
 func TestUnSettingConfig(t *testing.T) {
 	config, err := NewConfig()
-	assert.Nil(t, err)
-	err = config.Set("sm.tile_cache_size", "10")
-	assert.Nil(t, err)
+	require.NoError(t, err)
+	require.NoError(t, config.Set("sm.tile_cache_size", "10"))
 
 	val, err := config.Get("sm.tile_cache_size")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "10", val)
 
-	err = config.Unset("sm.tile_cache_size")
-	assert.Nil(t, err)
+	require.NoError(t, config.Unset("sm.tile_cache_size"))
 
 	val, err = config.Get("sm.tile_cache_size")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "10000000", val)
 }
 
 //TestFileConfig
 func TestFileConfig(t *testing.T) {
 	config, err := NewConfig()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, config)
-	err = config.Set("sm.tile_cache_size", "10")
-	assert.Nil(t, err)
+	require.NoError(t, config.Set("sm.tile_cache_size", "10"))
 
 	val, err := config.Get("sm.tile_cache_size")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "10", val)
 
 	// Create temporary path for testing configuration writing/reading
-	tmpPath := os.TempDir() + string(os.PathSeparator) + "tiledb_test_config"
-	defer os.Remove(tmpPath)
-	if _, err = os.Stat(tmpPath); err == nil {
-		os.Remove(tmpPath)
-	}
+	tmpPath := filepath.Join(t.TempDir(), "config")
 
-	err = config.SaveToFile(tmpPath)
-	assert.Nil(t, err)
+	require.NoError(t, config.SaveToFile(tmpPath))
 
 	config2, err := LoadConfig(tmpPath)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, config2)
 
 	val, err = config2.Get("sm.tile_cache_size")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "10", val)
 }
 
 //TestConfigIter
 func TestConfigIter(t *testing.T) {
 	config, err := NewConfig()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, config)
 
 	// Iterate the configuration
 	iter, err := config.Iterate("vfs.s3.")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, iter)
 
 	for ; !iter.IsDone(); err = iter.Next() {

@@ -30,8 +30,7 @@ func TestGoldens(t *testing.T) {
 		c := c
 		t.Run(c.filename, func(t *testing.T) {
 			t.Parallel()
-			tmpdir := temp(t)
-			outdir := filepath.Join(tmpdir, "testdata")
+			outdir := filepath.Join(t.TempDir(), "testdata")
 			if err := os.Mkdir(outdir, 0770); err != nil {
 				t.Fatalf("could not create test subdir: %v", err)
 			}
@@ -54,8 +53,7 @@ func TestGoldens(t *testing.T) {
 
 func TestBadPackages(t *testing.T) {
 	t.Parallel()
-	tmpdir := temp(t)
-	defer os.RemoveAll(tmpdir)
+	tmpdir := t.TempDir()
 	cases := [][]string{
 		{fmt.Sprintf("--out=%cat-the-root.go", filepath.Separator)},
 		{"--out=" + filepath.Join(tmpdir, "package-name-is", "invalid.go")},
@@ -82,8 +80,10 @@ func TestBadPackages(t *testing.T) {
 
 func TestBadName(t *testing.T) {
 	t.Parallel()
-	tmpdir := temp(t)
-	defer os.RemoveAll(tmpdir)
+	tmpdir := filepath.Join(t.TempDir(), "output")
+	if err := os.Mkdir(tmpdir, 0o770); err != nil {
+		t.Fatalf("error creating test directory")
+	}
 
 	cmd := exec.Command("go", "run", ".", "--out", filepath.Join(tmpdir, "fakefile.go"), "--suffix=I have spaces")
 	output, err := cmd.CombinedOutput()
@@ -99,8 +99,7 @@ func TestBadName(t *testing.T) {
 
 func TestCantWrite(t *testing.T) {
 	t.Parallel()
-	tmpdir := temp(t)
-	defer os.RemoveAll(tmpdir)
+	tmpdir := t.TempDir()
 	// The 'somepkg' directory is never created.
 	fullPath := filepath.Join(tmpdir, "somepkg", "filename.go")
 	cmd := exec.Command("go", "run", binary, "--out="+fullPath)
@@ -111,15 +110,8 @@ func TestCantWrite(t *testing.T) {
 	}
 }
 
-func temp(t *testing.T) string {
-	tmpdir, err := ioutil.TempDir("", "sizegen")
-	if err != nil {
-		t.Fatalf("could not create tempdir: %v", err)
-	}
-	return tmpdir
-}
-
-func read(t *testing.T, f string) string {
+func read(t testing.TB, f string) string {
+	t.Helper()
 	in, err := ioutil.ReadFile(f)
 	if err != nil {
 		t.Fatalf("error opening %v: %v", f, err)

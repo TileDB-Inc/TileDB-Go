@@ -1,32 +1,26 @@
 package tiledb
 
 import (
-	"github.com/stretchr/testify/assert"
-	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGroupCreate(t *testing.T) {
 
 	// Test context without config
 	context, err := NewContext(nil)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	// create temp group name
-	tmpGroup := os.TempDir() + string(os.PathSeparator) + "tiledb_test_group"
-	// Cleanup group when test ends
-	defer os.RemoveAll(tmpGroup)
-	if _, err = os.Stat(tmpGroup); err == nil {
-		os.RemoveAll(tmpGroup)
-	}
+	tmpGroup := t.TempDir()
 
 	// Create initial group
-	err = GroupCreate(context, tmpGroup)
-	assert.Nil(t, err)
+	require.NoError(t, GroupCreate(context, tmpGroup))
 
 	// Creating the same group twice should error
-	err = GroupCreate(context, tmpGroup)
-	assert.NotNil(t, err)
+	assert.Error(t, GroupCreate(context, tmpGroup))
 }
 
 func ExampleGroupCreate() {

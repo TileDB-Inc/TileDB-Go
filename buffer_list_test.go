@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func ExampleNewBufferList() {
@@ -35,17 +36,17 @@ func ExampleNewBufferList() {
 // TestNewBufferList tests creating a new bufferList
 func TestNewBufferList(t *testing.T) {
 	context, err := NewContext(nil)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	bufferList, err := NewBufferList(context)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, bufferList)
 
 	numBuffers, err := bufferList.NumBuffers()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, uint64(0), numBuffers)
 
 	totalSize, err := bufferList.TotalSize()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, uint64(0), totalSize)
 }

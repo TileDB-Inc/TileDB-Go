@@ -1,12 +1,11 @@
 package tiledb
 
 import (
-	"os"
-	"path"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func ExampleNewArray() {
@@ -79,45 +78,41 @@ func ExampleNewArray() {
 }
 
 // TestArray tests creating a new dimension
-func buildArraySchema(context *Context, t *testing.T) *ArraySchema {
+func buildArraySchema(context *Context, t testing.TB) *ArraySchema {
 	// Test create dimension
 	dimension, err := NewDimension(context, "dim1", TILEDB_INT8, []int8{1, 10}, int8(5))
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, dimension)
 
 	// Test creating domain
 	domain, err := NewDomain(context)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, domain)
 
 	// Add dimension
-	err = domain.AddDimensions(dimension)
-	assert.Nil(t, err)
+	require.NoError(t, domain.AddDimensions(dimension))
 
 	// Create array schema
 	arraySchema, err := NewArraySchema(context, TILEDB_DENSE)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, arraySchema)
 
 	// Crete attribute to add to schema
 	attribute, err := NewAttribute(context, "a1", TILEDB_INT32)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, attribute)
 
 	// Crete attribute to add to schema
 	attribute2, err := NewAttribute(context, "a2", TILEDB_STRING_ASCII)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, attribute2)
 
-	err = attribute2.SetCellValNum(TILEDB_VAR_NUM)
-	assert.Nil(t, err)
+	require.NoError(t, attribute2.SetCellValNum(TILEDB_VAR_NUM))
 
 	// Add Attribute
-	err = arraySchema.AddAttributes(attribute, attribute2)
-	assert.Nil(t, err)
+	require.NoError(t, arraySchema.AddAttributes(attribute, attribute2))
 
-	err = arraySchema.SetDomain(domain)
-	assert.Nil(t, err)
+	require.NoError(t, arraySchema.SetDomain(domain))
 
 	return arraySchema
 }
@@ -125,92 +120,81 @@ func buildArraySchema(context *Context, t *testing.T) *ArraySchema {
 func TestArray(t *testing.T) {
 	// Create configuration
 	config, err := NewConfig()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	// Test context with config
 	context, err := NewContext(config)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	// create temp group name
-	tmpArrayPath := path.Join(os.TempDir(), "tiledb_test_array")
-	// Cleanup group when test ends
-	defer os.RemoveAll(tmpArrayPath)
-	if _, err = os.Stat(tmpArrayPath); err == nil {
-		os.RemoveAll(tmpArrayPath)
-	}
+	tmpArrayPath := t.TempDir()
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, array)
 
 	arraySchema := buildArraySchema(context, t)
 
 	// Create array on disk
-	err = array.Create(arraySchema)
-	assert.Nil(t, err)
+	require.NoError(t, array.Create(arraySchema))
 
 	// Get array URI
 	uri, err := array.URI()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "file://"+tmpArrayPath, uri)
 
 	//err = array.Consolidate()
-	//assert.Nil(t, err)
+	//require.NoError(t, err)
 
 	// Open array for reading
-	err = array.Open(TILEDB_READ)
-	assert.Nil(t, err)
+	require.NoError(t, array.Open(TILEDB_READ))
 
 	// Test re-opening
-	err = array.Reopen()
-	assert.Nil(t, err)
+	require.NoError(t, array.Reopen())
 
 	// Close Array
-	err = array.Close()
-	assert.Nil(t, err)
+	require.NoError(t, array.Close())
 
 	// Open array for reading At
-	err = array.OpenWithOptions(TILEDB_READ, WithEndTimestamp(uint64(time.Now().UnixNano()/1000000)))
-	assert.Nil(t, err)
+	require.NoError(t, array.OpenWithOptions(TILEDB_READ, WithEndTimestamp(uint64(time.Now().UnixNano()/1000000))))
 
 	// Get the array schema
 	arraySchema, err = array.Schema()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, arraySchema)
 
 	// Validate array schema is usable
 	tileOrder, err := arraySchema.TileOrder()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, TILEDB_ROW_MAJOR, tileOrder)
 
 	queryType, err := array.QueryType()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, TILEDB_READ, queryType)
 
 	// Get non empty domain, which is none since no data has been written
 	nonEmptyDomain, isEmpty, err := array.NonEmptyDomain()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Nil(t, nonEmptyDomain)
 	assert.True(t, isEmpty)
 
 	// Test from name
 	nonEmptyDomainFromName, isEmpty, err := array.NonEmptyDomainFromName("dim1")
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Nil(t, nonEmptyDomainFromName)
 	assert.True(t, isEmpty)
 
 	// Test from index
 	nonEmptyDomainFromIndex, isEmpty, err := array.NonEmptyDomainFromIndex(0)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Nil(t, nonEmptyDomainFromIndex)
 	assert.True(t, isEmpty)
 
 	// Close the array
-	err = array.Close()
-	assert.Nil(t, err)
+	require.NoError(t, array.Close())
 
 	arraySchemaLoaded, err := LoadArraySchema(context, tmpArrayPath)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, arraySchemaLoaded)
 
 	array.Free()
@@ -220,7 +204,7 @@ func TestArrayEncryption(t *testing.T) {
 	encryption_key := "unittestunittestunittestunittest"
 	// Create configuration
 	config, err := NewConfig()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	err = config.Set("sm.encryption_type", TILEDB_AES_256_GCM.String())
 	assert.Nil(t, err)
@@ -230,71 +214,61 @@ func TestArrayEncryption(t *testing.T) {
 
 	// Test context with config
 	context, err := NewContext(config)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	// create temp group name
-	tmpArrayPath := path.Join(os.TempDir(), "tiledb_test_array")
-	// Cleanup group when test ends
-	defer os.RemoveAll(tmpArrayPath)
-	if _, err = os.Stat(tmpArrayPath); err == nil {
-		os.RemoveAll(tmpArrayPath)
-	}
+	tmpArrayPath := t.TempDir()
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, array)
 
 	arraySchema := buildArraySchema(context, t)
 
 	// Create array on disk
-	err = array.Create(arraySchema)
+	require.NoError(t, array.Create(arraySchema))
 	assert.Nil(t, err)
 
 	//err = array.Consolidate()
-	//assert.Nil(t, err)
+	//require.NoError(t, err)
 
 	// Open array for reading
-	err = array.Open(TILEDB_READ)
-	assert.Nil(t, err)
+	require.NoError(t, array.Open(TILEDB_READ))
 
 	// Test re-opening
-	err = array.Reopen()
-	assert.Nil(t, err)
+	require.NoError(t, array.Reopen())
 
 	// Close Array
-	err = array.Close()
-	assert.Nil(t, err)
+	require.NoError(t, array.Close())
 
 	// Open array for reading At
-	err = array.OpenWithOptions(TILEDB_READ, WithEndTimestamp(uint64(time.Now().UnixNano()/1000000)))
-	assert.Nil(t, err)
+	require.NoError(t, array.OpenWithOptions(TILEDB_READ, WithEndTimestamp(uint64(time.Now().UnixNano()/1000000))))
 
 	// Get the array schema
 	arraySchema, err = array.Schema()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, arraySchema)
 
 	// Validate array schema is usable
 	tileOrder, err := arraySchema.TileOrder()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, TILEDB_ROW_MAJOR, tileOrder)
 
 	queryType, err := array.QueryType()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, TILEDB_READ, queryType)
 
 	// Get non empty domain, which is none since no data has been written
 	nonEmptyDomain, isEmpty, err := array.NonEmptyDomain()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Nil(t, nonEmptyDomain)
 	assert.True(t, isEmpty)
 
 	// Close the array
-	err = array.Close()
-	assert.Nil(t, err)
+	require.NoError(t, array.Close())
 
 	arraySchemaLoaded, err := LoadArraySchema(context, tmpArrayPath)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, arraySchemaLoaded)
 
 	array.Free()
@@ -303,11 +277,10 @@ func TestArrayEncryption(t *testing.T) {
 func TestArray_OpenWithOptions(t *testing.T) {
 	t.Run("StartTime", func(t *testing.T) {
 		startTime := uint64(1621976364000)
-		a, cleanup, err := newTestArray(t)
+		a, err := newTestArray(t)
 		if err != nil {
 			t.Fatalf("failed to create new test array: %v", err)
 		}
-		defer cleanup()
 		err = a.OpenWithOptions(TILEDB_READ, WithStartTimestamp(startTime))
 		assert.NoError(t, err)
 
@@ -319,11 +292,10 @@ func TestArray_OpenWithOptions(t *testing.T) {
 
 	t.Run("EndTime", func(t *testing.T) {
 		endTime := uint64(1621976364666)
-		a, cleanup, err := newTestArray(t)
+		a, err := newTestArray(t)
 		if err != nil {
 			t.Fatalf("failed to create new test array: %v", err)
 		}
-		defer cleanup()
 		err = a.OpenWithOptions(TILEDB_READ, WithEndTimestamp(endTime))
 		assert.NoError(t, err)
 
@@ -334,40 +306,33 @@ func TestArray_OpenWithOptions(t *testing.T) {
 	})
 }
 
-func newTestArray(t *testing.T) (*Array, func(), error) {
+func newTestArray(t *testing.T) (*Array, error) {
 	// Create configuration
 	config, err := NewConfig()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Test context with config
 	context, err := NewContext(config)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// create temp group name
-	tmpArrayPath := path.Join(os.TempDir(), "tiledb_test_array")
+	tmpArrayPath := t.TempDir()
 
 	array, err := NewArray(context, tmpArrayPath)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	arraySchema := buildArraySchema(context, t)
 	// Create array on disk
 	err = array.Create(arraySchema)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	// Create new array struct
-	return array, func() {
-		// Cleanup group when test ends
-		os.RemoveAll(tmpArrayPath)
-		if _, err = os.Stat(tmpArrayPath); err == nil {
-			os.RemoveAll(tmpArrayPath)
-		}
-	}, nil
+	return array, nil
 }

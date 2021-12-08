@@ -2,9 +2,11 @@ package tiledb
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func ExampleNewAttribute() {
@@ -63,14 +65,14 @@ func ExampleNewAttribute() {
 func TestNewAttribute(t *testing.T) {
 	// Create configuration
 	config, err := NewConfig()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	// Test context with config
 	context, err := NewContext(config)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	attribute, err := NewAttribute(context, "test", TILEDB_INT32)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, attribute)
 
 	attribute.Free()
@@ -129,189 +131,164 @@ func ExampleAttribute_SetFilterList() {
 func TestFullAttribute(t *testing.T) {
 	// Create configuration
 	config, err := NewConfig()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	// Test context with config
 	context, err := NewContext(config)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	// Create Attribute
 	attribute, err := NewAttribute(context, "test", TILEDB_INT32)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, attribute)
 
 	// Get Attribute Name
 	name, err := attribute.Name()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "test", name)
 
 	// Get Attribute Datatype
 	datatype, err := attribute.Type()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, TILEDB_INT32, datatype)
 
 	// Get and set compressor
 	filter, err := NewFilter(context, TILEDB_FILTER_GZIP)
-	assert.Nil(t, err)
-	err = filter.SetOption(TILEDB_COMPRESSION_LEVEL, int32(5))
-	assert.Nil(t, err)
+	require.NoError(t, err)
+	require.NoError(t, filter.SetOption(TILEDB_COMPRESSION_LEVEL, int32(5)))
 	filterList, err := NewFilterList(context)
-	assert.Nil(t, err)
-	err = filterList.AddFilter(filter)
-	assert.Nil(t, err)
-	err = attribute.SetFilterList(filterList)
-	assert.Nil(t, err)
+	require.NoError(t, err)
+	require.NoError(t, filterList.AddFilter(filter))
+	require.NoError(t, attribute.SetFilterList(filterList))
 
 	filterListReturn, err := attribute.FilterList()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, filterListReturn)
 	filterReturn, err := filterListReturn.FilterFromIndex(0)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, filterListReturn)
 	filterTypeReturn, err := filterReturn.Type()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.EqualValues(t, TILEDB_FILTER_GZIP, filterTypeReturn)
 	filterOption, err := filter.Option(TILEDB_COMPRESSION_LEVEL)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.EqualValues(t, int32(5), filterOption)
 
 	// Set Cell Value Number
-	err = attribute.SetCellValNum(10)
-	assert.Nil(t, err)
+	require.NoError(t, attribute.SetCellValNum(10))
 
 	// Get attribute cell size
 	cellSize, err := attribute.CellSize()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.EqualValues(t, 40, cellSize)
 
 	cellValNum, err := attribute.CellValNum()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, uint32(10), cellValNum)
 
-	err = attribute.SetFillValue(12)
-	assert.Nil(t, err)
+	require.NoError(t, attribute.SetFillValue(12))
 
 	fillValue, valueSize, err := attribute.GetFillValue()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, int32(12), fillValue)
 	assert.Equal(t, uint64(40), valueSize)
 
 	// Temp path for testing dump
-	tmpPathDump := os.TempDir() + string(os.PathSeparator) + "tiledb_attribute_dump_test"
-	// Cleanup tmp file when test ends
-	defer os.RemoveAll(tmpPathDump)
-	if _, err = os.Stat(tmpPathDump); err == nil {
-		os.RemoveAll(tmpPathDump)
-	}
+	tmpPathDump := filepath.Join(t.TempDir(), "dumpfile")
 
 	// Test dumping to file
-	err = attribute.Dump(tmpPathDump)
-	assert.Nil(t, err)
+	require.NoError(t, attribute.Dump(tmpPathDump))
 	// Validate dumped file is non-empty
 	fileInfo, err := os.Stat(tmpPathDump)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotZero(t, fileInfo.Size())
 
-	err = attribute.DumpSTDOUT()
-	assert.Nil(t, err)
+	require.NoError(t, attribute.DumpSTDOUT())
 }
 
 func TestNullableAttribute(t *testing.T) {
 	// Create configuration
 	config, err := NewConfig()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	// Test context with config
 	context, err := NewContext(config)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 
 	// Create Attribute
 	attribute, err := NewAttribute(context, "test", TILEDB_INT32)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, attribute)
 
 	// Get Attribute Name
 	name, err := attribute.Name()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "test", name)
 
 	// Set Attribute Nullable
-	err = attribute.SetNullable(true)
-	assert.Nil(t, err)
+	require.NoError(t, attribute.SetNullable(true))
 
 	// Get Attribute Nullable
 	nullable, err := attribute.Nullable()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.True(t, nullable)
 
 	// Get Attribute Datatype
 	datatype, err := attribute.Type()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, TILEDB_INT32, datatype)
 
 	// Get and set compressor
 	filter, err := NewFilter(context, TILEDB_FILTER_GZIP)
-	assert.Nil(t, err)
-	err = filter.SetOption(TILEDB_COMPRESSION_LEVEL, int32(5))
-	assert.Nil(t, err)
+	require.NoError(t, err)
+	require.NoError(t, filter.SetOption(TILEDB_COMPRESSION_LEVEL, int32(5)))
 	filterList, err := NewFilterList(context)
-	assert.Nil(t, err)
-	err = filterList.AddFilter(filter)
-	assert.Nil(t, err)
-	err = attribute.SetFilterList(filterList)
-	assert.Nil(t, err)
+	require.NoError(t, err)
+	require.NoError(t, filterList.AddFilter(filter))
+	require.NoError(t, attribute.SetFilterList(filterList))
 
 	filterListReturn, err := attribute.FilterList()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, filterListReturn)
 	filterReturn, err := filterListReturn.FilterFromIndex(0)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, filterListReturn)
 	filterTypeReturn, err := filterReturn.Type()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.EqualValues(t, TILEDB_FILTER_GZIP, filterTypeReturn)
 	filterOption, err := filter.Option(TILEDB_COMPRESSION_LEVEL)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.EqualValues(t, int32(5), filterOption)
 
 	// Set Cell Value Number
-	err = attribute.SetCellValNum(10)
-	assert.Nil(t, err)
+	require.NoError(t, attribute.SetCellValNum(10))
 
 	// Get attribute cell size
 	cellSize, err := attribute.CellSize()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.EqualValues(t, 40, cellSize)
 
 	cellValNum, err := attribute.CellValNum()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, uint32(10), cellValNum)
 
-	err = attribute.SetFillValueNullable(12, true)
-	assert.Nil(t, err)
+	require.NoError(t, attribute.SetFillValueNullable(12, true))
 
 	fillValue, valueSize, valid, err := attribute.GetFillValueNullable()
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, int32(12), fillValue)
 	assert.Equal(t, uint64(40), valueSize)
 	assert.True(t, valid)
 
 	// Temp path for testing dump
-	tmpPathDump := os.TempDir() + string(os.PathSeparator) + "tiledb_attribute_dump_test"
-	// Cleanup tmp file when test ends
-	defer os.RemoveAll(tmpPathDump)
-	if _, err = os.Stat(tmpPathDump); err == nil {
-		os.RemoveAll(tmpPathDump)
-	}
+	tmpPathDump := filepath.Join(t.TempDir(), "dumpfile")
 
 	// Test dumping to file
-	err = attribute.Dump(tmpPathDump)
-	assert.Nil(t, err)
+	require.NoError(t, attribute.Dump(tmpPathDump))
 	// Validate dumped file is non-empty
 	fileInfo, err := os.Stat(tmpPathDump)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 	assert.NotZero(t, fileInfo.Size())
 
-	err = attribute.DumpSTDOUT()
-	assert.Nil(t, err)
+	require.NoError(t, attribute.DumpSTDOUT())
 }
