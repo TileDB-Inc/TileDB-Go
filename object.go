@@ -34,26 +34,26 @@ func ObjectType(tdbCtx *Context, path string) (ObjectTypeEnum, error) {
 	return ObjectTypeEnum(objectTypeEnum), nil
 }
 
-type groupDefinition struct {
-	objectTypeEnum ObjectTypeEnum
-	path           string
+type GroupDefinition struct {
+	ObjectTypeEnum ObjectTypeEnum
+	Path           string
 }
 
 // ObjectList defines the value of data returned by object iteration callback
 type ObjectList struct {
-	objectList []groupDefinition
+	ObjectList []GroupDefinition
 }
 
 //export objectsInPath
 func objectsInPath(path *C.cchar_t, objectTypeEnum C.tiledb_object_t, data unsafe.Pointer) int32 {
 	objectData := pointer.Restore(data).(*ObjectList)
 
-	groupDefinition := groupDefinition{
-		objectTypeEnum: ObjectTypeEnum(objectTypeEnum),
-		path:           C.GoString(path),
+	groupDefinition := GroupDefinition{
+		ObjectTypeEnum: ObjectTypeEnum(objectTypeEnum),
+		Path:           C.GoString(path),
 	}
 
-	objectData.objectList = append(objectData.objectList, groupDefinition)
+	objectData.ObjectList = append(objectData.ObjectList, groupDefinition)
 
 	return 1
 }
@@ -73,7 +73,7 @@ func ObjectWalk(tdbCtx *Context, path string, walkOrder WalkOrder) (*ObjectList,
 	defer C.free(unsafe.Pointer(cpath))
 
 	objectList := ObjectList{
-		objectList: []groupDefinition{},
+		ObjectList: []GroupDefinition{},
 	}
 	data := pointer.Save(&objectList)
 
@@ -100,7 +100,7 @@ func ObjectLs(tdbCtx *Context, path string) (*ObjectList, error) {
 	defer C.free(unsafe.Pointer(cpath))
 
 	objectList := ObjectList{
-		objectList: []groupDefinition{},
+		ObjectList: []GroupDefinition{},
 	}
 	data := pointer.Save(&objectList)
 

@@ -68,12 +68,12 @@ func TestObjectArray(t *testing.T) {
 
 	objectList, err := ObjectWalk(context, groupPath, TILEDB_PREORDER)
 	require.NoError(t, err)
-	assert.Equal(t, 2, len(objectList.objectList))
-	assert.Equal(t, TILEDB_GROUP, objectList.objectList[0].objectTypeEnum)
-	assert.Equal(t, TILEDB_ARRAY, objectList.objectList[1].objectTypeEnum)
+	assert.Equal(t, 2, len(objectList.ObjectList))
+	assert.Equal(t, TILEDB_GROUP, objectList.ObjectList[0].ObjectTypeEnum)
+	assert.Equal(t, TILEDB_ARRAY, objectList.ObjectList[1].ObjectTypeEnum)
 
 	objectList, err = ObjectLs(context, groupPath)
 	require.NoError(t, err)
-	assert.Equal(t, 1, len(objectList.objectList))
-	assert.Equal(t, TILEDB_GROUP, objectList.objectList[0].objectTypeEnum)
+	assert.Equal(t, 1, len(objectList.ObjectList))
+	assert.Equal(t, TILEDB_GROUP, objectList.ObjectList[0].ObjectTypeEnum)
 }
