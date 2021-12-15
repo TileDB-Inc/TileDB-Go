@@ -479,14 +479,14 @@ func listOfFoldersInPath(path *C.cchar_t, data unsafe.Pointer) int32 {
 
 	uri := C.GoString(path)
 
-	isDir, err := folderData.Vfs.IsDir(uri)
-	if err != nil {
-		return 0
-	}
+	// isDir, err := folderData.Vfs.IsDir(uri)
+	// if err != nil {
+	// 	return 0
+	// }
 
-	if isDir {
-		folderData.Folders = append(folderData.Folders, uri)
-	}
+	// if isDir {
+	folderData.Folders = append(folderData.Folders, uri)
+	// }
 
 	return 1
 }
