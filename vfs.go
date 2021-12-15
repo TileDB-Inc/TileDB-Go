@@ -449,6 +449,12 @@ type NumOfFragmentsData struct {
 	Vfs          *VFS
 }
 
+// FolderData is a type
+type FolderData struct {
+	Folders []string
+	Vfs     *VFS
+}
+
 //export numOfFragmentsInPath
 func numOfFragmentsInPath(path *C.cchar_t, data unsafe.Pointer) int32 {
 	numOfFragmentsData := pointer.Restore(data).(*NumOfFragmentsData)
@@ -462,6 +468,24 @@ func numOfFragmentsInPath(path *C.cchar_t, data unsafe.Pointer) int32 {
 
 	if isDir && !strings.HasSuffix(uri, arrayMetadataFolderName) {
 		numOfFragmentsData.NumOfFolders++
+	}
+
+	return 1
+}
+
+//export listOfFoldersInPath
+func listOfFoldersInPath(path *C.cchar_t, data unsafe.Pointer) int32 {
+	folderData := pointer.Restore(data).(*FolderData)
+
+	uri := C.GoString(path)
+
+	isDir, err := folderData.Vfs.IsDir(uri)
+	if err != nil {
+		return 0
+	}
+
+	if isDir {
+		folderData.Folders = append(folderData.Folders, uri)
 	}
 
 	return 1
@@ -602,4 +626,24 @@ func (v *VFSfh) fetchAndSetSize() error {
 	v.size = &size
 
 	return nil
+}
+
+// LsDir returns number of directories in a path
+func (v *VFS) LsDir(path string) ([]string, error) {
+	cpath := C.CString(path)
+	defer C.free(unsafe.Pointer(cpath))
+
+	folderData := FolderData{
+		Folders: []string{},
+		Vfs:     v,
+	}
+	data := pointer.Save(&folderData)
+
+	ret := C._list_of_folders_in_path(v.context.tiledbContext, v.tiledbVFS, cpath, data)
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error in getting folder list %s: %s", path, v.context.LastError())
+	}
+
+	return folderData.Folders, nil
 }
