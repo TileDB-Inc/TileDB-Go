@@ -42,17 +42,7 @@ func TestVFS(t *testing.T) {
 	assert.True(t, isDir)
 
 	// Create File
-	require.NoError(t, vfs.Touch(tmpFilePath))
-
-	fh, err := vfs.Open(tmpFilePath, TILEDB_VFS_WRITE)
-	require.NoError(t, err)
-
-	bytes := []byte{0, 1, 2}
-	require.NoError(t, vfs.Write(fh, bytes))
-
-	bytes2, err := vfs.Read(fh, 0, uint64(len(bytes)))
-	require.NoError(t, err)
-	assert.EqualValues(t, bytes, bytes2)
+	createFile(t, vfs, tmpFilePath)
 
 	dirSize, err := vfs.DirSize(tmpPath)
 	require.NoError(t, err)
@@ -173,4 +163,109 @@ func TestVFSFH(t *testing.T) {
 	assert.Equal(t, 3, n)
 	require.NoError(t, r.Close())
 	assert.ElementsMatch(t, b, bRead)
+}
+
+// TestVFSLs validates vfs LsDir operation is successful
+func TestVFSLs(t *testing.T) {
+	config, err := NewConfig()
+	require.NoError(t, err)
+
+	context, err := NewContext(config)
+	require.NoError(t, err)
+
+	vfs, err := NewVFS(context, config)
+	require.NoError(t, err)
+
+	tmpPath := filepath.Join(t.TempDir(), "somedir")
+	tmpPath2 := filepath.Join(tmpPath, "somedir2")
+	tmpPath3 := filepath.Join(tmpPath, "somedir3")
+
+	isDir, err := vfs.IsDir(tmpPath)
+	require.NoError(t, err)
+	assert.False(t, isDir)
+
+	isDir, err = vfs.IsDir(tmpPath3)
+	require.NoError(t, err)
+	assert.False(t, isDir)
+
+	isDir, err = vfs.IsDir(tmpPath3)
+	require.NoError(t, err)
+	assert.False(t, isDir)
+
+	tmpFilePath := filepath.Join(tmpPath, "somefile")
+	tmpFilePath2 := filepath.Join(tmpPath, "somefile2")
+	tmpFilePath3 := filepath.Join(tmpPath, "somefile3")
+
+	isFile, err := vfs.IsFile(tmpFilePath)
+	require.NoError(t, err)
+	assert.False(t, isFile)
+
+	isFile, err = vfs.IsFile(tmpFilePath2)
+	require.NoError(t, err)
+	assert.False(t, isFile)
+
+	isFile, err = vfs.IsFile(tmpFilePath3)
+	require.NoError(t, err)
+	assert.False(t, isFile)
+
+	// Create directories
+	require.NoError(t, vfs.CreateDir(tmpPath))
+	require.NoError(t, vfs.CreateDir(tmpPath2))
+	require.NoError(t, vfs.CreateDir(tmpPath3))
+
+	isDir, err = vfs.IsDir(tmpPath)
+	require.NoError(t, err)
+	assert.True(t, isDir)
+
+	isDir, err = vfs.IsDir(tmpPath2)
+	require.NoError(t, err)
+	assert.True(t, isDir)
+
+	isDir, err = vfs.IsDir(tmpPath3)
+	require.NoError(t, err)
+	assert.True(t, isDir)
+
+	// Create Files
+	createFile(t, vfs, tmpFilePath)
+	createFile(t, vfs, tmpFilePath2)
+	createFile(t, vfs, tmpFilePath3)
+
+	isFile, err = vfs.IsFile(tmpFilePath)
+	require.NoError(t, err)
+	assert.True(t, isFile)
+
+	isFile, err = vfs.IsFile(tmpFilePath2)
+	require.NoError(t, err)
+	assert.True(t, isFile)
+
+	isFile, err = vfs.IsFile(tmpFilePath3)
+	require.NoError(t, err)
+	assert.True(t, isFile)
+
+	folderList, fileList, err := vfs.Ls(tmpPath)
+	require.NoError(t, err)
+	assert.Equal(t, 2, len(folderList))
+	assert.Equal(t, 3, len(fileList))
+
+	// Remove Files
+	require.NoError(t, vfs.RemoveFile(tmpFilePath))
+	require.NoError(t, vfs.RemoveFile(tmpFilePath2))
+	require.NoError(t, vfs.RemoveFile(tmpFilePath3))
+
+	// Remove directories
+	require.NoError(t, vfs.RemoveDir(tmpPath))
+}
+
+func createFile(t *testing.T, vfs *VFS, path string) {
+	require.NoError(t, vfs.Touch(path))
+
+	fh, err := vfs.Open(path, TILEDB_VFS_WRITE)
+	require.NoError(t, err)
+
+	bytes := []byte{0, 1, 2}
+	require.NoError(t, vfs.Write(fh, bytes))
+
+	bytes2, err := vfs.Read(fh, 0, uint64(len(bytes)))
+	require.NoError(t, err)
+	assert.EqualValues(t, bytes, bytes2)
 }

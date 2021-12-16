@@ -603,3 +603,50 @@ func (v *VFSfh) fetchAndSetSize() error {
 
 	return nil
 }
+
+// FolderData is a type encapsulating list of folders and files
+type FolderData struct {
+	Folders []string
+	Files   []string
+	Vfs     *VFS
+}
+
+//export vfsLs
+func vfsLs(path *C.cchar_t, data unsafe.Pointer) int32 {
+	folderData := pointer.Restore(data).(*FolderData)
+
+	uri := C.GoString(path)
+
+	isDir, err := folderData.Vfs.IsDir(uri)
+	if err != nil {
+		return 0
+	}
+
+	if isDir {
+		folderData.Folders = append(folderData.Folders, uri)
+	} else {
+		folderData.Files = append(folderData.Files, uri)
+	}
+
+	return 1
+}
+
+// Ls returns list of folders and files in a path
+func (v *VFS) Ls(path string) ([]string, []string, error) {
+	cpath := C.CString(path)
+	defer C.free(unsafe.Pointer(cpath))
+
+	folderData := FolderData{
+		Folders: []string{},
+		Files:   []string{},
+		Vfs:     v,
+	}
+	data := pointer.Save(&folderData)
+
+	ret := C._vfs_ls(v.context.tiledbContext, v.tiledbVFS, cpath, data)
+	if ret != C.TILEDB_OK {
+		return nil, nil, fmt.Errorf("error in getting path listing %s: %s", path, v.context.LastError())
+	}
+
+	return folderData.Folders, folderData.Files, nil
+}
