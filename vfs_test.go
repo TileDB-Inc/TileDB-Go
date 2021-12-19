@@ -165,8 +165,8 @@ func TestVFSFH(t *testing.T) {
 	assert.ElementsMatch(t, b, bRead)
 }
 
-// TestVFSLs validates vfs LsDir operation is successful
-func TestVFSLs(t *testing.T) {
+// TestVFSList validates vfs List operation is successful
+func TestVFSList(t *testing.T) {
 	config, err := NewConfig()
 	require.NoError(t, err)
 
