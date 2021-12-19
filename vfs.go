@@ -631,8 +631,8 @@ func vfsLs(path *C.cchar_t, data unsafe.Pointer) int32 {
 	return 1
 }
 
-// Ls returns list of folders and files in a path
-func (v *VFS) Ls(path string) ([]string, []string, error) {
+// List returns list of folders and files in a path
+func (v *VFS) List(path string) ([]string, []string, error) {
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
 

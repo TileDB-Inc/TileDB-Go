@@ -83,7 +83,7 @@ jobs:
       run: go test -v ./...
 
   Macos_Test:
-    runs-on: macos-10.15
+    runs-on: macos-11
     strategy:
       matrix:
         # Will be checking following versions
@@ -162,7 +162,7 @@ jobs:
       run: go test -tags=experimental -v ./...
 
   Macos_Experimental_Test:
-    runs-on: macos-10.15
+    runs-on: macos-11
     strategy:
       matrix:
         # Will be checking following versions

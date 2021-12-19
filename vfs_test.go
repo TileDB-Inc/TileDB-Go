@@ -177,8 +177,8 @@ func TestVFSLs(t *testing.T) {
 	require.NoError(t, err)
 
 	tmpPath := filepath.Join(t.TempDir(), "somedir")
-	tmpPath2 := filepath.Join(tmpPath, "somedir2")
-	tmpPath3 := filepath.Join(tmpPath, "somedir3")
+	tmpPath2 := filepath.Join(tmpPath, "subdir")
+	tmpPath3 := filepath.Join(tmpPath, "subdir2")
 
 	isDir, err := vfs.IsDir(tmpPath)
 	require.NoError(t, err)
@@ -242,30 +242,25 @@ func TestVFSLs(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, isFile)
 
-	folderList, fileList, err := vfs.Ls(tmpPath)
+	folderList, fileList, err := vfs.List(tmpPath)
 	require.NoError(t, err)
-	assert.Equal(t, 2, len(folderList))
-	assert.Equal(t, 3, len(fileList))
-
-	// Remove Files
-	require.NoError(t, vfs.RemoveFile(tmpFilePath))
-	require.NoError(t, vfs.RemoveFile(tmpFilePath2))
-	require.NoError(t, vfs.RemoveFile(tmpFilePath3))
-
-	// Remove directories
-	require.NoError(t, vfs.RemoveDir(tmpPath))
+	assert.EqualValues(t, []string{"file://" + tmpPath2,
+		"file://" + tmpPath3}, folderList)
+	assert.EqualValues(t, []string{"file://" + tmpFilePath, "file://" +
+		tmpFilePath2, "file://" + tmpFilePath3}, fileList)
 }
 
-func createFile(t *testing.T, vfs *VFS, path string) {
+func createFile(t testing.TB, vfs *VFS, path string) {
+	t.Helper()
 	require.NoError(t, vfs.Touch(path))
 
 	fh, err := vfs.Open(path, TILEDB_VFS_WRITE)
 	require.NoError(t, err)
 
-	bytes := []byte{0, 1, 2}
-	require.NoError(t, vfs.Write(fh, bytes))
+	inBytes := []byte{0, 1, 2}
+	require.NoError(t, vfs.Write(fh, inBytes))
 
-	bytes2, err := vfs.Read(fh, 0, uint64(len(bytes)))
+	outBytes, err := vfs.Read(fh, 0, uint64(len(inBytes)))
 	require.NoError(t, err)
-	assert.EqualValues(t, bytes, bytes2)
+	assert.EqualValues(t, inBytes, outBytes)
 }
