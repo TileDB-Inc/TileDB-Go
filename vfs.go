@@ -538,6 +538,9 @@ func (v *VFSfh) Read(p []byte) (int, error) {
 // appends data at the end of the file. If the file does not exist,
 // it will be created
 func (v *VFSfh) Write(bytes []byte) (int, error) {
+	if len(bytes) == 0 {
+		return 0, nil
+	}
 	cbuffer := unsafe.Pointer(&bytes[0])
 	ret := C.tiledb_vfs_write(v.context.tiledbContext, v.tiledbVFSfh, cbuffer, C.uint64_t(len(bytes)))
 
