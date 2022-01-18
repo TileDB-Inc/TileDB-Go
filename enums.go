@@ -257,6 +257,9 @@ func (d Datatype) MakeSlice(numElements uint64) (interface{}, unsafe.Pointer, er
 func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, error) {
 	switch d {
 	case TILEDB_INT8:
+		if cvalue == nil {
+			return int8(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]int8, valueNum)
 			tmpslice := (*[1 << 46]C.int8_t)(cvalue)[:valueNum:valueNum]
@@ -267,6 +270,9 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 		}
 		return *(*int8)(cvalue), nil
 	case TILEDB_INT16:
+		if cvalue == nil {
+			return int16(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]int16, valueNum)
 			tmpslice := (*[1 << 46]C.int16_t)(cvalue)[:valueNum:valueNum]
@@ -277,6 +283,9 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 		}
 		return *(*int16)(cvalue), nil
 	case TILEDB_INT32:
+		if cvalue == nil {
+			return int32(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]int32, valueNum)
 			tmpslice := (*[1 << 46]C.int32_t)(cvalue)[:valueNum:valueNum]
@@ -287,6 +296,9 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 		}
 		return *(*int32)(cvalue), nil
 	case TILEDB_INT64:
+		if cvalue == nil {
+			return int64(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]int64, valueNum)
 			tmpslice := (*[1 << 46]C.int64_t)(cvalue)[:valueNum:valueNum]
@@ -297,6 +309,9 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 		}
 		return *(*int64)(cvalue), nil
 	case TILEDB_UINT8:
+		if cvalue == nil {
+			return uint8(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]uint8, valueNum)
 			tmpslice := (*[1 << 46]C.uint8_t)(cvalue)[:valueNum:valueNum]
@@ -307,6 +322,9 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 		}
 		return *(*uint8)(cvalue), nil
 	case TILEDB_UINT16:
+		if cvalue == nil {
+			return uint16(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]uint16, valueNum)
 			tmpslice := (*[1 << 46]C.uint16_t)(cvalue)[:valueNum:valueNum]
@@ -317,6 +335,9 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 		}
 		return *(*uint16)(cvalue), nil
 	case TILEDB_UINT32:
+		if cvalue == nil {
+			return uint32(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]uint32, valueNum)
 			tmpslice := (*[1 << 46]C.uint32_t)(cvalue)[:valueNum:valueNum]
@@ -327,6 +348,9 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 		}
 		return *(*uint32)(cvalue), nil
 	case TILEDB_UINT64:
+		if cvalue == nil {
+			return uint64(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]uint64, valueNum)
 			tmpslice := (*[1 << 46]C.uint64_t)(cvalue)[:valueNum:valueNum]
@@ -337,6 +361,9 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 		}
 		return *(*uint64)(cvalue), nil
 	case TILEDB_FLOAT32:
+		if cvalue == nil {
+			return float32(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]float32, valueNum)
 			tmpslice := (*[1 << 46]C.float)(cvalue)[:valueNum:valueNum]
@@ -347,6 +374,9 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 		}
 		return *(*float32)(cvalue), nil
 	case TILEDB_FLOAT64:
+		if cvalue == nil {
+			return float64(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]float64, valueNum)
 			tmpslice := (*[1 << 46]C.double)(cvalue)[:valueNum:valueNum]
@@ -357,12 +387,21 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 		}
 		return *(*float64)(cvalue), nil
 	case TILEDB_CHAR:
+		if cvalue == nil || valueNum == 0 {
+			return "", nil
+		}
 		tmpslice := (*[1 << 46]C.char)(cvalue)[:valueNum:valueNum]
 		return C.GoString(&tmpslice[0])[0:valueNum], nil
 	case TILEDB_STRING_ASCII:
+		if cvalue == nil || valueNum == 0 {
+			return "", nil
+		}
 		tmpslice := (*[1 << 46]C.char)(cvalue)[:valueNum:valueNum]
 		return C.GoString(&tmpslice[0])[0:valueNum], nil
 	case TILEDB_STRING_UTF8:
+		if cvalue == nil || valueNum == 0 {
+			return "", nil
+		}
 		tmpslice := (*[1 << 46]C.char)(cvalue)[:valueNum:valueNum]
 		return C.GoString(&tmpslice[0])[0:valueNum], nil
 	case TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK,
@@ -373,6 +412,9 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 		if valueNum > 1 {
 			return nil, fmt.Errorf("Unrecognized value type: %d", d)
 		} else {
+			if cvalue == nil {
+				return int64(0), nil
+			}
 			var timestamp interface{} = *(*int16)(cvalue)
 			return GetTimeFromTimestamp(d, timestamp.(int64)), nil
 		}
