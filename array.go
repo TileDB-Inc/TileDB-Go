@@ -1038,10 +1038,6 @@ func (a *Array) GetMetadata(key string) (Datatype, uint, interface{}, error) {
 		return 0, 0, nil, fmt.Errorf("Error getting metadata from array, key: %s does not exist", key)
 	}
 
-	if cvalue == nil {
-		return 0, 0, nil, fmt.Errorf("Error getting metadata from array, value is empty")
-	}
-
 	datatype := Datatype(cType)
 	value, err := datatype.GetValue(valueNum, cvalue)
 	if err != nil {
@@ -1095,10 +1091,6 @@ func (a *Array) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 	valueNum := uint(cValueNum)
 	if valueNum == 0 {
 		return nil, fmt.Errorf("Error getting metadata from array, Index: %d does not exist", index)
-	}
-
-	if cvalue == nil {
-		return nil, fmt.Errorf("Error getting metadata from array, value is empty")
 	}
 
 	datatype := Datatype(cType)

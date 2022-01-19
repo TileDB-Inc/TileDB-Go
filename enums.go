@@ -255,127 +255,155 @@ func (d Datatype) MakeSlice(numElements uint64) (interface{}, unsafe.Pointer, er
 
 // GetValue gets value stored in a void pointer for this data type
 func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, error) {
-	var value interface{}
 	switch d {
 	case TILEDB_INT8:
+		if cvalue == nil {
+			return int8(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]int8, valueNum)
-			tmpslice := (*[1 << 46]C.int8_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.int8_t)(cvalue)[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = int8(s)
 			}
-			value = tmpValue
-		} else {
-			value = *(*int8)(unsafe.Pointer(cvalue))
+			return tmpValue, nil
 		}
+		return *(*int8)(cvalue), nil
 	case TILEDB_INT16:
+		if cvalue == nil {
+			return int16(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]int16, valueNum)
-			tmpslice := (*[1 << 46]C.int16_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.int16_t)(cvalue)[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = int16(s)
 			}
-			value = tmpValue
-		} else {
-			value = *(*int16)(unsafe.Pointer(cvalue))
+			return tmpValue, nil
 		}
+		return *(*int16)(cvalue), nil
 	case TILEDB_INT32:
+		if cvalue == nil {
+			return int32(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]int32, valueNum)
-			tmpslice := (*[1 << 46]C.int32_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.int32_t)(cvalue)[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = int32(s)
 			}
-			value = tmpValue
-		} else {
-			value = *(*int32)(unsafe.Pointer(cvalue))
+			return tmpValue, nil
 		}
+		return *(*int32)(cvalue), nil
 	case TILEDB_INT64:
+		if cvalue == nil {
+			return int64(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]int64, valueNum)
-			tmpslice := (*[1 << 46]C.int64_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.int64_t)(cvalue)[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = int64(s)
 			}
-			value = tmpValue
-		} else {
-			value = *(*int64)(unsafe.Pointer(cvalue))
+			return tmpValue, nil
 		}
+		return *(*int64)(cvalue), nil
 	case TILEDB_UINT8:
+		if cvalue == nil {
+			return uint8(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]uint8, valueNum)
-			tmpslice := (*[1 << 46]C.uint8_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.uint8_t)(cvalue)[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = uint8(s)
 			}
-			value = tmpValue
-		} else {
-			value = *(*uint8)(unsafe.Pointer(cvalue))
+			return tmpValue, nil
 		}
+		return *(*uint8)(cvalue), nil
 	case TILEDB_UINT16:
+		if cvalue == nil {
+			return uint16(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]uint16, valueNum)
-			tmpslice := (*[1 << 46]C.uint16_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.uint16_t)(cvalue)[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = uint16(s)
 			}
-			value = tmpValue
-		} else {
-			value = *(*uint16)(unsafe.Pointer(cvalue))
+			return tmpValue, nil
 		}
+		return *(*uint16)(cvalue), nil
 	case TILEDB_UINT32:
+		if cvalue == nil {
+			return uint32(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]uint32, valueNum)
-			tmpslice := (*[1 << 46]C.uint32_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.uint32_t)(cvalue)[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = uint32(s)
 			}
-			value = tmpValue
-		} else {
-			value = *(*uint32)(unsafe.Pointer(cvalue))
+			return tmpValue, nil
 		}
+		return *(*uint32)(cvalue), nil
 	case TILEDB_UINT64:
+		if cvalue == nil {
+			return uint64(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]uint64, valueNum)
-			tmpslice := (*[1 << 46]C.uint64_t)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.uint64_t)(cvalue)[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = uint64(s)
 			}
-			value = tmpValue
-		} else {
-			value = *(*uint64)(unsafe.Pointer(cvalue))
+			return tmpValue, nil
 		}
+		return *(*uint64)(cvalue), nil
 	case TILEDB_FLOAT32:
+		if cvalue == nil {
+			return float32(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]float32, valueNum)
-			tmpslice := (*[1 << 46]C.float)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.float)(cvalue)[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = float32(s)
 			}
-			value = tmpValue
-		} else {
-			value = *(*float32)(unsafe.Pointer(cvalue))
+			return tmpValue, nil
 		}
+		return *(*float32)(cvalue), nil
 	case TILEDB_FLOAT64:
+		if cvalue == nil {
+			return float64(0), nil
+		}
 		if valueNum > 1 {
 			tmpValue := make([]float64, valueNum)
-			tmpslice := (*[1 << 46]C.double)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
+			tmpslice := (*[1 << 46]C.double)(cvalue)[:valueNum:valueNum]
 			for i, s := range tmpslice {
 				tmpValue[i] = float64(s)
 			}
-			value = tmpValue
-		} else {
-			value = *(*float64)(unsafe.Pointer(cvalue))
+			return tmpValue, nil
 		}
+		return *(*float64)(cvalue), nil
 	case TILEDB_CHAR:
-		tmpslice := (*[1 << 46]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
-		value = C.GoString(&tmpslice[0])[0:valueNum]
+		if cvalue == nil || valueNum == 0 {
+			return "", nil
+		}
+		tmpslice := (*[1 << 46]C.char)(cvalue)[:valueNum:valueNum]
+		return C.GoString(&tmpslice[0])[0:valueNum], nil
 	case TILEDB_STRING_ASCII:
-		tmpslice := (*[1 << 46]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
-		value = C.GoString(&tmpslice[0])[0:valueNum]
+		if cvalue == nil || valueNum == 0 {
+			return "", nil
+		}
+		tmpslice := (*[1 << 46]C.char)(cvalue)[:valueNum:valueNum]
+		return C.GoString(&tmpslice[0])[0:valueNum], nil
 	case TILEDB_STRING_UTF8:
-		tmpslice := (*[1 << 46]C.char)(unsafe.Pointer(cvalue))[:valueNum:valueNum]
-		value = C.GoString(&tmpslice[0])[0:valueNum]
+		if cvalue == nil || valueNum == 0 {
+			return "", nil
+		}
+		tmpslice := (*[1 << 46]C.char)(cvalue)[:valueNum:valueNum]
+		return C.GoString(&tmpslice[0])[0:valueNum], nil
 	case TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK,
 		TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN,
 		TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US,
@@ -384,14 +412,15 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 		if valueNum > 1 {
 			return nil, fmt.Errorf("Unrecognized value type: %d", d)
 		} else {
-			var timestamp interface{} = *(*int16)(unsafe.Pointer(cvalue))
-			value = GetTimeFromTimestamp(d, timestamp.(int64))
+			if cvalue == nil {
+				return int64(0), nil
+			}
+			var timestamp interface{} = *(*int16)(cvalue)
+			return GetTimeFromTimestamp(d, timestamp.(int64)), nil
 		}
 	default:
 		return nil, fmt.Errorf("Unrecognized value type: %d", d)
 	}
-
-	return value, nil
 }
 
 // EncryptionType represents different encryption algorithms
@@ -488,7 +517,7 @@ const (
 	TILEDB_COMPLETED QueryStatus = C.TILEDB_COMPLETED
 	// TILEDB_INPROGRESS Query is in progress
 	TILEDB_INPROGRESS QueryStatus = C.TILEDB_INPROGRESS
-	//TILEDB_INCOMPLETE Query completed (but not all data has been read)
+	// TILEDB_INCOMPLETE Query completed (but not all data has been read)
 	TILEDB_INCOMPLETE QueryStatus = C.TILEDB_INCOMPLETE
 	// TILEDB_UNINITIALIZED Query not initialized.
 	TILEDB_UNINITIALIZED QueryStatus = C.TILEDB_UNINITIALIZED
