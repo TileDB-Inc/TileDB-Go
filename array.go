@@ -41,7 +41,12 @@ type ArrayMetadata struct {
 
 // MarshalJSON implements the Marshaler interface for ArrayMetadata
 func (a ArrayMetadata) MarshalJSON() ([]byte, error) {
-	return json.Marshal(a.Value)
+	switch v := a.Value.(type) {
+	case []byte:
+		return json.Marshal(string(v))
+	default:
+		return json.Marshal(v)
+	}
 }
 
 // NonEmptyDomain contains the non empty dimension bounds and dimension name
