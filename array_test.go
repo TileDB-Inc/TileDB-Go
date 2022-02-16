@@ -149,11 +149,23 @@ func TestArray(t *testing.T) {
 	// Open array for reading
 	require.NoError(t, array.Open(TILEDB_READ))
 
+	isOpen, err := array.Isopen()
+	require.NoError(t, err)
+	assert.Equal(t, true, isOpen)
+
 	// Test re-opening
 	require.NoError(t, array.Reopen())
 
+	isOpen, err = array.Isopen()
+	require.NoError(t, err)
+	assert.Equal(t, true, isOpen)
+
 	// Close Array
 	require.NoError(t, array.Close())
+
+	isOpen, err = array.Isopen()
+	require.NoError(t, err)
+	assert.Equal(t, false, isOpen)
 
 	// Open array for reading At
 	require.NoError(t, array.OpenWithOptions(TILEDB_READ, WithEndTimestamp(uint64(time.Now().UnixNano()/1000000))))

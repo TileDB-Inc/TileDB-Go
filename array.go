@@ -173,7 +173,32 @@ func (a *Array) Reopen() error {
 }
 
 // Close a tiledb array, this is called on garbage collection automatically
+func (a *Array) Isopen() (bool, error) {
+	var isOpen C.int32_t
+	ret := C.tiledb_array_is_open(a.context.tiledbContext, a.tiledbArray, &isOpen)
+
+	if ret != C.TILEDB_OK {
+		return false, fmt.Errorf("error in checking if array is open: %s", a.context.LastError())
+	}
+
+	if isOpen == 0 {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+// Close a tiledb array, this is called on garbage collection automatically
 func (a *Array) Close() error {
+	isOpen, err := a.Isopen()
+	if err != nil {
+		return err
+	}
+
+	if !isOpen {
+		return nil
+	}
+
 	ret := C.tiledb_array_close(a.context.tiledbContext, a.tiledbArray)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error closing tiledb array for querying: %s", a.context.LastError())
