@@ -29,6 +29,41 @@ func TestGroupCreate(t *testing.T) {
 	group, err = NewGroup(context, tmpGroup)
 	require.NoError(t, err)
 	assert.Error(t, group.Create())
+
+}
+
+func TestGroups_Metadata(t *testing.T) {
+	tdbCtx, err := NewContext(nil)
+	require.NoError(t, err)
+
+	group, err := createTestGroup(tdbCtx, t.TempDir())
+	require.NoError(t, err)
+
+	// =========================================================================
+	// Test adding metadata
+	require.NoError(t, group.Open(TILEDB_WRITE))
+	require.NoError(t, group.PutMetadata("key", "value"))
+	require.NoError(t, group.Close())
+
+	// =========================================================================
+	// Verify it is added
+	require.NoError(t, group.Open(TILEDB_READ))
+	num, err := group.GetMetadataNum()
+	require.NoError(t, err)
+	assert.EqualValues(t, uint64(1), num)
+
+	dType, _, val, err := group.GetMetadata("key")
+	require.NoError(t, err)
+	assert.EqualValues(t, dType, TILEDB_STRING_UTF8)
+	assert.EqualValues(t, val, "value")
+	require.NoError(t, group.Close())
+
+	// =========================================================================
+	// Remove it
+	require.NoError(t, group.Open(TILEDB_WRITE))
+	err = group.DeleteMetadata("key")
+	require.NoError(t, err)
+	assert.EqualValues(t, uint64(0), num)
 }
 
 func TestGroups_AddMembers(t *testing.T) {
