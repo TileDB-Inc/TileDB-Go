@@ -140,7 +140,7 @@ func (g *Group) GetMemberCount() (uint64, error) {
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("Error retrieving member count in group: %s", g.context.LastError())
 	}
-	return count, nil
+	return uint64(count), nil
 }
 
 func (g *Group) GetMemberFromIndex(index uint64) (string, ObjectTypeEnum, error) {
@@ -148,7 +148,7 @@ func (g *Group) GetMemberFromIndex(index uint64) (string, ObjectTypeEnum, error)
 	defer C.free(unsafe.Pointer(curi))
 
 	var objectTypeEnum C.tiledb_object_t
-	ret := C.tiledb_group_get_member_by_index(g.context.tiledbContext, g.group, C.uint64_t(index), curi, &objectTypeEnum)
+	ret := C.tiledb_group_get_member_by_index(g.context.tiledbContext, g.group, C.uint64_t(index), &curi, &objectTypeEnum)
 	if ret != C.TILEDB_OK {
 		return "", TILEDB_INVALID, fmt.Errorf("Error getting member by index for group: %s", g.context.LastError())
 	}
@@ -159,4 +159,21 @@ func (g *Group) GetMemberFromIndex(index uint64) (string, ObjectTypeEnum, error)
 	}
 
 	return uri, ObjectTypeEnum(objectTypeEnum), nil
+}
+
+func (g *Group) Dump(recurse bool) (string, error) {
+	var cOutput *C.char
+	defer C.free(unsafe.Pointer(cOutput))
+
+	var cRecurse C.uint8_t
+	if recurse {
+		cRecurse = 1
+	}
+
+	ret := C.tiledb_group_dump_str(g.context.tiledbContext, g.group, &cOutput, cRecurse)
+	if ret != C.TILEDB_OK {
+		return "", fmt.Errorf("Error dumping group contents: %s", g.context.LastError())
+	}
+
+	return C.GoString(cOutput), nil
 }
