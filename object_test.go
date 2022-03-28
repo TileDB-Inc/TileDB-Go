@@ -8,28 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestObjectCreate(t *testing.T) {
-	// Create context
-	context, err := NewContext(nil)
-	require.NoError(t, err)
-
-	// create temp group name
-	groupPath := t.TempDir()
-
-	groupPathNew := t.TempDir()
-
-	// Create initial group
-	require.NoError(t, GroupCreate(context, groupPath))
-
-	objType, err := ObjectType(context, groupPath)
-	require.NoError(t, err)
-	assert.Equal(t, TILEDB_GROUP, objType)
-
-	require.NoError(t, ObjectMove(context, groupPath, groupPathNew))
-
-	require.NoError(t, ObjectRemove(context, groupPathNew))
-}
-
 func TestObjectArray(t *testing.T) {
 	// Create context
 	context, err := NewContext(nil)
@@ -38,15 +16,20 @@ func TestObjectArray(t *testing.T) {
 	// create temp group name
 	groupPath := t.TempDir()
 
-	// Create initial group
-	require.NoError(t, GroupCreate(context, groupPath))
+	group, err := NewGroup(context, groupPath)
+	require.NoError(t, err)
 
-	arrayGroup := filepath.Join(groupPath, "arrays")
+	// Create initial group
+	require.NoError(t, group.Create())
+
+	arrayGroupPath := filepath.Join(groupPath, "arrays")
+	arrayGroup, err := NewGroup(context, groupPath)
+	require.NoError(t, err)
 
 	// Create the array group
-	require.NoError(t, GroupCreate(context, arrayGroup))
+	require.NoError(t, arrayGroup.Create())
 
-	tmpArrayPath := filepath.Join(arrayGroup, "tiledb_test_array")
+	tmpArrayPath := filepath.Join(arrayGroupPath, "tiledb_test_array")
 
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)

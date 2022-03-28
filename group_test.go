@@ -1,3 +1,6 @@
+//go:build experimental
+// +build experimental
+
 package tiledb
 
 import (
@@ -8,7 +11,6 @@ import (
 )
 
 func TestGroupCreate(t *testing.T) {
-
 	// Test context without config
 	context, err := NewContext(nil)
 	require.NoError(t, err)
@@ -17,24 +19,12 @@ func TestGroupCreate(t *testing.T) {
 	tmpGroup := t.TempDir()
 
 	// Create initial group
-	require.NoError(t, GroupCreate(context, tmpGroup))
+	group, err := NewGroup(context, tmpGroup)
+	require.NoError(t, err)
+	require.NoError(t, group.Create())
 
 	// Creating the same group twice should error
-	assert.Error(t, GroupCreate(context, tmpGroup))
-}
-
-func ExampleGroupCreate() {
-	// Create context without config
-	context, err := NewContext(nil)
-	if err != nil {
-		// Handle error
-		return
-	}
-
-	// Create Group
-	err = GroupCreate(context, "my_group")
-	if err != nil {
-		// Handle error
-		return
-	}
+	group, err = NewGroup(context, tmpGroup)
+	require.NoError(t, err)
+	assert.Error(t, group.Create())
 }
