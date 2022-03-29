@@ -6,7 +6,6 @@ package tiledb
 import (
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,6 +40,7 @@ func TestGroups_Metadata(t *testing.T) {
 
 	// =========================================================================
 	// Test adding metadata
+	require.NoError(t, setConfigForWrite(group, 0))
 	require.NoError(t, group.Open(TILEDB_WRITE))
 	require.NoError(t, group.PutMetadata("key", "value"))
 	require.NoError(t, group.Close())
@@ -60,10 +60,17 @@ func TestGroups_Metadata(t *testing.T) {
 
 	// =========================================================================
 	// Remove it
+	require.NoError(t, setConfigForWrite(group, 1))
 	require.NoError(t, group.Open(TILEDB_WRITE))
 	err = group.DeleteMetadata("key")
 	require.NoError(t, err)
+	require.NoError(t, group.Close())
+
+	require.NoError(t, group.Open(TILEDB_READ))
+	num, err = group.GetMetadataNum()
+	require.NoError(t, err)
 	assert.EqualValues(t, uint64(0), num)
+	require.NoError(t, group.Close())
 }
 
 func TestGroups_AddMembers(t *testing.T) {
@@ -82,7 +89,6 @@ func TestGroups_AddMembers(t *testing.T) {
 	count, err := memberCount(group)
 	require.NoError(t, err)
 	assert.EqualValues(t, uint(2), count)
-	require.NoError(t, group.Close())
 }
 
 func TestGroups_RemoveMembers(t *testing.T) {
@@ -103,8 +109,12 @@ func TestGroups_RemoveMembers(t *testing.T) {
 
 	// =========================================================================
 	// Remove the members and validate
+	require.NoError(t, setConfigForWrite(group, 1))
 	require.NoError(t, group.Open(TILEDB_WRITE))
 	require.NoError(t, group.RemoveMember(arrayPathToRemove))
+	require.NoError(t, group.Close())
+
+	require.NoError(t, group.Open(TILEDB_READ))
 	require.NoError(t, group.Close())
 
 	count, err = memberCount(group)
@@ -118,18 +128,6 @@ func TestGroups_RemoveMembers(t *testing.T) {
 }
 
 func memberCount(group *Group) (uint64, error) {
-	conf, err := NewConfig()
-	if err != nil {
-		return 0, err
-	}
-	if err := conf.Set("sm.group.timestamp_start", strconv.Itoa(int(time.Now().UnixMilli()))); err != nil {
-		return 0, err
-	}
-
-	if err := group.SetConfig(conf); err != nil {
-		return 0, err
-	}
-
 	if err := group.Open(TILEDB_READ); err != nil {
 		return 0, err
 	}
@@ -177,6 +175,10 @@ func addTwoArraysToGroup(tdbCtx *Context, group *Group, arraySchema *ArraySchema
 		return err
 	}
 
+	if err := setConfigForWrite(group, 0); err != nil {
+		return err
+	}
+
 	if err := group.Open(TILEDB_WRITE); err != nil {
 		return err
 	}
@@ -190,4 +192,19 @@ func addTwoArraysToGroup(tdbCtx *Context, group *Group, arraySchema *ArraySchema
 	}
 
 	return group.Close()
+}
+
+func setConfigForWrite(group *Group, i int) error {
+	conf, err := NewConfig()
+	if err != nil {
+		return err
+	}
+	if err := conf.Set("sm.group.timestamp_end", strconv.Itoa(1648581656+i)); err != nil {
+		return err
+	}
+
+	if err := group.SetConfig(conf); err != nil {
+		return err
+	}
+	return nil
 }
