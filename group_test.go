@@ -127,6 +127,36 @@ func TestGroups_RemoveMembers(t *testing.T) {
 	assert.EqualValues(t, objectType, TILEDB_ARRAY)
 }
 
+func TestDeserializeGroup(t *testing.T) {
+	tdbCtx, err := NewContext(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	buffer, err := NewBuffer(tdbCtx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	g, err := NewGroup(tdbCtx, t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := buffer.SetBuffer([]byte(`{
+     "group": {
+        "members": [
+           {"uri": "tiledb://namespace/name", "type": "ARRAY"},
+           {"uri": "tiledb://namespace/name2", "type": "GROUP"}
+         ]
+     }
+}`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := g.Deserialize(buffer, TILEDB_JSON, true); err != nil {
+		t.Fatalf("DeserializeGroup -> %v; expected no err", err)
+	}
+}
+
 func memberCount(group *Group) (uint64, error) {
 	if err := group.Open(TILEDB_READ); err != nil {
 		return 0, err

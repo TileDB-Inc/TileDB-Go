@@ -20,6 +20,7 @@ import (
    	#cgo LDFLAGS: -ltiledb
    	#cgo linux LDFLAGS: -ldl
 	#include <tiledb/tiledb_experimental.h>
+	#include <tiledb/tiledb_serialization.h>
 	#include <stdlib.h>
 */
 import "C"
@@ -48,6 +49,23 @@ func NewGroup(tdbCtx *Context, uri string) (*Group, error) {
 	})
 
 	return &group, nil
+}
+
+// Deserialize deserializes a new array schema from the given buffer
+func (g *Group) Deserialize(buffer *Buffer, serializationType SerializationType, clientSide bool) error {
+	var cClientSide C.int32_t
+	if clientSide {
+		cClientSide = 1
+	} else {
+		cClientSide = 0
+	}
+
+	ret := C.tiledb_deserialize_group(g.context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, g.group)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deserializing group: %s", g.context.LastError())
+	}
+
+	return nil
 }
 
 // Create a new TileDB group
