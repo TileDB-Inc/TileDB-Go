@@ -51,7 +51,7 @@ func NewGroup(tdbCtx *Context, uri string) (*Group, error) {
 	return &group, nil
 }
 
-// Deserialize deserializes a new array schema from the given buffer
+// Deserialize deserializes the group from the given buffer
 func (g *Group) Deserialize(buffer *Buffer, serializationType SerializationType, clientSide bool) error {
 	var cClientSide C.int32_t
 	if clientSide {
@@ -492,4 +492,29 @@ func (g *Group) Dump(recurse bool) (string, error) {
 	}
 
 	return C.GoString(cOutput), nil
+}
+
+// SerializeGroupMetadata gets and serializes the group metadata
+func SerializeGroupMetadata(g *Group, serializationType SerializationType) (*Buffer, error) {
+	buffer := Buffer{context: g.context}
+	// Set finalizer for free C pointer on gc
+	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
+		buffer.Free()
+	})
+
+	ret := C.tiledb_serialize_group_metadata(g.context.tiledbContext, g.group, C.tiledb_serialization_type_t(serializationType), &buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error serializing group metadata: %s", g.context.LastError())
+	}
+
+	return &buffer, nil
+}
+
+// DeserializeGroupMetadata deserializes group metadata
+func DeserializeGroupMetadata(g *Group, buffer *Buffer, serializationType SerializationType) error {
+	ret := C.tiledb_deserialize_group_metadata(g.context.tiledbContext, g.group, C.tiledb_serialization_type_t(serializationType), buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deserializing group metadata: %s", g.context.LastError())
+	}
+	return nil
 }
