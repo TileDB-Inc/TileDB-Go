@@ -8,7 +8,9 @@
 package tiledb
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"runtime"
@@ -58,6 +60,16 @@ func (g *Group) Deserialize(buffer *Buffer, serializationType SerializationType,
 		cClientSide = 1
 	} else {
 		cClientSide = 0
+	}
+
+	b, err := buffer.Data()
+	if err != nil {
+		return errors.New("failed to retrieve bytes from buffer")
+	}
+
+	// cstrings are null terminated. Go's are not, add it as a suffix
+	if err := buffer.SetBuffer(append(b, []byte("\u0000")...)); err != nil {
+		return errors.New("failed to add null terminator to buffer")
 	}
 
 	ret := C.tiledb_deserialize_group(g.context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, g.group)
@@ -507,14 +519,33 @@ func SerializeGroupMetadata(g *Group, serializationType SerializationType) (*Buf
 		return nil, fmt.Errorf("Error serializing group metadata: %s", g.context.LastError())
 	}
 
+	b, err := buffer.Data()
+	if err != nil {
+		return nil, errors.New("failed to retrieve bytes from buffer")
+	}
+	// cstrings are null terminated. Go's are not, remove the suffix if it exists
+	if err := buffer.SetBuffer(bytes.TrimSuffix(b, []byte("\u0000"))); err != nil {
+		return nil, errors.New("failed to remove null terminator from buffer")
+	}
+
 	return &buffer, nil
 }
 
 // DeserializeGroupMetadata deserializes group metadata
 func DeserializeGroupMetadata(g *Group, buffer *Buffer, serializationType SerializationType) error {
+	b, err := buffer.Data()
+	if err != nil {
+		return errors.New("failed to retrieve bytes from buffer")
+	}
+	// cstrings are null terminated. Go's are not, add it as a suffix
+	if err := buffer.SetBuffer(append(b, []byte("\u0000")...)); err != nil {
+		return errors.New("failed to add null terminator to buffer")
+	}
+
 	ret := C.tiledb_deserialize_group_metadata(g.context.tiledbContext, g.group, C.tiledb_serialization_type_t(serializationType), buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error deserializing group metadata: %s", g.context.LastError())
 	}
+
 	return nil
 }
