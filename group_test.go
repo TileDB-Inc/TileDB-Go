@@ -114,17 +114,16 @@ func TestGroups_RemoveMembers(t *testing.T) {
 	require.NoError(t, group.RemoveMember(arrayPathToRemove))
 	require.NoError(t, group.Close())
 
-	require.NoError(t, group.Open(TILEDB_READ))
-	require.NoError(t, group.Close())
-
 	count, err = memberCount(group)
 	require.NoError(t, err)
 	require.EqualValues(t, uint64(1), count)
 
-	uri, objectType, err := group.GetMemberFromIndex(1)
+	require.NoError(t, group.Open(TILEDB_READ))
+	uri, objectType, err := group.GetMemberFromIndex(0)
 	require.NoError(t, err)
-	assert.EqualValues(t, uri, arrayPathToKeep)
+	assert.EqualValues(t, "file://"+arrayPathToKeep, uri)
 	assert.EqualValues(t, objectType, TILEDB_ARRAY)
+	require.NoError(t, group.Close())
 }
 
 func TestDeserializeGroup(t *testing.T) {
