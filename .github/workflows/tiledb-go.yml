@@ -8,19 +8,6 @@ on:
     branches: [ master ]
 
 jobs:
-# Jobs run in parallel
-  Go_fmt:
-    name: format
-    runs-on: ubuntu-20.04
-    steps:
-      # Checks out repository
-      - uses: actions/checkout@v2
-
-      # Checks TileDB-Go formatting
-      - name: Checks formatting of TileDB-Go code
-        run: ./.github/scripts/format.sh
-        shell: bash
-
   golangci:
     name: lint
     runs-on: ubuntu-20.04
@@ -47,7 +34,7 @@ jobs:
     strategy:
       matrix:
         # Will be checking following versions
-        go: ["1.16", "1.17"]
+        go: ["1.17", "1.18"]
     steps:
 
     # Checks out repository
@@ -87,7 +74,7 @@ jobs:
     strategy:
       matrix:
         # Will be checking following versions
-        go: ["1.16", "1.17"]
+        go: ["1.17", "1.18"]
     steps:
     # Checks out repository
     - uses: actions/checkout@v2
@@ -126,7 +113,7 @@ jobs:
     strategy:
       matrix:
         # Will be checking following versions
-        go: ["1.16", "1.17"]
+        go: ["1.17", "1.18"]
     steps:
 
     # Checks out repository
@@ -166,7 +153,7 @@ jobs:
     strategy:
       matrix:
         # Will be checking following versions
-        go: ["1.16", "1.17"]
+        go: ["1.17", "1.18"]
     steps:
     # Checks out repository
     - uses: actions/checkout@v2
@@ -205,7 +192,7 @@ jobs:
     strategy:
       matrix:
         # Will be checking following versions
-        go: [1.16]
+        go: [1.18]
     steps:
     # Checks out repository
     - uses: actions/checkout@v2
