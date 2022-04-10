@@ -45,8 +45,8 @@ import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 func ExampleRange() {
 	examples_lib.RunRange()
 
-	// Output: Error adding query range: [TileDB::Dimension] Error: Cannot add range to dimension; Lower range bound 1065353216 cannot be larger than the higher bound 4
-	// Error adding query range: [TileDB::Query] Error: Cannot add range; Invalid dimension index
+	// Error adding query range: [TileDB::Dimension] Error: Cannot add range to dimension; Lower range bound 1065353216 cannot be larger than the higher bound 4
+	// Error adding query range: [TileDB::Subarray] Error: Cannot add range; Invalid dimension index
 	// Number of ranges across dimension 0 is: 1
 	// Number of ranges across dimension `rows` is: 1
 	// Range start for dimension 0, range 0 is: 1
