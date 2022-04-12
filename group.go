@@ -142,15 +142,19 @@ func (g *Group) Config() (*Config, error) {
 	return &config, nil
 }
 
-func (g *Group) AddMember(uri string, isRelativeURI bool) error {
+func (g *Group) AddMember(uri, name string, isRelativeURI bool) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
+
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+
 	var cRelative C.uint8_t
 	if isRelativeURI {
 		cRelative = 1
 	}
 
-	ret := C.tiledb_group_add_member(g.context.tiledbContext, g.group, curi, cRelative)
+	ret := C.tiledb_group_add_member(g.context.tiledbContext, g.group, curi, cRelative, cname)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error adding member to group: %s", g.context.LastError())
 	}
@@ -378,22 +382,52 @@ func (g *Group) GetMemberCount() (uint64, error) {
 	return uint64(count), nil
 }
 
-func (g *Group) GetMemberFromIndex(index uint64) (string, ObjectTypeEnum, error) {
+func (g *Group) GetMemberFromIndex(index uint64) (string, string, ObjectTypeEnum, error) {
 	var curi *C.char
 	defer C.free(unsafe.Pointer(curi))
 
+	var cname *C.char
+	defer C.free(unsafe.Pointer(cname))
+
 	var objectTypeEnum C.tiledb_object_t
-	ret := C.tiledb_group_get_member_by_index(g.context.tiledbContext, g.group, C.uint64_t(index), &curi, &objectTypeEnum)
+	ret := C.tiledb_group_get_member_by_index(g.context.tiledbContext, g.group, C.uint64_t(index), &curi, &objectTypeEnum, &cname)
 	if ret != C.TILEDB_OK {
-		return "", TILEDB_INVALID, fmt.Errorf("Error getting member by index for group: %s", g.context.LastError())
+		return "", "", TILEDB_INVALID, fmt.Errorf("Error getting member by index for group: %s", g.context.LastError())
 	}
 
 	uri := C.GoString(curi)
 	if uri == "" {
-		return "", TILEDB_INVALID, fmt.Errorf("Error getting URI for member %d: uri is empty", index)
+		return "", "", TILEDB_INVALID, fmt.Errorf("Error getting URI for member %d: uri is empty", index)
 	}
 
-	return uri, ObjectTypeEnum(objectTypeEnum), nil
+	return uri, C.GoString(cname), ObjectTypeEnum(objectTypeEnum), nil
+}
+
+func (g *Group) GetMemberByName(name string) (string, string, ObjectTypeEnum, error) {
+	var curi *C.char
+	defer C.free(unsafe.Pointer(curi))
+
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+
+	var objectTypeEnum C.tiledb_object_t
+	ret := C.tiledb_group_get_member_by_name(g.context.tiledbContext, g.group, cname, &curi, &objectTypeEnum)
+	if ret != C.TILEDB_OK {
+		return "", "", TILEDB_INVALID, fmt.Errorf("Error getting member by index for group: %s", g.context.LastError())
+	}
+
+	uri := C.GoString(curi)
+	if uri == "" {
+		return "", "", TILEDB_INVALID, fmt.Errorf("Error getting URI for member %s: uri is empty", name)
+	}
+
+	if name == "" {
+		return "", "", TILEDB_INVALID, fmt.Errorf("Error getting name for member %s: name is empty", name)
+	}
+
+	name = C.GoString(cname)
+
+	return uri, name, ObjectTypeEnum(objectTypeEnum), nil
 }
 
 func (g *Group) GetMetadata(key string) (Datatype, uint, interface{}, error) {

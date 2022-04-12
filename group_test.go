@@ -119,10 +119,31 @@ func TestGroups_RemoveMembers(t *testing.T) {
 	require.EqualValues(t, uint64(1), count)
 
 	require.NoError(t, group.Open(TILEDB_READ))
-	uri, objectType, err := group.GetMemberFromIndex(0)
+	uri, name, objectType, err := group.GetMemberFromIndex(0)
 	require.NoError(t, err)
 	assert.EqualValues(t, "file://"+arrayPathToKeep, uri)
 	assert.EqualValues(t, objectType, TILEDB_ARRAY)
+	assert.EqualValues(t, name, arrayPathToKeep)
+	require.NoError(t, group.Close())
+}
+
+func TestGetMemberByName(t *testing.T) {
+	tdbCtx, err := NewContext(nil)
+	require.NoError(t, err)
+
+	group, err := createTestGroup(tdbCtx, t.TempDir())
+	require.NoError(t, err)
+
+	arraySchema := buildArraySchema(tdbCtx, t)
+	arrayPath1, arrayPath2 := t.TempDir(), t.TempDir()
+	require.NoError(t, addTwoArraysToGroup(tdbCtx, group, arraySchema, arrayPath1, arrayPath2))
+
+	require.NoError(t, group.Open(TILEDB_READ))
+	uri, name, objectType, err := group.GetMemberByName(arrayPath1)
+	require.NoError(t, err)
+	assert.EqualValues(t, "file://"+arrayPath1, uri)
+	assert.EqualValues(t, objectType, TILEDB_ARRAY)
+	assert.EqualValues(t, name, arrayPath1)
 	require.NoError(t, group.Close())
 }
 
@@ -131,6 +152,7 @@ func TestDeserializeGroup(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	buffer, err := NewBuffer(tdbCtx)
 	if err != nil {
 		t.Fatal(err)
@@ -141,11 +163,18 @@ func TestDeserializeGroup(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if err := setConfigForWrite(g, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	require.NoError(t, g.Create())
+
+	require.NoError(t, g.Open(TILEDB_WRITE))
 	if err := buffer.SetBuffer([]byte(`{
      "group": {
         "members": [
-           {"uri": "tiledb://namespace/name", "type": "ARRAY"},
-           {"uri": "tiledb://namespace/name2", "type": "GROUP"}
+           {"uri": "tiledb://namespace/name", "type": "ARRAY", "name": "array1"},
+           {"uri": "tiledb://namespace/name2", "type": "GROUP", "name": "group1"}
          ]
      }
 }`)); err != nil {
@@ -154,6 +183,11 @@ func TestDeserializeGroup(t *testing.T) {
 	if err := g.Deserialize(buffer, TILEDB_JSON, true); err != nil {
 		t.Fatalf("DeserializeGroup -> %v; expected no err", err)
 	}
+	require.NoError(t, g.Close())
+
+	count, err := memberCount(g)
+	require.NoError(t, err)
+	require.EqualValues(t, uint64(2), count)
 }
 
 func memberCount(group *Group) (uint64, error) {
@@ -212,11 +246,11 @@ func addTwoArraysToGroup(tdbCtx *Context, group *Group, arraySchema *ArraySchema
 		return err
 	}
 
-	if err := group.AddMember(array1.uri, false); err != nil {
+	if err := group.AddMember(array1.uri, arrayURI1, false); err != nil {
 		return err
 	}
 
-	if err := group.AddMember(array2.uri, false); err != nil {
+	if err := group.AddMember(array2.uri, arrayURI2, false); err != nil {
 		return err
 	}
 
