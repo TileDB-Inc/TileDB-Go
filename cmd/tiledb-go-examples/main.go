@@ -13,7 +13,6 @@ func main() {
 	examples_lib.RunConfig()
 	examples_lib.RunDeserializeSparseLayouts()
 	examples_lib.RunEncryptedArray()
-	examples_lib.RunErrors()
 	examples_lib.RunFiltersArray()
 	examples_lib.RunFragmentsConsolidationArray()
 	examples_lib.RunMultiAttributeArray()

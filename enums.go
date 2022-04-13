@@ -607,6 +607,25 @@ const (
 	TILEDB_ARRAY ObjectTypeEnum = C.TILEDB_ARRAY
 )
 
+// String returns string representation
+func (o ObjectTypeEnum) String() string {
+	var cname *C.char
+	C.tiledb_object_type_to_str(C.tiledb_object_t(o), &cname)
+	return C.GoString(cname)
+}
+
+// ObjectTypeFromString returns the internal representation of the object type
+func ObjectTypeFromString(s string) (ObjectTypeEnum, error) {
+	cname := C.CString(s)
+	defer C.free(unsafe.Pointer(cname))
+	var cObjType C.tiledb_object_t
+	ret := C.tiledb_object_type_from_str(cname, &cObjType)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("%q is not a recognized tiledb_object_t", s)
+	}
+	return ObjectTypeEnum(cObjType), nil
+}
+
 // WalkOrder
 type WalkOrder int8
 
