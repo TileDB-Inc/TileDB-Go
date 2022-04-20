@@ -18,7 +18,7 @@ import (
 )
 
 // SerializeArraySchema serializes an array schema
-func SerializeArraySchema(schema *ArraySchema, serializationType SerializationType, clientSide bool) (*Buffer, error) {
+func SerializeArraySchema(schema *ArraySchema, serializationType SerializationType, clientSide bool) ([]byte, error) {
 	var cClientSide C.int32_t
 	if clientSide {
 		cClientSide = 1
@@ -37,7 +37,7 @@ func SerializeArraySchema(schema *ArraySchema, serializationType SerializationTy
 		return nil, fmt.Errorf("Error serializing array schema: %s", schema.context.LastError())
 	}
 
-	return &buffer, nil
+	return buffer.Serialize(serializationType)
 }
 
 // DeserializeArraySchema deserializes a new array schema from the given buffer
@@ -68,7 +68,7 @@ func DeserializeArraySchema(buffer *Buffer, serializationType SerializationType,
 }
 
 // SerializeArrayNonEmptyDomain gets and serializes the array nonempty domain
-func SerializeArrayNonEmptyDomain(a *Array, serializationType SerializationType) (*Buffer, error) {
+func SerializeArrayNonEmptyDomain(a *Array, serializationType SerializationType) ([]byte, error) {
 	schema, err := a.Schema()
 	if err != nil {
 		return nil, err
@@ -106,7 +106,7 @@ func SerializeArrayNonEmptyDomain(a *Array, serializationType SerializationType)
 		return nil, fmt.Errorf("Error serializing array nonempty domain: %s", a.context.LastError())
 	}
 
-	return &buffer, nil
+	return buffer.Serialize(serializationType)
 }
 
 // DeserializeArrayNonEmptyDomain deserializes an array nonempty domain
@@ -217,7 +217,7 @@ func DeserializeArrayNonEmptyDomain(a *Array, buffer *Buffer, serializationType 
 }
 
 // SerializeArrayNonEmptyDomainAllDimensions gets and serializes the array nonempty domain
-func SerializeArrayNonEmptyDomainAllDimensions(a *Array, serializationType SerializationType) (*Buffer, error) {
+func SerializeArrayNonEmptyDomainAllDimensions(a *Array, serializationType SerializationType) ([]byte, error) {
 
 	buffer := Buffer{context: a.context}
 	// Set finalizer for free C pointer on gc
@@ -231,7 +231,7 @@ func SerializeArrayNonEmptyDomainAllDimensions(a *Array, serializationType Seria
 		return nil, fmt.Errorf("Error serializing array nonempty domain: %s", a.context.LastError())
 	}
 
-	return &buffer, nil
+	return buffer.Serialize(serializationType)
 }
 
 // DeserializeArrayNonEmptyDomainAllDimensions deserializes an array nonempty domain
@@ -247,7 +247,7 @@ func DeserializeArrayNonEmptyDomainAllDimensions(a *Array, buffer *Buffer, seria
 }
 
 // SerializeArrayMaxBufferSizes gets and serializes the array max buffer sizes for the given subarray
-func SerializeArrayMaxBufferSizes(a *Array, subarray interface{}, serializationType SerializationType) (*Buffer, error) {
+func SerializeArrayMaxBufferSizes(a *Array, subarray interface{}, serializationType SerializationType) ([]byte, error) {
 	// Create subarray void*
 	var cSubarray unsafe.Pointer
 	if reflect.TypeOf(subarray).Kind() != reflect.Slice {
@@ -306,7 +306,7 @@ func SerializeArrayMaxBufferSizes(a *Array, subarray interface{}, serializationT
 		return nil, fmt.Errorf("error serializing array max buffer sizes: %s", a.context.LastError())
 	}
 
-	return &buffer, nil
+	return buffer.Serialize(serializationType)
 }
 
 // SerializeQuery serializes a query
@@ -350,7 +350,7 @@ func DeserializeQuery(query *Query, buffer *Buffer, serializationType Serializat
 }
 
 // SerializeArrayMetadata gets and serializes the array metadata
-func SerializeArrayMetadata(a *Array, serializationType SerializationType) (*Buffer, error) {
+func SerializeArrayMetadata(a *Array, serializationType SerializationType) ([]byte, error) {
 	buffer := Buffer{context: a.context}
 	// Set finalizer for free C pointer on gc
 	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
@@ -362,7 +362,7 @@ func SerializeArrayMetadata(a *Array, serializationType SerializationType) (*Buf
 		return nil, fmt.Errorf("Error serializing array metadata: %s", a.context.LastError())
 	}
 
-	return &buffer, nil
+	return buffer.Serialize(serializationType)
 }
 
 // DeserializeArrayMetadata deserializes array metadata
@@ -375,7 +375,7 @@ func DeserializeArrayMetadata(a *Array, buffer *Buffer, serializationType Serial
 }
 
 // SerializeQueryEstResultSizes gets and serializes the query estimated result sizes
-func SerializeQueryEstResultSizes(q *Query, serializationType SerializationType, clientSide bool) (*Buffer, error) {
+func SerializeQueryEstResultSizes(q *Query, serializationType SerializationType, clientSide bool) ([]byte, error) {
 	var cClientSide C.int32_t
 	if clientSide {
 		cClientSide = 1
@@ -394,7 +394,7 @@ func SerializeQueryEstResultSizes(q *Query, serializationType SerializationType,
 		return nil, fmt.Errorf("Error serializing query est buffer sizes: %s", q.context.LastError())
 	}
 
-	return &buffer, nil
+	return buffer.Serialize(serializationType)
 }
 
 // DeserializeQueryEstResultSizes deserializes query estimated result sizes

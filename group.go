@@ -8,7 +8,6 @@
 package tiledb
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -62,7 +61,7 @@ func (g *Group) Deserialize(buffer *Buffer, serializationType SerializationType,
 		cClientSide = 0
 	}
 
-	b, err := buffer.Data()
+	b, err := buffer.bytes()
 	if err != nil {
 		return errors.New("failed to retrieve bytes from buffer")
 	}
@@ -541,7 +540,7 @@ func (g *Group) Dump(recurse bool) (string, error) {
 }
 
 // SerializeGroupMetadata gets and serializes the group metadata
-func SerializeGroupMetadata(g *Group, serializationType SerializationType) (*Buffer, error) {
+func SerializeGroupMetadata(g *Group, serializationType SerializationType) ([]byte, error) {
 	buffer := Buffer{context: g.context}
 	// Set finalizer for free C pointer on gc
 	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
@@ -553,21 +552,12 @@ func SerializeGroupMetadata(g *Group, serializationType SerializationType) (*Buf
 		return nil, fmt.Errorf("Error serializing group metadata: %s", g.context.LastError())
 	}
 
-	b, err := buffer.Data()
-	if err != nil {
-		return nil, errors.New("failed to retrieve bytes from buffer")
-	}
-	// cstrings are null terminated. Go's are not, remove the suffix if it exists
-	if err := buffer.SetBuffer(bytes.TrimSuffix(b, []byte("\u0000"))); err != nil {
-		return nil, errors.New("failed to remove null terminator from buffer")
-	}
-
-	return &buffer, nil
+	return buffer.Serialize(serializationType)
 }
 
 // DeserializeGroupMetadata deserializes group metadata
 func DeserializeGroupMetadata(g *Group, buffer *Buffer, serializationType SerializationType) error {
-	b, err := buffer.Data()
+	b, err := buffer.bytes()
 	if err != nil {
 		return errors.New("failed to retrieve bytes from buffer")
 	}

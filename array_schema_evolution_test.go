@@ -80,11 +80,16 @@ func TestArraySchemaEvolution(t *testing.T) {
 	// Remove atrribute a1
 	require.NoError(t, arraySchemaEvolution.DropAttribute("a1"))
 
-	buffer, err := SerializeArraySchemaEvolution(arraySchemaEvolution,
+	bs, err := SerializeArraySchemaEvolution(arraySchemaEvolution,
 		TILEDB_CAPNP, true)
 	require.NoError(t, err)
 
-	newArraySchemaEvolution, err := DeserializeArraySchemaEvolution(buffer,
+	buff, err := NewBuffer(context)
+
+	err = buff.SetBuffer(bs)
+	require.NoError(t, err)
+
+	newArraySchemaEvolution, err := DeserializeArraySchemaEvolution(buff,
 		TILEDB_CAPNP, true)
 	require.NoError(t, err)
 

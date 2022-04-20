@@ -8,6 +8,7 @@ package tiledb
 */
 import "C"
 import (
+	"bytes"
 	"fmt"
 	"runtime"
 	"unsafe"
@@ -77,8 +78,49 @@ func (b *Buffer) Type() (Datatype, error) {
 	return Datatype(bufferType), nil
 }
 
-// Data returns a byte slice backed by the underlying C memory region of the buffer
-func (b *Buffer) Data() ([]byte, error) {
+func (b *Buffer) Serialize(serializationType SerializationType) ([]byte, error) {
+	switch serializationType {
+	case TILEDB_CAPNP:
+		return b.asCapnp()
+	case TILEDB_JSON:
+		return b.asJSON()
+	default:
+		return nil, fmt.Errorf("unsupported serialization type: %v", serializationType)
+	}
+}
+
+func (b *Buffer) asJSON() ([]byte, error) {
+	bs, err := b.bytes()
+	if err != nil {
+		return nil, err
+	}
+	// cstrings are null terminated. Go's are not, remove it
+	return bytes.TrimSuffix(bs, []byte("\u0000")), nil
+}
+
+func (b *Buffer) asCapnp() ([]byte, error) {
+	// Create a full copy of the byte slice, as the Buffer object owns the memory.
+	bs, err := b.bytes()
+	if err != nil {
+		return nil, err
+	}
+	return bs, nil
+}
+
+// SetBuffer sets the data pointer and size on the Buffer to the given slice
+func (b *Buffer) SetBuffer(buffer []byte) error {
+	bufferSize := len(buffer)
+
+	ret := C.tiledb_buffer_set_data(b.context.tiledbContext, b.tiledbBuffer, unsafe.Pointer(&buffer[0]), C.uint64_t(bufferSize))
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error setting tiledb buffer: %s", b.context.LastError())
+	}
+
+	return nil
+}
+
+// bytes returns a byte slice backed by the underlying C memory region of the buffer
+func (b *Buffer) bytes() ([]byte, error) {
 	var cbuffer unsafe.Pointer
 	var csize C.uint64_t
 
@@ -89,20 +131,13 @@ func (b *Buffer) Data() ([]byte, error) {
 
 	if cbuffer == nil {
 		return nil, nil
-	} else {
-		size := uint64(csize)
-		return (*[1 << 46]uint8)(unsafe.Pointer(cbuffer))[:size:size], nil
-	}
-}
-
-// SetType sets the data pointer and size on the Buffer to the given slice
-func (b *Buffer) SetBuffer(buffer []byte) error {
-	bufferSize := len(buffer)
-
-	ret := C.tiledb_buffer_set_data(b.context.tiledbContext, b.tiledbBuffer, unsafe.Pointer(&buffer[0]), C.uint64_t(bufferSize))
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting tiledb buffer: %s", b.context.LastError())
 	}
 
-	return nil
+	size := uint64(csize)
+	bs := (*[1 << 46]uint8)(unsafe.Pointer(cbuffer))[:size:size]
+
+	cpy := make([]byte, len(bs))
+	copy(cpy, bs)
+	runtime.KeepAlive(b)
+	return cpy, nil
 }

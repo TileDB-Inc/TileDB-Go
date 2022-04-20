@@ -24,7 +24,7 @@ func ExampleNewBuffer() {
 	}
 
 	// Get data slice
-	bytes, err := buffer.Data()
+	bytes, err := buffer.bytes()
 	if err != nil {
 		// Handle error
 		return
@@ -42,7 +42,7 @@ func TestNewBuffer(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, buffer)
 
-	bytes, err := buffer.Data()
+	bytes, err := buffer.bytes()
 	require.NoError(t, err)
 	assert.Nil(t, bytes)
 

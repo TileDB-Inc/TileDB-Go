@@ -1359,7 +1359,7 @@ func TestDenseQueryWrite(t *testing.T) {
 	bufferA5 := "hello" + "world"
 	offsetBufferA5 := []uint64{0, 5}
 	// Second string array so we can compare reads
-	bufferA5Comparison := make([]byte, len(bufferA5)) //new(string, len(bufferA5))
+	bufferA5Comparison := make([]byte, len(bufferA5)) // new(string, len(bufferA5))
 	elementsCopied = copy(bufferA5Comparison, bufferA5)
 	assert.Equal(t, len(bufferA5), elementsCopied)
 	assert.EqualValues(t, bufferA5, bufferA5Comparison)
@@ -1469,7 +1469,7 @@ func TestDenseQueryWrite(t *testing.T) {
 	_, _, err = query.SetBufferVar("a4", readOffsetBufferA4, readBufferA4)
 	require.NoError(t, err)
 
-	readBufferA5 := make([]byte, 10) //make(string, 10)
+	readBufferA5 := make([]byte, 10) // make(string, 10)
 	readOffsetBufferA5 := make([]uint64, 2)
 	_, _, err = query.SetBufferVar("a5", readOffsetBufferA5, readBufferA5)
 	require.NoError(t, err)
@@ -1651,8 +1651,8 @@ func TestSparseQueryWrite(t *testing.T) {
 	assert.NotNil(t, query)
 
 	// Set read subarray to only data that was written
-	//err = query.SetSubArray(subArray)
-	//require.NoError(t, err)
+	// err = query.SetSubArray(subArray)
+	// require.NoError(t, err)
 
 	// Set coordinates, since test is 1d, this is subarray
 	_, err = query.SetBuffer("dim1", subArray)
