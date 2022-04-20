@@ -33,30 +33,11 @@ type ArraySchema struct {
 
 // MarshalJSON marshal arraySchema struct to json using tiledb
 func (a *ArraySchema) MarshalJSON() ([]byte, error) {
-	clientSide := false // Currently this parameter is unused in libtiledb
-	buffer, err := SerializeArraySchema(a, TILEDB_JSON, clientSide)
+	bs, err := SerializeArraySchema(a, TILEDB_JSON, false)
 	if err != nil {
 		return nil, fmt.Errorf("Error marshaling json for array schema: %s", a.context.LastError())
 	}
-
-	bytes, err := buffer.Data()
-	if err != nil {
-		return nil, fmt.Errorf("Error marshaling json for array schema: %s", buffer.context.LastError())
-	}
-
-	// Create a full copy of the byte slice, as the Buffer object owns the memory.
-	size := len(bytes)
-	cpy := make([]byte, size)
-
-	copy(cpy, bytes)
-
-	// Check if the last character is a null byte, if so remove it from the slice
-	if cpy[size-1] == 0 {
-		cpy = cpy[:size-1]
-	}
-
-	runtime.KeepAlive(buffer)
-	return cpy, nil
+	return bs, nil
 }
 
 // Context exposes the internal TileDB context used to initialize the array schema

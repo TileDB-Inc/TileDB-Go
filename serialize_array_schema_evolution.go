@@ -22,7 +22,7 @@ import (
 )
 
 // SerializeArraySchemaEvolution serializes the given array schema evolution
-func SerializeArraySchemaEvolution(arraySchemaEvolution *ArraySchemaEvolution, serializationType SerializationType, clientSide bool) (*Buffer, error) {
+func SerializeArraySchemaEvolution(arraySchemaEvolution *ArraySchemaEvolution, serializationType SerializationType, clientSide bool) ([]byte, error) {
 	var cClientSide C.int32_t
 	if clientSide {
 		cClientSide = 1
@@ -46,7 +46,7 @@ func SerializeArraySchemaEvolution(arraySchemaEvolution *ArraySchemaEvolution, s
 			arraySchemaEvolution.context.LastError())
 	}
 
-	return &buffer, nil
+	return buffer.Serialize(serializationType)
 }
 
 // DeserializeArraySchemaEvolution deserializes a new array schema evolution object from the given buffer
