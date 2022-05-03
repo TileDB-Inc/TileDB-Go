@@ -23,6 +23,23 @@ import (
 type Buffer struct {
 	tiledbBuffer *C.tiledb_buffer_t
 	context      *Context
+
+	// goBytesSet is a reference to the last Go slice that the buffer was set to.
+	//
+	// Buffer technically violates the contract of CGo, by passing []byte slices
+	// to C code, which holds onto it long after the CGo call has returned.
+	// This means that, without keeping this around, Go thinks it can collect
+	// the store that we've passed in:
+	//
+	//     someBytes := getSomeBytes()
+	//     buf.SetBuffer(someBytes)
+	//     // if it's not referenced later, someBytes might now be collected!
+	//
+	// By holding onto this reference here, we shield the caller from this
+	// happening to them. This is still unsafe per the language spec, but because
+	// the Go garbage collector (as of v1.18) does not move objects around,
+	// this is not THAT dangerous at runtime.
+	goBytesSet []byte
 }
 
 // NewBuffer Allocs a new buffer
@@ -52,6 +69,7 @@ func NewBuffer(context *Context) (*Buffer, error) {
 // can safely be called many times on the same object; if it has already
 // been freed, it will not be freed again.
 func (b *Buffer) Free() {
+	b.goBytesSet = nil
 	if b.tiledbBuffer != nil {
 		C.tiledb_buffer_free(&b.tiledbBuffer)
 	}
@@ -83,37 +101,27 @@ func (b *Buffer) Type() (Datatype, error) {
 	return Datatype(bufferType), nil
 }
 
+// Serialize returns a copy of the bytes in the buffer.
 func (b *Buffer) Serialize(serializationType SerializationType) ([]byte, error) {
+	bs, err := b.dataCopy()
+	if err != nil {
+		return nil, err
+	}
 	switch serializationType {
 	case TILEDB_CAPNP:
-		return b.asCapnp()
+		// The entire byte array contains Cap'nP data. Don't bother it.
 	case TILEDB_JSON:
-		return b.asJSON()
+		// The data is a null-terminated string. Strip off the terminator.
+		bs = bytes.TrimSuffix(bs, []byte{0})
 	default:
 		return nil, fmt.Errorf("unsupported serialization type: %v", serializationType)
-	}
-}
-
-func (b *Buffer) asJSON() ([]byte, error) {
-	bs, err := b.bytes()
-	if err != nil {
-		return nil, err
-	}
-	// cstrings are null terminated. Go's are not, remove it
-	return bytes.TrimSuffix(bs, []byte("\u0000")), nil
-}
-
-func (b *Buffer) asCapnp() ([]byte, error) {
-	// Create a full copy of the byte slice, as the Buffer object owns the memory.
-	bs, err := b.bytes()
-	if err != nil {
-		return nil, err
 	}
 	return bs, nil
 }
 
 // SetBuffer sets the data pointer and size on the Buffer to the given slice
 func (b *Buffer) SetBuffer(buffer []byte) error {
+	b.goBytesSet = buffer
 	bufferSize := len(buffer)
 
 	ret := C.tiledb_buffer_set_data(b.context.tiledbContext, b.tiledbBuffer, unsafe.Pointer(&buffer[0]), C.uint64_t(bufferSize))
@@ -124,8 +132,8 @@ func (b *Buffer) SetBuffer(buffer []byte) error {
 	return nil
 }
 
-// bytes returns a byte slice backed by the underlying C memory region of the buffer
-func (b *Buffer) bytes() ([]byte, error) {
+// dataCopy returns a copy of the bytes stored in the buffer.
+func (b *Buffer) dataCopy() ([]byte, error) {
 	var cbuffer unsafe.Pointer
 	var csize C.uint64_t
 
