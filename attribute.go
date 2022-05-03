@@ -11,7 +11,6 @@ import "C"
 import (
 	"fmt"
 	"os"
-	"runtime"
 	"unsafe"
 )
 
@@ -39,11 +38,7 @@ func NewAttribute(context *Context, name string, datatype Datatype) (*Attribute,
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb attribute: %s", context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&attribute, func(attribute *Attribute) {
-		attribute.Free()
-	})
+	freeOnGC(&attribute)
 
 	return &attribute, nil
 }
@@ -80,11 +75,7 @@ func (a *Attribute) FilterList() (*FilterList, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting tiledb attribute filter list: %s", a.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&filterList, func(filterList *FilterList) {
-		filterList.Free()
-	})
+	freeOnGC(&filterList)
 
 	return &filterList, nil
 }

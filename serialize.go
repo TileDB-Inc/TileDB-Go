@@ -13,7 +13,6 @@ import "C"
 import (
 	"fmt"
 	"reflect"
-	"runtime"
 	"unsafe"
 )
 
@@ -27,10 +26,7 @@ func SerializeArraySchema(schema *ArraySchema, serializationType SerializationTy
 	}
 
 	buffer := Buffer{context: schema.context}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
-		buffer.Free()
-	})
+	freeOnGC(&buffer)
 
 	ret := C.tiledb_serialize_array_schema(schema.context.tiledbContext, schema.tiledbArraySchema, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
@@ -56,13 +52,10 @@ func DeserializeArraySchema(buffer *Buffer, serializationType SerializationType,
 		return nil, fmt.Errorf("Error deserializing array schema: %s", schema.context.LastError())
 	}
 
-	// Set finalizer for free C pointer on gc
 	// This needs to happen *after* the tiledb_deserialize_array_schema call
 	// because that may leave the arraySchema with a non-nil pointer
 	// to already-freed memory.
-	runtime.SetFinalizer(&schema, func(arraySchema *ArraySchema) {
-		arraySchema.Free()
-	})
+	freeOnGC(&schema)
 
 	return &schema, nil
 }
@@ -95,10 +88,7 @@ func SerializeArrayNonEmptyDomain(a *Array, serializationType SerializationType)
 	}
 
 	buffer := Buffer{context: schema.context}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
-		buffer.Free()
-	})
+	freeOnGC(&buffer)
 
 	var cClientSide = C.int32_t(0) // Currently this parameter is unused in libtiledb
 	ret = C.tiledb_serialize_array_nonempty_domain(a.context.tiledbContext, a.tiledbArray, unsafe.Pointer(&tmpDomain[0]), isEmpty, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
@@ -195,10 +185,7 @@ func DeserializeArrayNonEmptyDomain(a *Array, buffer *Buffer, serializationType 
 func SerializeArrayNonEmptyDomainAllDimensions(a *Array, serializationType SerializationType) ([]byte, error) {
 
 	buffer := Buffer{context: a.context}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
-		buffer.Free()
-	})
+	freeOnGC(&buffer)
 
 	var cClientSide = C.int32_t(0) // Currently this parameter is unused in libtiledb
 	ret := C.tiledb_serialize_array_non_empty_domain_all_dimensions(a.context.tiledbContext, a.tiledbArray, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
@@ -260,10 +247,7 @@ func SerializeArrayMaxBufferSizes(a *Array, subarray interface{}, serializationT
 	}
 
 	buffer := Buffer{context: a.context}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
-		buffer.Free()
-	})
+	freeOnGC(&buffer)
 
 	ret := C.tiledb_serialize_array_max_buffer_sizes(a.context.tiledbContext, a.tiledbArray, cSubarray, C.tiledb_serialization_type_t(serializationType), &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
@@ -276,10 +260,7 @@ func SerializeArrayMaxBufferSizes(a *Array, subarray interface{}, serializationT
 // SerializeQuery serializes a query
 func SerializeQuery(query *Query, serializationType SerializationType, clientSide bool) (*BufferList, error) {
 	bufferList := BufferList{context: query.context}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&bufferList, func(bufferList *BufferList) {
-		bufferList.Free()
-	})
+	freeOnGC(&bufferList)
 
 	var cClientSide C.int32_t
 	if clientSide {
@@ -316,10 +297,7 @@ func DeserializeQuery(query *Query, buffer *Buffer, serializationType Serializat
 // SerializeArrayMetadata gets and serializes the array metadata
 func SerializeArrayMetadata(a *Array, serializationType SerializationType) ([]byte, error) {
 	buffer := Buffer{context: a.context}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
-		buffer.Free()
-	})
+	freeOnGC(&buffer)
 
 	ret := C.tiledb_serialize_array_metadata(a.context.tiledbContext, a.tiledbArray, C.tiledb_serialization_type_t(serializationType), &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
@@ -348,10 +326,7 @@ func SerializeQueryEstResultSizes(q *Query, serializationType SerializationType,
 	}
 
 	buffer := Buffer{context: q.context}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
-		buffer.Free()
-	})
+	freeOnGC(&buffer)
 
 	ret := C.tiledb_serialize_query_est_result_sizes(q.context.tiledbContext, q.tiledbQuery, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {

@@ -10,7 +10,6 @@ import "C"
 
 import (
 	"fmt"
-	"runtime"
 )
 
 // FilterList represents
@@ -27,11 +26,7 @@ func NewFilterList(context *Context) (*FilterList, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb FilterList: %s", filterList.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&filterList, func(filterList *FilterList) {
-		filterList.Free()
-	})
+	freeOnGC(&filterList)
 
 	return &filterList, nil
 }
@@ -98,10 +93,7 @@ func (f *FilterList) FilterFromIndex(index uint32) (*Filter, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error fetching filter for index %d from tiledb FilterList: %s", index, f.context.LastError())
 	}
-
-	runtime.SetFinalizer(&filter, func(filter *Filter) {
-		filter.Free()
-	})
+	freeOnGC(&filter)
 	return &filter, nil
 }
 

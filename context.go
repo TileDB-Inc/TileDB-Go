@@ -36,11 +36,7 @@ func NewContext(config *Config) (*Context, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb context: %w", context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&context, func(context *Context) {
-		context.Free()
-	})
+	freeOnGC(&context)
 
 	err := context.setDefaultTags()
 	if err != nil {
@@ -102,11 +98,7 @@ func (c *Context) Config() (*Config, error) {
 	} else if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Unknown error in GetConfig")
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&config, func(config *Config) {
-		config.Free()
-	})
+	freeOnGC(&config)
 
 	return &config, nil
 }

@@ -18,7 +18,6 @@ import "C"
 
 import (
 	"fmt"
-	"runtime"
 )
 
 // SerializeArraySchemaEvolution serializes the given array schema evolution
@@ -31,10 +30,7 @@ func SerializeArraySchemaEvolution(arraySchemaEvolution *ArraySchemaEvolution, s
 	}
 
 	buffer := Buffer{context: arraySchemaEvolution.context}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
-		buffer.Free()
-	})
+	freeOnGC(&buffer)
 
 	ret := C.tiledb_serialize_array_schema_evolution(
 		arraySchemaEvolution.context.tiledbContext,
@@ -68,13 +64,10 @@ func DeserializeArraySchemaEvolution(buffer *Buffer, serializationType Serializa
 		return nil, fmt.Errorf("Error deserializing array schema evolution: %s", arraySchemaEvolution.context.LastError())
 	}
 
-	// Set finalizer for free C pointer on gc
 	// This needs to happen *after* the tiledb_deserialize_array_schema_evolution
 	// call because that may leave the schemaEvolution with a non-nil pointer
 	// to already-freed memory.
-	runtime.SetFinalizer(&arraySchemaEvolution, func(arraySchemaEvolution *ArraySchemaEvolution) {
-		arraySchemaEvolution.Free()
-	})
+	freeOnGC(&arraySchemaEvolution)
 
 	return &arraySchemaEvolution, nil
 }

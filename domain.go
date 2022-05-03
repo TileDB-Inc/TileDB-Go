@@ -11,7 +11,6 @@ import "C"
 import (
 	"fmt"
 	"os"
-	"runtime"
 	"unsafe"
 )
 
@@ -31,11 +30,7 @@ func NewDomain(tdbCtx *Context) (*Domain, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb domain: %s", domain.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&domain, func(domain *Domain) {
-		domain.Free()
-	})
+	freeOnGC(&domain)
 
 	return &domain, nil
 }
@@ -86,10 +81,7 @@ func (d *Domain) DimensionFromIndex(index uint) (*Dimension, error) {
 	}
 
 	dimension := Dimension{tiledbDimension: dim, context: d.context}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&dimension, func(dimension *Dimension) {
-		dimension.Free()
-	})
+	freeOnGC(&dimension)
 
 	return &dimension, nil
 }
@@ -104,10 +96,7 @@ func (d *Domain) DimensionFromName(name string) (*Dimension, error) {
 		return nil, fmt.Errorf("Error getting tiledb dimension by name for domain: %s", d.context.LastError())
 	}
 	dimension := Dimension{tiledbDimension: dim, context: d.context}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&dimension, func(dimension *Dimension) {
-		dimension.Free()
-	})
+	freeOnGC(&dimension)
 	return &dimension, nil
 }
 

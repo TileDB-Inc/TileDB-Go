@@ -10,7 +10,6 @@ import "C"
 
 import (
 	"fmt"
-	"runtime"
 	"unsafe"
 )
 
@@ -30,10 +29,7 @@ func NewConfig() (*Config, error) {
 		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("error creating tiledb config: %s", C.GoString(msg))
 	}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&config, func(config *Config) {
-		config.Free()
-	})
+	freeOnGC(&config)
 
 	return &config, nil
 }
@@ -137,11 +133,7 @@ func LoadConfig(uri string) (*Config, error) {
 		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("error loading config from file %s: %s", uri, C.GoString(msg))
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&config, func(config *Config) {
-		config.Free()
-	})
+	freeOnGC(&config)
 
 	return &config, nil
 }

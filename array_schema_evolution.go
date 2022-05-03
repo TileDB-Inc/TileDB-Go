@@ -18,7 +18,6 @@ import "C"
 import (
 	"errors"
 	"fmt"
-	"runtime"
 	"unsafe"
 )
 
@@ -37,12 +36,7 @@ func NewArraySchemaEvolution(tdbCtx *Context) (*ArraySchemaEvolution, error) {
 		return nil, fmt.Errorf("error creating tiledb arraySchemaEvolution: %s",
 			arraySchemaEvolution.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&arraySchemaEvolution,
-		func(arraySchemaEvolution *ArraySchemaEvolution) {
-			arraySchemaEvolution.Free()
-		})
+	freeOnGC(&arraySchemaEvolution)
 
 	return &arraySchemaEvolution, nil
 }

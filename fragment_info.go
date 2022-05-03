@@ -10,7 +10,6 @@ import "C"
 
 import (
 	"fmt"
-	"runtime"
 	"unsafe"
 )
 
@@ -38,11 +37,7 @@ func NewFragmentInfo(tdbCtx *Context, uri string) (*FragmentInfo, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb fragment info: %s", fI.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&fI, func(fragmentInfo *FragmentInfo) {
-		fragmentInfo.Free()
-	})
+	freeOnGC(&fI)
 
 	return &fI, nil
 }

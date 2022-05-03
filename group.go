@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"runtime"
 	"unsafe"
 )
 
@@ -41,11 +40,7 @@ func NewGroup(tdbCtx *Context, uri string) (*Group, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb group: %s", group.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&group, func(group *Group) {
-		group.Free()
-	})
+	freeOnGC(&group)
 
 	return &group, nil
 }
@@ -127,10 +122,7 @@ func (g *Group) Config() (*Config, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting config from query: %s", g.context.LastError())
 	}
-
-	runtime.SetFinalizer(&config, func(config *Config) {
-		config.Free()
-	})
+	freeOnGC(&config)
 
 	if g.config == nil {
 		g.config = &config
@@ -449,10 +441,7 @@ func (g *Group) Dump(recurse bool) (string, error) {
 // SerializeGroupMetadata gets and serializes the group metadata
 func SerializeGroupMetadata(g *Group, serializationType SerializationType) ([]byte, error) {
 	buffer := Buffer{context: g.context}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
-		buffer.Free()
-	})
+	freeOnGC(&buffer)
 
 	ret := C.tiledb_serialize_group_metadata(g.context.tiledbContext, g.group, C.tiledb_serialization_type_t(serializationType), &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {

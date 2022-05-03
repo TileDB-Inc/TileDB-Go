@@ -9,7 +9,6 @@ package tiledb
 import "C"
 import (
 	"fmt"
-	"runtime"
 )
 
 // BufferList A list of TileDB BufferList objects
@@ -26,11 +25,7 @@ func NewBufferList(context *Context) (*BufferList, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb buffer list: %s", bufferList.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&bufferList, func(bufferList *BufferList) {
-		bufferList.Free()
-	})
+	freeOnGC(&bufferList)
 
 	return &bufferList, nil
 }
@@ -66,10 +61,7 @@ func (b *BufferList) NumBuffers() (uint64, error) {
 // GetBuffer returns a Buffer at the given index in the list
 func (b *BufferList) GetBuffer(bufferIndex uint) (*Buffer, error) {
 	buffer := Buffer{context: b.context}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
-		buffer.Free()
-	})
+	freeOnGC(&buffer)
 
 	ret := C.tiledb_buffer_list_get_buffer(b.context.tiledbContext, b.tiledbBufferList, C.uint64_t(bufferIndex), &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
@@ -94,10 +86,7 @@ func (b *BufferList) TotalSize() (uint64, error) {
 // Flatten copies and concatenates all buffers in the list into a new buffer
 func (b *BufferList) Flatten() (*Buffer, error) {
 	buffer := Buffer{context: b.context}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
-		buffer.Free()
-	})
+	freeOnGC(&buffer)
 
 	ret := C.tiledb_buffer_list_flatten(b.context.tiledbContext, b.tiledbBufferList, &buffer.tiledbBuffer)
 

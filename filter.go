@@ -10,7 +10,6 @@ import "C"
 
 import (
 	"fmt"
-	"runtime"
 	"unsafe"
 )
 
@@ -28,11 +27,7 @@ func NewFilter(context *Context, filterType FilterType) (*Filter, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb filter: %s", filter.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&filter, func(filter *Filter) {
-		filter.Free()
-	})
+	freeOnGC(&filter)
 
 	return &filter, nil
 }

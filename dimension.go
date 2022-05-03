@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"runtime"
 	"strconv"
 	"unsafe"
 )
@@ -211,11 +210,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb dimension: %s", context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&dimension, func(dimension *Dimension) {
-		dimension.Free()
-	})
+	freeOnGC(&dimension)
 
 	return &dimension, nil
 }
@@ -235,11 +230,7 @@ func NewStringDimension(context *Context, name string) (*Dimension, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb dimension: %s", context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&dimension, func(dimension *Dimension) {
-		dimension.Free()
-	})
+	freeOnGC(&dimension)
 
 	return &dimension, nil
 }
@@ -276,11 +267,7 @@ func (d *Dimension) FilterList() (*FilterList, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting tiledb dimension filter list: %s", d.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&filterList, func(filterList *FilterList) {
-		filterList.Free()
-	})
+	freeOnGC(&filterList)
 
 	return &filterList, nil
 }
