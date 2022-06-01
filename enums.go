@@ -112,6 +112,8 @@ const (
 	TILEDB_TIME_FS Datatype = C.TILEDB_TIME_FS
 	// TILEDB_TIME_AS 64-bit signed integer representing as
 	TILEDB_TIME_AS Datatype = C.TILEDB_TIME_AS
+	// TILEDB_BLOB 8-bit unsigned integer (or std::byte)
+	TILEDB_BLOB Datatype = C.TILEDB_BLOB
 )
 
 // String returns string representation
@@ -165,7 +167,7 @@ func (d Datatype) ReflectKind() reflect.Kind {
 		return reflect.Int32
 	case TILEDB_INT64:
 		return reflect.Int64
-	case TILEDB_UINT8:
+	case TILEDB_UINT8, TILEDB_BLOB:
 		return reflect.Uint8
 	case TILEDB_UINT16:
 		return reflect.Uint16
@@ -224,7 +226,7 @@ func (d Datatype) MakeSlice(numElements uint64) (interface{}, unsafe.Pointer, er
 		slice := make([]int64, numElements)
 		return slice, unsafe.Pointer(&slice[0]), nil
 
-	case TILEDB_UINT8, TILEDB_CHAR, TILEDB_STRING_ASCII, TILEDB_STRING_UTF8:
+	case TILEDB_UINT8, TILEDB_CHAR, TILEDB_STRING_ASCII, TILEDB_STRING_UTF8, TILEDB_BLOB:
 		slice := make([]uint8, numElements)
 		return slice, unsafe.Pointer(&slice[0]), nil
 
@@ -308,7 +310,7 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 			return tmpValue, nil
 		}
 		return *(*int64)(cvalue), nil
-	case TILEDB_UINT8:
+	case TILEDB_UINT8, TILEDB_BLOB:
 		if cvalue == nil {
 			return uint8(0), nil
 		}
