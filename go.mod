@@ -3,6 +3,7 @@ module github.com/TileDB-Inc/TileDB-Go
 require (
 	github.com/mattn/go-pointer v0.0.1
 	github.com/stretchr/testify v1.6.1
+	go4.org/unsafe/assume-no-moving-gc v0.0.0-20220617031537-928513b29760
 )
 
 require (
