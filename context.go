@@ -27,40 +27,20 @@ type Context struct {
 // NewContext creates a TileDB context with the given configuration
 // If the configuration passed is null it is created with default config
 func NewContext(config *Config) (*Context, error) {
-	var context Context
-	var ret C.int32_t
-	var tdbErr *C.tiledb_error_t
-	if config != nil {
-		ret = C.tiledb_ctx_alloc_with_error(config.tiledbConfig, &context.tiledbContext, &tdbErr)
-	} else {
-		ret = C.tiledb_ctx_alloc_with_error(nil, &context.tiledbContext, &tdbErr)
+	context, err := makeContext(config)
+	if err != nil {
+		return nil, err
 	}
-	if ret != C.TILEDB_OK {
-		// If the error isn't null report this
-		if tdbErr != nil {
-			var msg *C.char
-			C.tiledb_error_message(tdbErr, &msg)
-			defer C.tiledb_error_free(&tdbErr)
-			return nil, fmt.Errorf("error creating tiledb context: %s", C.GoString(msg))
-		}
-		// If the context is not null see if the error exists there
-		if context.tiledbContext != nil {
-			return nil, fmt.Errorf("error creating tiledb context: %w", context.LastError())
-		}
-		return nil, fmt.Errorf("error creating tiledb context: unknown error")
-	}
-
 	// Set finalizer for free C pointer on gc
 	runtime.SetFinalizer(&context, func(context *Context) {
 		context.Free()
 	})
 
-	err := context.setDefaultTags()
-	if err != nil {
+	if err := context.setDefaultTags(); err != nil {
 		return nil, fmt.Errorf("error creating tiledb context: %w", err)
 	}
 
-	return &context, nil
+	return context, nil
 }
 
 // NewContextFromMap creates a TileDB context with the given configuration.
