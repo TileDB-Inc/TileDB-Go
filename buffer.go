@@ -12,6 +12,11 @@ import (
 	"fmt"
 	"runtime"
 	"unsafe"
+
+	// Much of this package relies on the fact that the Go GC is non-moving.
+	// When we move to a new Go version, this dependency should be updated
+	// to ensure that the new version is still a non-moving GC.
+	_ "go4.org/unsafe/assume-no-moving-gc"
 )
 
 // Buffer A generic Buffer object used by some TileDB APIs
