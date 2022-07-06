@@ -349,6 +349,15 @@ func (g *Group) PutMetadata(key string, value interface{}) error {
 		if valueNum > 0 {
 			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(cTmpValue))
 		}
+	case reflect.Bool:
+		datatype = TILEDB_BOOL
+		if isSliceValue {
+			tmpValue := value.([]bool)
+			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
+		} else {
+			tmpValue := value.(bool)
+			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
+		}
 	default:
 		if isSliceValue {
 			return fmt.Errorf("Unrecognized value type passed: %s", valueInterfaceVal.Index(0).Kind().String())

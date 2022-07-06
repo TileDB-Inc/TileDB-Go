@@ -114,6 +114,8 @@ const (
 	TILEDB_TIME_AS Datatype = C.TILEDB_TIME_AS
 	// TILEDB_BLOB 8-bit unsigned integer (or std::byte)
 	TILEDB_BLOB Datatype = C.TILEDB_BLOB
+	// TILEDB_BOOL 8-bit boolean type
+	TILEDB_BOOL Datatype = C.TILEDB_BOOL
 )
 
 // String returns string representation
@@ -197,6 +199,8 @@ func (d Datatype) ReflectKind() reflect.Kind {
 		return reflect.Interface
 	case TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
 		return reflect.Int64
+	case TILEDB_BOOL:
+		return reflect.Bool
 	default:
 		return reflect.Interface
 	}
@@ -248,6 +252,10 @@ func (d Datatype) MakeSlice(numElements uint64) (interface{}, unsafe.Pointer, er
 
 	case TILEDB_FLOAT64:
 		slice := make([]float64, numElements)
+		return slice, unsafe.Pointer(&slice[0]), nil
+
+	case TILEDB_BOOL:
+		slice := make([]bool, numElements)
 		return slice, unsafe.Pointer(&slice[0]), nil
 
 	default:
@@ -420,6 +428,19 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 			var timestamp interface{} = *(*int16)(cvalue)
 			return GetTimeFromTimestamp(d, timestamp.(int64)), nil
 		}
+	case TILEDB_BOOL:
+		if cvalue == nil {
+			return false, nil
+		}
+		if valueNum > 1 {
+			tmpValue := make([]bool, valueNum)
+			tmpslice := (*[1 << 46]C.int8_t)(cvalue)[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = s != 0
+			}
+			return tmpValue, nil
+		}
+		return *(*int8)(cvalue), nil
 	default:
 		return nil, fmt.Errorf("Unrecognized value type: %d", d)
 	}

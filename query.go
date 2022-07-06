@@ -1424,7 +1424,7 @@ func (q *Query) Buffer(attributeOrDimension string) (interface{}, error) {
 		length := (*cbufferSize) / C.sizeof_int64_t
 		buffer = (*[1 << 46]int64)(cbuffer)[:length:length]
 
-	case TILEDB_UINT8:
+	case TILEDB_UINT8, TILEDB_BLOB:
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_uint8_t
 		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
@@ -1493,6 +1493,11 @@ func (q *Query) Buffer(attributeOrDimension string) (interface{}, error) {
 		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_int32_t
 		buffer = (*[1 << 46]C.int8_t)(cbuffer)[:length:length]
+
+	case TILEDB_BOOL:
+		ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_int8_t
+		buffer = (*[1 << 46]bool)(cbuffer)[:length:length]
 
 	default:
 		return nil, fmt.Errorf("Unrecognized attribute type: %d", datatype)
@@ -1588,7 +1593,7 @@ func (q *Query) BufferNullable(attributeOrDimension string) (interface{}, []uint
 		length := (*cbufferSize) / C.sizeof_int64_t
 		buffer = (*[1 << 46]int64)(cbuffer)[:length:length]
 
-	case TILEDB_UINT8:
+	case TILEDB_UINT8, TILEDB_BLOB:
 		length := (*cbufferSize) / C.sizeof_uint8_t
 		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
 
@@ -1643,6 +1648,10 @@ func (q *Query) BufferNullable(attributeOrDimension string) (interface{}, []uint
 	case TILEDB_ANY:
 		length := (*cbufferSize) / C.sizeof_int32_t
 		buffer = (*[1 << 46]C.int8_t)(cbuffer)[:length:length]
+
+	case TILEDB_BOOL:
+		length := (*cbufferSize) / C.sizeof_int8_t
+		buffer = (*[1 << 46]bool)(cbuffer)[:length:length]
 
 	default:
 		return nil, nil, fmt.Errorf("Unrecognized attribute type: %d", datatype)
@@ -1873,6 +1882,17 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 		// Store slice so underlying array is not gc'ed
 		q.buffers = append(q.buffers, tmpBuffer)
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+
+	case reflect.Bool:
+		// Set buffersize
+		bufferSize = bufferSize * bytesizes.Bool
+
+		// Create buffer void*
+		tmpBuffer := buffer.([]bool)
+		// Store slice so underlying array is not gc'ed
+		q.buffers = append(q.buffers, tmpBuffer)
+		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+
 	default:
 		return nil, nil, fmt.Errorf("Unrecognized buffer type passed: %s",
 			bufferType.String())
@@ -2133,6 +2153,17 @@ func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint6
 		// Store slice so underlying array is not gc'ed
 		q.buffers = append(q.buffers, tmpBuffer)
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+
+	case reflect.Bool:
+		// Set buffersize
+		bufferSize = bufferSize * bytesizes.Bool
+
+		// Create buffer void*
+		tmpBuffer := buffer.([]bool)
+		// Store slice so underlying array is not gc'ed
+		q.buffers = append(q.buffers, tmpBuffer)
+		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+
 	default:
 		return nil, nil, nil, fmt.Errorf("Unrecognized buffer type passed: %s",
 			bufferType.String())
