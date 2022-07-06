@@ -68,6 +68,10 @@ as such the below table reference which versions are compatible.
 | 0.10.0            | 2.1.X          |
 | 0.11.0            | 2.2.X          |
 | 0.12.0            | 2.3.X          |
+| 0.13.0            | >=2.4.X        |
+| 0.14.0            | >=2.5.X        |
+| 0.15.0            | >=2.8.X        |
+| 0.16.0            | 2.10.X         |
 
 
 ## Missing Functionality
