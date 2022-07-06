@@ -349,15 +349,6 @@ func (g *Group) PutMetadata(key string, value interface{}) error {
 		if valueNum > 0 {
 			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(cTmpValue))
 		}
-	case reflect.Int8:
-		datatype = TILEDB_INT8
-		if isSliceValue {
-			tmpValue := value.([]int8)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(int8)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
 	case reflect.Bool:
 		datatype = TILEDB_BOOL
 		if isSliceValue {
