@@ -664,3 +664,17 @@ var TILEDB_VAR_NUM = uint32(C.TILEDB_VAR_NUM)
 
 // TILEDB_COORDS A special name indicating the coordinates attribute.
 const TILEDB_COORDS = "__coords"
+
+// FileStoreMimeType is an enum for TileDB filestore mime types
+type FileStoreMimeType uint32
+
+// Mime types for TileDB filestore. The store can autodetect mime types
+// but these are provided if the user wants to enforce a type
+const (
+	// Filestore autodetect mime type
+	TILEDB_MIME_AUTODETECT = FileStoreMimeType(C.TILEDB_MIME_AUTODETECT)
+	// Filestore TIFF mime type
+	TILEDB_MIME_TIFF = FileStoreMimeType(C.TILEDB_MIME_TIFF)
+	// Filestore PDF mime type
+	TILEDB_MIME_PDF = FileStoreMimeType(C.TILEDB_MIME_PDF)
+)
