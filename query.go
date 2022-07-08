@@ -182,6 +182,10 @@ func (q *Query) SetSubArray(subArray interface{}) error {
 		// Create subArray void*
 		tmpSubArray := subArray.([]float64)
 		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Bool:
+		// Create subArray void*
+		tmpSubArray := subArray.([]bool)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
 	default:
 		return fmt.Errorf("Unrecognized subArray type passed: %s", subArrayType.String())
 	}
@@ -405,6 +409,14 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 		bufferSize = bufferSize * bytesizes.Float64
 		// Create buffer void*
 		tmpBuffer := buffer.([]float64)
+		// Store slice so underlying array is not gc'ed
+		q.buffers = append(q.buffers, tmpBuffer)
+		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+	case reflect.Bool:
+		// Set buffersize
+		bufferSize = bufferSize * bytesizes.Bool
+		// Create buffer void*
+		tmpBuffer := buffer.([]bool)
 		// Store slice so underlying array is not gc'ed
 		q.buffers = append(q.buffers, tmpBuffer)
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
@@ -639,6 +651,14 @@ func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{
 		// Store slice so underlying array is not gc'ed
 		q.buffers = append(q.buffers, tmpBuffer)
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+	case reflect.Bool:
+		// Set buffersize
+		bufferSize = bufferSize * bytesizes.Bool
+		// Create buffer void*
+		tmpBuffer := buffer.([]bool)
+		// Store slice so underlying array is not gc'ed
+		q.buffers = append(q.buffers, tmpBuffer)
+		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	default:
 		return nil, nil,
 			fmt.Errorf("Unrecognized buffer type passed: %s",
@@ -750,6 +770,11 @@ func getStartAndEndBuffers(start interface{}, end interface{}) (
 	case reflect.Float64:
 		tStart := start.(float64)
 		tEnd := end.(float64)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
+	case reflect.Bool:
+		tStart := start.(bool)
+		tEnd := end.(bool)
 		startBuffer = unsafe.Pointer(&tStart)
 		endBuffer = unsafe.Pointer(&tEnd)
 	default:
