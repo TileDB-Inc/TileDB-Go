@@ -10,11 +10,8 @@ import "C"
 
 import (
 	"fmt"
-	"reflect"
 	"runtime"
 	"unsafe"
-
-	"github.com/TileDB-Inc/TileDB-Go/bytesizes"
 )
 
 // QueryCondition defines a condition used for a query.
@@ -35,7 +32,7 @@ func NewQueryCondition(tdbCtx *Context, attributeName string, op QueryConditionO
 		qc.Free()
 	})
 
-	if err := qc.initQueryCondition(attributeName, value, op); err != nil {
+	if err := qc.init(attributeName, value, op); err != nil {
 		return nil, err
 	}
 
@@ -74,134 +71,91 @@ func (qc *QueryCondition) Context() *Context {
 	return qc.context
 }
 
-func (qc *QueryCondition) initQueryCondition(attributeName string, value interface{}, op QueryConditionOp) error {
+func (qc *QueryCondition) init(attributeName string, value interface{}, op QueryConditionOp) error {
+	switch value := value.(type) {
+	case int:
+		return qcInitScalar(qc, attributeName, value, op)
+	case []int:
+		return qcInitSlice(qc, attributeName, value, op)
+	case int8:
+		return qcInitScalar(qc, attributeName, value, op)
+	case []int8:
+		return qcInitSlice(qc, attributeName, value, op)
+	case int16:
+		return qcInitScalar(qc, attributeName, value, op)
+	case []int16:
+		return qcInitSlice(qc, attributeName, value, op)
+	case int32:
+		return qcInitScalar(qc, attributeName, value, op)
+	case []int32:
+		return qcInitSlice(qc, attributeName, value, op)
+	case int64:
+		return qcInitScalar(qc, attributeName, value, op)
+	case []int64:
+		return qcInitSlice(qc, attributeName, value, op)
+	case uint:
+		return qcInitScalar(qc, attributeName, value, op)
+	case []uint:
+		return qcInitSlice(qc, attributeName, value, op)
+	case uint8:
+		return qcInitScalar(qc, attributeName, value, op)
+	case []uint8:
+		return qcInitSlice(qc, attributeName, value, op)
+	case uint16:
+		return qcInitScalar(qc, attributeName, value, op)
+	case []uint16:
+		return qcInitSlice(qc, attributeName, value, op)
+	case uint32:
+		return qcInitScalar(qc, attributeName, value, op)
+	case []uint32:
+		return qcInitSlice(qc, attributeName, value, op)
+	case uint64:
+		return qcInitScalar(qc, attributeName, value, op)
+	case []uint64:
+		return qcInitSlice(qc, attributeName, value, op)
+	case float32:
+		return qcInitScalar(qc, attributeName, value, op)
+	case []float32:
+		return qcInitSlice(qc, attributeName, value, op)
+	case float64:
+		return qcInitScalar(qc, attributeName, value, op)
+	case []float64:
+		return qcInitSlice(qc, attributeName, value, op)
+	case bool:
+		return qcInitScalar(qc, attributeName, value, op)
+	case []bool:
+		return qcInitSlice(qc, attributeName, value, op)
+	case string:
+		valuePtr := unsafe.Pointer(C.CString(value))
+		defer C.free(valuePtr)
+		return qcInitInternal(qc, attributeName, valuePtr, uint64(len(value)), op)
+	}
+	return fmt.Errorf("cannot create query condition for type %T", value)
+}
+
+func qcInitScalar[T scalarType](qc *QueryCondition, attributeName string, value T, op QueryConditionOp) error {
+	return qcInitInternal(qc, attributeName, unsafe.Pointer(&value), uint64(unsafe.Sizeof(value)), op)
+}
+
+func qcInitSlice[T scalarType](qc *QueryCondition, attributeName string, value []T, op QueryConditionOp) error {
+	var t T
+	size := uint64(unsafe.Sizeof(t)) * uint64(len(value))
+	return qcInitInternal(qc, attributeName, slicePtr(value), size, op)
+}
+
+func qcInitInternal(qc *QueryCondition, attributeName string, valuePtr unsafe.Pointer, valueSize uint64, op QueryConditionOp) error {
 	cname := C.CString(attributeName)
 	defer C.free(unsafe.Pointer(cname))
-
-	size, err := getSize(value)
-	if err != nil {
-		return fmt.Errorf("Error initing tiledb query condition for attribute: %s error: %s", attributeName, err)
-	}
-
-	switch v := value.(type) {
-	case string:
-		valueSize := C.uint64_t(len(v))
-		cTmpValue := C.CString(v)
-		defer C.free(unsafe.Pointer(cTmpValue))
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(cTmpValue), valueSize, C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb string query condition: %s", qc.context.LastError())
-		}
-	case int:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric query condition: %s", qc.context.LastError())
-		}
-	case int8:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric query condition: %s", qc.context.LastError())
-		}
-	case int32:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric query condition: %s", qc.context.LastError())
-		}
-	case int64:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric query condition: %s", qc.context.LastError())
-		}
-	case uint:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric query condition: %s", qc.context.LastError())
-		}
-	case uint8:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric query condition: %s", qc.context.LastError())
-		}
-	case uint16:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric query condition: %s", qc.context.LastError())
-		}
-	case uint32:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric query condition: %s", qc.context.LastError())
-		}
-	case uint64:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric query condition: %s", qc.context.LastError())
-		}
-	case float32:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric query condition: %s", qc.context.LastError())
-		}
-	case float64:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric query condition: %s", qc.context.LastError())
-		}
-	case []int:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v[0]), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric slice query condition: %s", qc.context.LastError())
-		}
-	case []int8:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v[0]), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric slice query condition: %s", qc.context.LastError())
-		}
-	case []int32:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v[0]), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric slice query condition: %s", qc.context.LastError())
-		}
-	case []int64:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v[0]), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric slice query condition: %s", qc.context.LastError())
-		}
-	case []uint:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v[0]), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric slice query condition: %s", qc.context.LastError())
-		}
-	case []uint8:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v[0]), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric slice query condition: %s", qc.context.LastError())
-		}
-	case []uint16:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v[0]), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric slice query condition: %s", qc.context.LastError())
-		}
-	case []uint32:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v[0]), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric slice query condition: %s", qc.context.LastError())
-		}
-	case []uint64:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v[0]), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric slice query condition: %s", qc.context.LastError())
-		}
-	case []float32:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v[0]), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric slice query condition: %s", qc.context.LastError())
-		}
-	case []float64:
-		if ret := C.tiledb_query_condition_init(qc.context.tiledbContext, qc.cond, cname, unsafe.Pointer(&v[0]), C.uint64_t(size), C.tiledb_query_condition_op_t(op)); ret != C.TILEDB_OK {
-			return fmt.Errorf("Error initing tiledb numeric slice query condition: %s", qc.context.LastError())
-		}
-	default:
-		return fmt.Errorf("Unhandled query condition value type: %s", reflect.TypeOf(v))
+	ret := C.tiledb_query_condition_init(
+		qc.context.tiledbContext,
+		qc.cond,
+		cname,
+		valuePtr,
+		C.uint64_t(valueSize),
+		C.tiledb_query_condition_op_t(op),
+	)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("could not init %q query condition: %w", attributeName, qc.context.LastError())
 	}
 	return nil
-}
-
-func getSize(v interface{}) (uint64, error) {
-	if reflect.TypeOf(v).Kind() == reflect.Slice || reflect.TypeOf(v).Kind() == reflect.Array {
-		return sizeOfSlice(v)
-	}
-
-	size, ok := bytesizes.Kind[reflect.TypeOf(v).Kind()]
-	if !ok {
-		return 0, fmt.Errorf("Error determining size of value kind: %v", reflect.TypeOf(v).Kind())
-	}
-	return size, nil
-}
-
-func sizeOfSlice(v interface{}) (uint64, error) {
-	elemSize, ok := bytesizes.Kind[reflect.TypeOf(v).Elem().Kind()]
-	if !ok {
-		return 0, fmt.Errorf("Error determining type of value kind: %v", reflect.TypeOf(v).Elem().Kind())
-	}
-
-	return elemSize * uint64(reflect.ValueOf(v).Len()), nil
 }

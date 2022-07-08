@@ -187,6 +187,17 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		// Create extent void*
 		tmpExtent := (extent.(float64))
 		cextent = unsafe.Pointer(&tmpExtent)
+	case TILEDB_BOOL:
+		if domainType != reflect.Bool {
+			domainTypeMatchDatatype = false
+			break
+		}
+		// Create domain void*
+		tmpDomain := domain.([]bool)
+		cdomain = unsafe.Pointer(&tmpDomain[0])
+		// Create extent void*
+		tmpExtent := (extent.(bool))
+		cextent = unsafe.Pointer(&tmpExtent)
 	default:
 		return nil, fmt.Errorf("Unrecognized datatype passed: %s", datatype.String())
 	}
@@ -431,6 +442,18 @@ func (d *Dimension) Domain() (interface{}, error) {
 			tmpDomain[i] = float64(s)
 		}
 		domain = tmpDomain
+	case TILEDB_BOOL:
+		cdomain := C.malloc(2 * C.sizeof_double)
+		defer C.free(cdomain)
+		tmpDomain := make([]bool, 2)
+		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
+		tmpslice := (*[1 << 46]C.uint8_t)(unsafe.Pointer(cdomain))[:2:2]
+		for i, s := range tmpslice {
+			if s != 0 {
+				tmpDomain[i] = true
+			}
+		}
+		domain = tmpDomain
 	case TILEDB_STRING_ASCII:
 		domain = nil
 	default:
@@ -503,6 +526,11 @@ func (d *Dimension) Extent() (interface{}, error) {
 		defer C.free(cextent)
 		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
 		extent = *(*float64)(unsafe.Pointer(cextent))
+	case TILEDB_BOOL:
+		cextent := C.malloc(C.sizeof_uint8_t)
+		defer C.free(cextent)
+		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
+		extent = *(*bool)(unsafe.Pointer(cextent))
 	case TILEDB_STRING_ASCII:
 		extent = nil
 	default:

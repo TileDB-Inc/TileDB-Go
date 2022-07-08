@@ -144,73 +144,48 @@ func DeserializeArrayNonEmptyDomain(a *Array, buffer *Buffer, serializationType 
 		return nil, true, nil
 	}
 
-	tmpDomainType := reflect.TypeOf(tmpDomain).Elem().Kind()
-	nonEmptyDomains := make([]NonEmptyDomain, 0)
-	for i := uint(0); i < ndims; i++ {
-		dimension, err := domain.DimensionFromIndex(i)
+	nonEmptyDomains := make([]NonEmptyDomain, ndims)
+	for i := range nonEmptyDomains {
+		dimension, err := domain.DimensionFromIndex(uint(i))
 		if err != nil {
 			return nil, false, err
 		}
 
 		var nonEmptyDomain *NonEmptyDomain
 
-		switch tmpDomainType {
-		case reflect.Int:
-			tmpSubArray := tmpDomain.([]int)
-			tmpDimension := []int{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
-			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
-		case reflect.Int8:
-			tmpSubArray := tmpDomain.([]int8)
-			tmpDimension := []int8{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
-			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
-		case reflect.Int16:
-			tmpSubArray := tmpDomain.([]int16)
-			tmpDimension := []int16{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
-			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
-		case reflect.Int32:
-			tmpSubArray := tmpDomain.([]int32)
-			tmpDimension := []int32{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
-			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
-		case reflect.Int64:
-			tmpSubArray := tmpDomain.([]int64)
-			tmpDimension := []int64{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
-			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
-		case reflect.Uint:
-			tmpSubArray := tmpDomain.([]uint)
-			tmpDimension := []uint{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
-			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
-		case reflect.Uint8:
-			tmpSubArray := tmpDomain.([]uint8)
-			tmpDimension := []uint8{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
-			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
-		case reflect.Uint16:
-			tmpSubArray := tmpDomain.([]uint16)
-			tmpDimension := []uint16{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
-			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
-		case reflect.Uint32:
-			tmpSubArray := tmpDomain.([]uint32)
-			tmpDimension := []uint32{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
-			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
-		case reflect.Uint64:
-			tmpSubArray := tmpDomain.([]uint64)
-			tmpDimension := []uint64{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
-			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
-		case reflect.Float32:
-			tmpSubArray := tmpDomain.([]float32)
-			tmpDimension := []float32{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
-			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
-		case reflect.Float64:
-			tmpSubArray := tmpDomain.([]float64)
-			tmpDimension := []float64{tmpSubArray[(2 * i)], tmpSubArray[(2*i)+1]}
-			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDimension)
-		default:
-			return nil, false, fmt.Errorf("unhandled domain datatype: %s", tmpDomainType.String())
+		switch tmpDomain := tmpDomain.(type) {
+		case []int:
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDomain[2*i:2*i+2])
+		case []int8:
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDomain[2*i:2*i+2])
+		case []int16:
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDomain[2*i:2*i+2])
+		case []int32:
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDomain[2*i:2*i+2])
+		case []int64:
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDomain[2*i:2*i+2])
+		case []uint:
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDomain[2*i:2*i+2])
+		case []uint8:
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDomain[2*i:2*i+2])
+		case []uint16:
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDomain[2*i:2*i+2])
+		case []uint32:
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDomain[2*i:2*i+2])
+		case []uint64:
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDomain[2*i:2*i+2])
+		case []float32:
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDomain[2*i:2*i+2])
+		case []float64:
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDomain[2*i:2*i+2])
+		case []bool:
+			nonEmptyDomain, err = getNonEmptyDomainForDim(dimension, tmpDomain[2*i:2*i+2])
 		}
 
 		if err != nil {
 			return nil, false, err
 		}
-		nonEmptyDomains = append(nonEmptyDomains, *nonEmptyDomain)
+		nonEmptyDomains[i] = *nonEmptyDomain
 	}
 
 	return nonEmptyDomains, false, nil
@@ -253,46 +228,35 @@ func SerializeArrayMaxBufferSizes(a *Array, subarray interface{}, serializationT
 	if reflect.TypeOf(subarray).Kind() != reflect.Slice {
 		return nil, fmt.Errorf("subarray passed must be a slice, type passed was: %s", reflect.TypeOf(subarray).Kind().String())
 	}
-	subarrayType := reflect.TypeOf(subarray).Elem().Kind()
-	switch subarrayType {
-	case reflect.Int:
-		tmpSubArray := subarray.([]int)
-		cSubarray = unsafe.Pointer(&tmpSubArray[0])
-	case reflect.Int8:
-		tmpSubArray := subarray.([]int8)
-		cSubarray = unsafe.Pointer(&tmpSubArray[0])
-	case reflect.Int16:
-		tmpSubArray := subarray.([]int16)
-		cSubarray = unsafe.Pointer(&tmpSubArray[0])
-	case reflect.Int32:
-		tmpSubArray := subarray.([]int32)
-		cSubarray = unsafe.Pointer(&tmpSubArray[0])
-	case reflect.Int64:
-		tmpSubArray := subarray.([]int64)
-		cSubarray = unsafe.Pointer(&tmpSubArray[0])
-	case reflect.Uint:
-		tmpSubArray := subarray.([]uint)
-		cSubarray = unsafe.Pointer(&tmpSubArray[0])
-	case reflect.Uint8:
-		tmpSubArray := subarray.([]uint8)
-		cSubarray = unsafe.Pointer(&tmpSubArray[0])
-	case reflect.Uint16:
-		tmpSubArray := subarray.([]uint16)
-		cSubarray = unsafe.Pointer(&tmpSubArray[0])
-	case reflect.Uint32:
-		tmpSubArray := subarray.([]uint32)
-		cSubarray = unsafe.Pointer(&tmpSubArray[0])
-	case reflect.Uint64:
-		tmpSubArray := subarray.([]uint64)
-		cSubarray = unsafe.Pointer(&tmpSubArray[0])
-	case reflect.Float32:
-		tmpSubArray := subarray.([]float32)
-		cSubarray = unsafe.Pointer(&tmpSubArray[0])
-	case reflect.Float64:
-		tmpSubArray := subarray.([]float64)
-		cSubarray = unsafe.Pointer(&tmpSubArray[0])
+	switch subarray := subarray.(type) {
+	case []int:
+		cSubarray = slicePtr(subarray)
+	case []int8:
+		cSubarray = slicePtr(subarray)
+	case []int16:
+		cSubarray = slicePtr(subarray)
+	case []int32:
+		cSubarray = slicePtr(subarray)
+	case []int64:
+		cSubarray = slicePtr(subarray)
+	case []uint:
+		cSubarray = slicePtr(subarray)
+	case []uint8:
+		cSubarray = slicePtr(subarray)
+	case []uint16:
+		cSubarray = slicePtr(subarray)
+	case []uint32:
+		cSubarray = slicePtr(subarray)
+	case []uint64:
+		cSubarray = slicePtr(subarray)
+	case []float32:
+		cSubarray = slicePtr(subarray)
+	case []float64:
+		cSubarray = slicePtr(subarray)
+	case []bool:
+		cSubarray = slicePtr(subarray)
 	default:
-		return nil, fmt.Errorf("unhandled subarray datatype: %s", subarrayType.String())
+		return nil, fmt.Errorf("subarray must be a slice of scalars, not a %T", subarray)
 	}
 
 	buffer := Buffer{context: a.context}

@@ -904,6 +904,9 @@ func (q *Query) AddRangeVar(dimIdx uint32, start interface{}, end interface{}) e
 	case reflect.Float64:
 		return fmt.Errorf("Unsupported type of range component passed: %s",
 			startType.String())
+	case reflect.Bool:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
 	default:
 		return fmt.Errorf("Unrecognized type of range component passed: %s",
 			startType.String())
@@ -986,6 +989,9 @@ func (q *Query) AddRangeVarByName(dimName string, start interface{}, end interfa
 		return fmt.Errorf("Unsupported type of range component passed: %s",
 			startType.String())
 	case reflect.Float64:
+		return fmt.Errorf("Unsupported type of range component passed: %s",
+			startType.String())
+	case reflect.Bool:
 		return fmt.Errorf("Unsupported type of range component passed: %s",
 			startType.String())
 	default:
@@ -1111,6 +1117,9 @@ func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface
 		case TILEDB_FLOAT64:
 			start = *(*float64)(unsafe.Pointer(pStart))
 			end = *(*float64)(unsafe.Pointer(pEnd))
+		case TILEDB_BOOL:
+			start = *(*bool)(unsafe.Pointer(pStart))
+			end = *(*bool)(unsafe.Pointer(pEnd))
 		case TILEDB_STRING_ASCII:
 			start = *(*uint8)(unsafe.Pointer(pStart))
 			end = *(*uint8)(unsafe.Pointer(pEnd))
@@ -1243,6 +1252,9 @@ func (q *Query) GetRangeFromName(dimName string, rangeNum uint64) (interface{}, 
 		case TILEDB_FLOAT64:
 			start = *(*float64)(unsafe.Pointer(pStart))
 			end = *(*float64)(unsafe.Pointer(pEnd))
+		case TILEDB_BOOL:
+			start = *(*bool)(unsafe.Pointer(pStart))
+			end = *(*bool)(unsafe.Pointer(pEnd))
 		case TILEDB_STRING_ASCII:
 			start = *(*uint8)(unsafe.Pointer(pStart))
 			end = *(*uint8)(unsafe.Pointer(pEnd))
@@ -2437,6 +2449,13 @@ func (q *Query) BufferVar(attributeOrDimension string) ([]uint64, interface{}, e
 		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
 		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
 
+	case TILEDB_BOOL:
+		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
+		length := (*cbufferSize) / C.sizeof_char
+		buffer = (*[1 << 46]bool)(cbuffer)[:length:length]
+		offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+		offsets = (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
 	case TILEDB_CHAR:
 		ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
 		length := (*cbufferSize) / C.sizeof_char
@@ -2614,6 +2633,10 @@ func (q *Query) BufferVarNullable(attributeOrDimension string) ([]uint64, interf
 	case TILEDB_FLOAT64:
 		length := (*cbufferSize) / C.sizeof_double
 		buffer = (*[1 << 46]float64)(cbuffer)[:length:length]
+
+	case TILEDB_BOOL:
+		length := (*cbufferSize) / C.sizeof_double
+		buffer = (*[1 << 46]bool)(cbuffer)[:length:length]
 
 	case TILEDB_CHAR:
 		length := (*cbufferSize) / C.sizeof_char
