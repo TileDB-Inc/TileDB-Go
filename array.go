@@ -879,18 +879,20 @@ func (a *Array) PutMetadata(key string, value interface{}) error {
 		return arrayPutSliceMetadata(a, TILEDB_BOOL, key, value)
 	case string:
 		if len(value) == 0 {
-			return fmt.Errorf("length of metadata %T must be nonzero", value)
+			// Ignoring the request and returning `nil` here for compatibility.
+			// TODO: Maybe we should be doing something different here?
+			return nil
 		}
 		valPtr := unsafe.Pointer(C.CString(value))
 		defer C.free(valPtr)
 		return arrayPutMetadata(a, TILEDB_STRING_UTF8, key, valPtr, len(value))
 	}
-	return fmt.Errorf("can't add value of unrecognized type %T to metadata", value)
+	return fmt.Errorf("can't write %q metadata: unrecognized value type %T", key, value)
 }
 
 func arrayPutSliceMetadata[T scalarType](a *Array, dt Datatype, key string, value []T) error {
 	if len(value) == 0 {
-		return fmt.Errorf("length of metadata %T must be nonzero", value)
+		return fmt.Errorf("length of %q metadata value %T must be nonzero", key, value)
 	}
 	return arrayPutMetadata(a, dt, key, slicePtr(value), len(value))
 }
