@@ -878,11 +878,6 @@ func (a *Array) PutMetadata(key string, value interface{}) error {
 	case []bool:
 		return arrayPutSliceMetadata(a, TILEDB_BOOL, key, value)
 	case string:
-		if len(value) == 0 {
-			// Ignoring the request and returning `nil` here for compatibility.
-			// TODO: Maybe we should be doing something different here?
-			return nil
-		}
 		valPtr := unsafe.Pointer(C.CString(value))
 		defer C.free(valPtr)
 		return arrayPutMetadata(a, TILEDB_STRING_UTF8, key, valPtr, len(value))
@@ -892,7 +887,7 @@ func (a *Array) PutMetadata(key string, value interface{}) error {
 
 func arrayPutSliceMetadata[T scalarType](a *Array, dt Datatype, key string, value []T) error {
 	if len(value) == 0 {
-		return fmt.Errorf("length of %q metadata value %T must be nonzero", key, value)
+		return fmt.Errorf("length of %q metadata %T value must be nonzero", key, value)
 	}
 	return arrayPutMetadata(a, dt, key, slicePtr(value), len(value))
 }

@@ -9,7 +9,6 @@ package tiledb
 import "C"
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"runtime"
@@ -138,10 +137,6 @@ func (a *Attribute) CellSize() (uint64, error) {
 // @note For fixed-sized attributes, the input `size` should be equal
 //      to the cell size.
 func (a *Attribute) SetFillValue(value interface{}) error {
-	if value == nil {
-		return errors.New("Unrecognized value type passed: Cannot be a nil")
-	}
-
 	switch value := value.(type) {
 	case int:
 		return attributeSetFillValue(a, value)
@@ -170,11 +165,6 @@ func (a *Attribute) SetFillValue(value interface{}) error {
 	case bool:
 		return attributeSetFillValue(a, value)
 	case string:
-		if len(value) == 0 {
-			// TODO: This behavior is from the previous code that was here.
-			// Is it correct?
-			return nil
-		}
 		cValue := unsafe.Pointer(C.CString(value))
 		defer C.free(cValue)
 		return attributeSetFillValueInternal(a, cValue, uint64(len(value)))
@@ -224,10 +214,6 @@ func attributeSetFillValueInternal(a *Attribute, value unsafe.Pointer, valueSize
 // @note For fixed-sized attributes, the input `size` should be equal
 //      to the cell size.
 func (a *Attribute) SetFillValueNullable(value interface{}, valid bool) error {
-	if value == nil {
-		return errors.New("Unrecognized value type passed: Cannot be a nil")
-	}
-
 	switch value := value.(type) {
 	case int:
 		return attributeSetFillValueNullable(a, value, valid)
@@ -256,11 +242,6 @@ func (a *Attribute) SetFillValueNullable(value interface{}, valid bool) error {
 	case bool:
 		return attributeSetFillValueNullable(a, value, valid)
 	case string:
-		if len(value) == 0 {
-			// TODO: This behavior is from the previous code that was here.
-			// Is it correct?
-			return nil
-		}
 		cValue := unsafe.Pointer(C.CString(value))
 		defer C.free(cValue)
 		return attributeSetFillValueNullableInternal(a, cValue, uint64(len(value)), valid)
