@@ -1,0 +1,22 @@
+ABSTRACT
+
+We present a novel storage manager for multi-dimensional
+arrays that arise in scientific applications, which is part of a larger
+scientific data management system called TileDB. In contrast to existing
+solutions, TileDB is optimized for both dense and sparse arrays. Its
+key idea is to organize array elements into ordered collections called
+fragments. Each fragment is dense or sparse, and groups contiguous
+array elements into data tiles of fixed capacity. The organization into
+fragments turns random writes into sequential writes, and, coupled with
+a novel read algorithm, leads to very efficient reads.  TileDB enables
+parallelization via multi-threading and multiprocessing, offering
+thread-/process-safety and atomicity via lightweight locking. We show
+that TileDB delivers comparable performance to the HDF5 dense array
+storage manager, while providing much faster random writes. We also
+show that TileDB offers substantially faster reads and writes than the
+SciDB array database system with both dense and sparse arrays. Finally,
+we demonstrate that TileDB is considerably faster than adaptations of
+the Vertica relational column-store for dense array storage management,
+and at least as fast for the case of sparse arrays.
+
+More at https://people.csail.mit.edu/stavrosp/papers/vldb2017/VLDB17_TileDB.pdf
