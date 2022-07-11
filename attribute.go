@@ -9,10 +9,8 @@ package tiledb
 import "C"
 
 import (
-	"errors"
 	"fmt"
 	"os"
-	"reflect"
 	"runtime"
 	"unsafe"
 )
@@ -139,89 +137,67 @@ func (a *Attribute) CellSize() (uint64, error) {
 // @note For fixed-sized attributes, the input `size` should be equal
 //      to the cell size.
 func (a *Attribute) SetFillValue(value interface{}) error {
-
-	if value == nil {
-		return errors.New("Unrecognized value type passed: Cannot be a nil")
+	switch value := value.(type) {
+	case int:
+		return attributeSetFillValue(a, value)
+	case int8:
+		return attributeSetFillValue(a, value)
+	case int16:
+		return attributeSetFillValue(a, value)
+	case int32:
+		return attributeSetFillValue(a, value)
+	case int64:
+		return attributeSetFillValue(a, value)
+	case uint:
+		return attributeSetFillValue(a, value)
+	case uint8:
+		return attributeSetFillValue(a, value)
+	case uint16:
+		return attributeSetFillValue(a, value)
+	case uint32:
+		return attributeSetFillValue(a, value)
+	case uint64:
+		return attributeSetFillValue(a, value)
+	case float32:
+		return attributeSetFillValue(a, value)
+	case float64:
+		return attributeSetFillValue(a, value)
+	case bool:
+		return attributeSetFillValue(a, value)
+	case string:
+		cValue := unsafe.Pointer(C.CString(value))
+		defer C.free(cValue)
+		return attributeSetFillValueInternal(a, cValue, uint64(len(value)))
 	}
+	return fmt.Errorf("unrecognized fill value type %T", value)
+}
 
-	if reflect.TypeOf(value).Kind() == reflect.Slice {
-		return errors.New("Unrecognized value type passed: Cannot be a slice")
-	}
-
-	valueType := reflect.TypeOf(value).Kind()
-
-	cellValNum, err := a.CellValNum()
+func attributeSetFillValue[T scalarType](a *Attribute, value T) error {
+	valNum, err := a.CellValNum()
 	if err != nil {
 		return err
 	}
-
-	attrDataType, err := a.Type()
+	dataType, err := a.Type()
 	if err != nil {
 		return err
 	}
-
-	var valueSize C.uint64_t
-	if cellValNum == TILEDB_VAR_NUM {
-		valueSize = C.uint64_t(reflect.TypeOf(value).Size())
-	} else {
-		valueSize = C.uint64_t(attrDataType.Size() * uint64(cellValNum))
+	valueSize := uint64(unsafe.Sizeof(value))
+	if valNum != TILEDB_VAR_NUM {
+		valueSize = dataType.Size() * uint64(valNum)
 	}
+	return attributeSetFillValueInternal(a, unsafe.Pointer(&value), valueSize)
+}
 
-	var ret C.int32_t
-	switch valueType {
-	case reflect.Int:
-		tmpValue := value.(int)
-		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
-	case reflect.Int8:
-		tmpValue := value.(int8)
-		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
-	case reflect.Int16:
-		tmpValue := value.(int16)
-		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
-	case reflect.Int32:
-		tmpValue := value.(int32)
-		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
-	case reflect.Int64:
-		tmpValue := value.(int64)
-		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
-	case reflect.Uint:
-		tmpValue := value.(uint)
-		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
-	case reflect.Uint8:
-		tmpValue := value.(uint8)
-		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
-	case reflect.Uint16:
-		tmpValue := value.(uint16)
-		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
-	case reflect.Uint32:
-		tmpValue := value.(uint32)
-		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
-	case reflect.Uint64:
-		tmpValue := value.(uint64)
-		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
-	case reflect.Float32:
-		tmpValue := value.(float32)
-		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
-	case reflect.Float64:
-		tmpValue := value.(float64)
-		ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize)
-	case reflect.String:
-		stringValue := value.(string)
-		valueSize = C.uint64_t(len(stringValue))
-		cTmpValue := C.CString(stringValue)
-		defer C.free(unsafe.Pointer(cTmpValue))
-		if valueSize > 0 {
-			ret = C.tiledb_attribute_set_fill_value(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(cTmpValue), valueSize)
-		}
-	default:
-		valueInterfaceVal := reflect.ValueOf(value)
-		return fmt.Errorf("Unrecognized value type passed: %s", valueInterfaceVal.Kind().String())
-	}
-
+func attributeSetFillValueInternal(a *Attribute, value unsafe.Pointer, valueSize uint64) error {
+	ret := C.tiledb_attribute_set_fill_value(
+		a.context.tiledbContext,
+		a.tiledbAttribute,
+		value,
+		C.uint64_t(valueSize),
+	)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error filling attribute value: %s", a.context.LastError())
+		return fmt.Errorf("could not set attribute fill value: %w", a.context.LastError())
 	}
-
 	return nil
 }
 
@@ -238,93 +214,72 @@ func (a *Attribute) SetFillValue(value interface{}) error {
 // @note For fixed-sized attributes, the input `size` should be equal
 //      to the cell size.
 func (a *Attribute) SetFillValueNullable(value interface{}, valid bool) error {
-
-	if value == nil {
-		return errors.New("Unrecognized value type passed: Cannot be a nil")
+	switch value := value.(type) {
+	case int:
+		return attributeSetFillValueNullable(a, value, valid)
+	case int8:
+		return attributeSetFillValueNullable(a, value, valid)
+	case int16:
+		return attributeSetFillValueNullable(a, value, valid)
+	case int32:
+		return attributeSetFillValueNullable(a, value, valid)
+	case int64:
+		return attributeSetFillValueNullable(a, value, valid)
+	case uint:
+		return attributeSetFillValueNullable(a, value, valid)
+	case uint8:
+		return attributeSetFillValueNullable(a, value, valid)
+	case uint16:
+		return attributeSetFillValueNullable(a, value, valid)
+	case uint32:
+		return attributeSetFillValueNullable(a, value, valid)
+	case uint64:
+		return attributeSetFillValueNullable(a, value, valid)
+	case float32:
+		return attributeSetFillValueNullable(a, value, valid)
+	case float64:
+		return attributeSetFillValueNullable(a, value, valid)
+	case bool:
+		return attributeSetFillValueNullable(a, value, valid)
+	case string:
+		cValue := unsafe.Pointer(C.CString(value))
+		defer C.free(cValue)
+		return attributeSetFillValueNullableInternal(a, cValue, uint64(len(value)), valid)
 	}
+	return fmt.Errorf("unrecognized fill value type %T", value)
+}
 
-	if reflect.TypeOf(value).Kind() == reflect.Slice {
-		return errors.New("Unrecognized value type passed: Cannot be a slice")
-	}
-
-	valueType := reflect.TypeOf(value).Kind()
-
-	cellValNum, err := a.CellValNum()
+func attributeSetFillValueNullable[T scalarType](a *Attribute, value T, valid bool) error {
+	valNum, err := a.CellValNum()
 	if err != nil {
 		return err
 	}
-
-	attrDataType, err := a.Type()
+	dataType, err := a.Type()
 	if err != nil {
 		return err
 	}
-
-	var valueSize C.uint64_t
-	if cellValNum == TILEDB_VAR_NUM {
-		valueSize = C.uint64_t(reflect.TypeOf(value).Size())
-	} else {
-		valueSize = C.uint64_t(attrDataType.Size() * uint64(cellValNum))
+	valueSize := uint64(unsafe.Sizeof(value))
+	if valNum != TILEDB_VAR_NUM {
+		valueSize = dataType.Size() * uint64(valNum)
 	}
+	return attributeSetFillValueNullableInternal(a, unsafe.Pointer(&value), valueSize, valid)
+}
 
-	var ret C.int32_t
-	var cvalid C.uint8_t
+func attributeSetFillValueNullableInternal(a *Attribute, value unsafe.Pointer, valueSize uint64, valid bool) error {
+	cValid := C.uint8_t(0)
 	if valid {
-		cvalid = 1
+		cValid = 1
 	}
-	switch valueType {
-	case reflect.Int:
-		tmpValue := value.(int)
-		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cvalid)
-	case reflect.Int8:
-		tmpValue := value.(int8)
-		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cvalid)
-	case reflect.Int16:
-		tmpValue := value.(int16)
-		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cvalid)
-	case reflect.Int32:
-		tmpValue := value.(int32)
-		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cvalid)
-	case reflect.Int64:
-		tmpValue := value.(int64)
-		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cvalid)
-	case reflect.Uint:
-		tmpValue := value.(uint)
-		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cvalid)
-	case reflect.Uint8:
-		tmpValue := value.(uint8)
-		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cvalid)
-	case reflect.Uint16:
-		tmpValue := value.(uint16)
-		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cvalid)
-	case reflect.Uint32:
-		tmpValue := value.(uint32)
-		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cvalid)
-	case reflect.Uint64:
-		tmpValue := value.(uint64)
-		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cvalid)
-	case reflect.Float32:
-		tmpValue := value.(float32)
-		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cvalid)
-	case reflect.Float64:
-		tmpValue := value.(float64)
-		ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(&tmpValue), valueSize, cvalid)
-	case reflect.String:
-		stringValue := value.(string)
-		valueSize = C.uint64_t(len(stringValue))
-		cTmpValue := C.CString(stringValue)
-		defer C.free(unsafe.Pointer(cTmpValue))
-		if valueSize > 0 {
-			ret = C.tiledb_attribute_set_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, unsafe.Pointer(cTmpValue), valueSize, cvalid)
-		}
-	default:
-		valueInterfaceVal := reflect.ValueOf(value)
-		return fmt.Errorf("Unrecognized value type passed: %s", valueInterfaceVal.Kind().String())
-	}
-
+	ret := C.tiledb_attribute_set_fill_value_nullable(
+		a.context.tiledbContext,
+		a.tiledbAttribute,
+		value,
+		C.uint64_t(valueSize),
+		cValid,
+	)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error filling attribute value: %s", a.context.LastError())
+		return fmt.Errorf("could not set attribute fill value: %w", a.context.LastError())
 	}
-
 	return nil
 }
 

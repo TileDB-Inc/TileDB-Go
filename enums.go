@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"unsafe"
 )
 
@@ -444,6 +445,18 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 	default:
 		return nil, fmt.Errorf("Unrecognized value type: %d", d)
 	}
+}
+
+var tileDBInt, tileDBUint = intUintTypes() // The Datatypes of Go `int` and `uint`.
+
+func intUintTypes() (Datatype, Datatype) {
+	switch strconv.IntSize {
+	case 32:
+		return TILEDB_INT32, TILEDB_UINT32
+	case 64:
+		return TILEDB_INT64, TILEDB_UINT64
+	}
+	panic(fmt.Sprintf("can't run on systems with %v-bit integers", strconv.IntSize))
 }
 
 // EncryptionType represents different encryption algorithms

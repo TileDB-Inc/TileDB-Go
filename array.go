@@ -11,9 +11,7 @@ import "C"
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"runtime"
-	"strconv"
 	"unsafe"
 )
 
@@ -269,7 +267,7 @@ func (a *Array) OpenEndTimestamp() (uint64, error) {
 }
 
 // getNonEmptyDomainForDim creates a NonEmptyDomain from a generic dimension-typed slice
-func getNonEmptyDomainForDim(dimension *Dimension, dimensionSlice interface{}) (*NonEmptyDomain, error) {
+func getNonEmptyDomainForDim(dimension *Dimension, bounds interface{}) (*NonEmptyDomain, error) {
 	dimensionType, err := dimension.Type()
 	if err != nil {
 		return nil, err
@@ -279,51 +277,47 @@ func getNonEmptyDomainForDim(dimension *Dimension, dimensionSlice interface{}) (
 	if err != nil {
 		return nil, err
 	}
-
-	var nonEmptyDomain NonEmptyDomain
-	switch dimensionType {
-	case TILEDB_INT8:
-		tmpDimension := dimensionSlice.([]int8)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []int8{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_INT16:
-		tmpDimension := dimensionSlice.([]int16)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []int16{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_INT32:
-		tmpDimension := dimensionSlice.([]int32)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []int32{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY,
-		TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US,
-		TILEDB_DATETIME_NS, TILEDB_DATETIME_AS, TILEDB_DATETIME_FS, TILEDB_DATETIME_PS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
-		tmpDimension := dimensionSlice.([]int64)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []int64{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_UINT8:
-		tmpDimension := dimensionSlice.([]uint8)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []uint8{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_UINT16:
-		tmpDimension := dimensionSlice.([]uint16)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []uint16{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_UINT32:
-		tmpDimension := dimensionSlice.([]uint32)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []uint32{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_UINT64:
-		tmpDimension := dimensionSlice.([]uint64)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []uint64{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_FLOAT32:
-		tmpDimension := dimensionSlice.([]float32)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []float32{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_FLOAT64:
-		tmpDimension := dimensionSlice.([]float64)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []float64{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_STRING_ASCII:
-		tmpDimension := dimensionSlice.([]interface{})
-		lowBound := tmpDimension[0].([]uint8)
-		highBound := tmpDimension[1].([]uint8)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []string{string(lowBound), string(highBound)}}
-	default:
-		return nil, fmt.Errorf("error creating non empty domain: unknown dimension type")
+	switch ds := bounds.(type) {
+	case []int8:
+		return makeNonEmptyDomain(name, ds)
+	case []int16:
+		return makeNonEmptyDomain(name, ds)
+	case []int32:
+		return makeNonEmptyDomain(name, ds)
+	case []int64:
+		return makeNonEmptyDomain(name, ds)
+	case []uint8:
+		return makeNonEmptyDomain(name, ds)
+	case []uint16:
+		return makeNonEmptyDomain(name, ds)
+	case []uint32:
+		return makeNonEmptyDomain(name, ds)
+	case []uint64:
+		return makeNonEmptyDomain(name, ds)
+	case []float32:
+		return makeNonEmptyDomain(name, ds)
+	case []float64:
+		return makeNonEmptyDomain(name, ds)
+	case []bool:
+		return makeNonEmptyDomain(name, ds)
+	case []any:
+		if dimensionType != TILEDB_STRING_ASCII {
+			return nil, fmt.Errorf(
+				"type mismatch between non-empty domain type (%T) and dimension type (%v); expected %v",
+				ds[0], dimensionType, TILEDB_STRING_ASCII,
+			)
+		}
+		lo, hi := ds[0].([]byte), ds[1].([]byte)
+		return &NonEmptyDomain{DimensionName: name, Bounds: []string{string(lo), string(hi)}}, nil
 	}
+	return nil, fmt.Errorf(
+		"error creating nonempty domain: unknown data type (slice %T; type %v)",
+		bounds, dimensionType,
+	)
+}
 
-	return &nonEmptyDomain, nil
+func makeNonEmptyDomain[T any](name string, bounds []T) (*NonEmptyDomain, error) {
+	return &NonEmptyDomain{DimensionName: name, Bounds: []T{bounds[0], bounds[1]}}, nil
 }
 
 // NonEmptyDomain retrieves the non-empty domain from an array
@@ -830,182 +824,91 @@ func (a *Array) PutCharMetadata(key string, charData string) error {
 // PutMetadata puts a metadata key-value item to an open array. The array must
 // be opened in WRITE mode, otherwise the function will error out.
 func (a *Array) PutMetadata(key string, value interface{}) error {
-	ckey := C.CString(key)
-	defer C.free(unsafe.Pointer(ckey))
-
-	var isSliceValue bool = false
-	if reflect.TypeOf(value).Kind() == reflect.Slice {
-		isSliceValue = true
+	switch value := value.(type) {
+	case int:
+		return arrayPutScalarMetadata(a, tileDBInt, key, value)
+	case []int:
+		return arrayPutSliceMetadata(a, tileDBInt, key, value)
+	case int8:
+		return arrayPutScalarMetadata(a, TILEDB_INT8, key, value)
+	case []int8:
+		return arrayPutSliceMetadata(a, TILEDB_INT8, key, value)
+	case int16:
+		return arrayPutScalarMetadata(a, TILEDB_INT16, key, value)
+	case []int16:
+		return arrayPutSliceMetadata(a, TILEDB_INT16, key, value)
+	case int32:
+		return arrayPutScalarMetadata(a, TILEDB_INT32, key, value)
+	case []int32:
+		return arrayPutSliceMetadata(a, TILEDB_INT32, key, value)
+	case uint:
+		return arrayPutScalarMetadata(a, tileDBUint, key, value)
+	case []uint:
+		return arrayPutSliceMetadata(a, tileDBUint, key, value)
+	case int64:
+		return arrayPutScalarMetadata(a, TILEDB_INT64, key, value)
+	case []int64:
+		return arrayPutSliceMetadata(a, TILEDB_INT64, key, value)
+	case uint8:
+		return arrayPutScalarMetadata(a, TILEDB_UINT8, key, value)
+	case []uint8:
+		return arrayPutSliceMetadata(a, TILEDB_UINT8, key, value)
+	case uint16:
+		return arrayPutScalarMetadata(a, TILEDB_UINT16, key, value)
+	case []uint16:
+		return arrayPutSliceMetadata(a, TILEDB_UINT16, key, value)
+	case uint32:
+		return arrayPutScalarMetadata(a, TILEDB_UINT32, key, value)
+	case []uint32:
+		return arrayPutSliceMetadata(a, TILEDB_UINT32, key, value)
+	case uint64:
+		return arrayPutScalarMetadata(a, TILEDB_UINT64, key, value)
+	case []uint64:
+		return arrayPutSliceMetadata(a, TILEDB_UINT64, key, value)
+	case float32:
+		return arrayPutScalarMetadata(a, TILEDB_FLOAT32, key, value)
+	case []float32:
+		return arrayPutSliceMetadata(a, TILEDB_FLOAT32, key, value)
+	case float64:
+		return arrayPutScalarMetadata(a, TILEDB_FLOAT64, key, value)
+	case []float64:
+		return arrayPutSliceMetadata(a, TILEDB_FLOAT64, key, value)
+	case bool:
+		return arrayPutScalarMetadata(a, TILEDB_BOOL, key, value)
+	case []bool:
+		return arrayPutSliceMetadata(a, TILEDB_BOOL, key, value)
+	case string:
+		valPtr := unsafe.Pointer(C.CString(value))
+		defer C.free(valPtr)
+		return arrayPutMetadata(a, TILEDB_STRING_UTF8, key, valPtr, len(value))
 	}
+	return fmt.Errorf("can't write %q metadata: unrecognized value type %T", key, value)
+}
 
-	var datatype Datatype
-	var valueNum C.uint
-	var valueType reflect.Kind
-
-	valueInterfaceVal := reflect.ValueOf(value)
-	if isSliceValue {
-		if valueInterfaceVal.Len() == 0 {
-			return fmt.Errorf("Value passed must be a non-empty slice, size of slice is: %d", valueInterfaceVal.Len())
-		}
-		valueType = reflect.TypeOf(value).Elem().Kind()
-		valueNum = C.uint(valueInterfaceVal.Len())
-	} else {
-		valueType = reflect.TypeOf(value).Kind()
-		valueNum = 1
+func arrayPutSliceMetadata[T scalarType](a *Array, dt Datatype, key string, value []T) error {
+	if len(value) == 0 {
+		return fmt.Errorf("length of %q metadata %T value must be nonzero", key, value)
 	}
+	return arrayPutMetadata(a, dt, key, slicePtr(value), len(value))
+}
 
-	var ret C.int32_t
-	switch valueType {
-	case reflect.Int:
-		// Check size of int on platform
-		if strconv.IntSize == 32 {
-			datatype = TILEDB_INT32
-			if isSliceValue {
-				tmpValue := value.([]int32)
-				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-			} else {
-				tmpValue := value.(int32)
-				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-			}
-		} else {
-			datatype = TILEDB_INT64
-			if isSliceValue {
-				tmpValue := value.([]int64)
-				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-			} else {
-				tmpValue := value.(int64)
-				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-			}
-		}
-	case reflect.Int8:
-		datatype = TILEDB_INT8
-		if isSliceValue {
-			tmpValue := value.([]int8)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(int8)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Int16:
-		datatype = TILEDB_INT16
-		if isSliceValue {
-			tmpValue := value.([]int16)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(int16)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Int32:
-		datatype = TILEDB_INT32
-		if isSliceValue {
-			tmpValue := value.([]int32)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(int32)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Int64:
-		datatype = TILEDB_INT64
-		if isSliceValue {
-			tmpValue := value.([]int64)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(int64)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Uint:
-		// Check size of uint on platform
-		if strconv.IntSize == 32 {
-			datatype = TILEDB_UINT32
-			if isSliceValue {
-				tmpValue := value.([]uint32)
-				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-			} else {
-				tmpValue := value.(uint32)
-				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-			}
-		} else {
-			datatype = TILEDB_UINT64
-			if isSliceValue {
-				tmpValue := value.([]uint64)
-				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-			} else {
-				tmpValue := value.(uint64)
-				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-			}
-		}
-	case reflect.Uint8:
-		datatype = TILEDB_UINT8
-		if isSliceValue {
-			tmpValue := value.([]uint8)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(uint8)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Uint16:
-		datatype = TILEDB_UINT16
-		if isSliceValue {
-			tmpValue := value.([]uint16)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(uint16)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Uint32:
-		datatype = TILEDB_UINT32
-		if isSliceValue {
-			tmpValue := value.([]uint32)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(uint32)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Uint64:
-		datatype = TILEDB_UINT64
-		if isSliceValue {
-			tmpValue := value.([]uint64)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(uint64)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Float32:
-		datatype = TILEDB_FLOAT32
-		if isSliceValue {
-			tmpValue := value.([]float32)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(float32)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Float64:
-		datatype = TILEDB_FLOAT64
-		if isSliceValue {
-			tmpValue := value.([]float64)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(float64)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.String:
-		datatype = TILEDB_STRING_UTF8
-		stringValue := value.(string)
-		valueNum = C.uint(len(stringValue))
-		cTmpValue := C.CString(stringValue)
-		defer C.free(unsafe.Pointer(cTmpValue))
-		if valueNum > 0 {
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(cTmpValue))
-		}
-	default:
-		if isSliceValue {
-			return fmt.Errorf("Unrecognized value type passed: %s", valueInterfaceVal.Index(0).Kind().String())
-		}
-		return fmt.Errorf("Unrecognized value type passed: %s", valueInterfaceVal.Kind().String())
-	}
+func arrayPutScalarMetadata[T scalarType](a *Array, dt Datatype, key string, value T) error {
+	return arrayPutMetadata(a, dt, key, unsafe.Pointer(&value), 1)
+}
 
+func arrayPutMetadata(a *Array, dt Datatype, key string, valuePtr unsafe.Pointer, count int) error {
+	cKey := C.CString(key)
+	defer C.free(unsafe.Pointer(cKey))
+	ret := C.tiledb_array_put_metadata(
+		a.context.tiledbContext,
+		a.tiledbArray,
+		cKey,
+		C.tiledb_datatype_t(dt),
+		C.uint(count),
+		valuePtr,
+	)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error adding metadata to array: %s", a.context.LastError())
+		return fmt.Errorf("could not add metadata to array: %w", a.context.LastError())
 	}
 	return nil
 }
