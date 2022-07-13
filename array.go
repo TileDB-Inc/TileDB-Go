@@ -1067,9 +1067,7 @@ func (a *Array) Config() (*Config, error) {
 		return nil, fmt.Errorf("Error getting config from array: %s", a.context.LastError())
 	}
 
-	runtime.SetFinalizer(&config, func(config *Config) {
-		config.Free()
-	})
+	freeOnGC(&config)
 
 	if a.config == nil {
 		a.config = &config
