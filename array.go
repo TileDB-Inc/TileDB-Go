@@ -25,6 +25,7 @@ type Array struct {
 	tiledbArray *C.tiledb_array_t
 	context     *Context
 	uri         string
+	config      *Config
 }
 
 // ArrayMetadata defines metadata for the array
@@ -1044,4 +1045,35 @@ func (a *Array) GetMetadataMapWithValueLimit(limit *uint) (map[string]*ArrayMeta
 	}
 
 	return metadataMap, nil
+}
+
+// SetConfig config on query
+func (a *Array) SetConfig(config *Config) error {
+	a.config = config
+
+	ret := C.tiledb_array_set_config(a.context.tiledbContext, a.tiledbArray, a.config.tiledbConfig)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error setting config on array: %s", a.context.LastError())
+	}
+
+	return nil
+}
+
+// Config get config on query
+func (a *Array) Config() (*Config, error) {
+	config := Config{}
+	ret := C.tiledb_array_get_config(a.context.tiledbContext, a.tiledbArray, &config.tiledbConfig)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error getting config from array: %s", a.context.LastError())
+	}
+
+	runtime.SetFinalizer(&config, func(config *Config) {
+		config.Free()
+	})
+
+	if a.config == nil {
+		a.config = &config
+	}
+
+	return &config, nil
 }
