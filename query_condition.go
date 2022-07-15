@@ -10,7 +10,6 @@ import "C"
 
 import (
 	"fmt"
-	"runtime"
 	"unsafe"
 )
 
@@ -26,11 +25,7 @@ func NewQueryCondition(tdbCtx *Context, attributeName string, op QueryConditionO
 	if ret := C.tiledb_query_condition_alloc(qc.context.tiledbContext, &qc.cond); ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error allocating tiledb query condition: %s", qc.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&qc, func(qc *QueryCondition) {
-		qc.Free()
-	})
+	freeOnGC(&qc)
 
 	if err := qc.init(attributeName, value, op); err != nil {
 		return nil, err
@@ -46,11 +41,7 @@ func NewQueryConditionCombination(tdbCtx *Context, left *QueryCondition, op Quer
 	if ret := C.tiledb_query_condition_combine(qc.context.tiledbContext, left.cond, right.cond, C.tiledb_query_condition_combination_op_t(op), &qc.cond); ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error allocating tiledb query condition: %s", qc.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&qc, func(qc *QueryCondition) {
-		qc.Free()
-	})
+	freeOnGC(&qc)
 
 	return &qc, nil
 }

@@ -12,7 +12,6 @@ import "C"
 import (
 	"fmt"
 	"os"
-	"runtime"
 	"unsafe"
 )
 
@@ -101,12 +100,7 @@ func NewArraySchema(tdbCtx *Context, arrayType ArrayType) (*ArraySchema, error) 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb arraySchema: %s", arraySchema.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&arraySchema, func(arraySchema *ArraySchema) {
-		arraySchema.Free()
-	})
-
+	freeOnGC(&arraySchema)
 	return &arraySchema, nil
 }
 
@@ -153,10 +147,7 @@ func (a *ArraySchema) AttributeFromIndex(index uint) (*Attribute, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting attribute %d for tiledb arraySchema: %s", index, a.context.LastError())
 	}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&attr, func(attr *Attribute) {
-		attr.Free()
-	})
+	freeOnGC(&attr)
 	return &attr, nil
 }
 
@@ -171,10 +162,7 @@ func (a *ArraySchema) AttributeFromName(attrName string) (*Attribute, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting attribute %s for tiledb arraySchema: %s", attrName, a.context.LastError())
 	}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&attr, func(attr *Attribute) {
-		attr.Free()
-	})
+	freeOnGC(&attr)
 	return &attr, nil
 }
 
@@ -266,10 +254,7 @@ func (a *ArraySchema) Domain() (*Domain, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error setting domain for tiledb arraySchema: %s", a.context.LastError())
 	}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&domain, func(domain *Domain) {
-		domain.Free()
-	})
+	freeOnGC(&domain)
 	return &domain, nil
 }
 
@@ -346,10 +331,7 @@ func (a *ArraySchema) CoordsFilterList() (*FilterList, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting coordinates filter list for tiledb arraySchema: %s", a.context.LastError())
 	}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&filterList, func(filterList *FilterList) {
-		filterList.Free()
-	})
+	freeOnGC(&filterList)
 	return &filterList, nil
 }
 
@@ -371,10 +353,7 @@ func (a *ArraySchema) OffsetsFilterList() (*FilterList, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting offsets filter list for tiledb arraySchema: %s", a.context.LastError())
 	}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&filterList, func(filterList *FilterList) {
-		filterList.Free()
-	})
+	freeOnGC(&filterList)
 	return &filterList, nil
 }
 
@@ -396,10 +375,7 @@ func LoadArraySchema(context *Context, path string) (*ArraySchema, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error in loading arraySchema from %s: %s", path, a.context.LastError())
 	}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&a, func(arraySchema *ArraySchema) {
-		arraySchema.Free()
-	})
+	freeOnGC(&a)
 	return &a, nil
 }
 

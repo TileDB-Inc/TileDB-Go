@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"runtime"
 	"sync"
 	"unsafe"
 
@@ -71,11 +70,7 @@ func NewQuery(tdbCtx *Context, array *Array) (*Query, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb query: %s", query.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&query, func(query *Query) {
-		query.Free()
-	})
+	freeOnGC(&query)
 
 	query.resultBufferElements = make(map[string][3]*uint64)
 
@@ -3343,10 +3338,7 @@ func (q *Query) Array() (*Array, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting array from query: %s", q.context.LastError())
 	}
-
-	runtime.SetFinalizer(&array, func(array *Array) {
-		array.Free()
-	})
+	freeOnGC(&array)
 	return &array, nil
 }
 
@@ -3369,10 +3361,7 @@ func (q *Query) Config() (*Config, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting config from query: %s", q.context.LastError())
 	}
-
-	runtime.SetFinalizer(&config, func(config *Config) {
-		config.Free()
-	})
+	freeOnGC(&config)
 
 	if q.config == nil {
 		q.config = &config

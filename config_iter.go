@@ -10,7 +10,6 @@ import "C"
 
 import (
 	"fmt"
-	"runtime"
 	"unsafe"
 )
 
@@ -34,11 +33,7 @@ func NewConfigIter(config *Config, prefix string) (*ConfigIter, error) {
 		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("error creating tiledb config iter: %s", C.GoString(msg))
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&ci, func(ci *ConfigIter) {
-		ci.Free()
-	})
+	freeOnGC(&ci)
 
 	return &ci, nil
 }

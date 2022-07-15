@@ -12,7 +12,6 @@ import "C"
 import (
 	"fmt"
 	"io"
-	"runtime"
 	"strings"
 	"unsafe"
 
@@ -86,11 +85,7 @@ func NewVFS(context *Context, config *Config) (*VFS, error) {
 		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("error creating tiledb context: %s", C.GoString(msg))
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&vfs, func(vfs *VFS) {
-		vfs.Free()
-	})
+	freeOnGC(&vfs)
 
 	return &vfs, nil
 }
@@ -122,10 +117,7 @@ func (v *VFS) Config() (*Config, error) {
 	} else if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("unknown error in GetConfig")
 	}
-
-	runtime.SetFinalizer(&config, func(config *Config) {
-		config.Free()
-	})
+	freeOnGC(&config)
 
 	return &config, nil
 }
@@ -347,10 +339,7 @@ func (v *VFS) Open(uri string, mode VFSMode) (*VFSfh, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
 	fh := &VFSfh{context: v.context, uri: uri, vfs: v}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(fh, func(fh *VFSfh) {
-		fh.Free()
-	})
+	freeOnGC(fh)
 
 	ret := C.tiledb_vfs_open(v.context.tiledbContext, v.tiledbVFS, curi, C.tiledb_vfs_mode_t(mode), &fh.tiledbVFSfh)
 

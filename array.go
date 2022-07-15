@@ -11,7 +11,6 @@ import "C"
 import (
 	"encoding/json"
 	"fmt"
-	"runtime"
 	"unsafe"
 )
 
@@ -62,11 +61,7 @@ func NewArray(tdbCtx *Context, uri string) (*Array, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb array: %s", array.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&array, func(array *Array) {
-		array.Free()
-	})
+	freeOnGC(&array)
 
 	return &array, nil
 }
@@ -229,10 +224,7 @@ func (a *Array) Schema() (*ArraySchema, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting schema for tiledb array: %s", a.context.LastError())
 	}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&arraySchema, func(arraySchema *ArraySchema) {
-		arraySchema.Free()
-	})
+	freeOnGC(&arraySchema)
 	return &arraySchema, nil
 }
 

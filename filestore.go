@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"runtime"
 	"unsafe"
 )
 
@@ -175,9 +174,7 @@ func NewArraySchemaForFile(tdbCtx *Context, filePath string) (*ArraySchema, erro
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating schema: %s", tdbCtx.LastError())
 	}
-	runtime.SetFinalizer(&arraySchema, func(arraySchema *ArraySchema) {
-		arraySchema.Free()
-	})
+	freeOnGC(&arraySchema)
 
 	return &arraySchema, nil
 }
