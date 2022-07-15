@@ -52,19 +52,6 @@ jobs:
       with:
         go-version: ${{ matrix.go }}
 
-    - name: Cache dependencies
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-
-    - name: Install dependencies
-      run: go get -t .
-
     # Tests TileDB-Go
     - name: Test TileDB-Go
       run: go test -v ./...
@@ -90,19 +77,6 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go }}
-
-    - name: Cache dependencies
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/Library/Caches/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-
-    - name: Install dependencies
-      run: go get -t .
 
     # Tests TileDB-Go
     - name: Test TileDB-Go
@@ -131,19 +105,6 @@ jobs:
       with:
         go-version: ${{ matrix.go }}
 
-    - name: Cache dependencies
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-experimental
-        restore-keys: |
-          ${{ runner.os }}-go-
-
-    - name: Install dependencies
-      run: go get -t .
-
     # Tests TileDB-Go
     - name: Test TileDB-Go
       run: go test -tags=experimental -v ./...
@@ -170,19 +131,6 @@ jobs:
       with:
         go-version: ${{ matrix.go }}
 
-    - name: Cache dependencies
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/Library/Caches/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-experimental
-        restore-keys: |
-          ${{ runner.os }}-go-
-
-    - name: Install dependencies
-      run: go get -t .
-
     # Tests experimental bindings of TileDB-Go
     - name: Test TileDB-Go
       run: go test -tags=experimental -v ./...
@@ -208,20 +156,6 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go }}
-
-    - name: Cache dependencies
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-asan
-        restore-keys: |
-          ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          ${{ runner.os }}-go-
-
-    - name: Install dependencies
-      run: go get -t .
 
     # Tests TileDB-Go
     - name: Running examples using address sanitizer flags
