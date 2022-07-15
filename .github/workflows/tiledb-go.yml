@@ -7,157 +7,121 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  # The version of TileDB to test against.
+  CORE_VERSION: "2.10.2"
+  # The first seven characters of that version's commit hash
+  # (the same ones that GitHub displays on a release page).
+  CORE_HASH: "9ab84f9"
+
 jobs:
   golangci:
     name: lint
     runs-on: ubuntu-20.04
     steps:
 
-    # Checks out repository
-    - uses: actions/checkout@v2
+      # Checks out repository
+      - uses: actions/checkout@v2
 
-    # Downloads TileDB-Core from release assets and install
-    - name: Run TileDB install script
-      run: ./.github/scripts/install_tiledb_linux.sh
-      shell: bash
+      - name: Cache build
+        id: build-cache
+        uses: actions/cache@v2
+        with:
+          path: ~/tiledb-core/install
+          key: golangci-${{ runner.os }}-${{ env.CORE_VERSION }}-${{ env.CORE_HASH }}-${{ hashFiles('./.github/scripts/install_tiledb_binary.sh') }}
 
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v2
-      continue-on-error: true
-      with:
-        # Required: the version of golangci-lint is required and must be
-        # specified without patch version: we always use the latest patch version.
-        version: v1.35.2
+      - name: Install TileDB Core
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        run: './.github/scripts/install_tiledb_binary.sh'
 
-  Linux_Test:
-    runs-on: ubuntu-20.04
+      - name: Post-install
+        run: ./.github/scripts/post_install.sh
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        continue-on-error: true
+        with:
+          # Required: the version of golangci-lint is required and must be
+          # specified without patch version: we always use the latest patch version.
+          version: v1.35.2
+
+  binary-test:
+    name: binary-${{ matrix.runner }}-go${{ matrix.go }}
+    runs-on: ${{ matrix.runner }}
     strategy:
+      fail-fast: false
       matrix:
-        # Will be checking following versions
         go: ["1.18"]
+        runner: ["macos-11", "ubuntu-20.04"]
+
     steps:
 
-    # Checks out repository
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    # Downloads TileDB-Core from release assets and install
-    - name: Run TileDB install script
-      run: ./.github/scripts/install_tiledb_linux.sh
-      shell: bash
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
 
-    # Following action sets up Go and uses the strategy matrix to test on
-    # specific versions
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go }}
+      - name: Cache build
+        id: build-cache
+        uses: actions/cache@v2
+        with:
+          path: ~/tiledb-core/install
+          key: golangci-${{ runner.os }}-${{ env.CORE_VERSION }}-${{ env.CORE_HASH }}-${{ hashFiles('./.github/scripts/install_tiledb_binary.sh') }}
 
-    # Tests TileDB-Go
-    - name: Test TileDB-Go
-      run: go test -v ./...
+      - name: Install TileDB Core
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        run: './.github/scripts/install_tiledb_binary.sh'
 
-  Macos_Test:
-    runs-on: macos-11
+      - name: Post-install
+        run: ./.github/scripts/post_install.sh
+
+      - name: Run tests
+        run: go test -v ./...
+
+  source-test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
     strategy:
+      fail-fast: false
       matrix:
-        # Will be checking following versions
-        go: ["1.18"]
+        include:
+          - name: macos-experimental
+            runner: macos-11
+            flags: "-DTILEDB_VERBOSE=OFF -DTILEDB_S3=ON -DTILEDB_SERIALIZATION=ON -DCMAKE_BUILD_TYPE=Release"
+            test-command: go test -tags=experimental -v ./...
+          - name: linux-experimental
+            runner: ubuntu-20.04
+            flags: "-DTILEDB_VERBOSE=OFF -DTILEDB_S3=ON -DTILEDB_SERIALIZATION=ON -DCMAKE_BUILD_TYPE=Release"
+            test-command: go test -tags=experimental -v ./...
+          - name: linux-asan
+            runner: ubuntu-20.04
+            flags: "-DSANITIZER=leak -DTILEDB_VERBOSE=OFF -DTILEDB_S3=ON -DTILEDB_SERIALIZATION=ON -DCMAKE_BUILD_TYPE=Debug"
+            test-command: go run -asan ./cmd/tiledb-go-examples
+
     steps:
-    # Checks out repository
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    # Downloads TileDB-Core from release assets and install
-    - name: Run TileDB install script
-      run: ./.github/scripts/install_tiledb_macos.sh
-      shell: bash
+      - uses: actions/setup-go@v2
+        with:
+          go-version: "1.18"
 
-    # Following action sets up Go and uses the strategy matrix to test on
-    # specific versions
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go }}
+      - name: Cache build
+        id: build-cache
+        uses: actions/cache@v2
+        with:
+          path: ~/tiledb-core/install
+          key: tiledb-binary-${{ runner.os }}-${{ env.CORE_VERSION }}-${{ env.CORE_HASH }}-${{ hashFiles('./.github/scripts/install_tiledb_source.sh') }}-${{ matrix.flags }}
 
-    # Tests TileDB-Go
-    - name: Test TileDB-Go
-      run: go test -v ./...
+      - name: Compile TileDB Core
+        if: steps.build-cache.outputs.cache-hit != 'true'
+        run: './.github/scripts/install_tiledb_source.sh'
+        env:
+          BUILD_FLAGS: ${{ matrix.flags }}
 
-  Linux_Experimental_Test:
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        # Will be checking following versions
-        go: ["1.18"]
-    steps:
+      - name: Post-install
+        run: ./.github/scripts/post_install.sh
 
-    # Checks out repository
-    - uses: actions/checkout@v2
-
-    # Downloads TileDB-Core from release assets and install
-    - name: Run TileDB install script
-      run: ./.github/scripts/install_tiledb_source_linux.sh
-      shell: bash
-
-    # Following action sets up Go and uses the strategy matrix to test on
-    # specific versions
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go }}
-
-    # Tests TileDB-Go
-    - name: Test TileDB-Go
-      run: go test -tags=experimental -v ./...
-
-  Macos_Experimental_Test:
-    runs-on: macos-11
-    strategy:
-      matrix:
-        # Will be checking following versions
-        go: ["1.18"]
-    steps:
-    # Checks out repository
-    - uses: actions/checkout@v2
-
-    # Downloads TileDB-Core from release assets and install
-    - name: Run TileDB install script
-      run: ./.github/scripts/install_tiledb_source_macos.sh
-      shell: bash
-
-    # Following action sets up Go and uses the strategy matrix to test on
-    # specific versions
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go }}
-
-    # Tests experimental bindings of TileDB-Go
-    - name: Test TileDB-Go
-      run: go test -tags=experimental -v ./...
-
-  Linux_Address_Sanitizer:
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        # Will be checking following versions
-        go: [1.18]
-    steps:
-    # Checks out repository
-    - uses: actions/checkout@v2
-
-    # Downloads TileDB-Core from release assets and install
-    - name: Run TileDB install script
-      run: ./.github/scripts/install_tiledb_linux_debug.sh
-      shell: bash
-
-    # Following action sets up Go and uses the strategy matrix to test on
-    # specific versions
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go }}
-
-    # Tests TileDB-Go
-    - name: Running examples using address sanitizer flags
-      continue-on-error: true
-      run: go run -tags asan ./cmd/tiledb-go-examples
+      - name: Run test
+        run: ${{ matrix.test-command }}
