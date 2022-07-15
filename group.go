@@ -59,7 +59,7 @@ func (g *Group) Deserialize(buffer *Buffer, serializationType SerializationType,
 		cClientSide = 0
 	}
 
-	b, err := buffer.bytes()
+	b, err := buffer.dataCopy()
 	if err != nil {
 		return errors.New("failed to retrieve bytes from buffer")
 	}
@@ -464,7 +464,7 @@ func SerializeGroupMetadata(g *Group, serializationType SerializationType) ([]by
 
 // DeserializeGroupMetadata deserializes group metadata
 func DeserializeGroupMetadata(g *Group, buffer *Buffer, serializationType SerializationType) error {
-	b, err := buffer.bytes()
+	b, err := buffer.dataCopy()
 	if err != nil {
 		return errors.New("failed to retrieve bytes from buffer")
 	}
