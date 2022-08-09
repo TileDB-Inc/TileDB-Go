@@ -188,7 +188,7 @@ func consolidateVacuum(dir string) {
 	config, err := tiledb.NewConfig()
 	checkError(err)
 
-	err = config.Set("sm.consolidation.buffer_size", "4")
+	err = config.Set("sm.consolidation.buffer_size", "8")
 	checkError(err)
 
 	err = array.Consolidate(config)
