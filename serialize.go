@@ -351,3 +351,49 @@ func DeserializeQueryEstResultSizes(q *Query, buffer *Buffer, serializationType 
 	}
 	return nil
 }
+
+// SerializeArray serializes an array
+func SerializeArray(array *Array, serializationType SerializationType, clientSide bool) ([]byte, error) {
+	var cClientSide C.int32_t
+	if clientSide {
+		cClientSide = 1
+	} else {
+		cClientSide = 0
+	}
+
+	buffer := Buffer{context: array.context}
+	// Set finalizer for free C pointer on gc
+	freeOnGC(&buffer)
+
+	ret := C.tiledb_serialize_array(array.context.tiledbContext, array.tiledbArray, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error serializing array: %s", array.context.LastError())
+	}
+
+	return buffer.Serialize(serializationType)
+}
+
+// DeserializeArray deserializes a new array from the given buffer
+func DeserializeArray(buffer *Buffer, serializationType SerializationType, clientSide bool) (*Array, error) {
+	array := Array{context: buffer.context}
+
+	var cClientSide C.int32_t
+	if clientSide {
+		cClientSide = 1
+	} else {
+		cClientSide = 0
+	}
+
+	ret := C.tiledb_deserialize_array(array.context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, &array.tiledbArray)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error deserializing array: %s", array.context.LastError())
+	}
+
+	// Set finalizer for free C pointer on gc
+	// This needs to happen *after* the tiledb_deserialize_array call
+	// because that may leave the array with a non-nil pointer
+	// to already-freed memory.
+	freeOnGC(&array)
+
+	return &array, nil
+}
