@@ -24,6 +24,7 @@ type FragmentInfo struct {
 	context            *Context
 	uri                string
 	array              *Array
+	config             *Config
 }
 
 // NewFragmentInfo alloc a new fragment info for a given array and fetches all
@@ -569,4 +570,28 @@ func (fI *FragmentInfo) DumpSTDOUT() error {
 		return fmt.Errorf("Error dumping fragment info to stdout: %s", fI.context.LastError())
 	}
 	return nil
+}
+
+func (fI *FragmentInfo) SetConfig(config *Config) error {
+	ret := C.tiledb_fragment_info_set_config(fI.context.tiledbContext, fI.tiledbFragmentInfo, config.tiledbConfig)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error setting config on group: %s", fI.context.LastError())
+	}
+	fI.config = config
+	return nil
+}
+
+func (fI *FragmentInfo) Config() (*Config, error) {
+	var config Config
+	ret := C.tiledb_fragment_info_get_config(fI.context.tiledbContext, fI.tiledbFragmentInfo, &config.tiledbConfig)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error getting config from fragment info: %s", fI.context.LastError())
+	}
+	freeOnGC(&config)
+
+	if fI.config == nil {
+		fI.config = &config
+	}
+
+	return &config, nil
 }
