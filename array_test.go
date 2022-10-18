@@ -64,6 +64,12 @@ func ExampleNewArray() {
 		return
 	}
 
+	err = arraySchema.SetDomain(domain)
+	if err != nil {
+		// Handle error
+		return
+	}
+
 	array, err := NewArray(context, "my_array")
 	if err != nil {
 		// Handle error
