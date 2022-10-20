@@ -1,3 +1,3 @@
 set -e -x
-curl --location -o tiledb.tar.gz https://github.com/TileDB-Inc/TileDB/releases/download/2.11.0/tiledb-macos-x86_64-2.11.0-34e5dbc.tar.gz \
+curl --location -o tiledb.tar.gz https://github.com/TileDB-Inc/TileDB/releases/download/2.12.0/tiledb-macos-x86_64-2.12.0-ac8a0df.tar.gz \
 && sudo tar -C /usr/local -xf tiledb.tar.gz
