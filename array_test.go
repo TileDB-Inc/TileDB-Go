@@ -312,6 +312,96 @@ func TestArray_OpenWithOptions(t *testing.T) {
 	})
 }
 
+func TestArray_Metadata(t *testing.T) {
+	testKey := "test"
+	t.Run("ascii", func(t *testing.T) {
+		a, err := newTestArray(t)
+		if err != nil {
+			t.Fatalf("failed to create new test array: %v", err)
+		}
+
+		testString := "abc"
+		err = a.Open(TILEDB_WRITE)
+		assert.NoError(t, err)
+
+		err = a.PutMetadata(testKey, testString)
+		assert.NoError(t, err)
+
+		err = a.Close()
+		assert.NoError(t, err)
+
+		err = a.Open(TILEDB_READ)
+		assert.NoError(t, err)
+
+		dataType, valNum, value, err := a.GetMetadata(testKey)
+		assert.NoError(t, err)
+		assert.Equal(t, TILEDB_STRING_UTF8, dataType)
+		assert.EqualValues(t, len(testString), valNum)
+		assert.Equal(t, testString, value.(string))
+
+		a.Close()
+		assert.NoError(t, err)
+	})
+
+	t.Run("utf8", func(t *testing.T) {
+		a, err := newTestArray(t)
+		if err != nil {
+			t.Fatalf("failed to create new test array: %v", err)
+		}
+
+		testString := "€"
+		err = a.Open(TILEDB_WRITE)
+		assert.NoError(t, err)
+
+		err = a.PutMetadata(testKey, testString)
+		assert.NoError(t, err)
+
+		err = a.Close()
+		assert.NoError(t, err)
+
+		err = a.Open(TILEDB_READ)
+		assert.NoError(t, err)
+
+		dataType, valNum, value, err := a.GetMetadata(testKey)
+		assert.NoError(t, err)
+		assert.Equal(t, TILEDB_STRING_UTF8, dataType)
+		assert.EqualValues(t, len(testString), valNum)
+		assert.Equal(t, testString, value.(string))
+
+		a.Close()
+		assert.NoError(t, err)
+	})
+
+	t.Run("nulls", func(t *testing.T) {
+		a, err := newTestArray(t)
+		if err != nil {
+			t.Fatalf("failed to create new test array: %v", err)
+		}
+
+		testString := []byte("\000\000\000")
+		err = a.Open(TILEDB_WRITE)
+		assert.NoError(t, err)
+
+		err = arrayPutMetadata(a, TILEDB_STRING_UTF8, testKey, slicePtr(testString), len(testString))
+		assert.NoError(t, err)
+
+		err = a.Close()
+		assert.NoError(t, err)
+
+		err = a.Open(TILEDB_READ)
+		assert.NoError(t, err)
+
+		dataType, valNum, value, err := a.GetMetadata(testKey)
+		assert.NoError(t, err)
+		assert.Equal(t, TILEDB_STRING_UTF8, dataType)
+		assert.EqualValues(t, len(testString), valNum)
+		assert.Equal(t, string(testString), value.(string))
+
+		a.Close()
+		assert.NoError(t, err)
+	})
+}
+
 func newTestArray(t *testing.T) (*Array, error) {
 	// Create configuration
 	config, err := NewConfig()

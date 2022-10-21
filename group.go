@@ -411,7 +411,7 @@ func (g *Group) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 	}
 
 	groupMetadata := GroupMetadata{
-		Key:      C.GoString(cKey),
+		Key:      C.GoStringN(cKey, C.int(cKeyLen)),
 		KeyLen:   uint32(cKeyLen),
 		Datatype: datatype,
 		ValueNum: valueNum,

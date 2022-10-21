@@ -1004,7 +1004,7 @@ func (a *Array) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 	}
 
 	arrayMetadata := ArrayMetadata{
-		Key:      C.GoString(cKey),
+		Key:      C.GoStringN(cKey, C.int(cKeyLen)),
 		KeyLen:   uint32(cKeyLen),
 		Datatype: datatype,
 		ValueNum: valueNum,
