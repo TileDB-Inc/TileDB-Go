@@ -402,19 +402,22 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 			return "", nil
 		}
 		tmpslice := (*[1 << 46]C.char)(cvalue)[:valueNum:valueNum]
-		return C.GoString(&tmpslice[0])[0:valueNum], nil
+		// TODO: Handle overflow from unsigned conversion
+		return C.GoStringN(&tmpslice[0], C.int(valueNum))[0:valueNum], nil
 	case TILEDB_STRING_ASCII:
 		if cvalue == nil || valueNum == 0 {
 			return "", nil
 		}
 		tmpslice := (*[1 << 46]C.char)(cvalue)[:valueNum:valueNum]
-		return C.GoString(&tmpslice[0])[0:valueNum], nil
+		// TODO: Handle overflow from unsigned conversion
+		return C.GoStringN(&tmpslice[0], C.int(valueNum))[0:valueNum], nil
 	case TILEDB_STRING_UTF8:
 		if cvalue == nil || valueNum == 0 {
 			return "", nil
 		}
 		tmpslice := (*[1 << 46]C.char)(cvalue)[:valueNum:valueNum]
-		return C.GoString(&tmpslice[0])[0:valueNum], nil
+		// TODO: Handle overflow from unsigned conversion
+		return C.GoStringN(&tmpslice[0], C.int(valueNum))[0:valueNum], nil
 	case TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK,
 		TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN,
 		TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US,
