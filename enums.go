@@ -27,6 +27,8 @@ const (
 	TILEDB_DENSE ArrayType = C.TILEDB_DENSE
 	// TILEDB_SPARSE dense array
 	TILEDB_SPARSE ArrayType = C.TILEDB_SPARSE
+	// TILEDB_DELETE Delete query
+	TILEDB_DELETE QueryType = C.TILEDB_DELETE
 )
 
 // Datatype

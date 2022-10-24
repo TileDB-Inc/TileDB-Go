@@ -323,6 +323,291 @@ func ExampleNewQuery() {
 	}
 }
 
+// ExampleNewQuery shows a complete write, delete and read example
+func ExampleDeleteQuery() {
+	// Create configuration
+	config, err := NewConfig()
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Test context with config
+	context, err := NewContext(config)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Test create dimension
+	dimension, err := NewDimension(context, "dim1", TILEDB_INT8, []int8{0, 9}, int8(10))
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Test creating domain
+	domain, err := NewDomain(context)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Add dimension
+	err = domain.AddDimensions(dimension)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Create array schema
+	arraySchema, err := NewArraySchema(context, TILEDB_SPARSE)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Create attribute to add to schema
+	attribute, err := NewAttribute(context, "a1", TILEDB_INT32)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Add Attribute
+	err = arraySchema.AddAttributes(attribute)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Set Domain
+	err = arraySchema.SetDomain(domain)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	err = arraySchema.SetCellOrder(TILEDB_ROW_MAJOR)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	err = arraySchema.SetTileOrder(TILEDB_ROW_MAJOR)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Validate Schema
+	err = arraySchema.Check()
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// create temp group name
+	tmpArrayPath := os.TempDir()
+	// Create new array struct
+	array, err := NewArray(context, tmpArrayPath)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Create array on disk
+	err = array.Create(arraySchema)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Open array for writting
+	err = array.Open(TILEDB_WRITE)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Create write query
+	query, err := NewQuery(context, array)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Set write layout
+	err = query.SetLayout(TILEDB_UNORDERED)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Create write buffers
+	bufferA1 := []int32{1, 2, 3, 4}
+	_, err = query.SetBuffer("a1", bufferA1)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Set coordinates, since test is 1d, this is subarray
+	subArray := []int8{0, 1, 2, 3}
+	_, err = query.SetBuffer("dim1", subArray)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Submit write query
+	err = query.Submit()
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Validate status, since query was used this is should be complete
+	status, err := query.Status()
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Validate query type
+	_, err = query.Type()
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Finalize Write
+	err = query.Finalize()
+	if err != nil {
+		// Handle error
+		return
+	}
+	// Close and prepare to delete
+	err = array.Close()
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Prepare a Delete query for elements dim1[2,3]
+	// Reopen array for deletion
+	err = array.Open(TILEDB_DELETE)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	query, err = NewQuery(context, array)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	condition, err := NewQueryCondition(context, "dim1", TILEDB_QUERY_CONDITION_GE, int8(2))
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	err = query.SetQueryCondition(condition)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// submit and finalize query
+	err = query.Submit()
+	if err != nil {
+		// Handle error
+		return
+	}
+	err = query.Finalize()
+	if err != nil {
+		// Handle error
+		return
+	}
+	// Close and prepare to read
+	err = array.Close()
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Reopen array for reading
+	err = array.Open(TILEDB_READ)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	query, err = NewQuery(context, array)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Set coordinates, since test is 1d, this is subarray
+	_, err = query.SetBuffer("dim1", subArray)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Set empty buffers for reading
+	readBufferA1 := make([]int32, 4)
+	_, err = query.SetBuffer("a1", readBufferA1)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Set read layout
+	err = query.SetLayout(TILEDB_ROW_MAJOR)
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Submit read query async
+	err = query.SubmitAsync()
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Wait for status to return complete or to error
+	// Loop while status is inprogress
+	for status, err = query.Status(); status == TILEDB_INPROGRESS && err == nil; status, err = query.Status() {
+		if err != nil {
+			// Handle error
+			return
+		}
+	}
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Validate query type
+	_, err = query.Type()
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Results should be returned
+	_, err = query.HasResults()
+	if err != nil {
+		// Handle error
+		return
+	}
+}
+
 func TestQueryEffectiveBufferSize(t *testing.T) {
 	// Create configuration
 	config, err := NewConfig()
@@ -1545,6 +1830,166 @@ func TestDenseQueryWrite(t *testing.T) {
 	assert.EqualValues(t, bufferA7ValidityComparison, bufferA7ValidityGet)
 
 	query.Free()
+}
+
+// TestSparseQueryDelete validates that sparse array elements can be deleted
+func TestSparseQueryDelete(t *testing.T) {
+	// Create configuration
+	config, err := NewConfig()
+	require.NoError(t, err)
+
+	// Test context with config
+	context, err := NewContext(config)
+	require.NoError(t, err)
+
+	// Test create dimension
+	dimension, err := NewDimension(context, "dim1", TILEDB_INT8, []int8{0, 9}, int8(10))
+	require.NoError(t, err)
+	assert.NotNil(t, dimension)
+
+	// Test creating domain
+	domain, err := NewDomain(context)
+	require.NoError(t, err)
+	assert.NotNil(t, domain)
+
+	// Add dimension
+	require.NoError(t, domain.AddDimensions(dimension))
+
+	// Create array schema
+	arraySchema, err := NewArraySchema(context, TILEDB_SPARSE)
+	require.NoError(t, err)
+	assert.NotNil(t, arraySchema)
+
+	// Create attribute to add to schema
+	attribute, err := NewAttribute(context, "a1", TILEDB_INT32)
+	require.NoError(t, err)
+	assert.NotNil(t, attribute)
+
+	// Add Attribute
+	require.NoError(t, arraySchema.AddAttributes(attribute))
+
+	// Set Domain
+	require.NoError(t, arraySchema.SetDomain(domain))
+
+	require.NoError(t, arraySchema.SetCellOrder(TILEDB_ROW_MAJOR))
+
+	require.NoError(t, arraySchema.SetTileOrder(TILEDB_ROW_MAJOR))
+
+	// Validate Schema
+	require.NoError(t, arraySchema.Check())
+
+	// create temp group name
+	tmpArrayPath := t.TempDir()
+	// Create new array struct
+	array, err := NewArray(context, tmpArrayPath)
+	require.NoError(t, err)
+	assert.NotNil(t, array)
+
+	// Create array on disk
+	require.NoError(t, array.Create(arraySchema))
+
+	// Open array for writting
+	require.NoError(t, array.Open(TILEDB_WRITE))
+
+	// Create write query
+	query, err := NewQuery(context, array)
+	require.NoError(t, err)
+	assert.NotNil(t, query)
+
+	// Set write layout
+	assert.Nil(t, query.SetLayout(TILEDB_UNORDERED))
+
+	// Create write buffers
+	bufferA1 := []int32{1, 2, 3, 4}
+	_, err = query.SetBuffer("a1", bufferA1)
+	require.NoError(t, err)
+
+	// Set coordinates, since test is 1d, this is subarray
+	subArray := []int8{0, 1, 2, 3}
+	_, err = query.SetBuffer("dim1", subArray)
+	require.NoError(t, err)
+
+	// Submit write query
+	require.NoError(t, query.Submit())
+
+	// Validate status, since query was used this is should be complete
+	status, err := query.Status()
+	require.NoError(t, err)
+	assert.Equal(t, TILEDB_COMPLETED, status)
+
+	// Validate query type
+	queryType, err := query.Type()
+	require.NoError(t, err)
+	assert.Equal(t, TILEDB_WRITE, queryType)
+
+	// Finalize Write
+	require.NoError(t, query.Finalize())
+	// Close and prepare to delete
+	require.NoError(t, array.Close())
+
+	// Prepare a Delete query for elements dim1[2,3]
+	// Reopen array for deletion
+	require.NoError(t, array.Open(TILEDB_DELETE))
+
+	query, err = NewQuery(context, array)
+	require.NoError(t, err)
+	assert.NotNil(t, query)
+
+	condition, err := NewQueryCondition(context, "dim1", TILEDB_QUERY_CONDITION_GE, int8(2))
+	require.NoError(t, err)
+
+	err = query.SetQueryCondition(condition)
+	require.NoError(t, err)
+
+	// submit and finalize query
+	require.NoError(t, query.Submit())
+	require.NoError(t, query.Finalize())
+	// Close and prepare to read
+	require.NoError(t, array.Close())
+
+	// Reopen array for reading
+	require.NoError(t, array.Open(TILEDB_READ))
+
+	query, err = NewQuery(context, array)
+	require.NoError(t, err)
+	assert.NotNil(t, query)
+
+	// Set coordinates, since test is 1d, this is subarray
+	_, err = query.SetBuffer("dim1", subArray)
+	require.NoError(t, err)
+
+	// Set empty buffers for reading
+	readBufferA1 := make([]int32, 4)
+	_, err = query.SetBuffer("a1", readBufferA1)
+	require.NoError(t, err)
+
+	// Set read layout
+	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
+
+	// Submit read query async
+	require.NoError(t, query.SubmitAsync())
+
+	// Wait for status to return complete or to error
+	// Loop while status is inprogress
+	for status, err = query.Status(); status == TILEDB_INPROGRESS && err == nil; status, err = query.Status() {
+		require.NoError(t, err)
+		assert.Equal(t, TILEDB_INPROGRESS, status)
+	}
+	require.NoError(t, err)
+	assert.Equal(t, TILEDB_COMPLETED, status)
+
+	// Validate query type
+	queryType, err = query.Type()
+	require.NoError(t, err)
+	assert.Equal(t, TILEDB_READ, queryType)
+
+	// Results should be returned
+	hasResults, err := query.HasResults()
+	require.NoError(t, err)
+	assert.Equal(t, true, hasResults)
+
+	// Validate read buffers equal original write buffers
+	assert.ElementsMatch(t, []int32{1, 2, 0, 0}, readBufferA1)
 }
 
 // TestSparseQueryWrite validates a sparse array can be written to and read from
