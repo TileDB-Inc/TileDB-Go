@@ -121,7 +121,7 @@ jobs:
 
     # Downloads TileDB-Core from release assets and install
     - name: Run TileDB install script
-      run: ./.github/scripts/install_tiledb_source_linux.sh
+      run: ./.github/scripts/install_tiledb_linux.sh
       shell: bash
 
     # Following action sets up Go and uses the strategy matrix to test on
@@ -160,7 +160,7 @@ jobs:
 
     # Downloads TileDB-Core from release assets and install
     - name: Run TileDB install script
-      run: ./.github/scripts/install_tiledb_source_macos.sh
+      run: ./.github/scripts/install_tiledb_macos.sh
       shell: bash
 
     # Following action sets up Go and uses the strategy matrix to test on
