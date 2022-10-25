@@ -27,8 +27,6 @@ const (
 	TILEDB_DENSE ArrayType = C.TILEDB_DENSE
 	// TILEDB_SPARSE dense array
 	TILEDB_SPARSE ArrayType = C.TILEDB_SPARSE
-	// TILEDB_DELETE Delete query
-	TILEDB_DELETE QueryType = C.TILEDB_DELETE
 )
 
 // Datatype
@@ -581,6 +579,8 @@ const (
 	TILEDB_READ QueryType = C.TILEDB_READ
 	// TILEDB_WRITE Write query
 	TILEDB_WRITE QueryType = C.TILEDB_WRITE
+	// TILEDB_DELETE Delete query
+	TILEDB_DELETE QueryType = C.TILEDB_DELETE
 )
 
 // QueryConditionOp operation type for a query condition
