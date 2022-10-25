@@ -397,3 +397,82 @@ func DeserializeArray(buffer *Buffer, serializationType SerializationType, clien
 
 	return &array, nil
 }
+
+// SerializeFragmentInfo serializes fragment info
+func SerializeFragmentInfo(fragmentInfo *FragmentInfo, serializationType SerializationType, clientSide bool) ([]byte, error) {
+	var cClientSide C.int32_t
+	if clientSide {
+		cClientSide = 1
+	} else {
+		cClientSide = 0
+	}
+
+	buffer := Buffer{context: fragmentInfo.context}
+	// Set finalizer for free C pointer on gc
+	freeOnGC(&buffer)
+
+	ret := C.tiledb_serialize_fragment_info(fragmentInfo.context.tiledbContext, fragmentInfo.tiledbFragmentInfo, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error serializing array: %s", fragmentInfo.context.LastError())
+	}
+
+	return buffer.Serialize(serializationType)
+}
+
+// DeserializeFragmentInfo deserializes an existing fragment info from the given buffer
+func DeserializeFragmentInfo(fragmentInfo FragmentInfo, buffer *Buffer, arrayURI string, serializationType SerializationType, clientSide bool) error {
+	var cClientSide C.int32_t
+	if clientSide {
+		cClientSide = 1
+	} else {
+		cClientSide = 0
+	}
+
+	cArrayURI := C.CString(arrayURI)
+	defer C.free(unsafe.Pointer(cArrayURI))
+
+	ret := C.tiledb_deserialize_fragment_info(fragmentInfo.context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cArrayURI, cClientSide, fragmentInfo.tiledbFragmentInfo)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error deserializing array: %s", fragmentInfo.context.LastError())
+	}
+
+	return nil
+}
+
+// SerializeFragmentInfoRequest serializes fragment info
+func SerializeFragmentInfoRequest(fragmentInfo *FragmentInfo, serializationType SerializationType, clientSide bool) ([]byte, error) {
+	var cClientSide C.int32_t
+	if clientSide {
+		cClientSide = 1
+	} else {
+		cClientSide = 0
+	}
+
+	buffer := Buffer{context: fragmentInfo.context}
+	// Set finalizer for free C pointer on gc
+	freeOnGC(&buffer)
+
+	ret := C.tiledb_serialize_fragment_info_request(fragmentInfo.context.tiledbContext, fragmentInfo.tiledbFragmentInfo, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error serializing array: %s", fragmentInfo.context.LastError())
+	}
+
+	return buffer.Serialize(serializationType)
+}
+
+// DeserializeFragmentInfoRequest deserializes an existing fragment info from the given buffer
+func DeserializeFragmentInfoRequest(fragmentInfo FragmentInfo, buffer *Buffer, serializationType SerializationType, clientSide bool) error {
+	var cClientSide C.int32_t
+	if clientSide {
+		cClientSide = 1
+	} else {
+		cClientSide = 0
+	}
+
+	ret := C.tiledb_deserialize_fragment_info_request(fragmentInfo.context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, fragmentInfo.tiledbFragmentInfo)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error deserializing array: %s", fragmentInfo.context.LastError())
+	}
+
+	return nil
+}
