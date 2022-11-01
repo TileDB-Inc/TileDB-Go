@@ -285,18 +285,8 @@ func ExampleNewQuery() {
 		// Handle error
 		return
 	}
-	// Submit read query async
-	// Async submits do not block
-	err = query.SubmitAsync()
-	if err != nil {
-		// Handle error
-		return
-	}
-	// Wait for status to return complete or to error
-	// Loop while status is inprogress
-	for status, err = query.Status(); status == TILEDB_INPROGRESS && err == nil; status, err = query.Status() {
-		// Do something while query is running
-	}
+	// Submit read query
+	err = query.Submit()
 	if err != nil {
 		// Handle error
 		return
@@ -467,13 +457,6 @@ func ExampleDeleteQuery() {
 		return
 	}
 
-	// Validate status, since query was used this is should be complete
-	status, err := query.Status()
-	if err != nil {
-		// Handle error
-		return
-	}
-
 	// Validate query type
 	_, err = query.Type()
 	if err != nil {
@@ -573,21 +556,8 @@ func ExampleDeleteQuery() {
 		return
 	}
 
-	// Submit read query async
-	err = query.SubmitAsync()
-	if err != nil {
-		// Handle error
-		return
-	}
-
-	// Wait for status to return complete or to error
-	// Loop while status is inprogress
-	for status, err = query.Status(); status == TILEDB_INPROGRESS && err == nil; status, err = query.Status() {
-		if err != nil {
-			// Handle error
-			return
-		}
-	}
+	// Submit read query
+	err = query.Submit()
 	if err != nil {
 		// Handle error
 		return
@@ -1773,15 +1743,13 @@ func TestDenseQueryWrite(t *testing.T) {
 	// Set read layout
 	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
 
-	// Submit read query async
-	require.NoError(t, query.SubmitAsync())
+	// Submit read query
+	require.NoError(t, query.Submit())
 
 	// Wait for status to return complete or to error
 	// Loop while status is inprogress
-	for status, err = query.Status(); status == TILEDB_INPROGRESS && err == nil; status, err = query.Status() {
-		require.NoError(t, err)
-		assert.Equal(t, TILEDB_INPROGRESS, status)
-	}
+	status, err = query.Status()
+
 	require.NoError(t, err)
 	assert.Equal(t, TILEDB_COMPLETED, status)
 
@@ -1966,15 +1934,12 @@ func TestSparseQueryDelete(t *testing.T) {
 	// Set read layout
 	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
 
-	// Submit read query async
-	require.NoError(t, query.SubmitAsync())
+	// Submit read query
+	require.NoError(t, query.Submit())
 
-	// Wait for status to return complete or to error
-	// Loop while status is inprogress
-	for status, err = query.Status(); status == TILEDB_INPROGRESS && err == nil; status, err = query.Status() {
-		require.NoError(t, err)
-		assert.Equal(t, TILEDB_INPROGRESS, status)
-	}
+	// Check that status is completed.
+	status, err = query.Status()
+
 	require.NoError(t, err)
 	assert.Equal(t, TILEDB_COMPLETED, status)
 
@@ -2116,15 +2081,13 @@ func TestSparseQueryWrite(t *testing.T) {
 	// Set read layout
 	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
 
-	// Submit read query async
-	require.NoError(t, query.SubmitAsync())
+	// Submit read query
+	require.NoError(t, query.Submit())
 
 	// Wait for status to return complete or to error
 	// Loop while status is inprogress
-	for status, err = query.Status(); status == TILEDB_INPROGRESS && err == nil; status, err = query.Status() {
-		require.NoError(t, err)
-		assert.Equal(t, TILEDB_INPROGRESS, status)
-	}
+	status, err = query.Status()
+
 	require.NoError(t, err)
 	assert.Equal(t, TILEDB_COMPLETED, status)
 
@@ -2271,7 +2234,7 @@ func TestSparseQueryWriteNullable(t *testing.T) {
 	// Set read layout
 	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
 
-	// Submit read query async
+	// Submit read query
 	require.NoError(t, query.Submit())
 
 	status, err = query.Status()

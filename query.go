@@ -3033,6 +3033,9 @@ polled:
 	  }
 	  // Do something when query is finished
 	}(query)
+
+Deprecated: Use Submit() instead. It will block at the Go level, allowing the thread to be reused.
+This is more efficient than checking for the status in a loop.
 */
 func (q *Query) SubmitAsync() error {
 	ret := C.tiledb_query_submit_async(q.context.tiledbContext, q.tiledbQuery, nil, nil)
