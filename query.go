@@ -5,6 +5,13 @@ package tiledb
 #cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb.h>
 #include <stdlib.h>
+
+extern void tiledb_go_query_submit_async_callback(uintptr_t arg);
+
+static int32_t tiledb_go_query_submit_async(tiledb_ctx_t* ctx, tiledb_query_t* query, uintptr_t arg)
+{
+	return tiledb_query_submit_async(ctx, query, (void (*) (void*))tiledb_go_query_submit_async_callback, (void*)arg);
+}
 */
 import "C"
 
@@ -12,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"runtime/cgo"
 	"sync"
 	"unsafe"
 
@@ -2969,6 +2977,14 @@ func (q *Query) Finalize() error {
 	return nil
 }
 
+//export tiledb_go_query_submit_async_callback
+func tiledb_go_query_submit_async_callback(arg C.uintptr_t) {
+	handle := cgo.Handle(arg)
+	cont := handle.Value().(chan int)
+	handle.Delete()
+	cont <- 0
+}
+
 /*
 Submit a TileDB query
 This will block until query is completed
@@ -2986,14 +3002,18 @@ the buffers, implying that the larger buffers are needed for the query
 to proceed. In this case, the users must reallocate their buffers
 (increasing their size), reset the buffers with set_buffer(),
 and resubmit the query.
-
 */
 func (q *Query) Submit() error {
-	ret := C.tiledb_query_submit(q.context.tiledbContext, q.tiledbQuery)
+	cont := make(chan int)
+	h := cgo.NewHandle(cont)
+
+	ret := C.tiledb_go_query_submit_async(q.context.tiledbContext, q.tiledbQuery, C.uintptr_t(h))
 	if ret != C.TILEDB_OK {
+		h.Delete()
 		return fmt.Errorf("Error submitting query: %s", q.context.LastError())
 	}
 
+	<-cont
 	return nil
 }
 
@@ -3004,15 +3024,15 @@ Async does not currently support the callback function parameter
 To monitor progress of a query in a non blocking manner the status can be
 polled:
 
- // Start goroutine for background monitoring
- go func(query Query) {
-  var status QueryStatus
-  var err error
-   for status, err = query.Status(); status == TILEDB_INPROGRESS && err == nil; status, err = query.Status() {
-     // Do something while query is running
-   }
-   // Do something when query is finished
- }(query)
+	// Start goroutine for background monitoring
+	go func(query Query) {
+	 var status QueryStatus
+	 var err error
+	  for status, err = query.Status(); status == TILEDB_INPROGRESS && err == nil; status, err = query.Status() {
+	    // Do something while query is running
+	  }
+	  // Do something when query is finished
+	}(query)
 */
 func (q *Query) SubmitAsync() error {
 	ret := C.tiledb_query_submit_async(q.context.tiledbContext, q.tiledbQuery, nil, nil)
