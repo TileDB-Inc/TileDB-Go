@@ -4,6 +4,7 @@
 package tiledb
 
 import (
+	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -188,6 +189,50 @@ func TestDeserializeGroup(t *testing.T) {
 	count, err := memberCount(g)
 	require.NoError(t, err)
 	require.EqualValues(t, uint64(2), count)
+}
+
+func TestGetIsRelativeURIByName(t *testing.T) {
+	// create a group and add 2 members, one relative and one not
+	groupURI := t.TempDir()
+	arrayURI1 := t.TempDir()                       // for the non-relative member
+	arrayURI2 := filepath.Join(groupURI, "array2") // for the relative member
+
+	tdbCtx, err := NewContext(nil)
+	require.NoError(t, err)
+
+	group, err := createTestGroup(tdbCtx, groupURI)
+	require.NoError(t, err)
+
+	arraySchema := buildArraySchema(tdbCtx, t)
+	array1, err := NewArray(tdbCtx, arrayURI1)
+	require.NoError(t, err)
+	array1.Create(arraySchema)
+	require.NoError(t, err)
+	array2, err := NewArray(tdbCtx, arrayURI2)
+	require.NoError(t, err)
+	array2.Create(arraySchema)
+	require.NoError(t, err)
+
+	require.NoError(t, group.Open(TILEDB_WRITE))
+	require.NoError(t, group.AddMember(array1.uri, "array1", false))
+	require.NoError(t, group.AddMember("array2", "array2", true))
+	require.NoError(t, group.Close())
+
+	// check get relative of each member
+	require.NoError(t, group.Open(TILEDB_READ))
+	isRelative1, err := group.GetIsRelativeURIByName("array1")
+	require.NoError(t, err)
+	require.False(t, isRelative1)
+	isRelative2, err := group.GetIsRelativeURIByName("array2")
+	require.NoError(t, err)
+	require.True(t, isRelative2)
+
+	// check that non-existing members return error
+	_, err = group.GetIsRelativeURIByName("array3")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Error getting")
+
+	require.NoError(t, group.Close())
 }
 
 func memberCount(group *Group) (uint64, error) {
