@@ -469,3 +469,16 @@ func DeserializeGroupMetadata(g *Group, buffer *Buffer, serializationType Serial
 
 	return nil
 }
+
+// GetIsRelativeURIByName returns whether a named member of the group has a uri relative to the group
+func (g *Group) GetIsRelativeURIByName(name string) (bool, error) {
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
+
+	var isRelative C.uint8_t
+	ret := C.tiledb_group_get_is_relative_uri_by_name(g.context.tiledbContext, g.group, cName, &isRelative)
+	if ret != C.TILEDB_OK {
+		return false, fmt.Errorf("Error getting if member %s has a relative uri: %s", name, g.context.LastError())
+	}
+	return isRelative > 0, nil
+}
