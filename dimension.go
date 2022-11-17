@@ -353,131 +353,53 @@ func (d *Dimension) Domain() (interface{}, error) {
 		return nil, err
 	}
 
-	var ret C.int32_t
-	var domain interface{}
 	switch datatype {
 	case TILEDB_INT8:
-		cdomain := C.malloc(2 * C.sizeof_int8_t)
-		defer C.free(cdomain)
-		tmpDomain := make([]int8, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.int8_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = int8(s)
-		}
-		domain = tmpDomain
+		return domainInternal[int8](d)
 	case TILEDB_INT16:
-		cdomain := C.malloc(2 * C.sizeof_int16_t)
-		defer C.free(cdomain)
-		tmpDomain := make([]int16, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.int16_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = int16(s)
-		}
-		domain = tmpDomain
+		return domainInternal[int16](d)
 	case TILEDB_INT32:
-		cdomain := C.malloc(2 * C.sizeof_int32_t)
-		defer C.free(cdomain)
-		tmpDomain := make([]int32, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.int32_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = int32(s)
-		}
-		domain = tmpDomain
+		return domainInternal[int32](d)
 	case TILEDB_INT64:
-		cdomain := C.malloc(2 * C.sizeof_int64_t)
-		defer C.free(cdomain)
-		tmpDomain := make([]int64, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.int64_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = int64(s)
-		}
-		domain = tmpDomain
+		return domainInternal[int64](d)
 	case TILEDB_UINT8:
-		cdomain := C.malloc(2 * C.sizeof_uint8_t)
-		defer C.free(cdomain)
-		tmpDomain := make([]uint8, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.uint8_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = uint8(s)
-		}
-		domain = tmpDomain
+		return domainInternal[uint8](d)
 	case TILEDB_UINT16:
-		cdomain := C.malloc(2 * C.sizeof_uint16_t)
-		defer C.free(cdomain)
-		tmpDomain := make([]uint16, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.uint16_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = uint16(s)
-		}
-		domain = tmpDomain
+		return domainInternal[uint16](d)
 	case TILEDB_UINT32:
-		cdomain := C.malloc(2 * C.sizeof_uint32_t)
-		defer C.free(cdomain)
-		tmpDomain := make([]uint32, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.uint32_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = uint32(s)
-		}
-		domain = tmpDomain
+		return domainInternal[uint32](d)
 	case TILEDB_UINT64:
-		cdomain := C.malloc(2 * C.sizeof_uint64_t)
-		defer C.free(cdomain)
-		tmpDomain := make([]uint64, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.uint64_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = uint64(s)
-		}
-		domain = tmpDomain
+		return domainInternal[uint64](d)
 	case TILEDB_FLOAT32:
-		cdomain := C.malloc(2 * C.sizeof_float)
-		defer C.free(cdomain)
-		tmpDomain := make([]float32, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.float)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = float32(s)
-		}
-		domain = tmpDomain
+		return domainInternal[float32](d)
 	case TILEDB_FLOAT64:
-		cdomain := C.malloc(2 * C.sizeof_double)
-		defer C.free(cdomain)
-		tmpDomain := make([]float64, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.double)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = float64(s)
-		}
-		domain = tmpDomain
+		return domainInternal[float64](d)
 	case TILEDB_BOOL:
-		cdomain := C.malloc(2 * C.sizeof_double)
-		defer C.free(cdomain)
-		tmpDomain := make([]bool, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.uint8_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			if s != 0 {
-				tmpDomain[i] = true
-			}
+		// Ensure that our booleans are in canonical true/false form in case they're
+		// a value other than 0 or 1.
+		asUints, err := domainInternal[uint8](d)
+		if err != nil {
+			return nil, err
 		}
-		domain = tmpDomain
+		return []bool{asUints[0] != 0, asUints[1] != 0}, nil
 	case TILEDB_STRING_ASCII:
-		domain = nil
-	default:
-		return nil, fmt.Errorf("Unrecognized domain type: %d", datatype)
+		return nil, nil
 	}
+	return nil, fmt.Errorf("Unrecognized domain type: %d", datatype)
+}
+
+func domainInternal[T any](d *Dimension) ([]T, error) {
+	// tiledb_dimension_get_domain writes *a pointer to the memory it owns*
+	// into cDomain, so we need to ensure that the domain stays alive for
+	// the entire duration of this call.
+	defer runtime.KeepAlive(d)
+	var cDomain unsafe.Pointer
+	ret := C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cDomain)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting tiledb dimension's domain: %s", d.context.LastError())
 	}
-
-	return domain, nil
+	asArray := (*[2]T)(cDomain)
+	return []T{asArray[0], asArray[1]}, nil
 }
 
 // Extent returns the dimension's extent.
@@ -486,75 +408,48 @@ func (d *Dimension) Extent() (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	var ret C.int32_t
-	var extent interface{}
 	switch datatype {
 	case TILEDB_INT8:
-		cextent := C.malloc(C.sizeof_int8_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*int8)(unsafe.Pointer(cextent))
+		return extentInternal[int8](d)
 	case TILEDB_INT16:
-		cextent := C.malloc(C.sizeof_int16_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*int16)(unsafe.Pointer(cextent))
+		return extentInternal[int16](d)
 	case TILEDB_INT32:
-		cextent := C.malloc(C.sizeof_int32_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*int32)(unsafe.Pointer(cextent))
+		return extentInternal[int32](d)
 	case TILEDB_INT64:
-		cextent := C.malloc(C.sizeof_int64_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*int64)(unsafe.Pointer(cextent))
+		return extentInternal[int64](d)
 	case TILEDB_UINT8:
-		cextent := C.malloc(C.sizeof_uint8_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*uint8)(unsafe.Pointer(cextent))
+		return extentInternal[uint8](d)
 	case TILEDB_UINT16:
-		cextent := C.malloc(C.sizeof_uint16_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*uint16)(unsafe.Pointer(cextent))
+		return extentInternal[uint16](d)
 	case TILEDB_UINT32:
-		cextent := C.malloc(C.sizeof_uint32_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*uint32)(unsafe.Pointer(cextent))
+		return extentInternal[uint32](d)
 	case TILEDB_UINT64:
-		cextent := C.malloc(C.sizeof_uint64_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*uint64)(unsafe.Pointer(cextent))
+		return extentInternal[uint64](d)
 	case TILEDB_FLOAT32:
-		cextent := C.malloc(C.sizeof_float)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*float32)(unsafe.Pointer(cextent))
+		return extentInternal[float32](d)
 	case TILEDB_FLOAT64:
-		cextent := C.malloc(C.sizeof_double)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*float64)(unsafe.Pointer(cextent))
+		return extentInternal[float64](d)
 	case TILEDB_BOOL:
-		cextent := C.malloc(C.sizeof_uint8_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*bool)(unsafe.Pointer(cextent))
+		xt, err := extentInternal[uint8](d)
+		return xt != 0, err
 	case TILEDB_STRING_ASCII:
-		extent = nil
-	default:
-		return nil, fmt.Errorf("Unrecognized extent type: %d", datatype)
+		return nil, nil
 	}
-	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting tiledb dimension's extent: %s", d.context.LastError())
-	}
+	return nil, fmt.Errorf("Unrecognized extent type: %d", datatype)
+}
 
-	return extent, nil
+func extentInternal[T any](d *Dimension) (T, error) {
+	// As in domainInternal, tiledb_dimension_get_tile_extent writes a pointer
+	// to memory it owns into cExtent. Ensure this Dimension stays alive.
+	defer runtime.KeepAlive(d)
+	var cExtent unsafe.Pointer
+	var output T
+	cRet := C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cExtent)
+	if cRet != C.TILEDB_OK {
+		return output, fmt.Errorf("could not get TileDB dimension's extent: %w", d.context.LastError())
+	}
+	output = *(*T)(cExtent)
+	return output, nil
 }
 
 // DumpSTDOUT dumps the dimension in ASCII format to stdout.
