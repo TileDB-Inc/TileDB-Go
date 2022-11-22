@@ -1075,3 +1075,17 @@ func (a *Array) Config() (*Config, error) {
 
 	return &config, nil
 }
+
+// DeleteFragments delete the range of fragments from startTimestamp to endTimestamp. The array needs to be opened modify exclusive.
+func (a *Array) DeleteFragments(startTimestamp, endTimestamp uint64) error {
+	curi := C.CString(a.uri)
+	defer C.free(unsafe.Pointer(curi))
+
+	ret := C.tiledb_array_delete_fragments(a.context.tiledbContext, a.tiledbArray, curi,
+		C.uint64_t(startTimestamp), C.uint64_t(endTimestamp))
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deleting fragments from array: %s", a.context.LastError())
+	}
+
+	return nil
+}

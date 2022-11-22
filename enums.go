@@ -581,6 +581,8 @@ const (
 	TILEDB_WRITE QueryType = C.TILEDB_WRITE
 	// TILEDB_DELETE Delete query
 	TILEDB_DELETE QueryType = C.TILEDB_DELETE
+	// TILEDB_MODIFY_EXCLUSIVE Modify exclusive query
+	TILEDB_MODIFY_EXCLUSIVE QueryType = C.TILEDB_MODIFY_EXCLUSIVE
 )
 
 // QueryConditionOp operation type for a query condition
