@@ -583,6 +583,18 @@ const (
 	TILEDB_DELETE QueryType = C.TILEDB_DELETE
 )
 
+// QueryTypeFromString returns the internal representation of the query type
+func QueryTypeFromString(s string) (QueryType, error) {
+	cname := C.CString(s)
+	defer C.free(unsafe.Pointer(cname))
+	var cQueryType C.tiledb_query_type_t
+	ret := C.tiledb_query_type_from_str(cname, &cQueryType)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("%q is not a recognized tiledb_query_type_t", s)
+	}
+	return QueryType(cQueryType), nil
+}
+
 // QueryConditionOp operation type for a query condition
 type QueryConditionOp uint8
 
