@@ -402,6 +402,65 @@ func TestArray_Metadata(t *testing.T) {
 	})
 }
 
+func TestArray_DeleteFragments(t *testing.T) {
+	// Create an array with domain [1, 10].
+	// Create fragments [1,2] [3,4] [5,6] [7,8] [9,10]
+	// Delete the first 2 fragments and verify the non empty domain is [5, 10]
+
+	// create an array and write 5 fragments
+	array, err := newTestArray(t)
+	require.NoError(t, err)
+
+	testStarted := time.Now()
+	var fragmentCreatedAt []time.Time
+
+	context, err := NewContext(nil)
+	require.NoError(t, err)
+	err = array.Open(TILEDB_WRITE)
+	require.NoError(t, err)
+	for i := 1; i <= 10; i += 2 {
+		time.Sleep(100 * time.Millisecond)
+
+		query, err := NewQuery(context, array)
+		require.NoError(t, err)
+		require.NotNil(t, query)
+
+		err = query.AddRangeByName("dim1", int32(i), int32(i+1))
+		require.NoError(t, err)
+		_, err = query.SetBuffer("a1", []int32{int32(i), int32(i + 1)})
+		_, _, err = query.SetBufferVar("a2", []uint64{0, 1}, []byte("aa"))
+		require.NoError(t, err)
+
+		err = query.Submit()
+		require.NoError(t, err)
+
+		status, err := query.Status()
+		require.NoError(t, err)
+		assert.Equal(t, TILEDB_COMPLETED, status)
+
+		fragmentCreatedAt = append(fragmentCreatedAt, time.Now())
+	}
+	err = array.Close()
+	require.NoError(t, err)
+
+	// delete the first two fragments
+	err = array.Open(TILEDB_MODIFY_EXCLUSIVE)
+	require.NoError(t, err)
+	err = array.DeleteFragments(uint64(testStarted.UnixMilli()), uint64(fragmentCreatedAt[1].UnixMilli()))
+	require.NoError(t, err)
+	err = array.Close()
+	require.NoError(t, err)
+
+	// verify deletion
+	err = array.Open(TILEDB_READ)
+	require.NoError(t, err)
+	domain, _, err := array.NonEmptyDomainFromName("dim1")
+	require.NoError(t, err)
+	bounds := domain.Bounds.([]int8)
+	require.Equal(t, int8(5), bounds[0])
+	require.Equal(t, int8(10), bounds[1])
+}
+
 func newTestArray(t *testing.T) (*Array, error) {
 	// Create configuration
 	config, err := NewConfig()
