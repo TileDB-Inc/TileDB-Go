@@ -74,6 +74,7 @@ as such the below table reference which versions are compatible.
 | 0.16.0            | 2.10.X         |
 | 0.17.0            | 2.11.X         |
 | 0.18.0            | 2.12.X         |
+| 0.19.0            | 2.13.X         |
 
 
 ## Missing Functionality
