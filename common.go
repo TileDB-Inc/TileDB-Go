@@ -1,6 +1,9 @@
 package tiledb
 
-import "unsafe"
+import (
+	"reflect"
+	"unsafe"
+)
 
 // scalarType includes the basic types that can be stored in a TileDB array.
 // It does not include variable-sized types like strings or blobs.
@@ -14,5 +17,6 @@ type scalarType interface {
 
 // slicePtr gives you an unsafe pointer to the start of a slice.
 func slicePtr[T any](slc []T) unsafe.Pointer {
-	return unsafe.Pointer(&slc[0])
+	hdr := (*reflect.SliceHeader)(unsafe.Pointer(&slc))
+	return unsafe.Pointer(hdr.Data)
 }

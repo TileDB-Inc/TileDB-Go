@@ -20,7 +20,8 @@ type Buffer struct {
 	context      *Context
 
 	// data is a reference to the memory that this Buffer refers to.
-	// If this is set to `nil`, the Buffer is managed by
+	// If this is set to `nil`, the Buffer is was allocated and its memory is
+	// owned by TileDB internals.
 	//
 	// Buffer technically violates the contract of CGo, by passing []byte slices
 	// to C code, which holds onto it long after the CGo call has returned.
@@ -140,6 +141,14 @@ func (b *Buffer) dataCopy() ([]byte, error) {
 
 	if b.data == nil {
 		// This is a TileDB-managed buffer. We need to copy its data into Go memory.
+		// We assume that once a buffer is set to point to user-provided memory,
+		// TileDB never updates the buffer to point to its own memory (i.e., the
+		// only time when there will be a buffer pointing to TileDB-owned memory is
+		// when TileDB allocates a fresh buffer, e.g. as an out parameter from a
+		// serialization function).
+
+		// Since this buffer is TileDB-managed, make sure it's not GC'd before we're
+		// done with its memory.
 		defer runtime.KeepAlive(b)
 		return C.GoBytes(cbuffer, C.int(csize)), nil
 	}

@@ -1,7 +1,6 @@
 package tiledb
 
 import (
-	"reflect"
 	"runtime"
 	"unsafe"
 
@@ -47,8 +46,7 @@ func freeFreeable(obj Freeable) { obj.Free() }
 type byteBuffer []byte
 
 func (bb byteBuffer) start() unsafe.Pointer {
-	hdr := (*reflect.SliceHeader)(unsafe.Pointer(&bb))
-	return unsafe.Pointer(hdr.Data)
+	return slicePtr(bb)
 }
 
 func (bb byteBuffer) lenBytes() uintptr { return uintptr(len(bb)) }
