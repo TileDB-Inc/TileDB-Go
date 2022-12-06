@@ -12,11 +12,6 @@ import (
 	"fmt"
 	"runtime"
 	"unsafe"
-
-	// Much of this package relies on the fact that the Go GC is non-moving.
-	// When we move to a new Go version, this dependency should be updated
-	// to ensure that the new version is still a non-moving GC.
-	_ "go4.org/unsafe/assume-no-moving-gc"
 )
 
 // Buffer A generic Buffer object used by some TileDB APIs
@@ -24,7 +19,9 @@ type Buffer struct {
 	tiledbBuffer *C.tiledb_buffer_t
 	context      *Context
 
-	// goBytesSet is a reference to the last Go slice that the buffer was set to.
+	// data is a reference to the memory that this Buffer refers to.
+	// If this is set to `nil`, the Buffer is was allocated and its memory is
+	// owned by TileDB internals.
 	//
 	// Buffer technically violates the contract of CGo, by passing []byte slices
 	// to C code, which holds onto it long after the CGo call has returned.
@@ -39,7 +36,7 @@ type Buffer struct {
 	// happening to them. This is still unsafe per the language spec, but because
 	// the Go garbage collector (as of v1.18) does not move objects around,
 	// this is not THAT dangerous at runtime.
-	goBytesSet []byte
+	data byteBuffer
 }
 
 // NewBuffer Allocs a new buffer
@@ -65,7 +62,7 @@ func NewBuffer(context *Context) (*Buffer, error) {
 // can safely be called many times on the same object; if it has already
 // been freed, it will not be freed again.
 func (b *Buffer) Free() {
-	b.goBytesSet = nil
+	b.data = nil
 	if b.tiledbBuffer != nil {
 		C.tiledb_buffer_free(&b.tiledbBuffer)
 	}
@@ -115,12 +112,12 @@ func (b *Buffer) Serialize(serializationType SerializationType) ([]byte, error) 
 	return bs, nil
 }
 
-// SetBuffer sets the data pointer and size on the Buffer to the given slice
+// SetBuffer sets the buffer to point at the given Go slice. The memory is now
+// Go-managed.
 func (b *Buffer) SetBuffer(buffer []byte) error {
-	b.goBytesSet = buffer
-	bufferSize := len(buffer)
+	b.data = byteBuffer(buffer)
 
-	ret := C.tiledb_buffer_set_data(b.context.tiledbContext, b.tiledbBuffer, unsafe.Pointer(&buffer[0]), C.uint64_t(bufferSize))
+	ret := C.tiledb_buffer_set_data(b.context.tiledbContext, b.tiledbBuffer, b.data.start(), C.uint64_t(b.data.lenBytes()))
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error setting tiledb buffer: %s", b.context.LastError())
 	}
@@ -142,11 +139,23 @@ func (b *Buffer) dataCopy() ([]byte, error) {
 		return nil, nil
 	}
 
-	size := uint64(csize)
-	bs := (*[1 << 46]uint8)(unsafe.Pointer(cbuffer))[:size:size]
+	if b.data == nil {
+		// This is a TileDB-managed buffer. We need to copy its data into Go memory.
+		// We assume that once a buffer is set to point to user-provided memory,
+		// TileDB never updates the buffer to point to its own memory (i.e., the
+		// only time when there will be a buffer pointing to TileDB-owned memory is
+		// when TileDB allocates a fresh buffer, e.g. as an out parameter from a
+		// serialization function).
 
-	cpy := make([]byte, len(bs))
-	copy(cpy, bs)
-	runtime.KeepAlive(b)
+		// Since this buffer is TileDB-managed, make sure it's not GC'd before we're
+		// done with its memory.
+		defer runtime.KeepAlive(b)
+		return C.GoBytes(cbuffer, C.int(csize)), nil
+	}
+
+	gotBytes := b.data.subSlice(cbuffer, uintptr(csize))
+
+	cpy := make([]byte, len(gotBytes))
+	copy(cpy, gotBytes)
 	return cpy, nil
 }
