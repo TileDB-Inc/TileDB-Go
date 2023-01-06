@@ -1,0 +1,84 @@
+name: TileDB-Go with nightly libtiledb
+
+on:
+  push:
+    paths:
+      - '.github/workflows/nightly.yml'
+      - '.github/scripts/nightly/**'
+  schedule:
+    - cron: "0 4 * * *" # Every night at 4 AM UTC (11 PM EST; 12 AM EDT)
+  workflow_dispatch:
+
+env:
+  go: "1.18"
+
+jobs:
+  ubuntu:
+    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+
+    - uses: actions/checkout@v3
+
+    - name: Install Conda environment with go and nightly libtiledb
+      uses: mamba-org/provision-with-micromamba@main
+      with:
+        environment-file: false
+        environment-name: nightly
+        extra-specs: |
+          gcc
+          go=${{ env.go }}
+          tiledb
+        channels: tiledb/label/nightlies, conda-forge
+
+    - name: Install dependencies
+      run: go get -t .
+
+    - name: Test TileDB-Go
+      run: |
+        export CPATH=$CONDA_PREFIX/include
+        export LIBRARY_PATH=$CONDA_PREFIX/lib
+        export LD_LIBRARY_PATH=$CONDA_PREFIX/lib
+
+        go test -v ./...
+
+  macos:
+    runs-on: macos-11
+    needs: ubuntu
+    steps:
+
+    - uses: actions/checkout@v3
+      with:
+        repository: 'TileDB-Inc/TileDB-Go'
+        ref: 'sa/sc-24303/not-use-deprecated-tiledb-methods'
+
+    - name: Install nightly TileDB from source
+      run: ./.github/scripts/nightly/install_tiledb_source_macos.sh
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ env.go }}
+
+    - name: Install dependencies
+      run: go get -t .
+
+    - name: Test TileDB-Go
+      run: go test -v ./...
+
+  issue:
+    permissions:
+      issues: write
+    runs-on: ubuntu-latest
+    needs: [ubuntu, macos]
+    if: ( failure() || cancelled() ) && github.repository_owner == 'TileDB-Inc' && github.event_name == 'schedule'
+    steps:
+
+    - uses: actions/checkout@v3
+    - name: Open Issue
+      env:
+        GH_TOKEN: ${{ github.token }}
+        TZ: "America/New_York"
+      run: ./.github/scripts/nightly/open-isue.sh
