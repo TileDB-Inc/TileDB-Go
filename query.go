@@ -3995,3 +3995,105 @@ func (q *Query) getValidityBufferAndSize(attributeOrDimension string) ([]uint8, 
 
 	return validities, validityNumElements, nil
 }
+
+// SetOffsetsBufferUnsafe sets the offset buffer for a var-sized attribute/dimension
+// This takes an unsafe pointer which is passed straight to tiledb c_api for advanced usage
+func (q *Query) SetOffsetsBufferUnsafe(attribute string, offset unsafe.Pointer, offsetSize uint64) (*uint64, error) {
+	q.bufferMutex.Lock()
+	defer q.bufferMutex.Unlock()
+
+	cAttribute := C.CString(attribute)
+	defer C.free(unsafe.Pointer(cAttribute))
+
+	ret := C.tiledb_query_set_offsets_buffer(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		cAttribute,
+		(*C.uint64_t)(offset),
+		(*C.uint64_t)(unsafe.Pointer(&offsetSize)))
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error setting query offsets buffer: %s", q.context.LastError())
+	}
+
+	q.setResultBufferPointer(attribute, 0, &offsetSize)
+
+	return &offsetSize, nil
+}
+
+// SetOffsetsBuffer sets the offset buffer for a var-sized attribute/dimension
+func (q *Query) SetOffsetsBuffer(attributeOrDimension string, offset []uint64) (*uint64, error) {
+	q.bufferMutex.Lock()
+	defer q.bufferMutex.Unlock()
+
+	cAttributeOrDimension := C.CString(attributeOrDimension)
+	defer C.free(unsafe.Pointer(cAttributeOrDimension))
+
+	offsetSize := uint64(len(offset)) * bytesizes.Uint64
+	if offsetSize == uint64(0) {
+		return nil, errors.New("Offset slice has no length, offset slices are required to be initialized before reading or writing")
+	}
+
+	ret := C.tiledb_query_set_offsets_buffer(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		cAttributeOrDimension,
+		(*C.uint64_t)(unsafe.Pointer(&(offset)[0])),
+		(*C.uint64_t)(unsafe.Pointer(&offsetSize)))
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error setting query offsets buffer: %s", q.context.LastError())
+	}
+
+	q.setResultBufferPointer(attributeOrDimension, 0, &offsetSize)
+
+	return &offsetSize, nil
+}
+
+// GetOffsetsBuffer retrieves the offset buffer for a var-sized attribute/dimension
+func (q *Query) GetOffsetsBuffer(attributeOrDimension string) ([]uint64, error) {
+	buf, _, err := q.getOffsetsBufferAndSize(attributeOrDimension)
+	return buf, err
+}
+
+// GetExpectedOffsetsBufferLength retrieves the size of the offset buffer for a var-sized attribute/dimension
+// This is equivalent to calling GetOffsetsBuffer and taking the length of the returned buffer except
+// in the case of a deserialized read query where GetOffsetsBuffer returns nil. Serialization of read queries serializes
+// only lengths not buffers. The caller should use this method to get the size and allocate a buffer for the read query.
+func (q *Query) GetExpectedOffsetsBufferLength(attributeOrDimension string) (uint64, error) {
+	_, n, err := q.getOffsetsBufferAndSize(attributeOrDimension)
+	return n, err
+}
+
+// getOffsetsBufferAndSize uses tiledb.get_query_offsets_buffer to retrieve the size of the offsets buffer for a var-sized attribute/dimension
+// The returned length is equal to the size of the buffer except in the case of a deserialized read query.
+// Serialization of read queries serializes only lengths not buffers thus the methods returns a nil buffer and
+// a non zero length. The caller should use this method to get the size and allocate a buffer for the read query.
+func (q *Query) getOffsetsBufferAndSize(attributeOrDimension string) ([]uint64, uint64, error) {
+	cattributeNameOrDimension := C.CString(attributeOrDimension)
+	defer C.free(unsafe.Pointer(cattributeNameOrDimension))
+
+	var coffsetsSize *C.uint64_t
+	var coffsets *C.uint64_t
+
+	ret := C.tiledb_query_get_offsets_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize)
+	if ret != C.TILEDB_OK {
+		return nil, 0, fmt.Errorf("Error getting tiledb query offset buffer for %s: %s", attributeOrDimension, q.context.LastError())
+	}
+
+	var offsetNumElements uint64
+	if coffsetsSize == nil {
+		offsetNumElements = 0
+	} else {
+		offsetNumElements = uint64(*coffsetsSize) / TILEDB_UINT64.Size()
+	}
+
+	if coffsets == nil {
+		return nil, offsetNumElements, nil
+	}
+
+	offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+	offsets := (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	return offsets, offsetNumElements, nil
+}
