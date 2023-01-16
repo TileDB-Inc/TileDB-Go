@@ -3807,3 +3807,105 @@ func (q *Query) getDataBufferAndSize(attributeOrDimension string) (interface{}, 
 
 	return buffer, dataNumElements, nil
 }
+
+// SetValidityBufferUnsafe sets the validity buffer for nullable attribute/dimension
+// This takes an unsafe pointer which is passed straight to tiledb c_api for advanced usage
+func (q *Query) SetValidityBufferUnsafe(attribute string, buffer unsafe.Pointer, bufferSize uint64) (*uint64, error) {
+	q.bufferMutex.Lock()
+	defer q.bufferMutex.Unlock()
+
+	cAttribute := C.CString(attribute)
+	defer C.free(unsafe.Pointer(cAttribute))
+
+	ret := C.tiledb_query_set_validity_buffer(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		cAttribute,
+		(*C.uint8_t)(buffer),
+		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error setting query validity buffer: %s", q.context.LastError())
+	}
+
+	q.setResultBufferPointer(attribute, 2, &bufferSize)
+
+	return &bufferSize, nil
+}
+
+// SetValidityBuffer sets the validity buffer for nullable attribute/dimension
+func (q *Query) SetValidityBuffer(attributeOrDimension string, buffer []uint8) (*uint64, error) {
+	q.bufferMutex.Lock()
+	defer q.bufferMutex.Unlock()
+
+	cAttributeOrDimension := C.CString(attributeOrDimension)
+	defer C.free(unsafe.Pointer(cAttributeOrDimension))
+
+	bufferSize := uint64(len(buffer)) * bytesizes.Uint8
+	if bufferSize == uint64(0) {
+		return nil, errors.New("Validity slice has no length, offset slices are required to be initialized before reading or writting")
+	}
+
+	ret := C.tiledb_query_set_validity_buffer(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		cAttributeOrDimension,
+		(*C.uint8_t)(unsafe.Pointer(&(buffer)[0])),
+		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error setting query validity buffer: %s", q.context.LastError())
+	}
+
+	q.setResultBufferPointer(attributeOrDimension, 2, &bufferSize)
+
+	return &bufferSize, nil
+}
+
+// GetValidityBuffer retrieves the validity buffer for a nullable attribute/dimension
+func (q *Query) GetValidityBuffer(attributeOrDimension string) ([]uint8, error) {
+	buf, _, err := q.getValidityBufferAndSize(attributeOrDimension)
+	return buf, err
+}
+
+// GetExpectedValidityBufferLength retrieves the size of the validity buffer for a nullable attribute/dimension
+// This is equivalent to calling GetValidityBuffer and taking the length of the returned buffer except
+// in the case of a deserialized read query where GetValidityBuffer returns nil. Serialization of read queries serializes
+// only lengths not buffers. The caller should use this method to get the size and allocate a buffer for the read query.
+func (q *Query) GetExpectedValidityBufferLength(attributeOrDimension string) (uint64, error) {
+	_, n, err := q.getValidityBufferAndSize(attributeOrDimension)
+	return n, err
+}
+
+// getValidityBufferAndSize uses tiledb.get_query_validity_buffer to retrieve the validity buffer and its size for a nullable attribute/dimension
+// The returned length is equal to the size of the buffer except in the case of a deserialized read query.
+// Serialization of read queries serializes only lengths not buffers thus the methods returns a nil buffer and
+// a non zero length. The caller should use this method to get the size and allocate a buffer for the read query.
+func (q *Query) getValidityBufferAndSize(attributeOrDimension string) ([]uint8, uint64, error) {
+	cattributeNameOrDimension := C.CString(attributeOrDimension)
+	defer C.free(unsafe.Pointer(cattributeNameOrDimension))
+
+	var cvalidityByteMapSize *C.uint64_t
+	var cvalidityByteMap *C.uint8_t
+
+	ret := C.tiledb_query_get_validity_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &cvalidityByteMap, &cvalidityByteMapSize)
+	if ret != C.TILEDB_OK {
+		return nil, 0, fmt.Errorf("Error getting tiledb query validity buffer for %s: %s", attributeOrDimension, q.context.LastError())
+	}
+
+	var validityNumElements uint64
+	if cvalidityByteMapSize == nil {
+		validityNumElements = 0
+	} else {
+		validityNumElements = uint64(*cvalidityByteMapSize) / TILEDB_UINT8.Size()
+	}
+
+	if cvalidityByteMap == nil {
+		return nil, validityNumElements, nil
+	}
+
+	validityByteMapLength := *cvalidityByteMapSize / C.sizeof_uint8_t
+	validities := (*[1 << 46]uint8)(unsafe.Pointer(cvalidityByteMap))[:validityByteMapLength:validityByteMapLength]
+
+	return validities, validityNumElements, nil
+}
