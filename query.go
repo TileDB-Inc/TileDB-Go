@@ -689,97 +689,6 @@ func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{
 	return &bufferSize, &bufferValiditySize, nil
 }
 
-func getStartAndEndBuffers(start interface{}, end interface{}) (
-	unsafe.Pointer, unsafe.Pointer, error) {
-	startReflectValue := reflect.ValueOf(start)
-	endReflectValue := reflect.ValueOf(end)
-
-	if startReflectValue.Kind() != endReflectValue.Kind() {
-		return nil, nil, fmt.Errorf(
-			"The datatype of the range components must be the same as the type, start was: %s, end was: %s",
-			startReflectValue.Kind().String(), endReflectValue.Kind().String())
-	}
-
-	var startBuffer unsafe.Pointer
-	var endBuffer unsafe.Pointer
-
-	startReflectType := reflect.TypeOf(start)
-	startType := startReflectType.Kind()
-
-	switch startType {
-	case reflect.Int:
-		tStart := start.(int)
-		tEnd := end.(int)
-		startBuffer = unsafe.Pointer(&tStart)
-		endBuffer = unsafe.Pointer(&tEnd)
-	case reflect.Int8:
-		tStart := start.(int8)
-		tEnd := end.(int8)
-		startBuffer = unsafe.Pointer(&tStart)
-		endBuffer = unsafe.Pointer(&tEnd)
-	case reflect.Int16:
-		tStart := start.(int16)
-		tEnd := end.(int16)
-		startBuffer = unsafe.Pointer(&tStart)
-		endBuffer = unsafe.Pointer(&tEnd)
-	case reflect.Int32:
-		tStart := start.(int32)
-		tEnd := end.(int32)
-		startBuffer = unsafe.Pointer(&tStart)
-		endBuffer = unsafe.Pointer(&tEnd)
-	case reflect.Int64:
-		tStart := start.(int64)
-		tEnd := end.(int64)
-		startBuffer = unsafe.Pointer(&tStart)
-		endBuffer = unsafe.Pointer(&tEnd)
-	case reflect.Uint:
-		tStart := start.(uint)
-		tEnd := end.(uint)
-		startBuffer = unsafe.Pointer(&tStart)
-		endBuffer = unsafe.Pointer(&tEnd)
-	case reflect.Uint8:
-		tStart := start.(uint8)
-		tEnd := end.(uint8)
-		startBuffer = unsafe.Pointer(&tStart)
-		endBuffer = unsafe.Pointer(&tEnd)
-	case reflect.Uint16:
-		tStart := start.(uint16)
-		tEnd := end.(uint16)
-		startBuffer = unsafe.Pointer(&tStart)
-		endBuffer = unsafe.Pointer(&tEnd)
-	case reflect.Uint32:
-		tStart := start.(uint32)
-		tEnd := end.(uint32)
-		startBuffer = unsafe.Pointer(&tStart)
-		endBuffer = unsafe.Pointer(&tEnd)
-	case reflect.Uint64:
-		tStart := start.(uint64)
-		tEnd := end.(uint64)
-		startBuffer = unsafe.Pointer(&tStart)
-		endBuffer = unsafe.Pointer(&tEnd)
-	case reflect.Float32:
-		tStart := start.(float32)
-		tEnd := end.(float32)
-		startBuffer = unsafe.Pointer(&tStart)
-		endBuffer = unsafe.Pointer(&tEnd)
-	case reflect.Float64:
-		tStart := start.(float64)
-		tEnd := end.(float64)
-		startBuffer = unsafe.Pointer(&tStart)
-		endBuffer = unsafe.Pointer(&tEnd)
-	case reflect.Bool:
-		tStart := start.(bool)
-		tEnd := end.(bool)
-		startBuffer = unsafe.Pointer(&tStart)
-		endBuffer = unsafe.Pointer(&tEnd)
-	default:
-		return nil, nil, fmt.Errorf("Unrecognized type of range component passed: %s",
-			startType.String())
-	}
-
-	return startBuffer, endBuffer, nil
-}
-
 // AddRange adds a 1D range along a subarray dimension, which is in the form
 // (start, end, stride). The datatype of the range components must be the same
 // as the type of the domain of the array in the query.
@@ -2986,7 +2895,6 @@ the buffers, implying that the larger buffers are needed for the query
 to proceed. In this case, the users must reallocate their buffers
 (increasing their size), reset the buffers with set_buffer(),
 and resubmit the query.
-
 */
 func (q *Query) Submit() error {
 	ret := C.tiledb_query_submit(q.context.tiledbContext, q.tiledbQuery)
@@ -3004,15 +2912,15 @@ Async does not currently support the callback function parameter
 To monitor progress of a query in a non blocking manner the status can be
 polled:
 
- // Start goroutine for background monitoring
- go func(query Query) {
-  var status QueryStatus
-  var err error
-   for status, err = query.Status(); status == TILEDB_INPROGRESS && err == nil; status, err = query.Status() {
-     // Do something while query is running
-   }
-   // Do something when query is finished
- }(query)
+	// Start goroutine for background monitoring
+	go func(query Query) {
+	 var status QueryStatus
+	 var err error
+	  for status, err = query.Status(); status == TILEDB_INPROGRESS && err == nil; status, err = query.Status() {
+	    // Do something while query is running
+	  }
+	  // Do something when query is finished
+	}(query)
 */
 func (q *Query) SubmitAsync() error {
 	ret := C.tiledb_query_submit_async(q.context.tiledbContext, q.tiledbQuery, nil, nil)
@@ -3387,4 +3295,95 @@ func (q *Query) Stats() ([]byte, error) {
 	}
 
 	return []byte(s), nil
+}
+
+func getStartAndEndBuffers(start interface{}, end interface{}) (
+	unsafe.Pointer, unsafe.Pointer, error) {
+	startReflectValue := reflect.ValueOf(start)
+	endReflectValue := reflect.ValueOf(end)
+
+	if startReflectValue.Kind() != endReflectValue.Kind() {
+		return nil, nil, fmt.Errorf(
+			"The datatype of the range components must be the same as the type, start was: %s, end was: %s",
+			startReflectValue.Kind().String(), endReflectValue.Kind().String())
+	}
+
+	var startBuffer unsafe.Pointer
+	var endBuffer unsafe.Pointer
+
+	startReflectType := reflect.TypeOf(start)
+	startType := startReflectType.Kind()
+
+	switch startType {
+	case reflect.Int:
+		tStart := start.(int)
+		tEnd := end.(int)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
+	case reflect.Int8:
+		tStart := start.(int8)
+		tEnd := end.(int8)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
+	case reflect.Int16:
+		tStart := start.(int16)
+		tEnd := end.(int16)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
+	case reflect.Int32:
+		tStart := start.(int32)
+		tEnd := end.(int32)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
+	case reflect.Int64:
+		tStart := start.(int64)
+		tEnd := end.(int64)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
+	case reflect.Uint:
+		tStart := start.(uint)
+		tEnd := end.(uint)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
+	case reflect.Uint8:
+		tStart := start.(uint8)
+		tEnd := end.(uint8)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
+	case reflect.Uint16:
+		tStart := start.(uint16)
+		tEnd := end.(uint16)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
+	case reflect.Uint32:
+		tStart := start.(uint32)
+		tEnd := end.(uint32)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
+	case reflect.Uint64:
+		tStart := start.(uint64)
+		tEnd := end.(uint64)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
+	case reflect.Float32:
+		tStart := start.(float32)
+		tEnd := end.(float32)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
+	case reflect.Float64:
+		tStart := start.(float64)
+		tEnd := end.(float64)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
+	case reflect.Bool:
+		tStart := start.(bool)
+		tEnd := end.(bool)
+		startBuffer = unsafe.Pointer(&tStart)
+		endBuffer = unsafe.Pointer(&tEnd)
+	default:
+		return nil, nil, fmt.Errorf("Unrecognized type of range component passed: %s",
+			startType.String())
+	}
+
+	return startBuffer, endBuffer, nil
 }
