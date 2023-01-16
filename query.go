@@ -878,262 +878,42 @@ func (q *Query) BufferNullable(attributeOrDimension string) (interface{}, []uint
 // SetBufferVarUnsafe Sets the buffer for a variable sized attribute to a query
 // This takes unsafe pointers which is passsed straight to tiledb c_api
 // for advanced usage
+//
+// Deprecated: use SetDataBufferUnsafe and SetOffsetsBufferUnsafe instead.
 func (q *Query) SetBufferVarUnsafe(attribute string, offset unsafe.Pointer, offsetSize uint64, buffer unsafe.Pointer, bufferSize uint64) (*uint64, *uint64, error) {
-	cAttribute := C.CString(attribute)
-	defer C.free(unsafe.Pointer(cAttribute))
-
-	ret := C.tiledb_query_set_buffer_var(
-		q.context.tiledbContext,
-		q.tiledbQuery,
-		cAttribute,
-		(*C.uint64_t)(offset),
-		(*C.uint64_t)(unsafe.Pointer(&offsetSize)),
-		buffer,
-		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
-
-	if ret != C.TILEDB_OK {
-		return nil, nil, fmt.Errorf("Error setting query var buffer: %s", q.context.LastError())
+	bufferSizePtr, err := q.SetDataBufferUnsafe(attribute, buffer, bufferSize)
+	if err != nil {
+		q.resetResultBufferPointers(attribute)
+		return nil, nil, err
 	}
 
-	q.resultBufferElements[attribute] = [3]*uint64{&offsetSize, &bufferSize, nil}
+	offsetSizePtr, err := q.SetOffsetsBufferUnsafe(attribute, offset, offsetSize)
+	if err != nil {
+		q.resetResultBufferPointers(attribute)
+		return nil, nil, err
+	}
 
-	return &offsetSize, &bufferSize, nil
+	return offsetSizePtr, bufferSizePtr, nil
 }
 
 // SetBufferVar Sets the buffer for a variable sized attribute/dimension to a query
 // The buffer must be an initialized slice
+//
+// Deprecated: Use SetDataBuffer and SetOffsetsBuffer instead.
 func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffer interface{}) (*uint64, *uint64, error) {
-	bufferReflectType := reflect.TypeOf(buffer)
-	bufferReflectValue := reflect.ValueOf(buffer)
-	if bufferReflectValue.Kind() != reflect.Slice {
-		return nil, nil, fmt.Errorf("Buffer passed must be a slice that is pre"+
-			"-allocated, type passed was: %s", bufferReflectValue.Kind().String())
-	}
-
-	// Next get the attribute to validate the buffer type is the same as the attribute
-	schema, err := q.array.Schema()
+	bufferSizePtr, err := q.SetDataBuffer(attributeOrDimension, buffer)
 	if err != nil {
-		return nil, nil, fmt.Errorf(
-			"Could not get array schema for SetBuffer: %s",
-			err)
-	}
-
-	var attributeOrDimensionType Datatype
-
-	domain, err := schema.Domain()
-	if err != nil {
-		return nil, nil, fmt.Errorf(
-			"Could not get domain from array schema for SetBufferVar: %s",
-			err)
-	}
-
-	hasDim, err := domain.HasDimension(attributeOrDimension)
-	if err != nil {
+		q.resetResultBufferPointers(attributeOrDimension)
 		return nil, nil, err
 	}
 
-	if hasDim {
-		dimension, err := domain.DimensionFromName(attributeOrDimension)
-		if err != nil {
-			return nil, nil, fmt.Errorf("Could not get attribute or dimension for SetBufferVar: %s",
-				attributeOrDimension)
-		}
-		attributeOrDimensionType, err = dimension.Type()
-		if err != nil {
-			return nil, nil, fmt.Errorf("Could not get dimensionType for SetBufferVar: %s",
-				attributeOrDimension)
-		}
-	} else {
-		schemaAttribute, err := schema.AttributeFromName(attributeOrDimension)
-		if err != nil {
-			return nil, nil, fmt.Errorf("Could not get attribute %s SetBufferVar",
-				attributeOrDimension)
-		}
-
-		attributeOrDimensionType, err = schemaAttribute.Type()
-		if err != nil {
-			return nil, nil, fmt.Errorf("Could not get attributeType for SetBufferVar: %s",
-				attributeOrDimension)
-		}
+	offsetSizePtr, err := q.SetOffsetsBuffer(attributeOrDimension, offset)
+	if err != nil {
+		q.resetResultBufferPointers(attributeOrDimension)
+		return nil, nil, err
 	}
 
-	bufferType := bufferReflectType.Elem().Kind()
-
-	if attributeOrDimensionType.ReflectKind() != bufferType {
-		return nil, nil, fmt.Errorf("Buffer and Attribute do not have the same"+
-			" data types. Buffer: %s, Attribute: %s", bufferType.String(), attributeOrDimensionType.ReflectKind().String())
-	}
-
-	bufferSize := uint64(bufferReflectValue.Len())
-
-	if bufferSize == uint64(0) {
-		return nil, nil, fmt.Errorf("Buffer has no length, " +
-			"buffers are required to be initialized before reading or writting")
-	}
-
-	offsetSize := uint64(len(offset)) * bytesizes.Uint64
-
-	if offsetSize == uint64(0) {
-		return nil, nil, fmt.Errorf("Offset slice has no length, " +
-			"offset slices are required to be initialized before reading or writting")
-	}
-
-	// Acquire a lock to make appending to buffer slice thread safe
-	q.bufferMutex.Lock()
-	defer q.bufferMutex.Unlock()
-
-	// Store offset so array does not get gc'ed
-	q.buffers = append(q.buffers, offset)
-
-	// Set offset and buffer
-	var cbuffer unsafe.Pointer
-	coffset := unsafe.Pointer(&(offset)[0])
-	switch bufferType {
-	case reflect.Int:
-		// Set buffersize
-		bufferSize = bufferSize * bytesizes.Int
-
-		// Create buffer void*
-		tmpBuffer := buffer.([]int)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
-	case reflect.Int8:
-		// Set buffersize
-		bufferSize = bufferSize * bytesizes.Int8
-
-		// Create buffer void*
-		tmpBuffer := buffer.([]int8)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
-	case reflect.Int16:
-		// Set buffersize
-		bufferSize = bufferSize * bytesizes.Int16
-
-		// Create buffer void*
-		tmpBuffer := buffer.([]int16)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
-	case reflect.Int32:
-		// Set buffersize
-		bufferSize = bufferSize * bytesizes.Int32
-
-		// Create buffer void*
-		tmpBuffer := buffer.([]int32)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
-	case reflect.Int64:
-		// Set buffersize
-		bufferSize = bufferSize * bytesizes.Int64
-
-		// Create buffer void*
-		tmpBuffer := buffer.([]int64)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
-	case reflect.Uint:
-		// Set buffersize
-		bufferSize = bufferSize * bytesizes.Uint
-
-		// Create buffer void*
-		tmpBuffer := buffer.([]uint)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
-	case reflect.Uint8:
-		// Set buffersize
-		bufferSize = bufferSize * bytesizes.Uint8
-
-		// Create buffer void*
-		tmpBuffer := buffer.([]uint8)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
-	case reflect.Uint16:
-		// Set buffersize
-		bufferSize = bufferSize * bytesizes.Uint16
-
-		// Create buffer void*
-		tmpBuffer := buffer.([]uint16)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
-	case reflect.Uint32:
-		// Set buffersize
-		bufferSize = bufferSize * bytesizes.Uint32
-
-		// Create buffer void*
-		tmpBuffer := buffer.([]uint32)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
-	case reflect.Uint64:
-		// Set buffersize
-		bufferSize = bufferSize * bytesizes.Uint64
-
-		// Create buffer void*
-		tmpBuffer := buffer.([]uint64)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
-	case reflect.Float32:
-		// Set buffersize
-		bufferSize = bufferSize * bytesizes.Float32
-
-		// Create buffer void*
-		tmpBuffer := buffer.([]float32)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
-	case reflect.Float64:
-		// Set buffersize
-		bufferSize = bufferSize * bytesizes.Float64
-
-		// Create buffer void*
-		tmpBuffer := buffer.([]float64)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
-
-	case reflect.Bool:
-		// Set buffersize
-		bufferSize = bufferSize * bytesizes.Bool
-
-		// Create buffer void*
-		tmpBuffer := buffer.([]bool)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
-
-	default:
-		return nil, nil, fmt.Errorf("Unrecognized buffer type passed: %s",
-			bufferType.String())
-	}
-
-	cAttributeOrDimension := C.CString(attributeOrDimension)
-	defer C.free(unsafe.Pointer(cAttributeOrDimension))
-
-	ret := C.tiledb_query_set_buffer_var(
-		q.context.tiledbContext,
-		q.tiledbQuery,
-		cAttributeOrDimension,
-		(*C.uint64_t)(coffset),
-		(*C.uint64_t)(unsafe.Pointer(&offsetSize)),
-		cbuffer,
-		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
-
-	if ret != C.TILEDB_OK {
-		return nil, nil, fmt.Errorf("Error setting query var buffer: %s",
-			q.context.LastError())
-	}
-
-	q.resultBufferElements[attributeOrDimension] =
-		[3]*uint64{&offsetSize, &bufferSize, nil}
-
-	return &offsetSize, &bufferSize, nil
+	return offsetSizePtr, bufferSizePtr, nil
 }
 
 // SetBufferVarNullableUnsafe Sets the buffer for a variable sized nullable attribute to a query
