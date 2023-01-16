@@ -1977,269 +1977,66 @@ func (q *Query) BufferVarNullable(attributeOrDimension string) ([]uint64, interf
 }
 
 // BufferSizeVar returns the size (in num elements) of the backing C buffers for the given variable-length attribute
+//
+// Deprecated: use GetExpectedDataBufferLength and GetExpectedOffsetsBufferLength instead.
 func (q *Query) BufferSizeVar(attributeOrDimension string) (uint64, uint64, error) {
-	var datatype Datatype
-	schema, err := q.array.Schema()
+	dataLen, err := q.GetExpectedDataBufferLength(attributeOrDimension)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	domain, err := schema.Domain()
+	offsetsLen, err := q.GetExpectedOffsetsBufferLength(attributeOrDimension)
 	if err != nil {
-		return 0, 0, fmt.Errorf(
-			"Could not get domain from array schema for BufferSizeVar: %s",
-			err)
+		return 0, 0, err
 	}
 
-	if attributeOrDimension == TILEDB_COORDS {
-		datatype, err = domain.Type()
-		if err != nil {
-			return 0, 0, err
-		}
-	} else {
-		hasDim, err := domain.HasDimension(attributeOrDimension)
-		if err != nil {
-			return 0, 0, err
-		}
-
-		if hasDim {
-			dimension, err := domain.DimensionFromName(attributeOrDimension)
-			if err != nil {
-				return 0, 0, fmt.Errorf("Could not get attribute or dimension for BufferSizeVar: %s", attributeOrDimension)
-			}
-
-			datatype, err = dimension.Type()
-			if err != nil {
-				return 0, 0, fmt.Errorf("Could not get dimensionType for BufferSizeVar: %s", attributeOrDimension)
-			}
-		} else {
-			attribute, err := schema.AttributeFromName(attributeOrDimension)
-			if err != nil {
-				return 0, 0, fmt.Errorf("Could not get attribute %s for BufferSizeVar", attributeOrDimension)
-			}
-
-			datatype, err = attribute.Type()
-			if err != nil {
-				return 0, 0, fmt.Errorf("Could not get attributeType for BufferSizeVar: %s", attributeOrDimension)
-			}
-		}
-	}
-
-	dataTypeSize := datatype.Size()
-	offsetTypeSize := TILEDB_UINT64.Size()
-
-	cattributeNameOrDimension := C.CString(attributeOrDimension)
-	defer C.free(unsafe.Pointer(cattributeNameOrDimension))
-
-	var ret C.int32_t
-	var cbufferSize *C.uint64_t
-	var cbuffer unsafe.Pointer
-	var coffsetsSize *C.uint64_t
-	var coffsets *C.uint64_t
-	ret = C.tiledb_query_get_buffer_var(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize)
-	if ret != C.TILEDB_OK {
-		return 0, 0, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeOrDimension, q.context.LastError())
-	}
-
-	var offsetNumElements uint64
-	if coffsetsSize == nil {
-		offsetNumElements = 0
-	} else {
-		offsetNumElements = uint64(*coffsetsSize) / offsetTypeSize
-	}
-
-	var dataNumElements uint64
-	if cbufferSize == nil {
-		dataNumElements = 0
-	} else {
-		dataNumElements = uint64(*cbufferSize) / dataTypeSize
-	}
-
-	return offsetNumElements, dataNumElements, nil
+	return offsetsLen, dataLen, nil
 }
 
 // BufferSizeVarNullable returns the size (in num elements) of the backing C buffers for the given variable-length nullable attribute
+//
+// Deprecated: use GetExpectedDataBufferLength, GetExpectedOffsetsBufferLength and GetExpectedValidityBufferLength instead.
 func (q *Query) BufferSizeVarNullable(attributeName string) (uint64, uint64, uint64, error) {
-	var datatype Datatype
-	schema, err := q.array.Schema()
+	dataLen, err := q.GetExpectedDataBufferLength(attributeName)
 	if err != nil {
 		return 0, 0, 0, err
 	}
 
-	attribute, err := schema.AttributeFromName(attributeName)
+	offsetsLen, err := q.GetExpectedOffsetsBufferLength(attributeName)
 	if err != nil {
-		return 0, 0, 0, fmt.Errorf("Could not get attribute %s for BufferSizeVarNullable", attributeName)
+		return 0, 0, 0, err
 	}
 
-	datatype, err = attribute.Type()
+	validitiesLen, err := q.GetExpectedValidityBufferLength(attributeName)
 	if err != nil {
-		return 0, 0, 0, fmt.Errorf("Could not get attributeType for BufferSizeVarNullable: %s", attributeName)
+		return 0, 0, 0, err
 	}
 
-	dataTypeSize := datatype.Size()
-	offsetTypeSize := TILEDB_UINT64.Size()
-	validityTypeSize := TILEDB_UINT8.Size()
-
-	cattributeNameOrDimension := C.CString(attributeName)
-	defer C.free(unsafe.Pointer(cattributeNameOrDimension))
-
-	var ret C.int32_t
-	var cbufferSize *C.uint64_t
-	var cbuffer unsafe.Pointer
-	var coffsetsSize *C.uint64_t
-	var coffsets *C.uint64_t
-	var validityByteMap *C.uint8_t
-	var validityByteMapSize *C.uint64_t
-	ret = C.tiledb_query_get_buffer_var_nullable(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize, &cbuffer, &cbufferSize, &validityByteMap, &validityByteMapSize)
-	if ret != C.TILEDB_OK {
-		return 0, 0, 0, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeName, q.context.LastError())
-	}
-
-	var offsetNumElements uint64
-	if coffsetsSize == nil {
-		offsetNumElements = 0
-	} else {
-		offsetNumElements = uint64(*coffsetsSize) / offsetTypeSize
-	}
-
-	var dataNumElements uint64
-	if cbufferSize == nil {
-		dataNumElements = 0
-	} else {
-		dataNumElements = uint64(*cbufferSize) / dataTypeSize
-	}
-
-	var validityNumElements uint64
-	if validityByteMapSize == nil {
-		validityNumElements = 0
-	} else {
-		validityNumElements = uint64(*validityByteMapSize) / validityTypeSize
-	}
-
-	return offsetNumElements, dataNumElements, validityNumElements, nil
+	return offsetsLen, dataLen, validitiesLen, nil
 }
 
 // BufferSize returns the size (in num elements) of the backing C buffer for the given attribute
+//
+// Deprecated: use GetExpectedDataBufferLength instead.
 func (q *Query) BufferSize(attributeNameOrDimension string) (uint64, error) {
-	var datatype Datatype
-	schema, err := q.array.Schema()
-	if err != nil {
-		return 0, err
-	}
-
-	domain, err := schema.Domain()
-	if err != nil {
-		return 0, fmt.Errorf(
-			"Could not get domain from array schema for BufferSize: %s",
-			err)
-	}
-
-	if attributeNameOrDimension == TILEDB_COORDS {
-		datatype, err = domain.Type()
-		if err != nil {
-			return 0, err
-		}
-	} else {
-		hasDim, err := domain.HasDimension(attributeNameOrDimension)
-		if err != nil {
-			return 0, err
-		}
-
-		if hasDim {
-			dimension, err := domain.DimensionFromName(attributeNameOrDimension)
-			if err != nil {
-				return 0, fmt.Errorf("Could not get attribute or dimension for BufferSize: %s", attributeNameOrDimension)
-			}
-
-			datatype, err = dimension.Type()
-			if err != nil {
-				return 0, fmt.Errorf("Could not get dimensionType for BufferSize: %s", attributeNameOrDimension)
-			}
-		} else {
-			attribute, err := schema.AttributeFromName(attributeNameOrDimension)
-			if err != nil {
-				return 0, err
-			}
-
-			datatype, err = attribute.Type()
-			if err != nil {
-				return 0, err
-			}
-		}
-	}
-
-	dataTypeSize := datatype.Size()
-
-	cattributeNameOrDimension := C.CString(attributeNameOrDimension)
-	defer C.free(unsafe.Pointer(cattributeNameOrDimension))
-
-	var ret C.int32_t
-	var cbufferSize *C.uint64_t
-	var cbuffer unsafe.Pointer
-	ret = C.tiledb_query_get_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &cbuffer, &cbufferSize)
-	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeNameOrDimension, q.context.LastError())
-	}
-
-	var dataNumElements uint64
-	if cbufferSize == nil {
-		dataNumElements = 0
-	} else {
-		dataNumElements = uint64(*cbufferSize) / dataTypeSize
-	}
-
-	return dataNumElements, nil
+	return q.GetExpectedDataBufferLength(attributeNameOrDimension)
 }
 
 // BufferSizeNullable returns the size (in num elements) of the backing C buffer for the given nullable attribute
+//
+// Deprecated: use GetExpectedDataBufferLength and GetExpectedValidityBufferLength instead.
 func (q *Query) BufferSizeNullable(attributeName string) (uint64, uint64, error) {
-	var datatype Datatype
-	schema, err := q.array.Schema()
+	dataLen, err := q.GetExpectedDataBufferLength(attributeName)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	attribute, err := schema.AttributeFromName(attributeName)
+	validitiesLen, err := q.GetExpectedValidityBufferLength(attributeName)
 	if err != nil {
-		return 0, 0, fmt.Errorf("Could not get attribute %s for BufferSizeNullable", attributeName)
+		return 0, 0, err
 	}
 
-	datatype, err = attribute.Type()
-	if err != nil {
-		return 0, 0, fmt.Errorf("Could not get attributeType for BufferSizeNullable: %s", attributeName)
-	}
-
-	dataTypeSize := datatype.Size()
-	validityTypeSize := TILEDB_UINT8.Size()
-
-	cattributeNameOrDimension := C.CString(attributeName)
-	defer C.free(unsafe.Pointer(cattributeNameOrDimension))
-
-	var ret C.int32_t
-	var cbufferSize *C.uint64_t
-	var cbuffer unsafe.Pointer
-	var validityByteMap *C.uint8_t
-	var validityByteMapSize *C.uint64_t
-	ret = C.tiledb_query_get_buffer_nullable(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &cbuffer, &cbufferSize, &validityByteMap, &validityByteMapSize)
-	if ret != C.TILEDB_OK {
-		return 0, 0, fmt.Errorf("Error getting tiledb query buffer for %s: %s", attributeName, q.context.LastError())
-	}
-
-	var dataNumElements uint64
-	if cbufferSize == nil {
-		dataNumElements = 0
-	} else {
-		dataNumElements = uint64(*cbufferSize) / dataTypeSize
-	}
-
-	var validityNumElements uint64
-	if validityByteMapSize == nil {
-		validityNumElements = 0
-	} else {
-		validityNumElements = uint64(*validityByteMapSize) / validityTypeSize
-	}
-
-	return dataNumElements, validityNumElements, nil
+	return dataLen, validitiesLen, nil
 }
 
 // SetLayout sets the layout of the cells to be written or read
