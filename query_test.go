@@ -2,7 +2,9 @@ package tiledb
 
 import (
 	"os"
+	"reflect"
 	"testing"
+	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -2684,4 +2686,264 @@ func TestQueryStats(t *testing.T) {
 	assert.NotEmpty(t, stats, 0)
 
 	query.Free()
+}
+
+func TestSetDataBufferUnsafe(t *testing.T) {
+	// create a 1d array x[a] with a fixed length int32 attribute
+	config, err := NewConfig()
+	require.NoError(t, err)
+	tdbCtx, err := NewContext(config)
+	require.NoError(t, err)
+	dimension, err := NewDimension(tdbCtx, "x", TILEDB_INT8, []int8{1, 10}, int8(5))
+	require.NoError(t, err)
+	domain, err := NewDomain(tdbCtx)
+	require.NoError(t, err)
+	require.NoError(t, domain.AddDimensions(dimension))
+	arraySchema, err := NewArraySchema(tdbCtx, TILEDB_DENSE)
+	require.NoError(t, err)
+	attribute, err := NewAttribute(tdbCtx, "a", TILEDB_INT32)
+	require.NoError(t, err)
+	require.NoError(t, arraySchema.AddAttributes(attribute))
+	require.NoError(t, arraySchema.SetDomain(domain))
+	uri := t.TempDir()
+	array, err := NewArray(tdbCtx, uri)
+	require.NoError(t, err)
+	require.NoError(t, array.Create(arraySchema))
+	require.NoError(t, array.Close())
+
+	// open the array and write a slice
+	require.NoError(t, array.Open(TILEDB_WRITE))
+	tdbCtx, err = NewContext(config)
+	require.NoError(t, err)
+	q, err := NewQuery(tdbCtx, array)
+	require.NoError(t, err)
+	require.NoError(t, q.AddRangeByName("x", 4, 7))
+	dataBuffer := []int32{4, 5, 6, 7}
+	dataPtr := unsafe.Pointer((*reflect.SliceHeader)(unsafe.Pointer(&dataBuffer)).Data)
+	n, err := q.SetDataBufferUnsafe("a", dataPtr, 16)
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.Equal(t, uint64(len(dataBuffer))*uint64(unsafe.Sizeof(dataBuffer[0])), *n)
+	require.NoError(t, q.Submit())
+	status, err := q.Status()
+	require.NoError(t, err)
+	require.Equal(t, TILEDB_COMPLETED, status)
+	require.NoError(t, array.Close())
+
+	// open the array to read the full array and verify the written cells
+	require.NoError(t, array.Open(TILEDB_READ))
+	tdbCtx, err = NewContext(config)
+	require.NoError(t, err)
+	q, err = NewQuery(tdbCtx, array)
+	require.NoError(t, err)
+	require.NoError(t, q.AddRangeByName("x", 1, 10))
+	dataBuffer = []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	dataPtr = unsafe.Pointer((*reflect.SliceHeader)(unsafe.Pointer(&dataBuffer)).Data)
+	n, err = q.SetDataBufferUnsafe("a", dataPtr, 40)
+	require.NoError(t, err)
+	require.NotNil(t, n)
+	require.Equal(t, uint64(len(dataBuffer))*uint64(unsafe.Sizeof(dataBuffer[0])), *n)
+	require.NoError(t, q.Submit())
+	status, err = q.Status()
+	require.NoError(t, err)
+	require.Equal(t, TILEDB_COMPLETED, status)
+	assert.Equal(t, int32(4), dataBuffer[3])
+	assert.Equal(t, int32(5), dataBuffer[4])
+	assert.Equal(t, int32(6), dataBuffer[5])
+	assert.Equal(t, int32(7), dataBuffer[6])
+
+	// verify that GetDataBuffer works for buffers passed unsafe
+	storedBuffer, err := q.GetDataBuffer("a")
+	require.NoError(t, err)
+	storedDataBuffer, ok := storedBuffer.([]int32)
+	require.True(t, ok)
+	require.Equal(t, uintptr(dataPtr),
+		((*reflect.SliceHeader)(unsafe.Pointer(&storedDataBuffer)).Data))
+}
+
+func TestGetDataBuffer(t *testing.T) {
+	// create a 1d array x[a] with a fixed length int32 attribute
+	config, err := NewConfig()
+	require.NoError(t, err)
+	tdbCtx, err := NewContext(config)
+	require.NoError(t, err)
+	dimension, err := NewDimension(tdbCtx, "x", TILEDB_INT8, []int8{1, 10}, int8(5))
+	require.NoError(t, err)
+	domain, err := NewDomain(tdbCtx)
+	require.NoError(t, err)
+	require.NoError(t, domain.AddDimensions(dimension))
+	arraySchema, err := NewArraySchema(tdbCtx, TILEDB_DENSE)
+	require.NoError(t, err)
+	attribute, err := NewAttribute(tdbCtx, "a", TILEDB_INT32)
+	require.NoError(t, err)
+	require.NoError(t, arraySchema.AddAttributes(attribute))
+	require.NoError(t, arraySchema.SetDomain(domain))
+	uri := t.TempDir()
+	array, err := NewArray(tdbCtx, uri)
+	require.NoError(t, err)
+	require.NoError(t, array.Create(arraySchema))
+	require.NoError(t, array.Close())
+
+	// create a write query, set the data buffer and read it back
+	require.NoError(t, array.Open(TILEDB_WRITE))
+	tdbCtx, err = NewContext(config)
+	require.NoError(t, err)
+	q, err := NewQuery(tdbCtx, array)
+	require.NoError(t, err)
+	require.NoError(t, q.AddRangeByName("x", 4, 7))
+	dataBuffer := []int32{4, 5, 6, 7}
+	_, err = q.SetDataBuffer("a", dataBuffer)
+	require.NoError(t, err)
+
+	storedBuffer, err := q.GetDataBuffer("a")
+	require.NoError(t, err)
+	storedDataBuffer, ok := storedBuffer.([]int32)
+	require.True(t, ok)
+	require.Equal(t, ((*reflect.SliceHeader)(unsafe.Pointer(&dataBuffer)).Data),
+		((*reflect.SliceHeader)(unsafe.Pointer(&storedDataBuffer)).Data))
+}
+
+func TestSetDataBuffer(t *testing.T) {
+	// create a 1d array x[a] with a fixed length int32 attribute
+	config, err := NewConfig()
+	require.NoError(t, err)
+	tdbCtx, err := NewContext(config)
+	require.NoError(t, err)
+	dimension, err := NewDimension(tdbCtx, "x", TILEDB_INT8, []int8{1, 10}, int8(5))
+	require.NoError(t, err)
+	domain, err := NewDomain(tdbCtx)
+	require.NoError(t, err)
+	require.NoError(t, domain.AddDimensions(dimension))
+	arraySchema, err := NewArraySchema(tdbCtx, TILEDB_DENSE)
+	require.NoError(t, err)
+	attribute, err := NewAttribute(tdbCtx, "a", TILEDB_INT32)
+	require.NoError(t, err)
+	require.NoError(t, arraySchema.AddAttributes(attribute))
+	require.NoError(t, arraySchema.SetDomain(domain))
+	uri := t.TempDir()
+	array, err := NewArray(tdbCtx, uri)
+	require.NoError(t, err)
+	require.NoError(t, array.Create(arraySchema))
+	require.NoError(t, array.Close())
+
+	// open the array and write a slice
+	require.NoError(t, array.Open(TILEDB_WRITE))
+	tdbCtx, err = NewContext(config)
+	require.NoError(t, err)
+	q, err := NewQuery(tdbCtx, array)
+	require.NoError(t, err)
+	require.NoError(t, q.AddRangeByName("x", 4, 7))
+	dataBuffer := []int32{4, 5, 6, 7}
+	np, err := q.SetDataBuffer("a", dataBuffer)
+	require.NoError(t, err)
+	require.NotNil(t, np)
+	require.Equal(t, uint64(len(dataBuffer))*uint64(unsafe.Sizeof(dataBuffer[0])), *np)
+	require.NoError(t, q.Submit())
+	status, err := q.Status()
+	require.NoError(t, err)
+	require.Equal(t, TILEDB_COMPLETED, status)
+	require.NoError(t, array.Close())
+
+	// open the array to read the full array and verify the written cells
+	require.NoError(t, array.Open(TILEDB_READ))
+	tdbCtx, err = NewContext(config)
+	require.NoError(t, err)
+	q, err = NewQuery(tdbCtx, array)
+	require.NoError(t, err)
+	require.NoError(t, q.AddRangeByName("x", 1, 10))
+	dataBuffer = []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	np, err = q.SetDataBuffer("a", dataBuffer)
+	require.NoError(t, err)
+	require.NotNil(t, np)
+	require.Equal(t, uint64(len(dataBuffer))*uint64(unsafe.Sizeof(dataBuffer[0])), *np)
+	require.NoError(t, q.Submit())
+	status, err = q.Status()
+	require.NoError(t, err)
+	require.Equal(t, TILEDB_COMPLETED, status)
+	require.NoError(t, array.Close())
+	assert.Equal(t, int32(4), dataBuffer[3])
+	assert.Equal(t, int32(5), dataBuffer[4])
+	assert.Equal(t, int32(6), dataBuffer[5])
+	assert.Equal(t, int32(7), dataBuffer[6])
+}
+
+func TestGetExpectedDataBufferLength(t *testing.T) {
+	// create a 1d array x[a] with a fixed length int32 attribute
+	config, err := NewConfig()
+	require.NoError(t, err)
+	tdbCtx, err := NewContext(config)
+	require.NoError(t, err)
+	dimension, err := NewDimension(tdbCtx, "x", TILEDB_INT8, []int8{1, 10}, int8(5))
+	require.NoError(t, err)
+	domain, err := NewDomain(tdbCtx)
+	require.NoError(t, err)
+	require.NoError(t, domain.AddDimensions(dimension))
+	arraySchema, err := NewArraySchema(tdbCtx, TILEDB_DENSE)
+	require.NoError(t, err)
+	attribute, err := NewAttribute(tdbCtx, "a", TILEDB_INT32)
+	require.NoError(t, err)
+	require.NoError(t, arraySchema.AddAttributes(attribute))
+	require.NoError(t, arraySchema.SetDomain(domain))
+	uri := t.TempDir()
+	array, err := NewArray(tdbCtx, uri)
+	require.NoError(t, err)
+	require.NoError(t, array.Create(arraySchema))
+
+	require.NoError(t, array.Open(TILEDB_READ))
+	q, err := NewQuery(tdbCtx, array)
+	require.NoError(t, err)
+	require.NoError(t, q.AddRangeByName("x", 4, 7))
+	dataBuffer := []int32{0, 0, 0, 0}
+	_, err = q.SetDataBuffer("a", dataBuffer)
+	require.NoError(t, err)
+
+	t.Run("ProperQuery", func(t *testing.T) {
+		storedBuffer, err := q.GetDataBuffer("a")
+		require.NoError(t, err)
+		require.NotNil(t, storedBuffer)
+		siz, err := q.GetExpectedDataBufferLength("a")
+		require.NoError(t, err)
+		require.Equal(t, uint64(4), siz)
+	})
+
+	t.Run("SerializedClientSideQuery", func(t *testing.T) {
+		bf, err := SerializeQuery(q, TILEDB_CAPNP, true)
+		require.NoError(t, err)
+		require.NotNil(t, bf)
+		buf, err := bf.Flatten()
+		require.NoError(t, err)
+
+		dq, err := NewQuery(tdbCtx, array)
+		require.NoError(t, err)
+		_, err = dq.SetDataBuffer("a", []int32{0, 0, 0, 0})
+		err = DeserializeQuery(dq, buf, TILEDB_CAPNP, true)
+		require.NoError(t, err)
+
+		storedBuffer, err := dq.GetDataBuffer("a")
+		require.NoError(t, err)
+		require.NotNil(t, storedBuffer)
+		siz, err := dq.GetExpectedDataBufferLength("a")
+		require.NoError(t, err)
+		require.Equal(t, uint64(4), siz)
+	})
+
+	t.Run("SerializedServerSideQuery", func(t *testing.T) {
+		bf, err := SerializeQuery(q, TILEDB_CAPNP, false)
+		require.NoError(t, err)
+		require.NotNil(t, bf)
+		buf, err := bf.Flatten()
+		require.NoError(t, err)
+
+		dq, err := NewQuery(tdbCtx, array)
+		require.NoError(t, err)
+		err = DeserializeQuery(dq, buf, TILEDB_CAPNP, false)
+		require.NoError(t, err)
+
+		storedBuffer, err := dq.GetDataBuffer("a")
+		require.NoError(t, err)
+		require.Nil(t, storedBuffer)
+		siz, err := dq.GetExpectedDataBufferLength("a")
+		require.NoError(t, err)
+		require.Equal(t, uint64(4), siz)
+	})
 }
