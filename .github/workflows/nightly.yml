@@ -17,6 +17,9 @@ env:
   go: "1.18"
 
 jobs:
+  # Quick build using nightly libtiledb installed as conda binary
+  # https://anaconda.org/tiledb/tiledb/files?channel=nightlies
+  # https://github.com/TileDB-Inc/conda-forge-nightly-controller
   ubuntu:
     runs-on: ubuntu-20.04
     defaults:
@@ -48,6 +51,17 @@ jobs:
 
         go test -v ./...
 
+  # Longer build because libtiledb is built from source
+  #
+  # Couldn't build against the conda binary on macOS. When I set
+  # `DYLD_LIBRARY_PATH=$CONDA_PREFIX/lib`, then it failed because it found the
+  # system libarchive instead of the conda-installed one (even when I explicitly
+  # installed it from conda-forge). Error message below:
+  #
+  # dyld: Symbol not found: _iconv
+  #   Referenced from: /usr/lib/libarchive.2.dylib
+  #   Expected in: /Users/runner/micromamba-root/envs/nightly/lib/libiconv.2.dylib
+  #   in /usr/lib/libarchive.2.dylib
   macos:
     runs-on: macos-11
     needs: ubuntu
@@ -72,6 +86,12 @@ jobs:
     - name: Test TileDB-Go
       run: go test -v ./...
 
+  # Report if either the Ubuntu or macOS builds fail
+  #
+  # If there is an existing "nightly-failure" Issue open, then it comments
+  # instead of creating a new one
+  #
+  # Only reports a failure for scheduled builds on the TileDB-Inc repo
   issue:
     permissions:
       issues: write
