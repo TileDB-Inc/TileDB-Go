@@ -5,6 +5,10 @@ on:
     paths:
       - '.github/workflows/nightly.yml'
       - '.github/scripts/nightly/**'
+  pull_request:
+    paths:
+      - '.github/workflows/nightly.yml'
+      - '.github/scripts/nightly/**'
   schedule:
     - cron: "0 4 * * *" # Every night at 4 AM UTC (11 PM EST; 12 AM EDT)
   workflow_dispatch:
