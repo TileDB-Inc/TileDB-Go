@@ -68,9 +68,6 @@ jobs:
     steps:
 
     - uses: actions/checkout@v3
-      with:
-        repository: 'TileDB-Inc/TileDB-Go'
-        ref: 'sa/sc-24303/not-use-deprecated-tiledb-methods'
 
     - name: Install nightly TileDB from source
       run: ./.github/scripts/nightly/install_tiledb_source_macos.sh
