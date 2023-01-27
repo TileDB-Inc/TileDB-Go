@@ -24,7 +24,7 @@ if [[ -z "$existing" ]]
 then
   # open new issue
   gh issue create \
-    --assignee Shelnutt2,ihnorton \
+    --assignee Shelnutt2,ihnorton,anastasop \
     --body "$theMessage" \
     --label "nightly-failure" \
     --title "Nightly build failed on $theDate"
