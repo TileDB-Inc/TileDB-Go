@@ -95,14 +95,14 @@ func TestCancelAllTasks(t *testing.T) {
 func TestGetContextConfig(t *testing.T) {
 	// Create a context with a non-default value:
 	context, err := NewContextFromMap(map[string]string{
-		"sm.tile_cache_size": "10",
+		"sm.mem.total_budget": "10",
 	})
 	require.NoError(t, err)
 	config, err := context.Config()
 	require.NoError(t, err)
 
 	// Validate config has setting changed
-	val, err := config.Get("sm.tile_cache_size")
+	val, err := config.Get("sm.mem.total_budget")
 	require.NoError(t, err)
 	assert.Equal(t, "10", val)
 }
