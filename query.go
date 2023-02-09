@@ -10,6 +10,7 @@ import "C"
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"sync"
@@ -3471,4 +3472,628 @@ func (q *Query) Stats() ([]byte, error) {
 	}
 
 	return []byte(s), nil
+}
+
+// setResultBufferPointer sets the resultBufferElements for attribute
+// pos = 0(offsets buffer) 1(data buffer) 2(validities buffer)
+// The caller must hold the q.bufferMutex lock
+func (q *Query) setResultBufferPointer(attribute string, pos int, ptr *uint64) {
+	ptrs, present := q.resultBufferElements[attribute]
+	if !present {
+		ptrs = [3]*uint64{nil, nil, nil}
+	}
+	ptrs[pos] = ptr
+	q.resultBufferElements[attribute] = ptrs
+}
+
+// SetDataBufferUnsafe sets the buffer for a fixed-sized attribute to a query
+// This takes an unsafe pointer which is passsed straight to tiledb c_api for advanced usage
+func (q *Query) SetDataBufferUnsafe(attribute string, buffer unsafe.Pointer, bufferSize uint64) (*uint64, error) {
+	q.bufferMutex.Lock()
+	defer q.bufferMutex.Unlock()
+
+	cAttribute := C.CString(attribute)
+	defer C.free(unsafe.Pointer(cAttribute))
+
+	ret := C.tiledb_query_set_data_buffer(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		cAttribute,
+		buffer,
+		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error setting query data buffer: %s", q.context.LastError())
+	}
+
+	q.setResultBufferPointer(attribute, 1, &bufferSize)
+
+	return &bufferSize, nil
+}
+
+// SetDataBuffer sets the buffer for a fixed-sized attribute to a query
+func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (*uint64, error) {
+	bufferReflectType := reflect.TypeOf(buffer)
+	bufferReflectValue := reflect.ValueOf(buffer)
+	if bufferReflectValue.Kind() != reflect.Slice {
+		return nil, fmt.Errorf("Buffer passed must be a slice that is pre-allocated, type passed was: %s",
+			bufferReflectValue.Kind().String())
+	}
+
+	// Next get the attribute to validate the buffer type is the same as the attribute
+	schema, err := q.array.Schema()
+	if err != nil {
+		return nil, fmt.Errorf("Could not get array schema for SetDataBuffer: %s", err)
+	}
+
+	domain, err := schema.Domain()
+	if err != nil {
+		return nil, fmt.Errorf("Could not get domain for SetDataBuffer: %s", attributeOrDimension)
+	}
+
+	var attributeOrDimensionType Datatype
+	// If we are setting tiledb coordinates for a sparse array we want to check
+	// the domain type. The TILEDB_COORDS attribute is only materialized after
+	// the first write
+	if attributeOrDimension == TILEDB_COORDS {
+		attributeOrDimensionType, err = domain.Type()
+		if err != nil {
+			return nil, fmt.Errorf("Could not get domainType for SetDataBuffer: %s", attributeOrDimension)
+		}
+	} else {
+		hasDim, err := domain.HasDimension(attributeOrDimension)
+		if err != nil {
+			return nil, err
+		}
+
+		if hasDim {
+			dimension, err := domain.DimensionFromName(attributeOrDimension)
+			if err != nil {
+				return nil, fmt.Errorf("Could not get attribute or dimension for SetDataBuffer: %s",
+					attributeOrDimension)
+			}
+
+			attributeOrDimensionType, err = dimension.Type()
+			if err != nil {
+				return nil, fmt.Errorf("Could not get dimensionType for SetDataBuffer: %s",
+					attributeOrDimension)
+			}
+		} else {
+			schemaAttribute, err := schema.AttributeFromName(attributeOrDimension)
+			if err != nil {
+				return nil, fmt.Errorf("Could not get attribute %s for SetDataBuffer",
+					attributeOrDimension)
+			}
+
+			attributeOrDimensionType, err = schemaAttribute.Type()
+			if err != nil {
+				return nil, fmt.Errorf("Could not get attributeType for SetDataBuffer: %s",
+					attributeOrDimension)
+			}
+		}
+	}
+
+	bufferType := bufferReflectType.Elem().Kind()
+	if attributeOrDimensionType.ReflectKind() != bufferType {
+		return nil, fmt.Errorf("Buffer and Attribute do not have the same data types. Buffer: %s, Attribute: %s",
+			bufferType.String(),
+			attributeOrDimensionType.ReflectKind().String())
+	}
+
+	var cbuffer unsafe.Pointer
+	// Get length of slice, this will be multiplied by size of datatype below
+	bufferSize := uint64(bufferReflectValue.Len())
+
+	if bufferSize == uint64(0) {
+		return nil, errors.New("Buffer has no length, vbuffers are required to be initialized before reading or writting")
+	}
+
+	// Acquire a lock to make appending to buffer slice thread safe
+	q.bufferMutex.Lock()
+	defer q.bufferMutex.Unlock()
+
+	switch bufferType {
+	case reflect.Int:
+		// Set buffersize
+		bufferSize = bufferSize * bytesizes.Int
+		// Create buffer void*
+		tmpBuffer := buffer.([]int)
+		// Store slice so underlying array is not gc'ed
+		q.buffers = append(q.buffers, tmpBuffer)
+		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+	case reflect.Int8:
+		// Set buffersize
+		bufferSize = bufferSize * bytesizes.Int8
+		// Create buffer void*
+		tmpBuffer := buffer.([]int8)
+		// Store slice so underlying array is not gc'ed
+		q.buffers = append(q.buffers, tmpBuffer)
+		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+	case reflect.Int16:
+		// Set buffersize
+		bufferSize = bufferSize * bytesizes.Int16
+		// Create buffer void*
+		tmpBuffer := buffer.([]int16)
+		// Store slice so underlying array is not gc'ed
+		q.buffers = append(q.buffers, tmpBuffer)
+		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+	case reflect.Int32:
+		// Set buffersize
+		bufferSize = bufferSize * bytesizes.Int32
+		// Create buffer void*
+		tmpBuffer := buffer.([]int32)
+		// Store slice so underlying array is not gc'ed
+		q.buffers = append(q.buffers, tmpBuffer)
+		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+	case reflect.Int64:
+		// Set buffersize
+		bufferSize = bufferSize * bytesizes.Int64
+		// Create buffer void*
+		tmpBuffer := buffer.([]int64)
+		// Store slice so underlying array is not gc'ed
+		q.buffers = append(q.buffers, tmpBuffer)
+		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+	case reflect.Uint:
+		// Set buffersize
+		bufferSize = bufferSize * bytesizes.Uint
+		// Create buffer void*
+		tmpBuffer := buffer.([]uint)
+		// Store slice so underlying array is not gc'ed
+		q.buffers = append(q.buffers, tmpBuffer)
+		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+	case reflect.Uint8:
+		// Set buffersize
+		bufferSize = bufferSize * bytesizes.Uint8
+		// Create buffer void*
+		tmpBuffer := buffer.([]uint8)
+		// Store slice so underlying array is not gc'ed
+		q.buffers = append(q.buffers, tmpBuffer)
+		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+	case reflect.Uint16:
+		// Set buffersize
+		bufferSize = bufferSize * bytesizes.Uint16
+		// Create buffer void*
+		tmpBuffer := buffer.([]uint16)
+		// Store slice so underlying array is not gc'ed
+		q.buffers = append(q.buffers, tmpBuffer)
+		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+	case reflect.Uint32:
+		// Set buffersize
+		bufferSize = bufferSize * bytesizes.Uint32
+		// Create buffer void*
+		tmpBuffer := buffer.([]uint32)
+		// Store slice so underlying array is not gc'ed
+		q.buffers = append(q.buffers, tmpBuffer)
+		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+	case reflect.Uint64:
+		// Set buffersize
+		bufferSize = bufferSize * bytesizes.Uint64
+		// Create buffer void*
+		tmpBuffer := buffer.([]uint64)
+		// Store slice so underlying array is not gc'ed
+		q.buffers = append(q.buffers, tmpBuffer)
+		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+	case reflect.Float32:
+		// Set buffersize
+		bufferSize = bufferSize * bytesizes.Float32
+		// Create buffer void*
+		tmpBuffer := buffer.([]float32)
+		// Store slice so underlying array is not gc'ed
+		q.buffers = append(q.buffers, tmpBuffer)
+		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+	case reflect.Float64:
+		// Set buffersize
+		bufferSize = bufferSize * bytesizes.Float64
+		// Create buffer void*
+		tmpBuffer := buffer.([]float64)
+		// Store slice so underlying array is not gc'ed
+		q.buffers = append(q.buffers, tmpBuffer)
+		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+	case reflect.Bool:
+		// Set buffersize
+		bufferSize = bufferSize * bytesizes.Bool
+		// Create buffer void*
+		tmpBuffer := buffer.([]bool)
+		// Store slice so underlying array is not gc'ed
+		q.buffers = append(q.buffers, tmpBuffer)
+		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
+	default:
+		return nil,
+			fmt.Errorf("Unrecognized buffer type passed: %s",
+				bufferType.String())
+	}
+
+	cAttributeOrDimension := C.CString(attributeOrDimension)
+	defer C.free(unsafe.Pointer(cAttributeOrDimension))
+
+	ret := C.tiledb_query_set_data_buffer(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		cAttributeOrDimension,
+		cbuffer,
+		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error setting query data buffer: %s", q.context.LastError())
+	}
+
+	q.setResultBufferPointer(attributeOrDimension, 1, &bufferSize)
+
+	return &bufferSize, nil
+
+}
+
+// GetDataBuffer retrieves the data buffer of an attribute/dimension
+func (q *Query) GetDataBuffer(attributeOrDimension string) (interface{}, error) {
+	buf, _, err := q.getDataBufferAndSize(attributeOrDimension)
+	return buf, err
+}
+
+// GetExpectedDataBufferLength retrieves the size of the data buffer of an attribute/dimension
+// This is equivalent to calling GetDataBuffer and taking the length of the returned buffer except
+// in the case of a deserialized server side read query where GetDataBuffer returns nil.
+// Serialization of server side read queries serializes
+// only lengths not buffers. The caller should use this method to get the size and allocate a buffer for the read query.
+func (q *Query) GetExpectedDataBufferLength(attributeOrDimension string) (uint64, error) {
+	_, n, err := q.getDataBufferAndSize(attributeOrDimension)
+	return n, err
+}
+
+// getDataBufferAndSize uses tiledb.get_query_data_buffer to retrieve the data buffer and its size for an attribute/dimension
+// The returned length is equal to the size of the buffer except in the case of a deserialized read query.
+// Serialization of read queries serializes only lengths not buffers thus the methods returns a nil buffer and
+// a non zero length. The caller should use this method to get the size and allocate a buffer for the read query.
+func (q *Query) getDataBufferAndSize(attributeOrDimension string) (interface{}, uint64, error) {
+	var datatype Datatype
+	schema, err := q.array.Schema()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	domain, err := schema.Domain()
+	if err != nil {
+		return nil, 0, fmt.Errorf("Could not get domain from array schema for GetDataBuffer: %s", err)
+	}
+
+	if attributeOrDimension == TILEDB_COORDS {
+		datatype, err = domain.Type()
+		if err != nil {
+			return nil, 0, err
+		}
+	} else {
+		hasDim, err := domain.HasDimension(attributeOrDimension)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		if hasDim {
+			dimension, err := domain.DimensionFromName(attributeOrDimension)
+			if err != nil {
+				return nil, 0, fmt.Errorf("Could not get attribute or dimension for GetDataBuffer: %s", attributeOrDimension)
+			}
+
+			datatype, err = dimension.Type()
+			if err != nil {
+				return nil, 0, fmt.Errorf("Could not get dimensionType for GetDataBuffer: %s", attributeOrDimension)
+			}
+		} else {
+			attribute, err := schema.AttributeFromName(attributeOrDimension)
+			if err != nil {
+				return nil, 0, fmt.Errorf("Could not get attribute %s for GetDataBuffer", attributeOrDimension)
+			}
+
+			datatype, err = attribute.Type()
+			if err != nil {
+				return nil, 0, fmt.Errorf("Could not get attributeType for GetDataBuffer: %s", attributeOrDimension)
+			}
+		}
+	}
+
+	cAttributeOrDimension := C.CString(attributeOrDimension)
+	defer C.free(unsafe.Pointer(cAttributeOrDimension))
+
+	var ret C.int32_t
+	var cbufferSize *C.uint64_t
+	var cbuffer unsafe.Pointer
+	var buffer interface{}
+
+	ret = C.tiledb_query_get_data_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
+	if ret != C.TILEDB_OK {
+		return nil, 0, fmt.Errorf("Error getting tiledb query data buffer for %s: %s", attributeOrDimension, q.context.LastError())
+	}
+
+	var dataNumElements uint64
+	if cbufferSize != nil {
+		dataNumElements = uint64(*cbufferSize) / datatype.Size()
+	}
+	if cbuffer == nil {
+		return nil, dataNumElements, nil
+	}
+
+	switch datatype {
+	case TILEDB_INT8:
+		length := (*cbufferSize) / C.sizeof_int8_t
+		buffer = (*[1 << 46]int8)(cbuffer)[:length:length]
+
+	case TILEDB_INT16:
+		length := (*cbufferSize) / C.sizeof_int16_t
+		buffer = (*[1 << 46]int16)(cbuffer)[:length:length]
+
+	case TILEDB_INT32:
+		length := (*cbufferSize) / C.sizeof_int32_t
+		buffer = (*[1 << 46]int32)(cbuffer)[:length:length]
+
+	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
+		length := (*cbufferSize) / C.sizeof_int64_t
+		buffer = (*[1 << 46]int64)(cbuffer)[:length:length]
+
+	case TILEDB_UINT8, TILEDB_BLOB:
+		length := (*cbufferSize) / C.sizeof_uint8_t
+		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
+
+	case TILEDB_UINT16:
+		length := (*cbufferSize) / C.sizeof_uint16_t
+		buffer = (*[1 << 46]uint16)(cbuffer)[:length:length]
+
+	case TILEDB_UINT32:
+		length := (*cbufferSize) / C.sizeof_uint32_t
+		buffer = (*[1 << 46]uint32)(cbuffer)[:length:length]
+
+	case TILEDB_UINT64:
+		length := (*cbufferSize) / C.sizeof_uint64_t
+		buffer = (*[1 << 46]uint64)(cbuffer)[:length:length]
+
+	case TILEDB_FLOAT32:
+		length := (*cbufferSize) / C.sizeof_float
+		buffer = (*[1 << 46]float32)(cbuffer)[:length:length]
+
+	case TILEDB_FLOAT64:
+		length := (*cbufferSize) / C.sizeof_double
+		buffer = (*[1 << 46]float64)(cbuffer)[:length:length]
+
+	case TILEDB_CHAR:
+		length := (*cbufferSize) / C.sizeof_char
+		buffer = (*[1 << 46]byte)(cbuffer)[:length:length]
+
+	case TILEDB_STRING_ASCII:
+		length := (*cbufferSize) / C.sizeof_uint8_t
+		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
+
+	case TILEDB_STRING_UTF8:
+		length := (*cbufferSize) / C.sizeof_uint8_t
+		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
+
+	case TILEDB_STRING_UTF16:
+		length := (*cbufferSize) / C.sizeof_uint16_t
+		buffer = (*[1 << 46]uint16)(cbuffer)[:length:length]
+
+	case TILEDB_STRING_UTF32:
+		length := (*cbufferSize) / C.sizeof_uint32_t
+		buffer = (*[1 << 46]uint32)(cbuffer)[:length:length]
+
+	case TILEDB_STRING_UCS2:
+		length := (*cbufferSize) / C.sizeof_uint16_t
+		buffer = (*[1 << 46]uint16)(cbuffer)[:length:length]
+
+	case TILEDB_STRING_UCS4:
+		length := (*cbufferSize) / C.sizeof_uint32_t
+		buffer = (*[1 << 46]uint32)(cbuffer)[:length:length]
+
+	case TILEDB_ANY:
+		length := (*cbufferSize) / C.sizeof_int32_t
+		buffer = (*[1 << 46]C.int8_t)(cbuffer)[:length:length]
+
+	case TILEDB_BOOL:
+		length := (*cbufferSize) / C.sizeof_int8_t
+		buffer = (*[1 << 46]bool)(cbuffer)[:length:length]
+
+	default:
+		return nil, 0, fmt.Errorf("Unrecognized attribute type: %d", datatype)
+	}
+
+	return buffer, dataNumElements, nil
+}
+
+// SetValidityBufferUnsafe sets the validity buffer for nullable attribute/dimension
+// This takes an unsafe pointer which is passed straight to tiledb c_api for advanced usage
+func (q *Query) SetValidityBufferUnsafe(attribute string, buffer unsafe.Pointer, bufferSize uint64) (*uint64, error) {
+	q.bufferMutex.Lock()
+	defer q.bufferMutex.Unlock()
+
+	cAttribute := C.CString(attribute)
+	defer C.free(unsafe.Pointer(cAttribute))
+
+	ret := C.tiledb_query_set_validity_buffer(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		cAttribute,
+		(*C.uint8_t)(buffer),
+		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error setting query validity buffer: %s", q.context.LastError())
+	}
+
+	q.setResultBufferPointer(attribute, 2, &bufferSize)
+
+	return &bufferSize, nil
+}
+
+// SetValidityBuffer sets the validity buffer for nullable attribute/dimension
+func (q *Query) SetValidityBuffer(attributeOrDimension string, buffer []uint8) (*uint64, error) {
+	q.bufferMutex.Lock()
+	defer q.bufferMutex.Unlock()
+
+	cAttributeOrDimension := C.CString(attributeOrDimension)
+	defer C.free(unsafe.Pointer(cAttributeOrDimension))
+
+	bufferSize := uint64(len(buffer)) * bytesizes.Uint8
+	if bufferSize == uint64(0) {
+		return nil, errors.New("Validity slice has no length, validity slices are required to be initialized before reading or writing")
+	}
+
+	ret := C.tiledb_query_set_validity_buffer(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		cAttributeOrDimension,
+		(*C.uint8_t)(unsafe.Pointer(&(buffer)[0])),
+		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error setting query validity buffer: %s", q.context.LastError())
+	}
+
+	q.setResultBufferPointer(attributeOrDimension, 2, &bufferSize)
+
+	return &bufferSize, nil
+}
+
+// GetValidityBuffer retrieves the validity buffer for a nullable attribute/dimension
+func (q *Query) GetValidityBuffer(attributeOrDimension string) ([]uint8, error) {
+	buf, _, err := q.getValidityBufferAndSize(attributeOrDimension)
+	return buf, err
+}
+
+// GetExpectedValidityBufferLength retrieves the size of the validity buffer for a nullable attribute/dimension
+// This is equivalent to calling GetValidityBuffer and taking the length of the returned buffer except
+// in the case of a deserialized read query where GetValidityBuffer returns nil. Serialization of read queries serializes
+// only lengths not buffers. The caller should use this method to get the size and allocate a buffer for the read query.
+func (q *Query) GetExpectedValidityBufferLength(attributeOrDimension string) (uint64, error) {
+	_, n, err := q.getValidityBufferAndSize(attributeOrDimension)
+	return n, err
+}
+
+// getValidityBufferAndSize uses tiledb.get_query_validity_buffer to retrieve the validity buffer and its size for a nullable attribute/dimension
+// The returned length is equal to the size of the buffer except in the case of a deserialized read query.
+// Serialization of read queries serializes only lengths not buffers thus the methods returns a nil buffer and
+// a non zero length. The caller should use this method to get the size and allocate a buffer for the read query.
+func (q *Query) getValidityBufferAndSize(attributeOrDimension string) ([]uint8, uint64, error) {
+	cattributeNameOrDimension := C.CString(attributeOrDimension)
+	defer C.free(unsafe.Pointer(cattributeNameOrDimension))
+
+	var cvalidityByteMapSize *C.uint64_t
+	var cvalidityByteMap *C.uint8_t
+
+	ret := C.tiledb_query_get_validity_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &cvalidityByteMap, &cvalidityByteMapSize)
+	if ret != C.TILEDB_OK {
+		return nil, 0, fmt.Errorf("Error getting tiledb query validity buffer for %s: %s", attributeOrDimension, q.context.LastError())
+	}
+
+	var validityNumElements uint64
+	if cvalidityByteMapSize == nil {
+		validityNumElements = 0
+	} else {
+		validityNumElements = uint64(*cvalidityByteMapSize) / TILEDB_UINT8.Size()
+	}
+
+	if cvalidityByteMap == nil {
+		return nil, validityNumElements, nil
+	}
+
+	validityByteMapLength := *cvalidityByteMapSize / C.sizeof_uint8_t
+	validities := (*[1 << 46]uint8)(unsafe.Pointer(cvalidityByteMap))[:validityByteMapLength:validityByteMapLength]
+
+	return validities, validityNumElements, nil
+}
+
+// SetOffsetsBufferUnsafe sets the offset buffer for a var-sized attribute/dimension
+// This takes an unsafe pointer which is passed straight to tiledb c_api for advanced usage
+func (q *Query) SetOffsetsBufferUnsafe(attribute string, offset unsafe.Pointer, offsetSize uint64) (*uint64, error) {
+	q.bufferMutex.Lock()
+	defer q.bufferMutex.Unlock()
+
+	cAttribute := C.CString(attribute)
+	defer C.free(unsafe.Pointer(cAttribute))
+
+	ret := C.tiledb_query_set_offsets_buffer(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		cAttribute,
+		(*C.uint64_t)(offset),
+		(*C.uint64_t)(unsafe.Pointer(&offsetSize)))
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error setting query offsets buffer: %s", q.context.LastError())
+	}
+
+	q.setResultBufferPointer(attribute, 0, &offsetSize)
+
+	return &offsetSize, nil
+}
+
+// SetOffsetsBuffer sets the offset buffer for a var-sized attribute/dimension
+func (q *Query) SetOffsetsBuffer(attributeOrDimension string, offset []uint64) (*uint64, error) {
+	q.bufferMutex.Lock()
+	defer q.bufferMutex.Unlock()
+
+	cAttributeOrDimension := C.CString(attributeOrDimension)
+	defer C.free(unsafe.Pointer(cAttributeOrDimension))
+
+	offsetSize := uint64(len(offset)) * bytesizes.Uint64
+	if offsetSize == uint64(0) {
+		return nil, errors.New("Offset slice has no length, offset slices are required to be initialized before reading or writing")
+	}
+
+	ret := C.tiledb_query_set_offsets_buffer(
+		q.context.tiledbContext,
+		q.tiledbQuery,
+		cAttributeOrDimension,
+		(*C.uint64_t)(unsafe.Pointer(&(offset)[0])),
+		(*C.uint64_t)(unsafe.Pointer(&offsetSize)))
+
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error setting query offsets buffer: %s", q.context.LastError())
+	}
+
+	q.setResultBufferPointer(attributeOrDimension, 0, &offsetSize)
+
+	return &offsetSize, nil
+}
+
+// GetOffsetsBuffer retrieves the offset buffer for a var-sized attribute/dimension
+func (q *Query) GetOffsetsBuffer(attributeOrDimension string) ([]uint64, error) {
+	buf, _, err := q.getOffsetsBufferAndSize(attributeOrDimension)
+	return buf, err
+}
+
+// GetExpectedOffsetsBufferLength retrieves the size of the offset buffer for a var-sized attribute/dimension
+// This is equivalent to calling GetOffsetsBuffer and taking the length of the returned buffer except
+// in the case of a deserialized read query where GetOffsetsBuffer returns nil. Serialization of read queries serializes
+// only lengths not buffers. The caller should use this method to get the size and allocate a buffer for the read query.
+func (q *Query) GetExpectedOffsetsBufferLength(attributeOrDimension string) (uint64, error) {
+	_, n, err := q.getOffsetsBufferAndSize(attributeOrDimension)
+	return n, err
+}
+
+// getOffsetsBufferAndSize uses tiledb.get_query_offsets_buffer to retrieve the size of the offsets buffer for a var-sized attribute/dimension
+// The returned length is equal to the size of the buffer except in the case of a deserialized read query.
+// Serialization of read queries serializes only lengths not buffers thus the methods returns a nil buffer and
+// a non zero length. The caller should use this method to get the size and allocate a buffer for the read query.
+func (q *Query) getOffsetsBufferAndSize(attributeOrDimension string) ([]uint64, uint64, error) {
+	cattributeNameOrDimension := C.CString(attributeOrDimension)
+	defer C.free(unsafe.Pointer(cattributeNameOrDimension))
+
+	var coffsetsSize *C.uint64_t
+	var coffsets *C.uint64_t
+
+	ret := C.tiledb_query_get_offsets_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize)
+	if ret != C.TILEDB_OK {
+		return nil, 0, fmt.Errorf("Error getting tiledb query offset buffer for %s: %s", attributeOrDimension, q.context.LastError())
+	}
+
+	var offsetNumElements uint64
+	if coffsetsSize == nil {
+		offsetNumElements = 0
+	} else {
+		offsetNumElements = uint64(*coffsetsSize) / TILEDB_UINT64.Size()
+	}
+
+	if coffsets == nil {
+		return nil, offsetNumElements, nil
+	}
+
+	offsetsLength := *coffsetsSize / C.sizeof_uint64_t
+	offsets := (*[1 << 46]uint64)(unsafe.Pointer(coffsets))[:offsetsLength:offsetsLength]
+
+	return offsets, offsetNumElements, nil
 }
