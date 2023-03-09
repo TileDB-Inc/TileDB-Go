@@ -2916,6 +2916,7 @@ func TestGetExpectedDataBufferLength(t *testing.T) {
 		dq, err := NewQuery(tdbCtx, array)
 		require.NoError(t, err)
 		_, err = dq.SetDataBuffer("a", []int32{0, 0, 0, 0})
+		require.NoError(t, err)
 		err = DeserializeQuery(dq, buf, TILEDB_CAPNP, true)
 		require.NoError(t, err)
 
@@ -3003,6 +3004,7 @@ func TestSetValidityBufferUnsafe(t *testing.T) {
 	require.NoError(t, q.AddRangeByName("x", 1, 10))
 	dataBuffer = []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	_, err = q.SetDataBuffer("a", dataBuffer)
+	require.NoError(t, err)
 	validityBuffer = []uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	validityPtr = unsafe.Pointer((*reflect.SliceHeader)(unsafe.Pointer(&validityBuffer)).Data)
 	n, err = q.SetValidityBufferUnsafe("a", validityPtr, 10)
@@ -3290,6 +3292,7 @@ func TestSetOffsetsBufferUnsafe(t *testing.T) {
 	offsetsBuffer = make([]uint64, 10)
 	offsetsPtr = unsafe.Pointer((*reflect.SliceHeader)(unsafe.Pointer(&offsetsBuffer)).Data)
 	vnp, err = q.SetOffsetsBufferUnsafe("a", offsetsPtr, 80)
+	require.NoError(t, err)
 	require.NotNil(t, vnp)
 	require.Equal(t, uint64(len(offsetsBuffer))*uint64(unsafe.Sizeof(offsetsBuffer[0])), *vnp)
 	require.NoError(t, q.Submit())
