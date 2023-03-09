@@ -11,7 +11,7 @@ github.com/pmezard/go-difflib/difflib
 ## explicit; go 1.13
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
-# go4.org/unsafe/assume-no-moving-gc v0.0.0-20220617031537-928513b29760
+# go4.org/unsafe/assume-no-moving-gc v0.0.0-20230221090011-e4bae7ad2296
 ## explicit; go 1.11
 go4.org/unsafe/assume-no-moving-gc
 # gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
