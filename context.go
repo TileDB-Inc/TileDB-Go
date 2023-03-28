@@ -43,6 +43,9 @@ func NewContext(config *Config) (*Context, error) {
 		return nil, fmt.Errorf("error creating tiledb context: %w", err)
 	}
 
+	if config != nil {
+		runtime.KeepAlive(config)
+	}
 	return &context, nil
 }
 
