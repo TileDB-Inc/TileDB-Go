@@ -571,6 +571,34 @@ func (q QueryStatus) String() string {
 	return C.GoString(cname)
 }
 
+// QueryStatusDetailsReason indicates extended information about a returned query status in order to
+// allow improved client-side handling of buffers and potential resubmissions.
+type QueryStatusDetailsReason uint8
+
+const (
+	// TILEDB_REASON_NONE No additional details available
+	TILEDB_REASON_NONE QueryStatusDetailsReason = C.TILEDB_REASON_NONE
+	// TILEDB_REASON_USER_BUFFER_SIZE User buffers are too small
+	TILEDB_REASON_USER_BUFFER_SIZE QueryStatusDetailsReason = C.TILEDB_REASON_USER_BUFFER_SIZE
+	// TILEDB_REASON_MEMORY_BUDGET Exceeded memory budget: can resubmit without resize
+	TILEDB_REASON_MEMORY_BUDGET QueryStatusDetailsReason = C.TILEDB_REASON_MEMORY_BUDGET
+)
+
+// String returns string representation
+func (r QueryStatusDetailsReason) String() string {
+	// TileDB does not provide tiledb_query_status_details_reason_to_str
+	switch r {
+	case TILEDB_REASON_NONE:
+		return "REASON_NONE"
+	case TILEDB_REASON_USER_BUFFER_SIZE:
+		return "REASON_USER_BUFFER_SIZE"
+	case TILEDB_REASON_MEMORY_BUDGET:
+		return "REASON_MEMORY_BUDGET"
+	}
+
+	return "REASON_UNKNOWN"
+}
+
 // QueryType read or write query
 type QueryType int8
 

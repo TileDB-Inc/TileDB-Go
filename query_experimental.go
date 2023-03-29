@@ -20,6 +20,11 @@ import (
 	"fmt"
 )
 
+// QueryStatusDetails contains detailed information about the query status
+type QueryStatusDetails struct {
+	IncompleteReason QueryStatusDetailsReason
+}
+
 func (q *Query) RelevantFragmentNum() (uint64, error) {
 	var num C.uint64_t
 	if ret := C.tiledb_query_get_relevant_fragment_num(q.context.tiledbContext, q.tiledbQuery, &num); ret != C.TILEDB_OK {
@@ -27,4 +32,15 @@ func (q *Query) RelevantFragmentNum() (uint64, error) {
 	}
 
 	return uint64(num), nil
+}
+
+// StatusDetails returns extended query status details.
+func (q *Query) StatusDetails() (QueryStatusDetails, error) {
+	var details QueryStatusDetails
+	var cDetails C.tiledb_query_status_details_t
+	if ret := C.tiledb_query_get_status_details(q.context.tiledbContext, q.tiledbQuery, &cDetails); ret != C.TILEDB_OK {
+		return details, fmt.Errorf("Error getting query status details: %s", q.context.LastError())
+	}
+	details.IncompleteReason = QueryStatusDetailsReason(cDetails.incomplete_reason)
+	return details, nil
 }
