@@ -76,6 +76,7 @@ as such the below table reference which versions are compatible.
 | 0.18.0            | 2.12.X         |
 | 0.19.0            | 2.13.X         |
 | 0.20.0            | 2.14.X         |
+| 0.21.0            | 2.15.X         |
 
 
 ## Missing Functionality
@@ -84,3 +85,12 @@ The following TileDB core library features are missing from the Go API:
 
 - TileDB generic object management
 - TileDB group creation
+
+## Deprecated Functionality
+
+### 0.21.0
+
+The query methods `(Set)?Buffer(Var|Nullable|Var|Unsafe)*` are deprecated because the corresponding
+TileDB core methods are removed. The methods will be supported for 2 releases and are expected to be
+removed in release 0.23. It is recommended to use the proper combination of
+`(Set|Get)DataBuffer`, `(Set|Get)ValidityBuffer` and `(Set|Get)OffsetBuffer`.

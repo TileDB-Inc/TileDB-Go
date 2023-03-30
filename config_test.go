@@ -15,17 +15,17 @@ func ExampleConfig_Set() {
 		// handle error
 	}
 
-	err = config.Set("sm.tile_cache_size", "10")
+	err = config.Set("sm.memory_budget", "4294967296")
 	if err != nil {
 		// handle error
 	}
 
-	val, err := config.Get("sm.tile_cache_size")
+	val, err := config.Get("sm.memory_budget")
 	if err != nil {
 		// handle error
 	}
 	fmt.Println(val)
-	// Output: 10
+	// Output: 4294967296
 }
 
 func ExampleConfig_Get() {
@@ -34,12 +34,12 @@ func ExampleConfig_Get() {
 		// handle error
 	}
 
-	val, err := config.Get("sm.tile_cache_size")
+	val, err := config.Get("sm.memory_budget")
 	if err != nil {
 		// handle error
 	}
 	fmt.Println(val)
-	// Output: 10000000
+	// Output: 5368709120
 }
 
 func TestNewConfig(t *testing.T) {
@@ -54,13 +54,13 @@ func TestNewConfig(t *testing.T) {
 func TestSettingConfig(t *testing.T) {
 	config, err := NewConfig()
 	require.NoError(t, err)
-	assert.Error(t, config.Set("sm.tile_cache_size", "fail"))
+	assert.Error(t, config.Set("sm.memory_budget", "fail"))
 
-	require.NoError(t, config.Set("sm.tile_cache_size", "10"))
+	require.NoError(t, config.Set("sm.memory_budget", "4294967296"))
 
-	val, err := config.Get("sm.tile_cache_size")
+	val, err := config.Get("sm.memory_budget")
 	require.NoError(t, err)
-	assert.Equal(t, "10", val)
+	assert.Equal(t, "4294967296", val)
 }
 
 //TestGettingConfig
@@ -68,9 +68,9 @@ func TestGettingConfig(t *testing.T) {
 	config, err := NewConfig()
 	require.NoError(t, err)
 
-	val, err := config.Get("sm.tile_cache_size")
+	val, err := config.Get("sm.memory_budget")
 	require.NoError(t, err)
-	assert.Equal(t, "10000000", val)
+	assert.Equal(t, "5368709120", val)
 
 	val, err = config.Get("sm.does_not_exists")
 	require.NoError(t, err)
@@ -81,17 +81,17 @@ func TestGettingConfig(t *testing.T) {
 func TestUnSettingConfig(t *testing.T) {
 	config, err := NewConfig()
 	require.NoError(t, err)
-	require.NoError(t, config.Set("sm.tile_cache_size", "10"))
+	require.NoError(t, config.Set("sm.memory_budget", "4294967296"))
 
-	val, err := config.Get("sm.tile_cache_size")
+	val, err := config.Get("sm.memory_budget")
 	require.NoError(t, err)
-	assert.Equal(t, "10", val)
+	assert.Equal(t, "4294967296", val)
 
-	require.NoError(t, config.Unset("sm.tile_cache_size"))
+	require.NoError(t, config.Unset("sm.memory_budget"))
 
-	val, err = config.Get("sm.tile_cache_size")
+	val, err = config.Get("sm.memory_budget")
 	require.NoError(t, err)
-	assert.Equal(t, "10000000", val)
+	assert.Equal(t, "5368709120", val)
 }
 
 //TestFileConfig
@@ -99,11 +99,11 @@ func TestFileConfig(t *testing.T) {
 	config, err := NewConfig()
 	require.NoError(t, err)
 	assert.NotNil(t, config)
-	require.NoError(t, config.Set("sm.tile_cache_size", "10"))
+	require.NoError(t, config.Set("sm.memory_budget", "4294967296"))
 
-	val, err := config.Get("sm.tile_cache_size")
+	val, err := config.Get("sm.memory_budget")
 	require.NoError(t, err)
-	assert.Equal(t, "10", val)
+	assert.Equal(t, "4294967296", val)
 
 	// Create temporary path for testing configuration writing/reading
 	tmpPath := filepath.Join(t.TempDir(), "config")
@@ -114,9 +114,9 @@ func TestFileConfig(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, config2)
 
-	val, err = config2.Get("sm.tile_cache_size")
+	val, err = config2.Get("sm.memory_budget")
 	require.NoError(t, err)
-	assert.Equal(t, "10", val)
+	assert.Equal(t, "4294967296", val)
 }
 
 //TestConfigIter

@@ -196,6 +196,8 @@ func (q *Query) SetSubArray(subArray interface{}) error {
 // SetBufferUnsafe Sets the buffer for a fixed-sized attribute to a query
 // This takes an unsafe pointer which is passsed straight to tiledb c_api
 // for advanced usage
+//
+// Deprecated: Use SetDataBufferUnsafe
 func (q *Query) SetBufferUnsafe(attribute string, buffer unsafe.Pointer, bufferSize uint64) (*uint64, error) {
 	cAttribute := C.CString(attribute)
 	defer C.free(unsafe.Pointer(cAttribute))
@@ -219,6 +221,8 @@ func (q *Query) SetBufferUnsafe(attribute string, buffer unsafe.Pointer, bufferS
 
 // SetBuffer Sets the buffer for a fixed-sized attribute to a query
 // The buffer must be an initialized slice
+//
+// Deprecated: Use SetDataBuffer
 func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uint64,
 	error) {
 	bufferReflectType := reflect.TypeOf(buffer)
@@ -446,6 +450,8 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 // SetBufferNullableUnsafe Sets the buffer for a fixed-sized nullable attribute to a query
 // This takes an unsafe pointer which is passsed straight to tiledb c_api
 // for advanced usage
+//
+// Deprecated: Use SetDataBufferUnsafe and SetValidityBufferUnsafe
 func (q *Query) SetBufferNullableUnsafe(attribute string, buffer unsafe.Pointer, bufferSize uint64, bufferValidity unsafe.Pointer, bufferValiditySize uint64) (*uint64, *uint64, error) {
 	cAttribute := C.CString(attribute)
 	defer C.free(unsafe.Pointer(cAttribute))
@@ -481,6 +487,8 @@ func (q *Query) SetBufferNullableUnsafe(attribute string, buffer unsafe.Pointer,
 
 // SetBufferNullable Sets the buffer for a fixed-sized nullable attribute to a query
 // The buffer must be an initialized slice
+//
+// Deprecated: Use SetDataBuffer and SetValidityBuffer
 func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{}, bufferValidity []uint8) (*uint64, *uint64, error) {
 	bufferReflectType := reflect.TypeOf(buffer)
 	bufferReflectValue := reflect.ValueOf(buffer)
@@ -1400,6 +1408,8 @@ func (q *Query) GetRangeNumFromName(dimName string) (*uint64, error) {
 }
 
 // Buffer returns a slice backed by the underlying c buffer from tiledb
+//
+// Deprecated: Use GetDataBuffer
 func (q *Query) Buffer(attributeOrDimension string) (interface{}, error) {
 	var datatype Datatype
 	schema, err := q.array.Schema()
@@ -1547,6 +1557,8 @@ func (q *Query) Buffer(attributeOrDimension string) (interface{}, error) {
 
 // BufferNullable returns a slice backed by the underlying c buffer from tiledb for
 // validities, and values
+//
+// Deprecated: Use GetDataBuffer and GetValidityBuffer
 func (q *Query) BufferNullable(attributeOrDimension string) (interface{}, []uint8, error) {
 	schema, err := q.array.Schema()
 	if err != nil {
@@ -1704,6 +1716,8 @@ func (q *Query) BufferNullable(attributeOrDimension string) (interface{}, []uint
 // SetBufferVarUnsafe Sets the buffer for a variable sized attribute to a query
 // This takes unsafe pointers which is passsed straight to tiledb c_api
 // for advanced usage
+//
+// Deprecated: Use SetDataBufferUnsafe and SetOffsetsBufferUnsafe
 func (q *Query) SetBufferVarUnsafe(attribute string, offset unsafe.Pointer, offsetSize uint64, buffer unsafe.Pointer, bufferSize uint64) (*uint64, *uint64, error) {
 	cAttribute := C.CString(attribute)
 	defer C.free(unsafe.Pointer(cAttribute))
@@ -1737,6 +1751,8 @@ func (q *Query) SetBufferVarUnsafe(attribute string, offset unsafe.Pointer, offs
 
 // SetBufferVar Sets the buffer for a variable sized attribute/dimension to a query
 // The buffer must be an initialized slice
+//
+// Deprecated: Use SetDataBuffer and SetOffsetsBuffer
 func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffer interface{}) (*uint64, *uint64, error) {
 	bufferReflectType := reflect.TypeOf(buffer)
 	bufferReflectValue := reflect.ValueOf(buffer)
@@ -1984,6 +2000,8 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 // SetBufferVarNullableUnsafe Sets the buffer for a variable sized nullable attribute to a query
 // This takes unsafe pointers which is passsed straight to tiledb c_api
 // for advanced usage
+//
+// Deprecated: Use SetDataBufferUnsafe and SetOffsetsBufferUnsafe and SetValidityBufferUnsafe
 func (q *Query) SetBufferVarNullableUnsafe(attribute string, offset unsafe.Pointer, offsetSize uint64, buffer unsafe.Pointer, bufferSize uint64, bufferValidity unsafe.Pointer, bufferValiditySize uint64) (*uint64, *uint64, *uint64, error) {
 	cAttribute := C.CString(attribute)
 	defer C.free(unsafe.Pointer(cAttribute))
@@ -2029,6 +2047,8 @@ func (q *Query) SetBufferVarNullableUnsafe(attribute string, offset unsafe.Point
 
 // SetBufferVarNullable Sets the buffer for a variable sized nullable attribute/dimension to a query
 // The buffer must be an initialized slice
+//
+// Deprecated: Use SetDataBuffer and SetOffsetsBuffer and SetValidityBuffer
 func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint64, buffer interface{}, bufferValidity []uint8) (*uint64, *uint64, *uint64, error) {
 	bufferReflectType := reflect.TypeOf(buffer)
 	bufferReflectValue := reflect.ValueOf(buffer)
@@ -2381,6 +2401,8 @@ func (q *Query) ResultBufferElements() (map[string][3]uint64, error) {
 
 // BufferVar returns a slice backed by the underlying c buffer from tiledb for
 // offets and values
+//
+// Deprecated: Use GetDataBuffer and GetOffsetsBuffer
 func (q *Query) BufferVar(attributeOrDimension string) ([]uint64, interface{}, error) {
 	var datatype Datatype
 	schema, err := q.array.Schema()
@@ -2574,6 +2596,8 @@ func (q *Query) BufferVar(attributeOrDimension string) ([]uint64, interface{}, e
 
 // BufferVarNullable returns a slice backed by the underlying c buffer from tiledb for
 // offets, validities, and values
+//
+// Deprecated: Use GetDataBuffer and GetOffsetsBuffer and GetValidityBuffer
 func (q *Query) BufferVarNullable(attributeOrDimension string) ([]uint64, interface{}, []uint8, error) {
 	schema, err := q.array.Schema()
 	if err != nil {
@@ -2738,6 +2762,8 @@ func (q *Query) BufferVarNullable(attributeOrDimension string) ([]uint64, interf
 }
 
 // BufferSizeVar returns the size (in num elements) of the backing C buffers for the given variable-length attribute
+//
+// Deprecated: Use GetExpectedDataBufferLength and GetExpectedValidityBufferLength
 func (q *Query) BufferSizeVar(attributeOrDimension string) (uint64, uint64, error) {
 	var datatype Datatype
 	schema, err := q.array.Schema()
@@ -2826,6 +2852,8 @@ func (q *Query) BufferSizeVar(attributeOrDimension string) (uint64, uint64, erro
 }
 
 // BufferSizeVarNullable returns the size (in num elements) of the backing C buffers for the given variable-length nullable attribute
+//
+// Deprecated: Use GetExpectedDataBufferLength and GetExpectedValidityBufferLength and GetExpectedOffsetsBufferLength
 func (q *Query) BufferSizeVarNullable(attributeName string) (uint64, uint64, uint64, error) {
 	var datatype Datatype
 	schema, err := q.array.Schema()
@@ -2897,6 +2925,8 @@ func (q *Query) BufferSizeVarNullable(attributeName string) (uint64, uint64, uin
 }
 
 // BufferSize returns the size (in num elements) of the backing C buffer for the given attribute
+//
+// Deprecated: Use GetExpectedDataBufferLength
 func (q *Query) BufferSize(attributeNameOrDimension string) (uint64, error) {
 	var datatype Datatype
 	schema, err := q.array.Schema()
@@ -2969,6 +2999,8 @@ func (q *Query) BufferSize(attributeNameOrDimension string) (uint64, error) {
 }
 
 // BufferSizeNullable returns the size (in num elements) of the backing C buffer for the given nullable attribute
+//
+// Deprecated: Use GetExpectedDataBufferLength and GetExpectedValidityBufferLength
 func (q *Query) BufferSizeNullable(attributeName string) (uint64, uint64, error) {
 	var datatype Datatype
 	schema, err := q.array.Schema()
