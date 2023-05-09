@@ -12,6 +12,7 @@ import "C"
 import (
 	"fmt"
 	"io"
+	"math"
 	"strings"
 	"unsafe"
 
@@ -553,36 +554,38 @@ func (v *VFSfh) Sync() error {
 
 // Seek to an offset
 func (v *VFSfh) Seek(offset int64, whence int) (int64, error) {
-	absOffset := uint64(offset)
-	if offset <= 0 {
-		absOffset = uint64(-1 * offset)
+	if v.size == nil {
+		if err := v.fetchAndSetSize(); err != nil {
+			return -1, err
+		}
 	}
-	var origin uint64
 
+	var origin uint64
 	switch whence {
 	case io.SeekStart:
 		origin = 0
 	case io.SeekCurrent:
 		origin = v.offset
 	case io.SeekEnd:
-		// If the size is empty, fetch it
-		if v.size == nil {
-			err := v.fetchAndSetSize()
-			if err != nil {
-				return -1, err
-			}
-		}
 		origin = *v.size
 	default:
 		return -1, fmt.Errorf("unknown seek whence")
 	}
 
-	if (offset < 0 && absOffset > origin) ||
-		(offset >= 0 && absOffset > *v.size-origin) {
-		return -1, fmt.Errorf("invalid offset")
+	var newOffset uint64
+	if offset >= 0 {
+		newOffset = origin + uint64(offset)
+		if newOffset > *v.size {
+			return -1, fmt.Errorf("invalid offset, attempt to move beyond end of file")
+		}
+	} else {
+		if offset == math.MinInt64 || uint64(-offset) > origin {
+			return -1, fmt.Errorf("invalid offset, attempt to move before start of file")
+		}
+		newOffset = origin - uint64(-offset)
 	}
 
-	v.offset = uint64(int64(origin) + offset)
+	v.offset = newOffset
 	return int64(v.offset), nil
 }
 

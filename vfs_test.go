@@ -143,6 +143,11 @@ func TestVFSFH(t *testing.T) {
 
 	r, err := vfs.Open(tmpFilePath, TILEDB_VFS_READ)
 	require.NoError(t, err)
+
+	noffset, err := r.Seek(0, io.SeekStart)
+	require.NoError(t, err)
+	assert.EqualValues(t, 0, noffset)
+
 	bRead := make([]byte, 3)
 	n, err := r.Read(bRead)
 	require.NoError(t, err)
@@ -155,7 +160,7 @@ func TestVFSFH(t *testing.T) {
 	assert.Equal(t, io.EOF, err)
 	assert.Equal(t, 0, n)
 
-	noffset, err := r.Seek(0, io.SeekStart)
+	noffset, err = r.Seek(0, io.SeekStart)
 	require.NoError(t, err)
 	assert.EqualValues(t, 0, noffset)
 	n, err = r.Read(bRead)
