@@ -548,6 +548,46 @@ const (
 	TILEDB_HILBERT Layout = C.TILEDB_HILBERT
 )
 
+// String returns string representation
+func (l Layout) String() string {
+	var cname *C.char
+	C.tiledb_layout_to_str(C.tiledb_layout_t(l), &cname)
+	return C.GoString(cname)
+}
+
+// MarshalJSON interface for marshaling to json
+func (l Layout) MarshalJSON() ([]byte, error) {
+	return json.Marshal(l.String())
+}
+
+// UnmarshalJSON interface for unmarshaling from json
+func (l *Layout) UnmarshalJSON(bytes []byte) error {
+	return l.FromString(string(bytes))
+}
+
+// FromString converts from a layout string to enum
+func (d *Layout) FromString(s string) error {
+	cname := C.CString(s)
+	defer C.free(unsafe.Pointer(cname))
+	var cLayout C.tiledb_layout_t
+	ret := C.tiledb_layout_from_str(cname, &cLayout)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("%s is not a recognized tiledb_layout_t", s)
+	}
+	*d = Layout(cLayout)
+	return nil
+}
+
+// LayoutFromString converts from a layout string to enum
+func LayoutFromString(s string) (Layout, error) {
+	var l Layout
+	err := l.FromString(s)
+	if err != nil {
+		return TILEDB_UNORDERED, err
+	}
+	return l, nil
+}
+
 // QueryStatus status of a query
 type QueryStatus int8
 
