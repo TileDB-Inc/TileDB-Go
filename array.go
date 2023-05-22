@@ -11,6 +11,7 @@ import "C"
 import (
 	"encoding/json"
 	"fmt"
+	"runtime"
 	"unsafe"
 )
 
@@ -200,6 +201,8 @@ func (a *Array) Consolidate(config *Config) error {
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error consolidating tiledb array: %s", a.context.LastError())
 	}
+	
+	runtime.KeepAlive(config)
 	return nil
 }
 
@@ -215,6 +218,8 @@ func (a *Array) Vacuum(config *Config) error {
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error vacuumimg tiledb array: %s", a.context.LastError())
 	}
+	
+	runtime.KeepAlive(config)
 	return nil
 }
 
