@@ -482,3 +482,22 @@ func (g *Group) GetIsRelativeURIByName(name string) (bool, error) {
 	}
 	return isRelative > 0, nil
 }
+
+// Delete deletes written data from an open group. The group must be opened in MODIFY_EXCLUSIVE mode,
+// otherwise the function will error out.
+// Set recursive true if all data inside the group is to be deleted.
+func (g *Group) Delete(recursive bool) error {
+	curi := C.CString(g.uri)
+	defer C.free(unsafe.Pointer(curi))
+
+	var cRecursive C.uint8_t
+	if recursive {
+		cRecursive = 1
+	}
+
+	ret := C.tiledb_group_delete_group(g.context.tiledbContext, g.group, curi, cRecursive)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deleting group: %s", g.context.LastError())
+	}
+	return nil
+}
