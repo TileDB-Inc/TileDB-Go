@@ -13,6 +13,7 @@ import "C"
 import (
 	"fmt"
 	"reflect"
+	"runtime"
 	"unsafe"
 )
 
@@ -475,4 +476,39 @@ func DeserializeFragmentInfoRequest(fragmentInfo FragmentInfo, buffer *Buffer, s
 	}
 
 	return nil
+}
+
+func DeserializeQueryAndArray(context *Context, buffer *Buffer, serializationType SerializationType, clientSide bool, arrayURI string) (*Array, *Query, error) {
+	var cClientSide C.int32_t
+	if clientSide {
+		cClientSide = 1
+	} else {
+		cClientSide = 0
+	}
+
+	cArrayURI := C.CString(arrayURI)
+	defer C.free(unsafe.Pointer(cArrayURI))
+
+	array := &Array{
+		context: context,
+	}
+
+	query := &Query{
+		context: context,
+		array:   array,
+	}
+
+	ret := C.tiledb_deserialize_query_and_array(context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, cArrayURI, &query.tiledbQuery, &array.tiledbArray)
+	if ret != C.TILEDB_OK {
+		return nil, nil, fmt.Errorf("error deserializing query: %s", context.LastError())
+	}
+
+	freeOnGC(array)
+	freeOnGC(query)
+
+	query.resultBufferElements = make(map[string][3]*uint64)
+
+	// Make sure the buffer stays alive untill after the deserialization is complete
+	runtime.KeepAlive(buffer)
+	return array, query, nil
 }
