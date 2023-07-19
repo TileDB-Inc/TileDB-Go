@@ -276,11 +276,6 @@ func TestGroupDelete(t *testing.T) {
 		return []string{outerGroupURI, outerArrayURI, innerGroupURI, innerArrayURI}
 	}
 
-	// TileDB core versions 2.15.2, 2.15.3 and the upcoming 2.15.4
-	// are slightly different on the files they leave behind after delete
-	// To be compatible with all we check that a deleted group misses the `group.tdb` file
-	// and a delete array has an empty `__schema` dir
-
 	t.Run("recursive", func(t *testing.T) {
 		uris := setup(t)
 
@@ -304,12 +299,12 @@ func TestGroupDelete(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, exists)
 
-		dirSize, err := vfs.DirSize(uris[1] + "/__schema")
+		exists, err = vfs.IsDir(uris[1] + "/__schema")
 		require.NoError(t, err)
-		require.Equal(t, uint64(0), dirSize)
-		dirSize, err = vfs.DirSize(uris[1] + "/__schema")
+		require.False(t, exists)
+		exists, err = vfs.IsDir(uris[1] + "/__schema")
 		require.NoError(t, err)
-		require.Equal(t, uint64(0), dirSize)
+		require.False(t, exists)
 	})
 
 	t.Run("nonrecursive", func(t *testing.T) {
