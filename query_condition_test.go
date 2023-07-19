@@ -47,11 +47,15 @@ func testQueryConditionInt32(t *testing.T, array *Array) {
 		name           string
 		opValue        int32
 		op             QueryConditionOp
+		negate         bool
 		expectedValues []int32
 	}{
-		{"GreaterThan1", 1, TILEDB_QUERY_CONDITION_GT, []int32{2, 3}},
-		{"LessThan3", 3, TILEDB_QUERY_CONDITION_LT, []int32{1, 2}},
-		{"EqualTo2", 2, TILEDB_QUERY_CONDITION_EQ, []int32{2}},
+		{"GreaterThan1", 1, TILEDB_QUERY_CONDITION_GT, false, []int32{2, 3}},
+		{"NotGreaterThan1", 1, TILEDB_QUERY_CONDITION_GT, true, []int32{1}},
+		{"LessThan3", 3, TILEDB_QUERY_CONDITION_LT, false, []int32{1, 2}},
+		{"NotLessThan3", 3, TILEDB_QUERY_CONDITION_LT, true, []int32{3}},
+		{"EqualTo2", 2, TILEDB_QUERY_CONDITION_EQ, false, []int32{2}},
+		{"NotEqualTo2", 2, TILEDB_QUERY_CONDITION_EQ, true, []int32{1, 3}},
 	}
 	for _, c := range a1Cases {
 		c := c
@@ -68,6 +72,11 @@ func testQueryConditionInt32(t *testing.T, array *Array) {
 
 			qc, err := NewQueryCondition(array.context, "a1", c.op, c.opValue)
 			require.NoError(t, err)
+
+			if c.negate {
+				qc, err = NewQueryConditionNegated(array.context, qc)
+				require.NoError(t, err)
+			}
 
 			err = query.SetQueryCondition(qc)
 			require.NoError(t, err)
@@ -96,6 +105,7 @@ func testQueryConditionInt32(t *testing.T, array *Array) {
 		op2                  QueryConditionOp
 		op2Value             int32
 		combinationCondition QueryConditionCombinationOp
+		negate               bool
 		expectedValues       []int32
 	}{
 		{
@@ -105,7 +115,18 @@ func testQueryConditionInt32(t *testing.T, array *Array) {
 			op2:                  TILEDB_QUERY_CONDITION_LT,
 			op2Value:             3,
 			combinationCondition: TILEDB_QUERY_CONDITION_AND,
+			negate:               false,
 			expectedValues:       []int32{2},
+		},
+		{
+			name:                 "NotGreaterThan1AndLessThan3",
+			op1:                  TILEDB_QUERY_CONDITION_GT,
+			op1Value:             1,
+			op2:                  TILEDB_QUERY_CONDITION_LT,
+			op2Value:             3,
+			combinationCondition: TILEDB_QUERY_CONDITION_AND,
+			negate:               true,
+			expectedValues:       []int32{1, 3},
 		},
 	}
 	for _, c := range a1CombinationCases {
@@ -129,6 +150,11 @@ func testQueryConditionInt32(t *testing.T, array *Array) {
 
 			qc, err := NewQueryConditionCombination(array.context, qc1, c.combinationCondition, qc2)
 			require.NoError(t, err)
+
+			if c.negate {
+				qc, err = NewQueryConditionNegated(array.context, qc)
+				require.NoError(t, err)
+			}
 
 			err = query.SetQueryCondition(qc)
 			require.NoError(t, err)
