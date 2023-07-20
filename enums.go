@@ -564,6 +564,8 @@ const (
 	TILEDB_INCOMPLETE QueryStatus = C.TILEDB_INCOMPLETE
 	// TILEDB_UNINITIALIZED Query not initialized.
 	TILEDB_UNINITIALIZED QueryStatus = C.TILEDB_UNINITIALIZED
+	// TILEDB_INITIALIZED Query initialized.
+	TILEDB_INITIALIZED QueryStatus = C.TILEDB_INITIALIZED
 )
 
 // String returns string representation
