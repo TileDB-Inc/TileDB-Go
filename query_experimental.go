@@ -43,3 +43,23 @@ func (q *Query) StatusDetails() (QueryStatusDetails, error) {
 	details.IncompleteReason = QueryStatusDetailsReason(cDetails.incomplete_reason)
 	return details, nil
 }
+
+// getDimensionLabelDataType Retrieve a dimension label Datatype from the schema using experimental APIs.
+func (q *Query) getDimensionLabelDataType(labelName string) (Datatype, error) {
+	schema, err := q.array.Schema()
+	if err != nil {
+		return 0, fmt.Errorf("Could not get schema for getDimensionLabelDatatype: %s", err)
+	}
+
+	dimLabel, err := schema.DimensionLabelFromName(labelName)
+	if err != nil {
+		return 0, fmt.Errorf("Could not get dimension label %s for getDimensionLabelDatatype: %s", labelName, err)
+	}
+
+	datatype, err := dimLabel.Type()
+	if err != nil {
+		return 0, fmt.Errorf("Could not get dimension label type for getDimensionLabelDatatype: %s", err)
+	}
+
+	return datatype, nil
+}

@@ -1,5 +1,4 @@
 //go:build experimental
-// +build experimental
 
 package tiledb
 
@@ -151,90 +150,72 @@ func ExampleDimensionLabel_Free() {
 	// Output: [-1 -0.8 -0.6 -0.4 -0.2 0 0.2 0.4 0.6 0.8]
 }
 
-// TestDimension tests creating a new dimension label
-func TestDimensionLabel(t *testing.T) {
+// TestDimension Tests created dimension labels have expected schema values.
+func TestDimensionLabelSchema(t *testing.T) {
 	context, err := NewContext(nil)
 	require.NoError(t, err)
 
-	// Create dimension
-	dimension, err := NewDimension(context, "test", TILEDB_INT32, []int32{1, 10}, int32(5))
+	// Create dimensions.
+	dimension, err := NewDimension(context, "d0", TILEDB_INT32, []int32{1, 10}, int32(5))
 	require.NoError(t, err)
 	assert.NotNil(t, dimension)
-
-	dimension2, err := NewDimension(context, "test2", TILEDB_INT32, []int32{1.0, 10.0}, int32(5.0))
+	dimension2, err := NewDimension(context, "d1", TILEDB_INT32, []int32{1.0, 10.0}, int32(5.0))
 	require.NoError(t, err)
 	assert.NotNil(t, dimension2)
-
-	name, err := dimension.Name()
-	require.NoError(t, err)
-	assert.Equal(t, "test", name)
-
-	datatype, err := dimension.Type()
-	require.NoError(t, err)
-	assert.Equal(t, TILEDB_INT32, datatype)
-
+	// Create schema and domain.
 	schema, err := NewArraySchema(context, TILEDB_SPARSE)
 	require.NoError(t, err)
 	assert.NotNil(t, schema)
-
 	domain, err := NewDomain(context)
 	require.NoError(t, err)
-
 	require.NoError(t, domain.AddDimensions(dimension, dimension2))
 	require.NoError(t, schema.SetDomain(domain))
+
 	// Unordered dimension labels are not yet supported.
-	require.Error(t, schema.AddDimensionLabel(0, "test_label", TILEDB_UNORDERED_DATA, TILEDB_FLOAT64))
-	require.NoError(t, schema.AddDimensionLabel(0, "test_label", TILEDB_INCREASING_DATA, TILEDB_FLOAT64))
+	require.Error(t, schema.AddDimensionLabel(0, "d0_label0", TILEDB_UNORDERED_DATA, TILEDB_FLOAT64))
 
-	dimLabelNum, err := schema.DimensionLabelNum()
+	require.NoError(t, schema.AddDimensionLabel(0, "d0_label0", TILEDB_INCREASING_DATA, TILEDB_FLOAT64))
+	require.NoError(t, schema.AddDimensionLabel(0, "d0_label1", TILEDB_DECREASING_DATA, TILEDB_INT64))
+	require.NoError(t, schema.AddDimensionLabel(1, "d1_label0", TILEDB_DECREASING_DATA, TILEDB_FLOAT32))
+
+	dimLabelCheck(t, schema, "d0_label0", "__labels/l0", TILEDB_FLOAT64, TILEDB_INCREASING_DATA, 1)
+	dimLabelCheck(t, schema, "d0_label1", "__labels/l1", TILEDB_INT64, TILEDB_DECREASING_DATA, 1)
+	dimLabelCheck(t, schema, "d1_label0", "__labels/l2", TILEDB_FLOAT32, TILEDB_DECREASING_DATA, 1)
+
+	err = schema.SetDimensionLabelTileExtent("d0_label0", TILEDB_INT32, int32(2))
 	require.NoError(t, err)
-	assert.Equal(t, uint64(1), dimLabelNum)
 
-	require.NoError(t, schema.AddDimensionLabel(1, "test_label2", TILEDB_DECREASING_DATA, TILEDB_FLOAT64))
+	// Write the array and schemas to disk to validate dimension label extent.
+	array, err := NewArray(context, "dimlabel_schema_test")
+	if err != nil {
+		return
+	}
+	defer array.Free()
+	objectType, err := ObjectType(context, "dimlabel_schema_test")
+	if err != nil {
+		return
+	}
+	if objectType == TILEDB_ARRAY {
+		err = os.RemoveAll("dimlabel_schema_test")
+		if err != nil {
+			return
+		}
+	}
+	err = array.Create(schema)
 
-	dimLabelNum, err = schema.DimensionLabelNum()
+	labelSchema, err := LoadArraySchema(context, "dimlabel_schema_test/__labels/l0")
 	require.NoError(t, err)
-	assert.Equal(t, uint64(2), dimLabelNum)
-
-	dimLabel, err := schema.DimensionLabelFromIndex(0)
+	require.NotNil(t, labelSchema)
+	labelDomain, err := labelSchema.Domain()
 	require.NoError(t, err)
-	require.NotNil(t, dimLabel)
-
-	dimIndex, err := dimLabel.DimensionIndex()
+	require.NotNil(t, labelDomain)
+	labelDim, err := labelDomain.DimensionFromIndex(0)
 	require.NoError(t, err)
-	assert.Equal(t, uint32(0), dimIndex)
-
-	dimLabelFromName, err := schema.DimensionLabelFromName("test_label2")
+	require.NotNil(t, labelDim)
+	labelExtent, err := labelDim.Extent()
 	require.NoError(t, err)
-	require.NotNil(t, dimLabelFromName)
-	assert.Equal(t, dimLabel, dimLabelFromName)
-
-	dimLabelOrder, err := dimLabel.LabelOrder()
-	require.NoError(t, err)
-	assert.Equal(t, TILEDB_INCREASING_DATA, dimLabelOrder)
-
-	dimLabelOrder, err = dimLabelFromName.LabelOrder()
-	require.NoError(t, err)
-	assert.Equal(t, TILEDB_DECREASING_DATA, dimLabelOrder)
-
-	dimLabelName, err := dimLabel.Name()
-	assert.Equal(t, "test_label", dimLabelName)
-
-	datatype, err = dimLabel.Type()
-	require.NoError(t, err)
-	assert.Equal(t, TILEDB_FLOAT64, datatype)
-
-	dimLabelUri, err := dimLabel.Uri()
-	require.NoError(t, err)
-	assert.Equal(t, "__labels/l0", dimLabelUri)
-
-	dimLabelAttrName, err := dimLabel.LabelAttrName()
-	require.NoError(t, err)
-	assert.Equal(t, "label", dimLabelAttrName)
-
-	dimLabelCellValNum, err := dimLabel.LabelCellValNum()
-	require.NoError(t, err)
-	assert.Equal(t, uint32(1), dimLabelCellValNum)
+	require.NotNil(t, labelExtent)
+	require.Equal(t, labelExtent, int32(2))
 
 	// Get and set compressor
 	filter, err := NewFilter(context, TILEDB_FILTER_GZIP)
@@ -243,7 +224,29 @@ func TestDimensionLabel(t *testing.T) {
 	filterList, err := NewFilterList(context)
 	require.NoError(t, err)
 	require.NoError(t, filterList.AddFilter(filter))
-	require.NoError(t, schema.SetDimensionLabelFilterList("test_label", *filterList))
+	require.NoError(t, schema.SetDimensionLabelFilterList("d1_label0", *filterList))
+}
 
+// dimLabelCheck Retrieve a dimension label from schema by name and check expected values.
+func dimLabelCheck(t *testing.T, schema *ArraySchema, name string, uri string, labelType Datatype, labelOrder DataOrder, cellValNum uint32) {
+	dimLabel, err := schema.DimensionLabelFromName(name)
+	dimLabelType, err := dimLabel.Type()
+	require.NoError(t, err)
+	assert.Equal(t, labelType, dimLabelType)
+	dimLabelOrder, err := dimLabel.LabelOrder()
+	require.NoError(t, err)
+	assert.Equal(t, labelOrder, dimLabelOrder)
+	dimLabelName, err := dimLabel.Name()
+	require.NoError(t, err)
+	assert.Equal(t, name, dimLabelName)
+	dimLabelUri, err := dimLabel.Uri()
+	require.NoError(t, err)
+	assert.Equal(t, uri, dimLabelUri)
+	dimLabelAttrName, err := dimLabel.LabelAttrName()
+	require.NoError(t, err)
+	assert.Equal(t, "label", dimLabelAttrName)
+	dimLabelCellValNum, err := dimLabel.LabelCellValNum()
+	require.NoError(t, err)
+	assert.Equal(t, cellValNum, dimLabelCellValNum)
 	dimLabel.Free()
 }

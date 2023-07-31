@@ -1,5 +1,4 @@
 //go:build experimental
-// +build experimental
 
 // This file declares Go bindings for experimental features in TileDB.
 // Experimental APIs to do not fall under the API compatibility guarantees and
@@ -17,6 +16,7 @@ package tiledb
 import "C"
 import (
 	"fmt"
+	"reflect"
 	"unsafe"
 )
 
@@ -199,52 +199,67 @@ func (a *ArraySchema) SetDimensionLabelFilterList(name string, filterList Filter
 	return nil
 }
 
-// DimensionLabelNum Retrieves the number of dimension labels attached to an array schema.
-func (a *ArraySchema) DimensionLabelNum() (uint64, error) {
-	var dimLabelNum C.uint64_t
-	ret := C.tiledb_array_schema_get_dimension_label_num(a.context.tiledbContext, a.tiledbArraySchema, &dimLabelNum)
-	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting dimension label number for ArraySchema: %s", a.context.LastError())
+func (a *ArraySchema) SetDimensionLabelTileExtent(labelName string, dimType Datatype, extent interface{}) error {
+	cName := C.CString(labelName)
+	defer C.free(unsafe.Pointer(cName))
+
+	extentType := reflect.TypeOf(extent).Kind()
+	if extentType != dimType.ReflectKind() {
+		return fmt.Errorf("Dimension and extent do not have the same data types. Dimension: %s, Extent: %s",
+			dimType.ReflectKind(), extentType)
 	}
 
-	return uint64(dimLabelNum), nil
-}
+	// Create extent void*
+	var cExtent unsafe.Pointer
+	switch dimType {
+	case TILEDB_INT8:
+		tmpExtent := extent.(int8)
+		cExtent = unsafe.Pointer(&tmpExtent)
+	case TILEDB_INT16:
+		tmpExtent := extent.(int16)
+		cExtent = unsafe.Pointer(&tmpExtent)
+	case TILEDB_INT32:
+		tmpExtent := extent.(int32)
+		cExtent = unsafe.Pointer(&tmpExtent)
+	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
+		tmpExtent := extent.(int64)
+		cExtent = unsafe.Pointer(&tmpExtent)
+	case TILEDB_UINT8:
+		tmpExtent := extent.(uint8)
+		cExtent = unsafe.Pointer(&tmpExtent)
+	case TILEDB_UINT16:
+		tmpExtent := extent.(uint16)
+		cExtent = unsafe.Pointer(&tmpExtent)
+	case TILEDB_UINT32:
+		tmpExtent := extent.(uint32)
+		cExtent = unsafe.Pointer(&tmpExtent)
+	case TILEDB_UINT64:
+		tmpExtent := extent.(uint64)
+		cExtent = unsafe.Pointer(&tmpExtent)
+	case TILEDB_FLOAT32:
+		tmpExtent := extent.(float32)
+		cExtent = unsafe.Pointer(&tmpExtent)
+	case TILEDB_FLOAT64:
+		tmpExtent := extent.(float64)
+		cExtent = unsafe.Pointer(&tmpExtent)
+	case TILEDB_BOOL:
+		tmpExtent := extent.(bool)
+		cExtent = unsafe.Pointer(&tmpExtent)
+	default:
+		return fmt.Errorf("Unrecognized dimension datatype passed to SetDimensionLabelTileExtent: %s",
+			dimType.String())
+	}
 
-// DimensionLabelFromIndex Retrieve a dimension label from an array schema by index position.
-func (a *ArraySchema) DimensionLabelFromIndex(index uint64) (*DimensionLabel, error) {
-	dimLabel := DimensionLabel{context: a.context}
-	ret := C.tiledb_array_schema_get_dimension_label_from_index(
+	ret := C.tiledb_array_schema_set_dimension_label_tile_extent(
 		a.context.tiledbContext,
 		a.tiledbArraySchema,
-		C.uint64_t(index),
-		&dimLabel.tiledbDimensionLabel)
+		cName,
+		C.tiledb_datatype_t(dimType),
+		cExtent)
+
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf(
-			"Error getting dimension label at index %d for ArraySchema: %s",
-			index,
-			a.context.LastError())
+		return fmt.Errorf("Error setting dimension label tile extent on ArraySchema: %s", a.context.LastError())
 	}
 
-	freeOnGC(&dimLabel)
-	return &dimLabel, nil
-}
-
-// getDimensionLabelDataType Retrieve a dimension label Datatype from the schema using experimental APIs.
-func (q *Query) getDimensionLabelDataType(labelName string) (Datatype, error) {
-	schema, err := q.array.Schema()
-	if err != nil {
-		return 0, fmt.Errorf("Could not get schema for getDimensionLabelDatatype: %s", err)
-	}
-
-	dimLabel, err := schema.DimensionLabelFromName(labelName)
-	if err != nil {
-		return 0, fmt.Errorf("Could not get dimension label %s for getDimensionLabelDatatype: %s", labelName, err)
-	}
-
-	datatype, err := dimLabel.Type()
-	if err != nil {
-		return 0, fmt.Errorf("Could not get dimension label type for getDimensionLabelDatatype: %s", err)
-	}
-
-	return datatype, nil
+	return nil
 }
