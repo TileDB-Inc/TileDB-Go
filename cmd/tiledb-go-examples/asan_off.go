@@ -1,5 +1,4 @@
 //go:build !asan
-// +build !asan
 
 package main
 

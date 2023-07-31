@@ -1,5 +1,4 @@
 //go:build experimental
-// +build experimental
 
 // This file declares Go bindings for experimental features in TileDB.
 // Experimental APIs to do not fall under the API compatibility guarantees and
