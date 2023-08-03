@@ -207,6 +207,54 @@ func (d Datatype) ReflectKind() reflect.Kind {
 	}
 }
 
+// ReflectType returns the reflect type given a datatype
+func (d Datatype) ReflectType() reflect.Type {
+	switch d {
+	case TILEDB_INT8:
+		return reflect.TypeOf(int8(0))
+	case TILEDB_INT16:
+		return reflect.TypeOf(int16(0))
+	case TILEDB_INT32:
+		return reflect.TypeOf(int32(0))
+	case TILEDB_INT64:
+		return reflect.TypeOf(int64(0))
+	case TILEDB_UINT8, TILEDB_BLOB:
+		return reflect.TypeOf(uint8(0))
+	case TILEDB_UINT16:
+		return reflect.TypeOf(uint16(0))
+	case TILEDB_UINT32:
+		return reflect.TypeOf(uint32(0))
+	case TILEDB_UINT64:
+		return reflect.TypeOf(uint64(0))
+	case TILEDB_FLOAT32:
+		return reflect.TypeOf(float32(0))
+	case TILEDB_FLOAT64:
+		return reflect.TypeOf(float64(0))
+	case TILEDB_CHAR:
+		return reflect.TypeOf(uint8(0))
+	case TILEDB_STRING_ASCII:
+		return reflect.TypeOf(uint8(0))
+	case TILEDB_STRING_UTF8:
+		return reflect.TypeOf(uint8(0))
+	case TILEDB_STRING_UTF16:
+		return reflect.TypeOf(uint16(0))
+	case TILEDB_STRING_UTF32:
+		return reflect.TypeOf(uint32(0))
+	case TILEDB_STRING_UCS2:
+		return reflect.TypeOf(uint16(0))
+	case TILEDB_STRING_UCS4:
+		return reflect.TypeOf(uint32(0))
+	case TILEDB_ANY: // deprecated type since 2.7.0, treat as invalid
+		return reflect.TypeOf(nil)
+	case TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
+		return reflect.TypeOf(int64(0))
+	case TILEDB_BOOL:
+		return reflect.TypeOf(true)
+	default:
+		return reflect.TypeOf(nil)
+	}
+}
+
 // Size returns the datatype size in bytes
 func (d Datatype) Size() uint64 {
 	return uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(d)))
