@@ -507,6 +507,8 @@ const (
 	TILEDB_FILTER_POSITIVE_DELTA FilterType = C.TILEDB_FILTER_POSITIVE_DELTA
 	// TILEDB_FILTER_SCALE_FLOAT FILTER_SCALE_FLOAT float scaling filter.
 	TILEDB_FILTER_SCALE_FLOAT FilterType = C.TILEDB_FILTER_SCALE_FLOAT
+	// TILEDB_FILTER_DELTA Delta encoding filter.
+	TILEDB_FILTER_DELTA FilterType = C.TILEDB_FILTER_DELTA
 )
 
 // FilterOption for a given filter
@@ -562,6 +564,8 @@ const (
 	TILEDB_INCOMPLETE QueryStatus = C.TILEDB_INCOMPLETE
 	// TILEDB_UNINITIALIZED Query not initialized.
 	TILEDB_UNINITIALIZED QueryStatus = C.TILEDB_UNINITIALIZED
+	// TILEDB_INITIALIZED Query initialized.
+	TILEDB_INITIALIZED QueryStatus = C.TILEDB_INITIALIZED
 )
 
 // String returns string representation

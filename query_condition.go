@@ -46,6 +46,18 @@ func NewQueryConditionCombination(tdbCtx *Context, left *QueryCondition, op Quer
 	return &qc, nil
 }
 
+// NewQueryConditionNegated return the negation of the query condition. The initial condition
+// is unchanged
+func NewQueryConditionNegated(tdbCtx *Context, qc *QueryCondition) (*QueryCondition, error) {
+	nqc := QueryCondition{context: tdbCtx}
+	if ret := C.tiledb_query_condition_negate(qc.context.tiledbContext, qc.cond, &nqc.cond); ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error allocating tiledb query condition: %s", qc.context.LastError())
+	}
+	freeOnGC(&nqc)
+
+	return &nqc, nil
+}
+
 // Free releases the internal TileDB core data that was allocated on the C heap.
 // It is automatically called when this object is garbage collected, but can be
 // called earlier to manually release memory if needed. Free is idempotent and
