@@ -1,5 +1,4 @@
 //go:build experimental
-// +build experimental
 
 package tiledb
 
