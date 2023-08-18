@@ -512,3 +512,29 @@ func DeserializeQueryAndArray(context *Context, buffer *Buffer, serializationTyp
 	runtime.KeepAlive(buffer)
 	return array, query, nil
 }
+
+/*
+tiledb_handle_load_enumerations_request(
+    tiledb_ctx_t* ctx,
+    tiledb_array_t* array,
+    tiledb_serialization_type_t serialization_type,
+    const tiledb_buffer_t* request,
+    tiledb_buffer_t* response)
+*/
+
+// DeserializeLoadEnumerationsRequest passes to core a request to load enumerations and is returned serialized bytes to return to client
+func DeserializeLoadEnumerationsRequest(array *Array, serializationType SerializationType, request *Buffer) (*Buffer, error) {
+	response, err := NewBuffer(array.context)
+	if err != nil {
+		return nil, fmt.Errorf("error deserializing load enumerations request: %s", array.context.LastError())
+	}
+
+	ret := C.tiledb_handle_load_enumerations_request(array.context.tiledbContext, array.tiledbArray, C.tiledb_serialization_type_t(serializationType), request.tiledbBuffer, response.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error deserializing load enumerations request: %s", array.context.LastError())
+	}
+
+	runtime.KeepAlive(request)
+	runtime.KeepAlive(array)
+	return response, nil
+}
