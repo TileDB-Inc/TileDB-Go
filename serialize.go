@@ -513,15 +513,6 @@ func DeserializeQueryAndArray(context *Context, buffer *Buffer, serializationTyp
 	return array, query, nil
 }
 
-/*
-tiledb_handle_load_enumerations_request(
-    tiledb_ctx_t* ctx,
-    tiledb_array_t* array,
-    tiledb_serialization_type_t serialization_type,
-    const tiledb_buffer_t* request,
-    tiledb_buffer_t* response)
-*/
-
 // DeserializeLoadEnumerationsRequest passes to core a request to load enumerations and is returned serialized bytes to return to client
 func DeserializeLoadEnumerationsRequest(array *Array, serializationType SerializationType, request *Buffer) (*Buffer, error) {
 	response, err := NewBuffer(array.context)

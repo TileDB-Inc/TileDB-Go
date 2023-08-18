@@ -159,3 +159,15 @@ func (b *Buffer) dataCopy() ([]byte, error) {
 	copy(cpy, gotBytes)
 	return cpy, nil
 }
+
+func (b *Buffer) Len() (uint64, error) {
+	var cbuffer unsafe.Pointer
+	var csize C.uint64_t
+
+	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer, &cbuffer, &csize)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("Error getting tiledb buffer data: %s", b.context.LastError())
+	}
+
+	return uint64(csize), nil
+}
