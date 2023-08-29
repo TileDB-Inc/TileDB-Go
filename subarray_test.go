@@ -3,6 +3,7 @@ package tiledb
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -58,7 +59,7 @@ func TestSubarrayForDenseArray(t *testing.T) {
 
 		err = sa.AddRange(0, MakeRange[uint32](0x04040404, 0x07070707))
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "mismatch, range: uint32 dimension: uint8")
+		assert.Contains(t, err.Error(), "mismatch, range: uint32 dimension: uint8")
 	})
 
 	t.Run("AddRangeByName", func(t *testing.T) {
@@ -83,7 +84,7 @@ func TestSubarrayForDenseArray(t *testing.T) {
 
 		err = sa.AddRangeByName("y", MakeRange[uint32](0x04040404, 0x07070707))
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "mismatch, range: uint32 dimension: uint8")
+		assert.Contains(t, err.Error(), "mismatch, range: uint32 dimension: uint8")
 	})
 
 	t.Run("AddRangeMixed", func(t *testing.T) {
@@ -155,11 +156,11 @@ func TestSubarrayForSparseArray(t *testing.T) {
 
 		err = sa.AddRange(0, MakeRange[uint32](0x04040404, 0x07070707))
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "dimension is of variable size but range is not")
+		assert.Contains(t, err.Error(), "dimension is of variable size but range is not")
 
 		err = sa.AddRange(1, MakeRange[uint32](0x04040404, 0x07070707))
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "mismatch, range: uint32 dimension: float32")
+		assert.Contains(t, err.Error(), "mismatch, range: uint32 dimension: float32")
 	})
 
 	t.Run("AddRangeByName", func(t *testing.T) {
@@ -184,11 +185,11 @@ func TestSubarrayForSparseArray(t *testing.T) {
 
 		err = sa.AddRangeByName("str", MakeRange[uint32](0x04040404, 0x07070707))
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "dimension is of variable size but range is not")
+		assert.Contains(t, err.Error(), "dimension is of variable size but range is not")
 
 		err = sa.AddRangeByName("num", MakeRange[uint32](0x04040404, 0x07070707))
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "mismatch, range: uint32 dimension: float32")
+		assert.Contains(t, err.Error(), "mismatch, range: uint32 dimension: float32")
 	})
 }
 
@@ -352,7 +353,7 @@ func checkRange[T TileDBDimensionType](t *testing.T, r Range, start, end T) {
 	bounds, err := ExtractRange[T](r)
 	require.NoError(t, err)
 	require.Equal(t, 3, len(bounds))
-	require.EqualValues(t, start, bounds[0])
-	require.EqualValues(t, end, bounds[1])
-	require.EqualValues(t, *new(T), bounds[2])
+	assert.EqualValues(t, start, bounds[0])
+	assert.EqualValues(t, end, bounds[1])
+	assert.EqualValues(t, *new(T), bounds[2])
 }
