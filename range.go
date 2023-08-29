@@ -23,13 +23,13 @@ func MakeRange[T TileDBDimensionType](start, end T) Range {
 }
 
 // ExtractRange extracts the endpoints of the range.
-// It returns [3]T{start, end, stride}. The stride is not supported by TileDB core yet,
+// It returns []T{start, end, stride}. The stride is not supported by TileDB core yet,
 // so it gets the zero value of T
 func ExtractRange[T TileDBDimensionType](r Range) ([]T, error) {
 	tKind := genericType[T]().Kind()
 	rKind := reflect.ValueOf(r.start).Kind()
 	if tKind != rKind {
-		return nil, fmt.Errorf("cannot extract a range of %s to a slice of %s", rKind, tKind)
+		return nil, fmt.Errorf("cannot extract a range of %T to a slice of %v", r.start, genericType[T]())
 	}
 
 	res := make([]T, 3)
