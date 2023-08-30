@@ -87,12 +87,8 @@ func (sa *Subarray) AddRange(dimIdx uint32, r Range) error {
 		ret = C.tiledb_subarray_add_range_var(sa.context.tiledbContext, sa.subarray, C.uint32_t(dimIdx),
 			unsafe.Pointer(&startSlice[0]), C.uint64_t(len(startSlice)), unsafe.Pointer(&endSlice[0]), C.uint64_t(len(endSlice)))
 	} else {
-		sp := reflect.New(reflect.ValueOf(r.start).Type())
-		sp.Elem().Set(reflect.ValueOf(r.start))
-		ep := reflect.New(reflect.ValueOf(r.end).Type())
-		ep.Elem().Set(reflect.ValueOf(r.end))
 		ret = C.tiledb_subarray_add_range(sa.context.tiledbContext, sa.subarray, C.uint32_t(dimIdx),
-			sp.UnsafePointer(), ep.UnsafePointer(), nil)
+			addressableValue(r.start).UnsafePointer(), addressableValue(r.end).UnsafePointer(), nil)
 	}
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error adding subarray range: %s", sa.context.LastError())
@@ -122,12 +118,8 @@ func (sa *Subarray) AddRangeByName(dimName string, r Range) error {
 		ret = C.tiledb_subarray_add_range_var_by_name(sa.context.tiledbContext, sa.subarray, cDimName,
 			unsafe.Pointer(&startSlice[0]), C.uint64_t(len(startSlice)), unsafe.Pointer(&endSlice[0]), C.uint64_t(len(endSlice)))
 	} else {
-		sp := reflect.New(reflect.ValueOf(r.start).Type())
-		sp.Elem().Set(reflect.ValueOf(r.start))
-		ep := reflect.New(reflect.ValueOf(r.end).Type())
-		ep.Elem().Set(reflect.ValueOf(r.end))
 		ret = C.tiledb_subarray_add_range_by_name(sa.context.tiledbContext, sa.subarray, cDimName,
-			sp.UnsafePointer(), ep.UnsafePointer(), nil)
+			addressableValue(r.start).UnsafePointer(), addressableValue(r.end).UnsafePointer(), nil)
 	}
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error adding subarray range: %s", sa.context.LastError())

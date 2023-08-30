@@ -68,3 +68,12 @@ func datatypeOfDimensionFromName(arr *Array, dimName string) (Datatype, bool, er
 
 	return datatype, cellValNum == TILEDB_VAR_NUM, nil
 }
+
+// addressableValue copies the value of `val` into an addressable location.
+// This is used to return a Value that can always give as an UnsafePointer reflectively.
+func addressableValue(val any) reflect.Value {
+	valVal := reflect.ValueOf(val)
+	pointable := reflect.New(valVal.Type())
+	pointable.Elem().Set(valVal)
+	return pointable
+}
