@@ -26,6 +26,12 @@ func MakeRange[T TileDBDimensionType](start, end T) Range {
 // It returns []T{start, end, stride}. The stride is not supported by TileDB core yet,
 // so it gets the zero value of T
 func ExtractRange[T TileDBDimensionType](r Range) ([]T, error) {
+	// we compare reflect.Kind because they give more versatility. Reflect.Type is more strict
+	// Consider:
+	// type Tag string
+	// type Label string
+	// Label and Tag have different Type but same Kind. To interface with TileDB Core we use Kind
+	// which is reflected to the core dimensions types.
 	tKind := genericType[T]().Kind()
 	rKind := reflect.ValueOf(r.start).Kind()
 	if tKind != rKind {
