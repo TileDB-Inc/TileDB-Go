@@ -349,7 +349,7 @@ func openArray(t *testing.T, arrPath string, qt QueryType) *Array {
 	return arr
 }
 
-func checkRange[T TileDBDimensionType](t *testing.T, r Range, start, end T) {
+func checkRange[T DimensionType](t *testing.T, r Range, start, end T) {
 	bounds, err := ExtractRange[T](r)
 	require.NoError(t, err)
 	require.Equal(t, 3, len(bounds))

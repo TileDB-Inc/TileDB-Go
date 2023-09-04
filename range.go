@@ -6,8 +6,8 @@ import (
 	"reflect"
 )
 
-// TileDBDimensionType is a constraint for the types allowed for a TileDB dimension
-type TileDBDimensionType interface {
+// DimensionType is a constraint for the types allowed for a TileDB dimension
+type DimensionType interface {
 	~string | ~float32 | ~float64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~int | ~int8 | ~int16 | ~int32 | ~int64
 }
 
@@ -18,14 +18,14 @@ type Range struct {
 }
 
 // MakeRange returns a typed range [from, to]. It can be used with AddRange to add ranges to a dimension.
-func MakeRange[T TileDBDimensionType](start, end T) Range {
+func MakeRange[T DimensionType](start, end T) Range {
 	return Range{start: start, end: end}
 }
 
 // ExtractRange extracts the endpoints of the range.
 // It returns []T{start, end, stride}. The stride is not supported by TileDB core yet,
 // so it gets the zero value of T
-func ExtractRange[T TileDBDimensionType](r Range) ([]T, error) {
+func ExtractRange[T DimensionType](r Range) ([]T, error) {
 	// we compare reflect.Kind because they give more versatility. Reflect.Type is more strict
 	// Consider:
 	// type Tag string
