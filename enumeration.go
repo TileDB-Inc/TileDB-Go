@@ -62,8 +62,18 @@ func enumerationTypeToTileDB[T EnumerationType]() Datatype {
 	}
 }
 
-// NewEnumeration creates an enumeration with name and ordered or not values.
-func NewEnumeration[T EnumerationType](tdbCtx *Context, name string, ordered bool, values []T) (*Enumeration, error) {
+// NewOrderedEnumeration creates an ordered enumeration with name and values.
+func NewOrderedEnumeration[T EnumerationType](tdbCtx *Context, name string, values []T) (*Enumeration, error) {
+	return newEnumeration[T](tdbCtx, name, true, values)
+}
+
+// NewOrderedEnumeration creates an unordered enumeration with name and values.
+func NewUnorderedEnumeration[T EnumerationType](tdbCtx *Context, name string, values []T) (*Enumeration, error) {
+	return newEnumeration[T](tdbCtx, name, false, values)
+}
+
+// newEnumeration creates an enumeration with name and ordered or not values.
+func newEnumeration[T EnumerationType](tdbCtx *Context, name string, ordered bool, values []T) (*Enumeration, error) {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
 

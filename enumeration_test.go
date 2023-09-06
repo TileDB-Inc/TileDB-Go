@@ -17,14 +17,14 @@ func TestEnumeration(t *testing.T) {
 	tdbCtx, err := NewContext(config)
 	require.NoError(t, err)
 
-	romanNumerals, err := NewEnumeration(tdbCtx, "romanNumerals", true,
+	romanNumerals, err := NewOrderedEnumeration(tdbCtx, "romanNumerals",
 		[]string{"i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii", "xiii", "xiv", "xv", "xvi"})
 	require.NoError(t, err)
 
-	powersOfTwo, err := NewEnumeration(tdbCtx, "powersOfTwo", true, []uint32{1, 2, 4, 8, 16, 32, 64, 128, 256})
+	powersOfTwo, err := NewOrderedEnumeration(tdbCtx, "powersOfTwo", []uint32{1, 2, 4, 8, 16, 32, 64, 128, 256})
 	require.NoError(t, err)
 
-	truth, err := NewEnumeration(tdbCtx, "truth", false, []bool{false, true})
+	truth, err := NewUnorderedEnumeration(tdbCtx, "truth", []bool{false, true})
 	require.NoError(t, err)
 
 	t.Run("Name", func(t *testing.T) {
@@ -272,11 +272,11 @@ func arraySchemaWithEnumerations(t *testing.T) *ArraySchema {
 	require.NoError(t, domain.AddDimensions(dimRows, dimCols))
 	require.NoError(t, schema.SetDomain(domain))
 
-	greekNumerals, err := NewEnumeration(tdbCtx, "greekNumerals", true,
+	greekNumerals, err := NewOrderedEnumeration(tdbCtx, "greekNumerals",
 		[]string{"α", "β", "γ", "δ", "ε", "στ", "ζ", "η", "θ", "ι", "ια", "ιβ", "ιγ", "ιδ", "ιε", "ιστ"})
 	require.NoError(t, err)
 	require.NoError(t, schema.AddEnumeration(greekNumerals))
-	romanNumerals, err := NewEnumeration(tdbCtx, "romanNumerals", true,
+	romanNumerals, err := NewOrderedEnumeration(tdbCtx, "romanNumerals",
 		[]string{"i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii", "xiii", "xiv", "xv", "xvi"})
 	require.NoError(t, err)
 	require.NoError(t, schema.AddEnumeration(romanNumerals))
