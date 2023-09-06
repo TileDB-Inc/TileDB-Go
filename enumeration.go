@@ -237,27 +237,27 @@ func (e *Enumeration) Values() (interface{}, error) {
 	if typ != TILEDB_STRING_ASCII {
 		switch typ {
 		case TILEDB_BOOL:
-			return unsafe.Slice((*bool)(cData), cDataSize), nil
+			return copyUnsafeSliceOfEnumerationValues[bool](cData, int(cDataSize))
 		case TILEDB_INT8:
-			return unsafe.Slice((*int8)(cData), cDataSize), nil
+			return copyUnsafeSliceOfEnumerationValues[int8](cData, int(cDataSize))
 		case TILEDB_INT16:
-			return unsafe.Slice((*int16)(cData), cDataSize/C.uint64_t(2)), nil
+			return copyUnsafeSliceOfEnumerationValues[int16](cData, int(cDataSize))
 		case TILEDB_INT32:
-			return unsafe.Slice((*int32)(cData), cDataSize/C.uint64_t(4)), nil
+			return copyUnsafeSliceOfEnumerationValues[int32](cData, int(cDataSize))
 		case TILEDB_INT64:
-			return unsafe.Slice((*int64)(cData), cDataSize/C.uint64_t(8)), nil
+			return copyUnsafeSliceOfEnumerationValues[int64](cData, int(cDataSize))
 		case TILEDB_UINT8:
-			return unsafe.Slice((*uint8)(cData), cDataSize), nil
+			return copyUnsafeSliceOfEnumerationValues[uint8](cData, int(cDataSize))
 		case TILEDB_UINT16:
-			return unsafe.Slice((*uint16)(cData), cDataSize/C.uint64_t(2)), nil
+			return copyUnsafeSliceOfEnumerationValues[uint16](cData, int(cDataSize))
 		case TILEDB_UINT32:
-			return unsafe.Slice((*uint32)(cData), cDataSize/C.uint64_t(4)), nil
+			return copyUnsafeSliceOfEnumerationValues[uint32](cData, int(cDataSize))
 		case TILEDB_UINT64:
-			return unsafe.Slice((*uint64)(cData), cDataSize/C.uint64_t(8)), nil
+			return copyUnsafeSliceOfEnumerationValues[uint64](cData, int(cDataSize))
 		case TILEDB_FLOAT32:
-			return unsafe.Slice((*float32)(cData), cDataSize/C.uint64_t(4)), nil
+			return copyUnsafeSliceOfEnumerationValues[float32](cData, int(cDataSize))
 		case TILEDB_FLOAT64:
-			return unsafe.Slice((*float64)(cData), cDataSize/C.uint64_t(8)), nil
+			return copyUnsafeSliceOfEnumerationValues[float64](cData, int(cDataSize))
 		default:
 			panic("can't get here")
 		}
@@ -420,4 +420,21 @@ func DeserializeLoadEnumerationsRequest(array *Array, serializationType Serializ
 	runtime.KeepAlive(array)
 
 	return response, nil
+}
+
+// copyUnsafeSliceOfEnumerationValues copies the values returned by tiledb_enumeration_get_data to a slice
+// in go managed memory. This is for safety because the returned data points to unsafe memory handled by core.
+// The tiledb_enumeration_get_data returns the aggregated size (sth like len() * sizeOf) so this methods
+// also calculaces the data size per type
+func copyUnsafeSliceOfEnumerationValues[T any](data unsafe.Pointer, dataSize int) ([]T, error) {
+	var zero T
+	factor := int(unsafe.Sizeof(zero))
+	if dataSize%factor > 0 {
+		return nil, fmt.Errorf("Error getting data values: returned size does not contains an integer size of items")
+	}
+
+	retLen := dataSize / factor
+	ret := make([]T, retLen)
+	copy(ret, unsafe.Slice((*T)(data), retLen))
+	return ret, nil
 }
