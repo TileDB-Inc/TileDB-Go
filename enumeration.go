@@ -85,6 +85,8 @@ func NewEnumeration[T EnumerationType](tdbCtx *Context, name string, ordered boo
 		}
 		data := make([]byte, 0, dataSize)
 		offsets := make([]uint64, 0, len(values))
+		defer runtime.KeepAlive(data)
+		defer runtime.KeepAlive(offsets)
 		var currOffset uint64
 		for _, v := range values {
 			data = append(data, reflect.ValueOf(v).String()...)
