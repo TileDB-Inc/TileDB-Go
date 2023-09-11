@@ -90,10 +90,12 @@ func (sa *Subarray) AddRange(dimIdx uint32, r Range) error {
 		runtime.KeepAlive(startSlice)
 		runtime.KeepAlive(endSlice)
 	} else {
+		startValue := addressableValue(r.start)
+		endValue := addressableValue(r.end)
 		ret = C.tiledb_subarray_add_range(sa.context.tiledbContext, sa.subarray, C.uint32_t(dimIdx),
-			addressableValue(r.start).UnsafePointer(), addressableValue(r.end).UnsafePointer(), nil)
-		runtime.KeepAlive(r.start)
-		runtime.KeepAlive(r.end)
+			startValue.UnsafePointer(), endValue.UnsafePointer(), nil)
+		runtime.KeepAlive(startValue)
+		runtime.KeepAlive(endValue)
 	}
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error adding subarray range: %s", sa.context.LastError())
@@ -125,10 +127,12 @@ func (sa *Subarray) AddRangeByName(dimName string, r Range) error {
 		runtime.KeepAlive(startSlice)
 		runtime.KeepAlive(endSlice)
 	} else {
+		startValue := addressableValue(r.start)
+		endValue := addressableValue(r.end)
 		ret = C.tiledb_subarray_add_range_by_name(sa.context.tiledbContext, sa.subarray, cDimName,
-			addressableValue(r.start).UnsafePointer(), addressableValue(r.end).UnsafePointer(), nil)
-		runtime.KeepAlive(r.start)
-		runtime.KeepAlive(r.end)
+			startValue.UnsafePointer(), endValue.UnsafePointer(), nil)
+		runtime.KeepAlive(startValue)
+		runtime.KeepAlive(endValue)
 	}
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error adding subarray range: %s", sa.context.LastError())
