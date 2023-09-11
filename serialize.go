@@ -513,8 +513,25 @@ func DeserializeQueryAndArray(context *Context, buffer *Buffer, serializationTyp
 	return array, query, nil
 }
 
-// DeserializeLoadEnumerationsRequest passes to core a request to load enumerations and is returned serialized bytes to return to client
-func DeserializeLoadEnumerationsRequest(array *Array, serializationType SerializationType, request *Buffer) (*Buffer, error) {
+// HandleLoadArraySchemaRequest Pass the array and serialized request to core which returns the serialized response.
+func HandleLoadArraySchemaRequest(array *Array, serializationType SerializationType, request *Buffer) (*Buffer, error) {
+	response, err := NewBuffer(array.context)
+	if err != nil {
+		return nil, fmt.Errorf("error creating LoadArraySchemaResponse buffer: %s", array.context.LastError())
+	}
+
+	ret := C.tiledb_handle_load_array_schema_request(array.context.tiledbContext, array.tiledbArray, C.tiledb_serialization_type_t(serializationType), request.tiledbBuffer, response.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error handling LoadArraySchemaRequset: %s", array.context.LastError())
+	}
+
+	runtime.KeepAlive(request)
+	runtime.KeepAlive(response)
+	return response, nil
+}
+
+// HandleLoadEnumerationsRequest passes to core a request to load enumerations and is returned serialized bytes to return to client
+func HandleLoadEnumerationsRequest(array *Array, serializationType SerializationType, request *Buffer) (*Buffer, error) {
 	response, err := NewBuffer(array.context)
 	if err != nil {
 		return nil, fmt.Errorf("error deserializing load enumerations request: %s", array.context.LastError())
