@@ -126,6 +126,19 @@ func (a *ArraySchema) AddDimensionLabel(dimIndex uint32, name string, order Data
 	return nil
 }
 
+// DimensionLabelFromName retrieves a dimension label from an array schema with the requested index.
+func (a *ArraySchema) DimensionLabelFromIndex(labelIdx uint64) (*DimensionLabel, error) {
+	dimLabel := DimensionLabel{context: a.context}
+	ret := C.tiledb_array_schema_get_dimension_label_from_index(a.context.tiledbContext, a.tiledbArraySchema,
+		C.uint64_t(labelIdx), &dimLabel.tiledbDimensionLabel)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error getting dimension label '%d' for ArraySchema: %s", labelIdx, a.context.LastError())
+	}
+
+	freeOnGC(&dimLabel)
+	return &dimLabel, nil
+}
+
 // DimensionLabelFromName retrieves a dimension label from an array schema with the requested name.
 func (a *ArraySchema) DimensionLabelFromName(name string) (*DimensionLabel, error) {
 	cAttrName := C.CString(name)
@@ -154,6 +167,18 @@ func (a *ArraySchema) HasDimensionLabel(name string) (bool, error) {
 	}
 
 	return hasLabel != 0, nil
+}
+
+// DimensionLabelsNum returns the number of dimension label in this array schema
+func (a *ArraySchema) DimensionLabelsNum() (uint64, error) {
+	var labelNum uint64
+
+	ret := C.tiledb_array_schema_get_dimension_label_num(a.context.tiledbContext, a.tiledbArraySchema, (*C.uint64_t)(unsafe.Pointer(&labelNum)))
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("Error fetching dimension label number: %s", a.context.LastError())
+	}
+
+	return labelNum, nil
 }
 
 // SetDimensionLabelFilterList sets a filter on a dimension label filter in an array schema.

@@ -178,9 +178,13 @@ func TestDimensionLabelSchema(t *testing.T) {
 	require.NoError(t, schema.AddDimensionLabel(0, "d0_label1", TILEDB_DECREASING_DATA, TILEDB_INT64))
 	require.NoError(t, schema.AddDimensionLabel(1, "d1_label0", TILEDB_DECREASING_DATA, TILEDB_FLOAT32))
 
-	dimLabelCheck(t, schema, "d0_label0", "__labels/l0", TILEDB_FLOAT64, TILEDB_INCREASING_DATA, 1)
-	dimLabelCheck(t, schema, "d0_label1", "__labels/l1", TILEDB_INT64, TILEDB_DECREASING_DATA, 1)
-	dimLabelCheck(t, schema, "d1_label0", "__labels/l2", TILEDB_FLOAT32, TILEDB_DECREASING_DATA, 1)
+	num, err := schema.DimensionLabelsNum()
+	require.NoError(t, err)
+	assert.Equal(t, uint64(3), num)
+
+	dimLabelCheck(t, schema, 0, "d0_label0", "__labels/l0", TILEDB_FLOAT64, TILEDB_INCREASING_DATA, 1)
+	dimLabelCheck(t, schema, 1, "d0_label1", "__labels/l1", TILEDB_INT64, TILEDB_DECREASING_DATA, 1)
+	dimLabelCheck(t, schema, 2, "d1_label0", "__labels/l2", TILEDB_FLOAT32, TILEDB_DECREASING_DATA, 1)
 
 	err = schema.SetDimensionLabelTileExtent("d0_label0", TILEDB_INT32, int32(2))
 	require.NoError(t, err)
@@ -228,7 +232,10 @@ func TestDimensionLabelSchema(t *testing.T) {
 }
 
 // dimLabelCheck Retrieve a dimension label from schema by name and check expected values.
-func dimLabelCheck(t *testing.T, schema *ArraySchema, name string, uri string, labelType Datatype, labelOrder DataOrder, cellValNum uint32) {
+func dimLabelCheck(t *testing.T, schema *ArraySchema, idx int, name string, uri string, labelType Datatype, labelOrder DataOrder, cellValNum uint32) {
+	exists, err := schema.HasDimensionLabel(name)
+	require.NoError(t, err)
+	assert.True(t, exists)
 	dimLabel, err := schema.DimensionLabelFromName(name)
 	dimLabelType, err := dimLabel.Type()
 	require.NoError(t, err)
@@ -248,5 +255,13 @@ func dimLabelCheck(t *testing.T, schema *ArraySchema, name string, uri string, l
 	dimLabelCellValNum, err := dimLabel.CellValNum()
 	require.NoError(t, err)
 	assert.Equal(t, cellValNum, dimLabelCellValNum)
+
+	dimLabelInd, err := schema.DimensionLabelFromIndex(uint64(idx))
+	require.NoError(t, err)
+	dimLabelIndUri, err := dimLabelInd.URI()
+	require.NoError(t, err)
+	assert.Equal(t, dimLabelUri, dimLabelIndUri)
+
 	dimLabel.Free()
+	dimLabelInd.Free()
 }
