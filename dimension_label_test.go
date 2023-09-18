@@ -5,6 +5,7 @@ package tiledb
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -190,24 +191,15 @@ func TestDimensionLabelSchema(t *testing.T) {
 	require.NoError(t, err)
 
 	// Write the array and schemas to disk to validate dimension label extent.
-	array, err := NewArray(context, "dimlabel_schema_test")
-	if err != nil {
-		return
-	}
+	arrayPath := t.TempDir()
+	array, err := NewArray(context, arrayPath)
+	require.NoError(t, err)
 	defer array.Free()
-	objectType, err := ObjectType(context, "dimlabel_schema_test")
-	if err != nil {
-		return
-	}
-	if objectType == TILEDB_ARRAY {
-		err = os.RemoveAll("dimlabel_schema_test")
-		if err != nil {
-			return
-		}
-	}
-	err = array.Create(schema)
 
-	labelSchema, err := LoadArraySchema(context, "dimlabel_schema_test/__labels/l0")
+	err = array.Create(schema)
+	require.NoError(t, err)
+
+	labelSchema, err := LoadArraySchema(context, filepath.Join(arrayPath, "__labels", "l0"))
 	require.NoError(t, err)
 	require.NotNil(t, labelSchema)
 	labelDomain, err := labelSchema.Domain()
