@@ -17,6 +17,7 @@ import "C"
 import (
 	"fmt"
 	"reflect"
+	"runtime"
 	"unsafe"
 )
 
@@ -274,4 +275,131 @@ func (q *Query) getDimensionLabelDataType(labelName string) (Datatype, error) {
 	}
 
 	return datatype, nil
+}
+
+// GetDimensionLabelRangeNum returns the number of ranges for a dimension label
+func (sa *Subarray) GetDimensionLabelRangeNum(labelName string) (uint64, error) {
+	var rangeNum uint64
+
+	cLabelName := C.CString(labelName)
+	defer C.free(unsafe.Pointer(cLabelName))
+
+	ret := C.tiledb_subarray_get_label_range_num(sa.context.tiledbContext, sa.subarray, cLabelName, (*C.uint64_t)(unsafe.Pointer(&rangeNum)))
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("Error retrieving subarray label range num: %s", sa.context.LastError())
+	}
+
+	return rangeNum, nil
+}
+
+// AddDimensionLabelRange adds a range for a dimension label. It checks the types of range and label and
+// if the datatype of the range is not the same as the type of the label it returns an error.
+func (sa *Subarray) AddDimensionLabelRange(labelName string, r Range) error {
+	dt, isVar, err := datatypeOfDimensionLabel(sa.array, labelName)
+	if err != nil {
+		return err
+	}
+	if err := r.assertCompatibility(dt, isVar); err != nil {
+		return err
+	}
+
+	cLabelName := C.CString(labelName)
+	defer C.free(unsafe.Pointer(cLabelName))
+
+	var ret C.int32_t
+	if isVar {
+		startSlice := []byte(r.start.(string))
+		endSlice := []byte(r.end.(string))
+		ret = C.tiledb_subarray_add_label_range_var(sa.context.tiledbContext, sa.subarray, cLabelName,
+			unsafe.Pointer(&startSlice[0]), C.uint64_t(len(startSlice)), unsafe.Pointer(&endSlice[0]), C.uint64_t(len(endSlice)))
+		runtime.KeepAlive(startSlice)
+		runtime.KeepAlive(endSlice)
+	} else {
+		startValue := addressableValue(r.start)
+		endValue := addressableValue(r.end)
+		ret = C.tiledb_subarray_add_label_range(sa.context.tiledbContext, sa.subarray, cLabelName,
+			startValue.UnsafePointer(), endValue.UnsafePointer(), nil)
+		runtime.KeepAlive(startValue)
+		runtime.KeepAlive(endValue)
+	}
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error adding subarray label range: %s", sa.context.LastError())
+	}
+
+	return nil
+}
+
+// GetDimensionLabelRange retrieves a specific range of the subarray along a given dimension label name.
+func (sa *Subarray) GetDimensionLabelRange(labelName string, rangeNum uint64) (Range, error) {
+	dt, isVar, err := datatypeOfDimensionLabel(sa.array, labelName)
+	if err != nil {
+		return Range{}, err
+	}
+
+	cLabelName := C.CString(labelName)
+	defer C.free(unsafe.Pointer(cLabelName))
+
+	var r Range
+	var ret C.int32_t
+	if isVar {
+		var startSize, endSize uint64
+		ret = C.tiledb_subarray_get_label_range_var_size(sa.context.tiledbContext, sa.subarray, cLabelName, C.uint64_t(rangeNum),
+			(*C.uint64_t)(unsafe.Pointer(&startSize)), (*C.uint64_t)(unsafe.Pointer(&endSize)))
+		if ret == C.TILEDB_OK {
+			var sp, ep unsafe.Pointer
+			var startData, endData []byte
+			if startSize > 0 {
+				startData = make([]byte, int(startSize))
+				sp = unsafe.Pointer(&startData[0])
+			}
+			if endSize > 0 {
+				endData = make([]byte, int(endSize))
+				ep = unsafe.Pointer(&endData[0])
+			}
+			ret = C.tiledb_subarray_get_label_range_var(sa.context.tiledbContext, sa.subarray,
+				cLabelName, C.uint64_t(rangeNum), sp, ep)
+			if ret == C.TILEDB_OK {
+				r.start = string(startData)
+				r.end = string(endData)
+			}
+		}
+	} else {
+		var startPointer, endPointer, stridePointer unsafe.Pointer
+		ret = C.tiledb_subarray_get_label_range(sa.context.tiledbContext, sa.subarray,
+			cLabelName, C.uint64_t(rangeNum), &startPointer, &endPointer, &stridePointer)
+		typ := dt.ReflectType()
+		if ret == C.TILEDB_OK {
+			r.start = reflect.NewAt(typ, startPointer).Elem().Interface()
+			r.end = reflect.NewAt(typ, endPointer).Elem().Interface()
+		}
+	}
+	if ret != C.TILEDB_OK {
+		return Range{}, fmt.Errorf("Error retrieving subarray range for label %s and range num %d: %s", labelName, rangeNum, sa.context.LastError())
+	}
+
+	return r, err
+}
+
+func datatypeOfDimensionLabel(arr *Array, labelName string) (Datatype, bool, error) {
+	schema, err := arr.Schema()
+	if err != nil {
+		return Datatype(0), false, err
+	}
+
+	label, err := schema.DimensionLabelFromName(labelName)
+	if err != nil {
+		return Datatype(0), false, err
+	}
+
+	datatype, err := label.Type()
+	if err != nil {
+		return Datatype(0), false, err
+	}
+
+	cellValNum, err := label.CellValNum()
+	if err != nil {
+		return Datatype(0), false, err
+	}
+
+	return datatype, cellValNum == TILEDB_VAR_NUM, nil
 }

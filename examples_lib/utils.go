@@ -11,6 +11,11 @@ func checkError(err error) {
 	}
 }
 
+func checkedValue[T any](v T, err error) T {
+	checkError(err)
+	return v
+}
+
 // temp creates a temporary directory which contains the given name,
 // or panics if it cannot.
 func temp(name string) string {
