@@ -4129,3 +4129,24 @@ func (q *Query) getOffsetsBufferAndSize(attributeOrDimension string) ([]uint64, 
 
 	return offsets, offsetNumElements, nil
 }
+
+// SetSubarray sets the subarray for the query
+func (q *Query) SetSubarray(sa *Subarray) error {
+	ret := C.tiledb_query_set_subarray_t(q.context.tiledbContext, q.tiledbQuery, sa.subarray)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error setting tiledb query subarray: %s", q.context.LastError())
+	}
+	return nil
+}
+
+// GetSubarray get the subarray set on the query
+func (q *Query) GetSubarray() (*Subarray, error) {
+	var sa *C.tiledb_subarray_t
+
+	ret := C.tiledb_query_get_subarray_t(q.context.tiledbContext, q.tiledbQuery, &sa)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error getting tiledb query subarray: %s", q.context.LastError())
+	}
+
+	return &Subarray{array: q.array, subarray: sa, context: q.context}, nil
+}
