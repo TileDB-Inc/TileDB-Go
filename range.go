@@ -8,7 +8,7 @@ import (
 
 // DimensionType is a constraint for the types allowed for a TileDB dimension
 type DimensionType interface {
-	~string | ~float32 | ~float64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~int | ~int8 | ~int16 | ~int32 | ~int64
+	~string | ~float32 | ~float64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~int | ~int8 | ~int16 | ~int32 | ~int64 | ~bool
 }
 
 // Range is an 1D range along a subarray dimension
