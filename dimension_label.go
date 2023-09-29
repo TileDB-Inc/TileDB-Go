@@ -172,14 +172,14 @@ func (a *ArraySchema) HasDimensionLabel(name string) (bool, error) {
 
 // DimensionLabelsNum returns the number of dimension label in this array schema
 func (a *ArraySchema) DimensionLabelsNum() (uint64, error) {
-	var labelNum uint64
+	var labelNum C.uint64_t
 
-	ret := C.tiledb_array_schema_get_dimension_label_num(a.context.tiledbContext, a.tiledbArraySchema, (*C.uint64_t)(unsafe.Pointer(&labelNum)))
+	ret := C.tiledb_array_schema_get_dimension_label_num(a.context.tiledbContext, a.tiledbArraySchema, &labelNum)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("Error fetching dimension label number: %s", a.context.LastError())
 	}
 
-	return labelNum, nil
+	return uint64(labelNum), nil
 }
 
 // SetDimensionLabelFilterList sets a filter on a dimension label filter in an array schema.
@@ -279,17 +279,17 @@ func (q *Query) getDimensionLabelDataType(labelName string) (Datatype, error) {
 
 // GetDimensionLabelRangeNum returns the number of ranges for a dimension label
 func (sa *Subarray) GetDimensionLabelRangeNum(labelName string) (uint64, error) {
-	var rangeNum uint64
+	var rangeNum C.uint64_t
 
 	cLabelName := C.CString(labelName)
 	defer C.free(unsafe.Pointer(cLabelName))
 
-	ret := C.tiledb_subarray_get_label_range_num(sa.context.tiledbContext, sa.subarray, cLabelName, (*C.uint64_t)(unsafe.Pointer(&rangeNum)))
+	ret := C.tiledb_subarray_get_label_range_num(sa.context.tiledbContext, sa.subarray, cLabelName, &rangeNum)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("Error retrieving subarray label range num: %s", sa.context.LastError())
 	}
 
-	return rangeNum, nil
+	return uint64(rangeNum), nil
 }
 
 // AddDimensionLabelRange adds a range for a dimension label. It checks the types of range and label and
