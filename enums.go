@@ -816,15 +816,15 @@ func (d DataOrder) String() (string, error) {
 	return C.GoString(dataOrderStr), nil
 }
 
-// FromString Converts from a string to the equivalent DataOrder enum
-func (d *DataOrder) FromString(name string) error {
+// DataOrderFromString converts from a string to the equivalent DataOrder enum
+func DataOrderFromString(name string) (DataOrder, error) {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
+
 	var cDataOrder C.tiledb_data_order_t
 	ret := C.tiledb_data_order_from_str(cName, &cDataOrder)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error converting '%s' to tiledb_data_order_t", name)
+		return 0, fmt.Errorf("Error converting '%s' to tiledb_data_order_t", name)
 	}
-	*d = DataOrder(cDataOrder)
-	return nil
+	return DataOrder(cDataOrder), nil
 }
