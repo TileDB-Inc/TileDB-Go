@@ -257,7 +257,7 @@ func (a *ArraySchema) SetDimensionLabelTileExtent(labelName string, dimType Data
 	return nil
 }
 
-// getDimensionLabelDataType Retrieve a dimension label Datatype from the schema using experimental APIs.
+// getDimensionLabelDataType retrieves a dimension label Datatype from the schema using experimental APIs.
 func (q *Query) getDimensionLabelDataType(labelName string) (Datatype, error) {
 	schema, err := q.array.Schema()
 	if err != nil {

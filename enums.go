@@ -805,7 +805,7 @@ const (
 	TILEDB_DECREASING_DATA DataOrder = C.TILEDB_DECREASING_DATA
 )
 
-// String Returns string representation of a DataOrder
+// String returns string representation of a DataOrder
 func (d DataOrder) String() (string, error) {
 	var dataOrderStr *C.char
 	ret := C.tiledb_data_order_to_str(C.tiledb_data_order_t(d), &dataOrderStr)
