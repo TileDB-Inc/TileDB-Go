@@ -56,7 +56,7 @@ func (d *DimensionLabel) AttributeName() (string, error) {
 		return "", fmt.Errorf("Error getting dimension label attribute name: %s", d.context.LastError())
 	}
 
-	return C.GoString(labelAttrName), nil
+	return C.GoString(labelAttrName), nil // copies labelAttrName which is memory owned by core
 }
 
 // CellValNum returns the number of values per cell for the labels on the dimension label.
@@ -101,7 +101,7 @@ func (d *DimensionLabel) Name() (string, error) {
 		return "", fmt.Errorf("Error getting dimension label name: %s", d.context.LastError())
 	}
 
-	return C.GoString(labelName), nil
+	return C.GoString(labelName), nil // copies labelName which is memory owned by core
 }
 
 // Uri Returns the Uri for the dimension label array.
@@ -112,7 +112,7 @@ func (d *DimensionLabel) URI() (string, error) {
 		return "", fmt.Errorf("Error getting dimension label URI: %s", d.context.LastError())
 	}
 
-	return C.GoString(labelUri), nil
+	return C.GoString(labelUri), nil // copies labelUri which is memory owned by core
 }
 
 // AddDimensionLabel adds a dimension label to the array schema.
