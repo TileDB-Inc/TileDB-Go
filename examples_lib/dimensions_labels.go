@@ -42,8 +42,6 @@ func createArrayWithDimensionLabels(uri string) {
 	checkError(array.Open(tiledb.TILEDB_WRITE))
 
 	q := checkedValue(tiledb.NewQuery(tdbCtx, array))
-	sa := checkedValue(array.NewSubarray())
-	checkError(q.SetSubarray(sa))
 
 	// x_real labels are the dimension indices casted to floats
 	// It is a fixed length label, a slice of float is sufficient
@@ -69,10 +67,10 @@ func createArrayWithDimensionLabels(uri string) {
 
 	// fill the array with data. Each cell gets the row major rank
 	q = checkedValue(tiledb.NewQuery(tdbCtx, array))
-	sa = checkedValue(array.NewSubarray())
-	checkError(q.SetSubarray(sa))
+	sa := checkedValue(array.NewSubarray())
 	checkError(sa.AddRangeByName("x", tiledb.MakeRange(uint16(0), uint16(gridSize-1))))
 	checkError(sa.AddRangeByName("y", tiledb.MakeRange(uint16(0), uint16(gridSize-1))))
+	checkError(q.SetSubarray(sa))
 	b := make([]uint32, gridSize*gridSize)
 	for i := range b {
 		b[i] = uint32(i)
