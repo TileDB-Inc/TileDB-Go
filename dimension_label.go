@@ -207,41 +207,44 @@ func (a *ArraySchema) SetDimensionLabelTileExtent(labelName string, dimType Data
 			dimType.ReflectKind(), extentType)
 	}
 
+	// Use extentPtr to ensure cExtent is not collected before it is passed to tiledb.
+	var extentPtr any
+	defer runtime.KeepAlive(extentPtr)
 	// Create extent void*
 	var cExtent unsafe.Pointer
-	switch dimType {
-	case TILEDB_INT8:
-		tmpExtent := extent.(int8)
+	switch tmpExtent := extent.(type) {
+	case int8:
+		extentPtr = &tmpExtent
 		cExtent = unsafe.Pointer(&tmpExtent)
-	case TILEDB_INT16:
-		tmpExtent := extent.(int16)
+	case int16:
+		extentPtr = &tmpExtent
 		cExtent = unsafe.Pointer(&tmpExtent)
-	case TILEDB_INT32:
-		tmpExtent := extent.(int32)
+	case int32:
+		extentPtr = &tmpExtent
 		cExtent = unsafe.Pointer(&tmpExtent)
-	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
-		tmpExtent := extent.(int64)
+	case int64:
+		extentPtr = &tmpExtent
 		cExtent = unsafe.Pointer(&tmpExtent)
-	case TILEDB_UINT8:
-		tmpExtent := extent.(uint8)
+	case uint8:
+		extentPtr = &tmpExtent
 		cExtent = unsafe.Pointer(&tmpExtent)
-	case TILEDB_UINT16:
-		tmpExtent := extent.(uint16)
+	case uint16:
+		extentPtr = &tmpExtent
 		cExtent = unsafe.Pointer(&tmpExtent)
-	case TILEDB_UINT32:
-		tmpExtent := extent.(uint32)
+	case uint32:
+		extentPtr = &tmpExtent
 		cExtent = unsafe.Pointer(&tmpExtent)
-	case TILEDB_UINT64:
-		tmpExtent := extent.(uint64)
+	case uint64:
+		extentPtr = &tmpExtent
 		cExtent = unsafe.Pointer(&tmpExtent)
-	case TILEDB_FLOAT32:
-		tmpExtent := extent.(float32)
+	case float32:
+		extentPtr = &tmpExtent
 		cExtent = unsafe.Pointer(&tmpExtent)
-	case TILEDB_FLOAT64:
-		tmpExtent := extent.(float64)
+	case float64:
+		extentPtr = &tmpExtent
 		cExtent = unsafe.Pointer(&tmpExtent)
-	case TILEDB_BOOL:
-		tmpExtent := extent.(bool)
+	case bool:
+		extentPtr = &tmpExtent
 		cExtent = unsafe.Pointer(&tmpExtent)
 	default:
 		return fmt.Errorf("Unrecognized dimension datatype passed to SetDimensionLabelTileExtent: %s",
