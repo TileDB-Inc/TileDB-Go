@@ -96,3 +96,9 @@ The query methods `(Set)?Buffer(Var|Nullable|Var|Unsafe)*` are deprecated becaus
 TileDB core methods are removed. The methods will be supported for 2 releases and are expected to be
 removed in release 0.23. It is recommended to use the proper combination of
 `(Set|Get)DataBuffer`, `(Set|Get)ValidityBuffer` and `(Set|Get)OffsetBuffer`.
+
+### 0.23.1
+
+The query methods `(Add|Get)?Range` are deprecated because they are deprecated in TileDB core.
+It is recommend to use the `Subarray` type for building queries.
+The methods will be removed in the release following their removal from TileDB core.
