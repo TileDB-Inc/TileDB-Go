@@ -101,6 +101,8 @@ func (q *Query) Context() *Context {
 // SetSubArray Sets a subarray, defined in the order dimensions were added.
 // Coordinates are inclusive. For the case of writes, this is meaningful only
 // for dense arrays, and specifically dense writes.
+//
+// Deprecated: Use Subarrays
 func (q *Query) SetSubArray(subArray interface{}) error {
 
 	if reflect.TypeOf(subArray).Kind() != reflect.Slice {
@@ -812,6 +814,8 @@ func getStartAndEndBuffers(start interface{}, end interface{}) (
 // (start, end, stride). The datatype of the range components must be the same
 // as the type of the domain of the array in the query.
 // The stride is currently unsupported and set to nil.
+//
+// Deprecated: Use Subarrays
 func (q *Query) AddRange(dimIdx uint32, start interface{}, end interface{}) error {
 	startBuffer, endBuffer, err := getStartAndEndBuffers(start, end)
 	if err != nil {
@@ -834,6 +838,8 @@ func (q *Query) AddRange(dimIdx uint32, start interface{}, end interface{}) erro
 // (start, end, stride). The datatype of the range components must be the same
 // as the type of the domain of the array in the query.
 // The stride is currently unsupported and set to nil.
+//
+// Deprecated: Use Subarrays
 func (q *Query) AddRangeByName(dimName string, start interface{}, end interface{}) error {
 	startBuffer, endBuffer, err := getStartAndEndBuffers(start, end)
 	if err != nil {
@@ -856,6 +862,8 @@ func (q *Query) AddRangeByName(dimName string, start interface{}, end interface{
 
 // AddRangeVar adds a range applicable to variable-sized dimensions
 // Applicable only to string dimensions
+//
+// Deprecated: Use Subarrays
 func (q *Query) AddRangeVar(dimIdx uint32, start interface{}, end interface{}) error {
 	startReflectValue := reflect.ValueOf(start)
 	endReflectValue := reflect.ValueOf(end)
@@ -940,6 +948,8 @@ func (q *Query) AddRangeVar(dimIdx uint32, start interface{}, end interface{}) e
 
 // AddRangeVarByName adds a range applicable to variable-sized dimensions
 // Applicable only to string dimensions
+//
+// Deprecated: Use Subarrays
 func (q *Query) AddRangeVarByName(dimName string, start interface{}, end interface{}) error {
 	startReflectValue := reflect.ValueOf(start)
 	endReflectValue := reflect.ValueOf(end)
@@ -1030,6 +1040,8 @@ func (q *Query) AddRangeVarByName(dimName string, start interface{}, end interfa
 // Returns (start, end, error)
 // If start size or end size is 0 returns nil, nil, nil
 // Stride is not supported at the moment, always nil
+//
+// Deprecated: Use Subarrays
 func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface{}, error) {
 	var pStart, pEnd, pStride unsafe.Pointer
 
@@ -1159,6 +1171,8 @@ func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface
 // Returns (start, end, error)
 // If start size or end size is 0 returns nil, nil, nil
 // Stride is not supported at the moment, always nil
+//
+// Deprecated: Use Subarrays
 func (q *Query) GetRangeFromName(dimName string, rangeNum uint64) (interface{}, interface{}, error) {
 	var pStart, pEnd, pStride unsafe.Pointer
 
@@ -1294,6 +1308,8 @@ func (q *Query) GetRangeFromName(dimName string, rangeNum uint64) (interface{}, 
 // The function retrieves a specific range of the query subarray
 // along a given dimension.
 // Returns (start, end, error)
+//
+// Deprecated: Use Subarrays
 func (q *Query) GetRangeVar(dimIdx uint32, rangeNum uint64) (interface{}, interface{}, error) {
 	return q.GetRange(dimIdx, rangeNum)
 }
@@ -1303,12 +1319,16 @@ func (q *Query) GetRangeVar(dimIdx uint32, rangeNum uint64) (interface{}, interf
 // The function retrieves a specific range of the query subarray
 // along a given dimension.
 // Returns (start, end, error)
+//
+// Deprecated: Use Subarrays
 func (q *Query) GetRangeVarFromName(dimName string, rangeNum uint64) (interface{}, interface{}, error) {
 	return q.GetRangeFromName(dimName, rangeNum)
 }
 
 // GetRanges gets the number of dimensions from the array under current query
 // and builds an array of dimensions that have as memmbers arrays of ranges
+//
+// Deprecated: Use Subarrays
 func (q *Query) GetRanges() (map[string][]RangeLimits, error) {
 	// We need to infer the datatype of the dimension represented by index
 	// dimIdx. That said:
@@ -1372,6 +1392,8 @@ func (q *Query) GetRanges() (map[string][]RangeLimits, error) {
 
 // GetRangeNum retrieves the number of ranges of the query subarray
 // along a given dimension.
+//
+// Deprecated: Use Subarrays
 func (q *Query) GetRangeNum(dimIdx uint32) (*uint64, error) {
 	var rangeNum uint64
 
@@ -1389,6 +1411,8 @@ func (q *Query) GetRangeNum(dimIdx uint32) (*uint64, error) {
 
 // GetRangeNumFromName retrieves the number of ranges of the query subarray
 // along a given dimension.
+//
+// Deprecated: Use Subarrays
 func (q *Query) GetRangeNumFromName(dimName string) (*uint64, error) {
 	var rangeNum uint64
 
