@@ -13,8 +13,8 @@ type DimensionType interface {
 
 // Range is an 1D range along a subarray dimension
 type Range struct {
-	start interface{} // start of range, inclusive
-	end   interface{} // end of range, inclusive
+	start any // start of range, inclusive
+	end   any // end of range, inclusive
 }
 
 // MakeRange returns a typed range [from, to]. It can be used with AddRange to add ranges to a dimension.
@@ -44,6 +44,12 @@ func ExtractRange[T DimensionType](r Range) ([]T, error) {
 	// res[2] is stride
 
 	return res, nil
+}
+
+// Endpoints return the endpoint of the range. This is useful
+// to print the range or serialize it, without infering the type first
+func (r Range) Endpoints() (start, end any) {
+	return r.start, r.end
 }
 
 // assertCompatibility checks that the datatype of an array dimension are the same as the range's.
