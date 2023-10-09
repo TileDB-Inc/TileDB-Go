@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"runtime"
 	"strconv"
 	"unsafe"
 )
@@ -50,8 +51,14 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 
 	var ret C.int32_t
 	// Convert domain to type then to void*
+	// Use domainPtr to ensure cdomain is not collected before it is passed to tiledb.
+	var domainPtr any
+	defer runtime.KeepAlive(domainPtr)
 	var cdomain unsafe.Pointer
 	// Convert extent to type then to void*
+	// Use extentPtr to ensure cdomain is not collected before it is passed to tiledb.
+	var extentPtr any
+	defer runtime.KeepAlive(extentPtr)
 	var cextent unsafe.Pointer
 	// Switch on datatype type to create void* for domain and extent.
 	// Extent has already checked to be same type as domain so this is safe
@@ -63,9 +70,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]int8)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(int8))
+		tmpExtent := extent.(int8)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_INT16:
 		if domainType != reflect.Int16 {
@@ -74,9 +83,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]int16)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(int16))
+		tmpExtent := extent.(int16)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_INT32:
 		if domainType != reflect.Int32 && domainType != reflect.Int {
@@ -90,9 +101,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]int32)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(int32))
+		tmpExtent := extent.(int32)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
 		if domainType != reflect.Int64 && domainType != reflect.Int {
@@ -106,9 +119,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]int64)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(int64))
+		tmpExtent := extent.(int64)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_UINT8:
 		if domainType != reflect.Uint8 {
@@ -117,9 +132,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]uint8)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(uint8))
+		tmpExtent := extent.(uint8)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_UINT16:
 		if domainType != reflect.Uint16 {
@@ -128,9 +145,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]uint16)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(uint16))
+		tmpExtent := extent.(uint16)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_UINT32:
 		if domainType != reflect.Uint32 && domainType != reflect.Uint {
@@ -144,9 +163,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]uint32)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(uint32))
+		tmpExtent := extent.(uint32)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_UINT64:
 		if domainType != reflect.Uint64 && domainType != reflect.Uint {
@@ -160,9 +181,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]uint64)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(uint64))
+		tmpExtent := extent.(uint64)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_FLOAT32:
 		if domainType != reflect.Float32 {
@@ -171,9 +194,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]float32)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(float32))
+		tmpExtent := extent.(float32)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_FLOAT64:
 		if domainType != reflect.Float64 {
@@ -182,9 +207,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]float64)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(float64))
+		tmpExtent := extent.(float64)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_BOOL:
 		if domainType != reflect.Bool {
@@ -193,9 +220,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]bool)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(bool))
+		tmpExtent := extent.(bool)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	default:
 		return nil, fmt.Errorf("Unrecognized datatype passed: %s", datatype.String())

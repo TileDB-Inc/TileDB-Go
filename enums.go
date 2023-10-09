@@ -792,3 +792,39 @@ const (
 	// Filestore PDF mime type
 	TILEDB_MIME_PDF = FileStoreMimeType(C.TILEDB_MIME_PDF)
 )
+
+// DataOrder
+type DataOrder int8
+
+const (
+	// Unordered dimension label.
+	TILEDB_UNORDERED_DATA DataOrder = C.TILEDB_UNORDERED_DATA
+	// Ordered dimension label with increasing values.
+	TILEDB_INCREASING_DATA DataOrder = C.TILEDB_INCREASING_DATA
+	// Ordered dimension label with decreasing values.
+	TILEDB_DECREASING_DATA DataOrder = C.TILEDB_DECREASING_DATA
+)
+
+// String returns string representation of a DataOrder
+func (d DataOrder) String() (string, error) {
+	var dataOrderStr *C.char
+	ret := C.tiledb_data_order_to_str(C.tiledb_data_order_t(d), &dataOrderStr)
+	if ret != C.TILEDB_OK {
+		return "", fmt.Errorf("Error converting DataOrder to string: %d", d)
+	}
+
+	return C.GoString(dataOrderStr), nil
+}
+
+// DataOrderFromString converts from a string to the equivalent DataOrder enum
+func DataOrderFromString(name string) (DataOrder, error) {
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
+
+	var cDataOrder C.tiledb_data_order_t
+	ret := C.tiledb_data_order_from_str(cName, &cDataOrder)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("Error converting '%s' to tiledb_data_order_t", name)
+	}
+	return DataOrder(cDataOrder), nil
+}

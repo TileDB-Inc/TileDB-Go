@@ -1462,12 +1462,12 @@ func (q *Query) Buffer(attributeOrDimension string) (interface{}, error) {
 		if hasDim {
 			dimension, err := domain.DimensionFromName(attributeOrDimension)
 			if err != nil {
-				return nil, fmt.Errorf("Could not get attribute or dimension for SetBuffer: %s", attributeOrDimension)
+				return nil, fmt.Errorf("Could not get attribute or dimension for Buffer: %s", attributeOrDimension)
 			}
 
 			datatype, err = dimension.Type()
 			if err != nil {
-				return nil, fmt.Errorf("Could not get dimensionType for SetBuffer: %s", attributeOrDimension)
+				return nil, fmt.Errorf("Could not get dimensionType for Buffer: %s", attributeOrDimension)
 			}
 		} else {
 			attribute, err := schema.AttributeFromName(attributeOrDimension)
@@ -1477,7 +1477,7 @@ func (q *Query) Buffer(attributeOrDimension string) (interface{}, error) {
 
 			datatype, err = attribute.Type()
 			if err != nil {
-				return nil, fmt.Errorf("Could not get attributeType for SetBuffer: %s", attributeOrDimension)
+				return nil, fmt.Errorf("Could not get attributeType for Buffer: %s", attributeOrDimension)
 			}
 		}
 	}
@@ -2085,7 +2085,7 @@ func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint6
 	schema, err := q.array.Schema()
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf(
-			"Could not get array schema for SetBuffer: %s",
+			"Could not get array schema for SetBufferVarNullable: %s",
 			err)
 	}
 
@@ -2094,7 +2094,7 @@ func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint6
 	domain, err := schema.Domain()
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf(
-			"Could not get domain from array schema for SetBufferVar: %s",
+			"Could not get domain from array schema for SetBufferVarNullable: %s",
 			err)
 	}
 
@@ -2106,24 +2106,24 @@ func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint6
 	if hasDim {
 		dimension, err := domain.DimensionFromName(attributeOrDimension)
 		if err != nil {
-			return nil, nil, nil, fmt.Errorf("Could not get attribute or dimension for SetBufferVar: %s",
+			return nil, nil, nil, fmt.Errorf("Could not get attribute or dimension for SetBufferVarNullable: %s",
 				attributeOrDimension)
 		}
 		attributeOrDimensionType, err = dimension.Type()
 		if err != nil {
-			return nil, nil, nil, fmt.Errorf("Could not get dimensionType for SetBufferVar: %s",
+			return nil, nil, nil, fmt.Errorf("Could not get dimensionType for SetBufferVarNullable: %s",
 				attributeOrDimension)
 		}
 	} else {
 		schemaAttribute, err := schema.AttributeFromName(attributeOrDimension)
 		if err != nil {
-			return nil, nil, nil, fmt.Errorf("Could not get attribute %s SetBufferVar",
+			return nil, nil, nil, fmt.Errorf("Could not get attribute %s SetBufferVarNullable",
 				attributeOrDimension)
 		}
 
 		attributeOrDimensionType, err = schemaAttribute.Type()
 		if err != nil {
-			return nil, nil, nil, fmt.Errorf("Could not get attributeType for SetBufferVar: %s",
+			return nil, nil, nil, fmt.Errorf("Could not get attributeType for SetBufferVarNullable: %s",
 				attributeOrDimension)
 		}
 	}
@@ -2375,7 +2375,7 @@ func (q *Query) ResultBufferElements() (map[string][3]uint64, error) {
 			// For fixed length attributes offset elements are always zero
 			offsetElements := uint64(0)
 			if v[0] != nil {
-				// The attribute is variable lenght
+				// The attribute is variable length
 				offsetElements = (*v[0]) / bytesizes.Uint64
 			}
 
@@ -2390,6 +2390,16 @@ func (q *Query) ResultBufferElements() (map[string][3]uint64, error) {
 				return nil, err
 			}
 
+			hasAttr, err := schema.HasAttribute(attributeOrDimension)
+			if err != nil {
+				return nil, err
+			}
+
+			hasDimLabel, err := schema.HasDimensionLabel(attributeOrDimension)
+			if err != nil {
+				return nil, err
+			}
+
 			if hasDim {
 				dimension, err := domain.DimensionFromName(attributeOrDimension)
 				if err != nil {
@@ -2400,7 +2410,7 @@ func (q *Query) ResultBufferElements() (map[string][3]uint64, error) {
 				if err != nil {
 					return nil, fmt.Errorf("Could not get dimensionType for SetBuffer: %s", attributeOrDimension)
 				}
-			} else {
+			} else if hasAttr {
 				// Get the attribute
 				attribute, err := schema.AttributeFromName(attributeOrDimension)
 				if err != nil {
@@ -2412,6 +2422,14 @@ func (q *Query) ResultBufferElements() (map[string][3]uint64, error) {
 				if err != nil {
 					return nil, fmt.Errorf("Could not get attribute type for ResultBufferElements: %s", err)
 				}
+			} else if hasDimLabel {
+				datatype, err = q.getDimensionLabelDataType(attributeOrDimension)
+				if err != nil {
+					return nil, fmt.Errorf("Could not get dimension label type for ResultBufferElements: %s", err)
+				}
+			} else {
+				return nil, fmt.Errorf("Error in ResultBufferElements for %s: "+
+					"Attribute/dimension/label does not exist.", attributeOrDimension)
 			}
 
 			// Number of buffer elements is calculated
@@ -3602,6 +3620,16 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 			return nil, err
 		}
 
+		hasAttribute, err := schema.HasAttribute(attributeOrDimension)
+		if err != nil {
+			return nil, err
+		}
+
+		hasDimLabel, err := schema.HasDimensionLabel(attributeOrDimension)
+		if err != nil {
+			return nil, err
+		}
+
 		if hasDim {
 			dimension, err := domain.DimensionFromName(attributeOrDimension)
 			if err != nil {
@@ -3614,7 +3642,7 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 				return nil, fmt.Errorf("Could not get dimensionType for SetDataBuffer: %s",
 					attributeOrDimension)
 			}
-		} else {
+		} else if hasAttribute {
 			schemaAttribute, err := schema.AttributeFromName(attributeOrDimension)
 			if err != nil {
 				return nil, fmt.Errorf("Could not get attribute %s for SetDataBuffer",
@@ -3626,6 +3654,15 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 				return nil, fmt.Errorf("Could not get attributeType for SetDataBuffer: %s",
 					attributeOrDimension)
 			}
+		} else if hasDimLabel {
+			attributeOrDimensionType, err = q.getDimensionLabelDataType(attributeOrDimension)
+			if err != nil {
+				return nil, fmt.Errorf("Could not get dimension label type for SetDataBuffer: %s",
+					attributeOrDimension)
+			}
+		} else {
+			return nil, fmt.Errorf("Error in SetDataBuffer for %s: "+
+				"Attribute/dimension/label does not exist.", attributeOrDimension)
 		}
 	}
 
@@ -3822,6 +3859,16 @@ func (q *Query) getDataBufferAndSize(attributeOrDimension string) (interface{}, 
 			return nil, 0, err
 		}
 
+		hasAttr, err := schema.HasAttribute(attributeOrDimension)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		hasDimLabel, err := schema.HasDimensionLabel(attributeOrDimension)
+		if err != nil {
+			return nil, 0, err
+		}
+
 		if hasDim {
 			dimension, err := domain.DimensionFromName(attributeOrDimension)
 			if err != nil {
@@ -3832,7 +3879,7 @@ func (q *Query) getDataBufferAndSize(attributeOrDimension string) (interface{}, 
 			if err != nil {
 				return nil, 0, fmt.Errorf("Could not get dimensionType for GetDataBuffer: %s", attributeOrDimension)
 			}
-		} else {
+		} else if hasAttr {
 			attribute, err := schema.AttributeFromName(attributeOrDimension)
 			if err != nil {
 				return nil, 0, fmt.Errorf("Could not get attribute %s for GetDataBuffer", attributeOrDimension)
@@ -3842,6 +3889,15 @@ func (q *Query) getDataBufferAndSize(attributeOrDimension string) (interface{}, 
 			if err != nil {
 				return nil, 0, fmt.Errorf("Could not get attributeType for GetDataBuffer: %s", attributeOrDimension)
 			}
+		} else if hasDimLabel {
+			datatype, err = q.getDimensionLabelDataType(attributeOrDimension)
+			if err != nil {
+				return nil, 0, fmt.Errorf("Could not get dimension label type for getDataBufferAndSize: %s",
+					attributeOrDimension)
+			}
+		} else {
+			return nil, 0, fmt.Errorf("Error in getDataBufferAndSize for %s: "+
+				"Attribute/dimension/label does not exist.", attributeOrDimension)
 		}
 	}
 
