@@ -1,8 +1,8 @@
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
+
+
 #include <tiledb/tiledb.h>
 #include <tiledb/tiledb_serialization.h>
 #include <stdio.h>

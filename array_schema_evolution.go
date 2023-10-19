@@ -7,8 +7,8 @@
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
+
+
 #include <tiledb/tiledb_experimental.h>
 #include <stdlib.h>
 */

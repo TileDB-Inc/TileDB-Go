@@ -2,8 +2,8 @@ package tiledb
 
 /*
 #cgo CFLAGS: -I/usr/local/include
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
+
+
 #include <tiledb/tiledb.h>
 #include <tiledb/tiledb_enum.h>
 #include <tiledb/tiledb_serialization.h>
