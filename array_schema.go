@@ -10,6 +10,7 @@ import "C"
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"unsafe"
 )
 
@@ -422,4 +423,23 @@ func (a *ArraySchema) Type() (ArrayType, error) {
 	}
 
 	return ArrayType(arrayType), nil
+}
+
+// HandleLoadArraySchemaRequest Used by TileDB Cloud to handle loading array schemas.
+func HandleLoadArraySchemaRequest(array *Array, serializationType SerializationType, request *Buffer) (*Buffer, error) {
+	response, err := NewBuffer(array.context)
+	if err != nil {
+		return nil, fmt.Errorf("error allocating response buffer: %s", array.context.LastError())
+	}
+
+	ret := C.tiledb_handle_load_array_schema_request(array.context.tiledbContext, array.tiledbArray, C.tiledb_serialization_type_t(serializationType),
+		request.tiledbBuffer, response.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error handling load array schema request: %s", array.context.LastError())
+	}
+
+	runtime.KeepAlive(request)
+	runtime.KeepAlive(array)
+
+	return response, nil
 }
