@@ -246,6 +246,28 @@ func TestEnumerationQueryCondition(t *testing.T) {
 		assert.Equal(t, []uint8{1, 5, 0}, greekBuffer[0:3])
 		assert.Equal(t, []uint8{1, 5, 0}, romanBuffer[0:3])
 	})
+
+	t.Run("LabelNotExists", func(t *testing.T) {
+		array, err := NewArray(tdbCtx, arrayPath)
+		require.NoError(t, err)
+		require.NoError(t, array.Open(TILEDB_READ))
+		rQuery, err := NewQuery(tdbCtx, array)
+		require.NoError(t, err)
+		qcR, err := NewQueryCondition(tdbCtx, "roman", TILEDB_QUERY_CONDITION_EQ, "C")
+		require.NoError(t, err)
+		require.NoError(t, rQuery.SetQueryCondition(qcR))
+
+		rowsBuffer := make([]uint8, 16)
+		_, err = rQuery.SetDataBuffer("rows", rowsBuffer)
+		require.NoError(t, err)
+		colsBuffer := make([]uint8, 16)
+		_, err = rQuery.SetDataBuffer("cols", colsBuffer)
+		require.NoError(t, err)
+		err = rQuery.Submit()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Enumeration value not found")
+		require.NoError(t, array.Close())
+	})
 }
 
 func arraySchemaWithEnumerations(t *testing.T) *ArraySchema {
