@@ -311,7 +311,7 @@ func (e *Enumeration) Values() (interface{}, error) {
 }
 
 // ExtendEnumeration extends an existing enumeration to add more values. The returned value should be
-// used with schema evolution to make changes persistent.
+// used with ArraySchemaEvolution.ApplyExtendedEnumeration to make changes persistent.
 func ExtendEnumeration[T EnumerationType](tdbCtx *Context, e *Enumeration, values []T) (*Enumeration, error) {
 	if len(values) == 0 {
 		return nil, fmt.Errorf("Error extending enumeration: empty values")
@@ -483,6 +483,16 @@ func (ase *ArraySchemaEvolution) DropEnumeration(name string) error {
 	ret := C.tiledb_array_schema_evolution_drop_enumeration(ase.context.tiledbContext, ase.tiledbArraySchemaEvolution, cName)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error dropping enumeration %s from tiledb arraySchemaEvolution: %s", name, ase.context.LastError())
+	}
+
+	return nil
+}
+
+// ApplyExtendedEnumeration applies to the schema evolution the result of ExtendEnumeration
+func (ase *ArraySchemaEvolution) ApplyExtendedEnumeration(e *Enumeration) error {
+	ret := C.tiledb_array_schema_evolution_extend_enumeration(ase.context.tiledbContext, ase.tiledbArraySchemaEvolution, e.tiledbEnum)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error applying extended enumeration to arraySchemaEvolution: %s", ase.context.LastError())
 	}
 
 	return nil
