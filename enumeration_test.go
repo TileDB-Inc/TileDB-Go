@@ -270,6 +270,20 @@ func TestEnumerationQueryCondition(t *testing.T) {
 	})
 }
 
+func TestEnumerationEmpty(t *testing.T) {
+	schema := arraySchemaWithEmptyEnumerations(t)
+
+	config, err := NewConfig()
+	require.NoError(t, err)
+	tdbCtx, err := NewContext(config)
+	require.NoError(t, err)
+
+	arrayPath := t.TempDir()
+	array, err := NewArray(tdbCtx, arrayPath)
+	require.NoError(t, err)
+	require.NoError(t, array.Create(schema))
+}
+
 func arraySchemaWithEnumerations(t *testing.T) *ArraySchema {
 	config, err := NewConfig()
 	require.NoError(t, err)
@@ -300,6 +314,48 @@ func arraySchemaWithEnumerations(t *testing.T) *ArraySchema {
 	require.NoError(t, schema.AddEnumeration(greekNumerals))
 	romanNumerals, err := NewOrderedEnumeration(tdbCtx, "romanNumerals",
 		[]string{"i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii", "xiii", "xiv", "xv", "xvi"})
+	require.NoError(t, err)
+	require.NoError(t, schema.AddEnumeration(romanNumerals))
+
+	greekAttr, err := NewAttribute(tdbCtx, "greek", TILEDB_UINT8)
+	require.NoError(t, err)
+	require.NoError(t, greekAttr.SetEnumerationName("greekNumerals"))
+	romanAttr, err := NewAttribute(tdbCtx, "roman", TILEDB_UINT8)
+	require.NoError(t, err)
+	require.NoError(t, romanAttr.SetEnumerationName("romanNumerals"))
+	require.NoError(t, schema.AddAttributes(greekAttr, romanAttr))
+
+	return schema
+}
+
+func arraySchemaWithEmptyEnumerations(t *testing.T) *ArraySchema {
+	config, err := NewConfig()
+	require.NoError(t, err)
+	tdbCtx, err := NewContext(config)
+	require.NoError(t, err)
+
+	//=====
+	// create a sparse array [1,4]x[1,4]
+	//
+
+	schema, err := NewArraySchema(tdbCtx, TILEDB_SPARSE)
+	require.NoError(t, err)
+	require.NoError(t, schema.SetCellOrder(TILEDB_ROW_MAJOR))
+	require.NoError(t, schema.SetTileOrder(TILEDB_ROW_MAJOR))
+
+	domain, err := NewDomain(tdbCtx)
+	require.NoError(t, err)
+	dimRows, err := NewDimension(tdbCtx, "rows", TILEDB_UINT8, []uint8{1, 4}, uint8(2))
+	require.NoError(t, err)
+	dimCols, err := NewDimension(tdbCtx, "cols", TILEDB_UINT8, []uint8{1, 4}, uint8(2))
+	require.NoError(t, err)
+	require.NoError(t, domain.AddDimensions(dimRows, dimCols))
+	require.NoError(t, schema.SetDomain(domain))
+
+	greekNumerals, err := NewOrderedEnumeration[string](tdbCtx, "greekNumerals", nil)
+	require.NoError(t, err)
+	require.NoError(t, schema.AddEnumeration(greekNumerals))
+	romanNumerals, err := NewOrderedEnumeration[string](tdbCtx, "romanNumerals", nil)
 	require.NoError(t, err)
 	require.NoError(t, schema.AddEnumeration(romanNumerals))
 

@@ -88,7 +88,15 @@ func newEnumeration[T EnumerationType](tdbCtx *Context, name string, ordered boo
 	var cDataLen C.uint64_t
 	var cOffsets unsafe.Pointer
 	var cOffsetsLen C.uint64_t
-	if tiledbType == TILEDB_STRING_ASCII {
+
+	// for empty enumerations, TileDB accepts only nils, not empty slices
+	if len(values) == 0 {
+		if tiledbType == TILEDB_STRING_ASCII {
+			cCellNum = C.uint32_t(TILEDB_VAR_NUM)
+		} else {
+			cCellNum = C.uint32_t(1)
+		}
+	} else if tiledbType == TILEDB_STRING_ASCII {
 		var dataSize int
 		for _, v := range values {
 			dataSize += reflect.ValueOf(v).Len()
