@@ -310,6 +310,73 @@ func (e *Enumeration) Values() (interface{}, error) {
 	return strs, nil
 }
 
+// ExtendEnumeration extends an existing enumeration to add more values. The returned value should be
+// used with schema evolution to make changes persistent.
+func ExtendEnumeration[T EnumerationType](tdbCtx *Context, e *Enumeration, values []T) (*Enumeration, error) {
+	if len(values) == 0 {
+		return nil, fmt.Errorf("Error extending enumeration: empty values")
+	}
+
+	eName, err := e.Name()
+	if err != nil {
+		return nil, fmt.Errorf("Error extending enumeration: failed to get name of enumeration: %s", tdbCtx.LastError())
+	}
+
+	eType, err := e.Type()
+	if err != nil {
+		return nil, fmt.Errorf("Error extending enumeration: failed to get type of enumeration %s: %s", eName, tdbCtx.LastError())
+	}
+
+	tiledbType := enumerationTypeToTileDB[T]()
+	if eType != tiledbType {
+		return nil, fmt.Errorf("Error extending enumeration: type mismatch: enumeration type %v, values type %v", eType, tiledbType)
+	}
+
+	var cData unsafe.Pointer
+	var cDataLen C.uint64_t
+	var cOffsets unsafe.Pointer
+	var cOffsetsLen C.uint64_t
+
+	if tiledbType == TILEDB_STRING_ASCII {
+		var dataSize int
+		for _, v := range values {
+			dataSize += reflect.ValueOf(v).Len()
+		}
+		data := make([]byte, 0, dataSize)
+		offsets := make([]uint64, 0, len(values))
+		defer runtime.KeepAlive(data)
+		defer runtime.KeepAlive(offsets)
+		var currOffset uint64
+		for _, v := range values {
+			data = append(data, reflect.ValueOf(v).String()...)
+			offsets = append(offsets, currOffset)
+			currOffset += uint64(reflect.ValueOf(v).Len())
+		}
+		cData = reflect.ValueOf(data).UnsafePointer()
+		cDataLen = C.uint64_t(dataSize)
+		cOffsets = reflect.ValueOf(offsets).UnsafePointer()
+		cOffsetsLen = C.uint64_t(len(values) * int(reflect.TypeOf(uint64(0)).Size()))
+	} else {
+		var zz T
+		cData = reflect.ValueOf(values).UnsafePointer()
+		cDataLen = C.uint64_t(len(values) * int(reflect.TypeOf(zz).Size()))
+	}
+
+	var extEnum *C.tiledb_enumeration_t
+
+	ret := C.tiledb_enumeration_extend(tdbCtx.tiledbContext, e.tiledbEnum, cData, cDataLen, cOffsets, cOffsetsLen, &extEnum)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error extending enumeration: %s", tdbCtx.LastError())
+	}
+
+	ext := &Enumeration{context: tdbCtx, tiledbEnum: extEnum}
+	freeOnGC(ext)
+
+	runtime.KeepAlive(values)
+
+	return ext, nil
+}
+
 // AddEnumeration adds the Enumeration to the schema. It must be added before we add it to an attribute.
 func (a *ArraySchema) AddEnumeration(e *Enumeration) error {
 	ret := C.tiledb_array_schema_add_enumeration(a.context.tiledbContext, a.tiledbArraySchema, e.tiledbEnum)

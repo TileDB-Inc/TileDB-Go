@@ -98,6 +98,25 @@ func TestEnumeration(t *testing.T) {
 		assert.Contains(t, contents, "Name: romanNumerals")
 		assert.Contains(t, contents, "Element Count: 16")
 	})
+
+	t.Run("Extend", func(t *testing.T) {
+		startValues, err := romanNumerals.Values()
+		require.NoError(t, err)
+
+		additionalValues := []string{"xvii", "xviii", "xix"}
+		extendedRomanNumerals, err := ExtendEnumeration(tdbCtx, romanNumerals, additionalValues)
+		require.NoError(t, err)
+		extendedValues, err := extendedRomanNumerals.Values()
+		require.NoError(t, err)
+
+		require.Equal(t, append(startValues.([]string), additionalValues...), extendedValues)
+	})
+
+	t.Run("ExtendTypeConformance", func(t *testing.T) {
+		_, err := ExtendEnumeration(tdbCtx, romanNumerals, []int32{10})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "type mismatch")
+	})
 }
 
 func TestEnumerationAndSchema(t *testing.T) {
