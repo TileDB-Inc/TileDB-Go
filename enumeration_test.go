@@ -400,6 +400,30 @@ func TestEnumerationEvolution(t *testing.T) {
 	assert.Equal(t, []uint8{19, 24, 0}, romanBuffer[0:3])
 }
 
+type bogus string
+
+func (b bogus) String() string {
+	return "i am " + string(b)
+}
+
+func TestEnumerationDerivedValues(t *testing.T) {
+	// This tests that we use reflection correctly and we operate on the original
+	// values of types based on strings. Check newEnumeration and ExtendEnumeration
+	// which use reflect.ValueOf(v).String()
+
+	config, err := NewConfig()
+	require.NoError(t, err)
+	tdbCtx, err := NewContext(config)
+	require.NoError(t, err)
+
+	bogusEnum, err := NewOrderedEnumeration(tdbCtx, "bogusEnum", []bogus{"bogus1", "bogus2"})
+	require.NoError(t, err)
+
+	bogusValues, err := bogusEnum.Values()
+	require.NoError(t, err)
+	assert.EqualValues(t, bogusValues, []string{"bogus1", "bogus2"})
+}
+
 func arraySchemaWithEnumerations(t *testing.T) *ArraySchema {
 	config, err := NewConfig()
 	require.NoError(t, err)
