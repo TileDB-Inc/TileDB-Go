@@ -1080,6 +1080,7 @@ func (a *Array) Config() (*Config, error) {
 }
 
 // DeleteFragments delete the range of fragments from startTimestamp to endTimestamp. The array needs to be opened modify exclusive.
+// Deprecated: Use the module DeleteFragments
 func (a *Array) DeleteFragments(startTimestamp, endTimestamp uint64) error {
 	curi := C.CString(a.uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -1089,6 +1090,42 @@ func (a *Array) DeleteFragments(startTimestamp, endTimestamp uint64) error {
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error deleting fragments from array: %s", a.context.LastError())
 	}
+
+	return nil
+}
+
+// DeleteFragments deletes the range of fragments from startTimestamp to endTimestamp
+func DeleteFragments(tdbCtx *Context, uri string, startTimestamp, endTimestamp uint64) error {
+	curi := C.CString(uri)
+	defer C.free(unsafe.Pointer(curi))
+
+	ret := C.tiledb_array_delete_fragments_v2(tdbCtx.tiledbContext, curi,
+		C.uint64_t(startTimestamp), C.uint64_t(endTimestamp))
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deleting fragments from array: %s", tdbCtx.LastError())
+	}
+
+	return nil
+}
+
+// DeleteFragmentsList deletes the fragments of the list
+func DeleteFragmentsList(tdbCtx *Context, uri string, fragmentURIs []string) error {
+	curi := C.CString(uri)
+	defer C.free(unsafe.Pointer(curi))
+
+	var list []*C.char
+	for _, furi := range fragmentURIs {
+		cfuri := C.CString(furi)
+		defer C.free(unsafe.Pointer(cfuri))
+		list = append(list, cfuri)
+	}
+
+	ret := C.tiledb_array_delete_fragments_list(tdbCtx.tiledbContext, curi, (**C.char)(unsafe.Pointer(&list[0])), C.size_t(len(list)))
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deleting fragments list from array: %s", tdbCtx.LastError())
+	}
+
+	runtime.KeepAlive(list)
 
 	return nil
 }
