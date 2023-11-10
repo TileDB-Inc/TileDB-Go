@@ -40,6 +40,11 @@ jobs:
     # Checks out repository
     - uses: actions/checkout@v2
 
+    # Log details for the runner. Useful for debugging
+    - name: Run lscpu for runner details
+      run: lscpu
+      shell: bash
+
     # Downloads TileDB-Core from release assets and install
     - name: Run TileDB install script
       run: ./.github/scripts/install_tiledb_linux.sh
@@ -78,6 +83,11 @@ jobs:
     steps:
     # Checks out repository
     - uses: actions/checkout@v2
+
+    # Log details for the runner. Useful for debugging
+    - name: Run sysctl for runner details
+      run: sysctl -a
+      shell: bash
 
     # Downloads TileDB-Core from release assets and install
     - name: Run TileDB install script
@@ -119,6 +129,11 @@ jobs:
     # Checks out repository
     - uses: actions/checkout@v2
 
+    # Log details for the runner. Useful for debugging
+    - name: Run lscpu for runner details
+      run: lscpu
+      shell: bash
+
     # Downloads TileDB-Core from release assets and install
     - name: Run TileDB install script
       run: ./.github/scripts/install_tiledb_linux.sh
@@ -158,6 +173,11 @@ jobs:
     # Checks out repository
     - uses: actions/checkout@v2
 
+    # Log details for the runner. Useful for debugging
+    - name: Run sysctl for runner details
+      run: sysctl -a
+      shell: bash
+
     # Downloads TileDB-Core from release assets and install
     - name: Run TileDB install script
       run: ./.github/scripts/install_tiledb_macos.sh
@@ -196,6 +216,11 @@ jobs:
     steps:
     # Checks out repository
     - uses: actions/checkout@v2
+
+    # Log details for the runner. Useful for debugging
+    - name: Run lscpu for runner details
+      run: lscpu
+      shell: bash
 
     # Downloads TileDB-Core from release assets and install
     - name: Run TileDB install script
