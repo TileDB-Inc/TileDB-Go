@@ -1,8 +1,6 @@
 package tiledb
 
 /*
-
-
 #include <tiledb/tiledb.h>
 */
 import "C"

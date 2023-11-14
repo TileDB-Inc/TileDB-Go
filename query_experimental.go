@@ -7,8 +7,6 @@
 package tiledb
 
 /*
-
-
 #include <tiledb/tiledb.h>
 #include <tiledb/tiledb_experimental.h>
 #include <stdlib.h>

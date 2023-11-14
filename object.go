@@ -1,8 +1,6 @@
 package tiledb
 
 /*
-
-
 #include <tiledb/tiledb.h>
 #include <stdlib.h>
 #include "clibrary.h"
