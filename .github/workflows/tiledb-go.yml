@@ -10,7 +10,7 @@ on:
 jobs:
   golangci:
     name: lint
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
 
     # Checks out repository
@@ -30,7 +30,7 @@ jobs:
         version: v1.35.2
 
   Linux_Test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         # Will be checking following versions
@@ -39,6 +39,11 @@ jobs:
 
     # Checks out repository
     - uses: actions/checkout@v2
+
+    # Log details for the runner. Useful for debugging
+    - name: Run lscpu for runner details
+      run: lscpu
+      shell: bash
 
     # Downloads TileDB-Core from release assets and install
     - name: Run TileDB install script
@@ -70,7 +75,7 @@ jobs:
       run: go test -v ./...
 
   Macos_Test:
-    runs-on: macos-11
+    runs-on: macos-12
     strategy:
       matrix:
         # Will be checking following versions
@@ -78,6 +83,11 @@ jobs:
     steps:
     # Checks out repository
     - uses: actions/checkout@v2
+
+    # Log details for the runner. Useful for debugging
+    - name: Run sysctl for runner details
+      run: sysctl -a
+      shell: bash
 
     # Downloads TileDB-Core from release assets and install
     - name: Run TileDB install script
@@ -109,7 +119,7 @@ jobs:
       run: go test -v ./...
 
   Linux_Experimental_Test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         # Will be checking following versions
@@ -118,6 +128,11 @@ jobs:
 
     # Checks out repository
     - uses: actions/checkout@v2
+
+    # Log details for the runner. Useful for debugging
+    - name: Run lscpu for runner details
+      run: lscpu
+      shell: bash
 
     # Downloads TileDB-Core from release assets and install
     - name: Run TileDB install script
@@ -149,7 +164,7 @@ jobs:
       run: go test -tags=experimental -v ./...
 
   Macos_Experimental_Test:
-    runs-on: macos-11
+    runs-on: macos-12
     strategy:
       matrix:
         # Will be checking following versions
@@ -157,6 +172,11 @@ jobs:
     steps:
     # Checks out repository
     - uses: actions/checkout@v2
+
+    # Log details for the runner. Useful for debugging
+    - name: Run sysctl for runner details
+      run: sysctl -a
+      shell: bash
 
     # Downloads TileDB-Core from release assets and install
     - name: Run TileDB install script
@@ -188,7 +208,7 @@ jobs:
       run: go test -tags=experimental -v ./...
 
   Linux_Address_Sanitizer:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         # Will be checking following versions
@@ -196,6 +216,11 @@ jobs:
     steps:
     # Checks out repository
     - uses: actions/checkout@v2
+
+    # Log details for the runner. Useful for debugging
+    - name: Run lscpu for runner details
+      run: lscpu
+      shell: bash
 
     # Downloads TileDB-Core from release assets and install
     - name: Run TileDB install script
