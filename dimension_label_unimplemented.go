@@ -5,9 +5,7 @@
 package tiledb
 
 /*
-	#cgo LDFLAGS: -ltiledb
-	#cgo linux LDFLAGS: -ldl
-   	#include <stdlib.h>
+#include <stdlib.h>
 */
 import "C"
 import "fmt"

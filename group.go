@@ -14,8 +14,8 @@ import (
 )
 
 /*
-   	#cgo LDFLAGS: -ltiledb
-   	#cgo linux LDFLAGS: -ldl
+   	
+   	
 	#include <tiledb/tiledb_experimental.h>
 	#include <tiledb/tiledb_serialization.h>
 	#include <stdlib.h>
