@@ -79,6 +79,7 @@ as such the below table reference which versions are compatible.
 | 0.21.0            | 2.15.X         |
 | 0.22.0            | 2.16.X         |
 | 0.23.0            | 2.17.X         |
+| 0.24.0            | 2.18.X         |
 
 
 ## Missing Functionality
@@ -102,3 +103,8 @@ removed in release 0.23. It is recommended to use the proper combination of
 The query methods `(Add|Get)?Range` are deprecated because they are deprecated in TileDB core.
 It is recommend to use the `Subarray` type for building queries.
 The methods will be removed in the release following their removal from TileDB core.
+
+### 0.24.0
+
+`Array.DeleteFragments` is deprecated in favor of `tiledb.DeleteFragments` which binds to
+`C.tiledb_array_delete_fragments_v2` the preferred method to delete fragments in TileDB 2.18.0.
