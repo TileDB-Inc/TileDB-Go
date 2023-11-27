@@ -510,3 +510,27 @@ func DeserializeQueryAndArray(context *Context, buffer *Buffer, serializationTyp
 	runtime.KeepAlive(buffer)
 	return array, query, nil
 }
+
+// HandleArrayDeleteFragmentsTimestampsRequest is used by TileDB cloud to handle DeleteFragments with tiledb:// uris
+func HandleArrayDeleteFragmentsTimestampsRequest(context *Context, array *Array, buffer *Buffer, serializationType SerializationType) error {
+	ret := C.tiledb_handle_array_delete_fragments_timestamps_request(context.tiledbContext, array.tiledbArray,
+		C.tiledb_serialization_type_t(serializationType), buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error deserializing delete fragments timestamps: %s", context.LastError())
+	}
+
+	runtime.KeepAlive(buffer)
+	return nil
+}
+
+// HandleArrayDeleteFragmentsListRequest is used by TileDB cloud to handle DeleteFragmentsList with tiledb:// uris
+func HandleArrayDeleteFragmentsListRequest(context *Context, array *Array, buffer *Buffer, serializationType SerializationType) error {
+	ret := C.tiledb_handle_array_delete_fragments_list_request(context.tiledbContext, array.tiledbArray,
+		C.tiledb_serialization_type_t(serializationType), buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error deserializing delete fragments list: %s", context.LastError())
+	}
+
+	runtime.KeepAlive(buffer)
+	return nil
+}

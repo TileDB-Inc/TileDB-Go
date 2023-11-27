@@ -1,4 +1,4 @@
 set -e -x
-curl --location -o tiledb.tar.gz https://github.com/TileDB-Inc/TileDB/releases/download/2.17.3/tiledb-linux-x86_64-2.17.3-0c2de58.tar.gz \
+curl --location -o tiledb.tar.gz https://github.com/TileDB-Inc/TileDB/releases/download/2.18.0/tiledb-linux-x86_64-2.18.0-71ca8b4.tar.gz \
 && sudo tar -C /usr/local -xf tiledb.tar.gz
 sudo ldconfig /usr/local/lib
