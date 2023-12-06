@@ -556,3 +556,25 @@ func HandleQueryPlanRequest(array *Array, serializationType SerializationType, r
 
 	return response, nil
 }
+
+// HandleConsolidationPlanRequest handles a request for a consolidation plan. This is used by TileDB-Cloud
+// It returns a buffer with the serialized response. The caller should free the buffer after use.
+func HandleConsolidationPlanRequest(array *Array, serializationType SerializationType, request *Buffer) (*Buffer, error) {
+	opContext := array.context
+
+	response, err := NewBuffer(opContext)
+	if err != nil {
+		return nil, fmt.Errorf("Error allocating tiledb buffer: %s", opContext.LastError())
+	}
+
+	ret := C.tiledb_handle_consolidation_plan_request(opContext.tiledbContext, array.tiledbArray, C.tiledb_serialization_type_t(serializationType),
+		request.tiledbBuffer, response.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error handling consolidation plan request: %s", opContext.LastError())
+	}
+
+	runtime.KeepAlive(request)
+	runtime.KeepAlive(array)
+
+	return response, nil
+}
