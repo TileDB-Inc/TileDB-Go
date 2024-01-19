@@ -15,7 +15,7 @@ import (
 	"unsafe"
 )
 
-// SerializeArraySchema serializes an array schema
+// SerializeArraySchema serializes an array schema.
 func SerializeArraySchema(schema *ArraySchema, serializationType SerializationType, clientSide bool) ([]byte, error) {
 	var cClientSide C.int32_t
 	if clientSide {
@@ -35,7 +35,7 @@ func SerializeArraySchema(schema *ArraySchema, serializationType SerializationTy
 	return buffer.Serialize(serializationType)
 }
 
-// DeserializeArraySchema deserializes a new array schema from the given buffer
+// DeserializeArraySchema deserializes a new array schema from the given buffer.
 func DeserializeArraySchema(buffer *Buffer, serializationType SerializationType, clientSide bool) (*ArraySchema, error) {
 	schema := ArraySchema{context: buffer.context}
 
@@ -59,7 +59,7 @@ func DeserializeArraySchema(buffer *Buffer, serializationType SerializationType,
 	return &schema, nil
 }
 
-// SerializeArrayNonEmptyDomain gets and serializes the array nonempty domain
+// SerializeArrayNonEmptyDomain gets and serializes the array nonempty domain.
 func SerializeArrayNonEmptyDomain(a *Array, serializationType SerializationType) ([]byte, error) {
 	schema, err := a.Schema()
 	if err != nil {
@@ -98,7 +98,7 @@ func SerializeArrayNonEmptyDomain(a *Array, serializationType SerializationType)
 	return buffer.Serialize(serializationType)
 }
 
-// DeserializeArrayNonEmptyDomain deserializes an array nonempty domain
+// DeserializeArrayNonEmptyDomain deserializes an array nonempty domain.
 func DeserializeArrayNonEmptyDomain(a *Array, buffer *Buffer, serializationType SerializationType) ([]NonEmptyDomain, bool, error) {
 	schema, err := a.Schema()
 	if err != nil {
@@ -180,7 +180,7 @@ func DeserializeArrayNonEmptyDomain(a *Array, buffer *Buffer, serializationType 
 	return nonEmptyDomains, false, nil
 }
 
-// SerializeArrayNonEmptyDomainAllDimensions gets and serializes the array nonempty domain
+// SerializeArrayNonEmptyDomainAllDimensions gets and serializes the array nonempty domain.
 func SerializeArrayNonEmptyDomainAllDimensions(a *Array, serializationType SerializationType) ([]byte, error) {
 
 	buffer := Buffer{context: a.context}
@@ -195,7 +195,7 @@ func SerializeArrayNonEmptyDomainAllDimensions(a *Array, serializationType Seria
 	return buffer.Serialize(serializationType)
 }
 
-// DeserializeArrayNonEmptyDomainAllDimensions deserializes an array nonempty domain
+// DeserializeArrayNonEmptyDomainAllDimensions deserializes an array nonempty domain.
 func DeserializeArrayNonEmptyDomainAllDimensions(a *Array, buffer *Buffer, serializationType SerializationType) error {
 
 	var cClientSide = C.int32_t(0) // Currently this parameter is unused in libtiledb
@@ -207,7 +207,7 @@ func DeserializeArrayNonEmptyDomainAllDimensions(a *Array, buffer *Buffer, seria
 	return nil
 }
 
-// SerializeArrayMaxBufferSizes gets and serializes the array max buffer sizes for the given subarray
+// SerializeArrayMaxBufferSizes gets and serializes the array max buffer sizes for the given subarray.
 func SerializeArrayMaxBufferSizes(a *Array, subarray interface{}, serializationType SerializationType) ([]byte, error) {
 	// Create subarray void*
 	var cSubarray unsafe.Pointer
@@ -256,7 +256,7 @@ func SerializeArrayMaxBufferSizes(a *Array, subarray interface{}, serializationT
 	return buffer.Serialize(serializationType)
 }
 
-// SerializeQuery serializes a query
+// SerializeQuery serializes a query.
 func SerializeQuery(query *Query, serializationType SerializationType, clientSide bool) (*BufferList, error) {
 	bufferList := BufferList{context: query.context}
 	freeOnGC(&bufferList)
@@ -276,7 +276,7 @@ func SerializeQuery(query *Query, serializationType SerializationType, clientSid
 	return &bufferList, nil
 }
 
-// DeserializeQuery deserializes a buffer into an existing query
+// DeserializeQuery deserializes a buffer into an existing query.
 func DeserializeQuery(query *Query, buffer *Buffer, serializationType SerializationType, clientSide bool) error {
 	var cClientSide C.int32_t
 	if clientSide {
@@ -293,7 +293,7 @@ func DeserializeQuery(query *Query, buffer *Buffer, serializationType Serializat
 	return nil
 }
 
-// SerializeArrayMetadata gets and serializes the array metadata
+// SerializeArrayMetadata gets and serializes the array metadata.
 func SerializeArrayMetadata(a *Array, serializationType SerializationType) ([]byte, error) {
 	buffer := Buffer{context: a.context}
 	freeOnGC(&buffer)
@@ -306,7 +306,7 @@ func SerializeArrayMetadata(a *Array, serializationType SerializationType) ([]by
 	return buffer.Serialize(serializationType)
 }
 
-// DeserializeArrayMetadata deserializes array metadata
+// DeserializeArrayMetadata deserializes array metadata.
 func DeserializeArrayMetadata(a *Array, buffer *Buffer, serializationType SerializationType) error {
 	ret := C.tiledb_deserialize_array_metadata(a.context.tiledbContext, a.tiledbArray, C.tiledb_serialization_type_t(serializationType), buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
@@ -315,7 +315,7 @@ func DeserializeArrayMetadata(a *Array, buffer *Buffer, serializationType Serial
 	return nil
 }
 
-// SerializeQueryEstResultSizes gets and serializes the query estimated result sizes
+// SerializeQueryEstResultSizes gets and serializes the query estimated result sizes.
 func SerializeQueryEstResultSizes(q *Query, serializationType SerializationType, clientSide bool) ([]byte, error) {
 	var cClientSide C.int32_t
 	if clientSide {
@@ -335,7 +335,7 @@ func SerializeQueryEstResultSizes(q *Query, serializationType SerializationType,
 	return buffer.Serialize(serializationType)
 }
 
-// DeserializeQueryEstResultSizes deserializes query estimated result sizes
+// DeserializeQueryEstResultSizes deserializes query estimated result sizes.
 func DeserializeQueryEstResultSizes(q *Query, buffer *Buffer, serializationType SerializationType, clientSide bool) error {
 	var cClientSide C.int32_t
 	if clientSide {
@@ -351,7 +351,7 @@ func DeserializeQueryEstResultSizes(q *Query, buffer *Buffer, serializationType 
 	return nil
 }
 
-// SerializeArray serializes an array
+// SerializeArray serializes an array.
 func SerializeArray(array *Array, serializationType SerializationType, clientSide bool) ([]byte, error) {
 	var cClientSide C.int32_t
 	if clientSide {
@@ -372,7 +372,7 @@ func SerializeArray(array *Array, serializationType SerializationType, clientSid
 	return buffer.Serialize(serializationType)
 }
 
-// DeserializeArray deserializes a new array from the given buffer
+// DeserializeArray deserializes a new array from the given buffer.
 func DeserializeArray(buffer *Buffer, serializationType SerializationType, clientSide bool) (*Array, error) {
 	array := Array{context: buffer.context}
 
@@ -397,7 +397,7 @@ func DeserializeArray(buffer *Buffer, serializationType SerializationType, clien
 	return &array, nil
 }
 
-// SerializeFragmentInfo serializes fragment info
+// SerializeFragmentInfo serializes fragment info.
 func SerializeFragmentInfo(fragmentInfo *FragmentInfo, serializationType SerializationType, clientSide bool) ([]byte, error) {
 	var cClientSide C.int32_t
 	if clientSide {
@@ -418,7 +418,7 @@ func SerializeFragmentInfo(fragmentInfo *FragmentInfo, serializationType Seriali
 	return buffer.Serialize(serializationType)
 }
 
-// DeserializeFragmentInfo deserializes an existing fragment info from the given buffer
+// DeserializeFragmentInfo deserializes an existing fragment info from the given buffer.
 func DeserializeFragmentInfo(fragmentInfo FragmentInfo, buffer *Buffer, arrayURI string, serializationType SerializationType, clientSide bool) error {
 	var cClientSide C.int32_t
 	if clientSide {
@@ -438,7 +438,7 @@ func DeserializeFragmentInfo(fragmentInfo FragmentInfo, buffer *Buffer, arrayURI
 	return nil
 }
 
-// SerializeFragmentInfoRequest serializes fragment info
+// SerializeFragmentInfoRequest serializes fragment info.
 func SerializeFragmentInfoRequest(fragmentInfo *FragmentInfo, serializationType SerializationType, clientSide bool) ([]byte, error) {
 	var cClientSide C.int32_t
 	if clientSide {
@@ -459,7 +459,7 @@ func SerializeFragmentInfoRequest(fragmentInfo *FragmentInfo, serializationType 
 	return buffer.Serialize(serializationType)
 }
 
-// DeserializeFragmentInfoRequest deserializes an existing fragment info from the given buffer
+// DeserializeFragmentInfoRequest deserializes an existing fragment info from the given buffer.
 func DeserializeFragmentInfoRequest(fragmentInfo FragmentInfo, buffer *Buffer, serializationType SerializationType, clientSide bool) error {
 	var cClientSide C.int32_t
 	if clientSide {
@@ -511,7 +511,7 @@ func DeserializeQueryAndArray(context *Context, buffer *Buffer, serializationTyp
 	return array, query, nil
 }
 
-// HandleArrayDeleteFragmentsTimestampsRequest is used by TileDB cloud to handle DeleteFragments with tiledb:// uris
+// HandleArrayDeleteFragmentsTimestampsRequest is used by TileDB cloud to handle DeleteFragments with tiledb:// uris.
 func HandleArrayDeleteFragmentsTimestampsRequest(context *Context, array *Array, buffer *Buffer, serializationType SerializationType) error {
 	ret := C.tiledb_handle_array_delete_fragments_timestamps_request(context.tiledbContext, array.tiledbArray,
 		C.tiledb_serialization_type_t(serializationType), buffer.tiledbBuffer)
@@ -523,7 +523,7 @@ func HandleArrayDeleteFragmentsTimestampsRequest(context *Context, array *Array,
 	return nil
 }
 
-// HandleArrayDeleteFragmentsListRequest is used by TileDB cloud to handle DeleteFragmentsList with tiledb:// uris
+// HandleArrayDeleteFragmentsListRequest is used by TileDB cloud to handle DeleteFragmentsList with tiledb:// uris.
 func HandleArrayDeleteFragmentsListRequest(context *Context, array *Array, buffer *Buffer, serializationType SerializationType) error {
 	ret := C.tiledb_handle_array_delete_fragments_list_request(context.tiledbContext, array.tiledbArray,
 		C.tiledb_serialization_type_t(serializationType), buffer.tiledbBuffer)

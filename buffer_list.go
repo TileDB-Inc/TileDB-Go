@@ -39,12 +39,12 @@ func (b *BufferList) Free() {
 	}
 }
 
-// Context exposes the internal TileDB context used to initialize the buffer list
+// Context exposes the internal TileDB context used to initialize the buffer list.
 func (b *BufferList) Context() *Context {
 	return b.context
 }
 
-// NumBuffers returns number of buffers in the list
+// NumBuffers returns number of buffers in the list.
 func (b *BufferList) NumBuffers() (uint64, error) {
 	var numBuffers C.uint64_t
 	ret := C.tiledb_buffer_list_get_num_buffers(b.context.tiledbContext, b.tiledbBufferList, &numBuffers)
@@ -56,7 +56,7 @@ func (b *BufferList) NumBuffers() (uint64, error) {
 	return uint64(numBuffers), nil
 }
 
-// GetBuffer returns a Buffer at the given index in the list
+// GetBuffer returns a Buffer at the given index in the list.
 func (b *BufferList) GetBuffer(bufferIndex uint) (*Buffer, error) {
 	buffer := Buffer{context: b.context}
 	freeOnGC(&buffer)
@@ -69,7 +69,7 @@ func (b *BufferList) GetBuffer(bufferIndex uint) (*Buffer, error) {
 	return &buffer, nil
 }
 
-// TotalSize returns total number of bytes in the buffers in the list
+// TotalSize returns the total number of bytes in the buffers in the list.
 func (b *BufferList) TotalSize() (uint64, error) {
 	var totalSize C.uint64_t
 	ret := C.tiledb_buffer_list_get_total_size(b.context.tiledbContext, b.tiledbBufferList, &totalSize)
@@ -81,7 +81,7 @@ func (b *BufferList) TotalSize() (uint64, error) {
 	return uint64(totalSize), nil
 }
 
-// Flatten copies and concatenates all buffers in the list into a new buffer
+// Flatten copies and concatenates all buffers in the list into a new buffer.
 func (b *BufferList) Flatten() (*Buffer, error) {
 	buffer := Buffer{context: b.context}
 	freeOnGC(&buffer)

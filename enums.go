@@ -116,24 +116,24 @@ const (
 	TILEDB_BOOL Datatype = C.TILEDB_BOOL
 )
 
-// String returns string representation
+// String returns a string representation.
 func (d Datatype) String() string {
 	var cname *C.char
 	C.tiledb_datatype_to_str(C.tiledb_datatype_t(d), &cname)
 	return C.GoString(cname)
 }
 
-// MarshalJSON interface for marshaling to json
+// MarshalJSON implements the interface for marshaling to json.
 func (d Datatype) MarshalJSON() ([]byte, error) {
 	return json.Marshal(d.String())
 }
 
-// UnmarshalJSON interface for unmarshaling from json
+// UnmarshalJSON implements the interface for unmarshaling from json.
 func (d *Datatype) UnmarshalJSON(bytes []byte) error {
 	return d.FromString(string(bytes))
 }
 
-// FromString converts from a datatype string to enum
+// FromString converts from a datatype string to enum.
 func (d *Datatype) FromString(s string) error {
 	cname := C.CString(s)
 	defer C.free(unsafe.Pointer(cname))
@@ -146,7 +146,7 @@ func (d *Datatype) FromString(s string) error {
 	return nil
 }
 
-// DatatypeFromString converts from a datatype string to enum
+// DatatypeFromString converts from a datatype string to enum.
 func DatatypeFromString(s string) (Datatype, error) {
 	var d Datatype
 	err := d.FromString(s)
@@ -156,7 +156,7 @@ func DatatypeFromString(s string) (Datatype, error) {
 	return d, nil
 }
 
-// ReflectKind returns the reflect kind given a datatype
+// ReflectKind returns the reflect kind given a datatype.
 func (d Datatype) ReflectKind() reflect.Kind {
 	switch d {
 	case TILEDB_INT8:
@@ -204,7 +204,7 @@ func (d Datatype) ReflectKind() reflect.Kind {
 	}
 }
 
-// ReflectType returns the reflect type given a datatype
+// ReflectType returns the reflect type given a datatype.
 func (d Datatype) ReflectType() reflect.Type {
 	switch d {
 	case TILEDB_INT8:
@@ -252,12 +252,12 @@ func (d Datatype) ReflectType() reflect.Type {
 	}
 }
 
-// Size returns the datatype size in bytes
+// Size returns the datatype size in bytes.
 func (d Datatype) Size() uint64 {
 	return uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(d)))
 }
 
-// MakeSlice makes a slice of the correct type corresponding to the datatype, with a given number of elements
+// MakeSlice makes a slice of the correct type corresponding to the datatype, with a given number of elements.
 func (d Datatype) MakeSlice(numElements uint64) (interface{}, unsafe.Pointer, error) {
 	switch d {
 	case TILEDB_INT8:
@@ -309,7 +309,7 @@ func (d Datatype) MakeSlice(numElements uint64) (interface{}, unsafe.Pointer, er
 	}
 }
 
-// GetValue gets value stored in a void pointer for this data type
+// GetValue gets value stored in a void pointer for this data type.
 func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, error) {
 	switch d {
 	case TILEDB_INT8:
@@ -507,7 +507,7 @@ func intUintTypes() (Datatype, Datatype) {
 	panic(fmt.Sprintf("can't run on systems with %v-bit integers", strconv.IntSize))
 }
 
-// EncryptionType represents different encryption algorithms
+// EncryptionType represents different encryption algorithms.
 type EncryptionType uint8
 
 const (
@@ -517,7 +517,7 @@ const (
 	TILEDB_AES_256_GCM EncryptionType = C.TILEDB_AES_256_GCM
 )
 
-// String returns string representation
+// String returns a string representation.
 func (encryptionType EncryptionType) String() string {
 	var ctype *C.char
 	C.tiledb_encryption_type_to_str(C.tiledb_encryption_type_t(encryptionType), &ctype)
@@ -613,7 +613,7 @@ const (
 	TILEDB_INITIALIZED QueryStatus = C.TILEDB_INITIALIZED
 )
 
-// String returns string representation
+// String returns a string representation.
 func (q QueryStatus) String() string {
 	var cname *C.char
 	C.tiledb_query_status_to_str(C.tiledb_query_status_t(q), &cname)
@@ -633,7 +633,7 @@ const (
 	TILEDB_REASON_MEMORY_BUDGET QueryStatusDetailsReason = C.TILEDB_REASON_MEMORY_BUDGET
 )
 
-// String returns string representation
+// String returns a string representation.
 func (r QueryStatusDetailsReason) String() string {
 	// TileDB does not provide tiledb_query_status_details_reason_to_str
 	switch r {
@@ -662,7 +662,7 @@ const (
 	TILEDB_MODIFY_EXCLUSIVE QueryType = C.TILEDB_MODIFY_EXCLUSIVE
 )
 
-// QueryTypeFromString returns the internal representation of the query type
+// QueryTypeFromString returns the internal representation of the query type.
 func QueryTypeFromString(s string) (QueryType, error) {
 	cname := C.CString(s)
 	defer C.free(unsafe.Pointer(cname))
@@ -802,7 +802,7 @@ const (
 	TILEDB_DECREASING_DATA DataOrder = C.TILEDB_DECREASING_DATA
 )
 
-// String returns string representation of a DataOrder
+// String returns a string representation of a DataOrder.
 func (d DataOrder) String() (string, error) {
 	var dataOrderStr *C.char
 	ret := C.tiledb_data_order_to_str(C.tiledb_data_order_t(d), &dataOrderStr)
@@ -813,7 +813,7 @@ func (d DataOrder) String() (string, error) {
 	return C.GoString(dataOrderStr), nil
 }
 
-// DataOrderFromString converts from a string to the equivalent DataOrder enum
+// DataOrderFromString converts from a string to the equivalent DataOrder enum.
 func DataOrderFromString(name string) (DataOrder, error) {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))

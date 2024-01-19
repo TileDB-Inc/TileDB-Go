@@ -149,7 +149,7 @@ func (e *Enumeration) Free() {
 	}
 }
 
-// Name returns the name of the enumeration
+// Name returns the name of the enumeration.
 func (e *Enumeration) Name() (string, error) {
 	var str *C.tiledb_string_t
 
@@ -168,7 +168,7 @@ func (e *Enumeration) Name() (string, error) {
 	return C.GoStringN(cName, C.int(cNameSize)), nil
 }
 
-// Type returns the TileDB type of the enumeration
+// Type returns the TileDB type of the enumeration.
 func (e *Enumeration) Type() (Datatype, error) {
 	var attrType C.tiledb_datatype_t
 
@@ -180,7 +180,7 @@ func (e *Enumeration) Type() (Datatype, error) {
 	return Datatype(attrType), nil
 }
 
-// Type returns the number of cells for each enumeration value. It is 1 except for strings which is TILEDB_VAR_NUM
+// Type returns the number of cells for each enumeration value. It is 1 except for strings which is TILEDB_VAR_NUM.
 func (e *Enumeration) CellValNum() (uint32, error) {
 	var cellValNum C.uint32_t
 
@@ -205,7 +205,7 @@ func (e *Enumeration) IsOrdered() (bool, error) {
 	return ordered > 0, nil
 }
 
-// DumpSTDOUT() writes a human readable description of the enumeration in os.Stdout
+// DumpSTDOUT writes a human-readable description of the enumeration to os.Stdout.
 func (e *Enumeration) DumpSTDOUT() error {
 	ret := C.tiledb_enumeration_dump(e.context.tiledbContext, e.tiledbEnum, C.stdout)
 	if ret != C.TILEDB_OK {
@@ -215,7 +215,7 @@ func (e *Enumeration) DumpSTDOUT() error {
 	return nil
 }
 
-// Dump created the file at path, (must not exist) and writes a human readable description of the enumeration
+// Dump creates the file at path (must not exist) and writes a human-readable description of the enumeration.
 func (e *Enumeration) Dump(path string) error {
 	if _, err := os.Stat(path); err == nil {
 		return fmt.Errorf("Error path already %s exists", path)
@@ -238,7 +238,7 @@ func (e *Enumeration) Dump(path string) error {
 	return nil
 }
 
-// Values returns the enumeration values. The returned interface is a slice guaranteed to be cast to the type of the enumeration
+// Values returns the enumeration values. The returned interface is a slice guaranteed to be cast to the type of the enumeration.
 func (e *Enumeration) Values() (interface{}, error) {
 	typ, err := e.Type()
 	if err != nil {
@@ -398,7 +398,7 @@ func (a *Array) LoadAllEnumerations() error {
 	return nil
 }
 
-// GetEnumeration return the named Enumeration from the array schema
+// GetEnumeration return the named Enumeration from the array schema.
 func (a *Array) GetEnumeration(name string) (*Enumeration, error) {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
@@ -413,7 +413,7 @@ func (a *Array) GetEnumeration(name string) (*Enumeration, error) {
 }
 
 // SetEnumerationName sets the enumeration for the attribute. The enumeration must be set to the
-// schema and the attribute maximum size must fit the size of the enumeration values
+// schema and the attribute maximum size must fit the size of the enumeration values.
 func (a *Attribute) SetEnumerationName(name string) error {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
@@ -426,7 +426,7 @@ func (a *Attribute) SetEnumerationName(name string) error {
 	return nil
 }
 
-// GetEnumerationName returns the enumeration name of the attribute
+// GetEnumerationName returns the enumeration name of the attribute.
 func (a *Attribute) GetEnumerationName() (string, error) {
 	var str *C.tiledb_string_t
 
@@ -445,7 +445,7 @@ func (a *Attribute) GetEnumerationName() (string, error) {
 	return C.GoStringN(cName, C.int(cNameSize)), nil
 }
 
-// UseEnumerations set true to allow query conditions with enumeration literals
+// UseEnumerations set true to allow query conditions with enumeration literals.
 func (qc *QueryCondition) UseEnumeration(useEnum bool) error {
 	var cUseEnum C.int
 	if useEnum {
@@ -460,7 +460,7 @@ func (qc *QueryCondition) UseEnumeration(useEnum bool) error {
 	return nil
 }
 
-// AddEnumeration adds enumeration to the schema evolution
+// AddEnumeration adds enumeration to the schema evolution.
 func (ase *ArraySchemaEvolution) AddEnumeration(e *Enumeration) error {
 	name, err := e.Name()
 	if err != nil {
@@ -475,7 +475,7 @@ func (ase *ArraySchemaEvolution) AddEnumeration(e *Enumeration) error {
 	return nil
 }
 
-// DropEnumeration removes the enumeration from the schema evolution
+// DropEnumeration removes the enumeration from the schema evolution.
 func (ase *ArraySchemaEvolution) DropEnumeration(name string) error {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
@@ -488,7 +488,7 @@ func (ase *ArraySchemaEvolution) DropEnumeration(name string) error {
 	return nil
 }
 
-// ApplyExtendedEnumeration applies to the schema evolution the result of ExtendEnumeration
+// ApplyExtendedEnumeration applies to the schema evolution the result of ExtendEnumeration.
 func (ase *ArraySchemaEvolution) ApplyExtendedEnumeration(e *Enumeration) error {
 	ret := C.tiledb_array_schema_evolution_extend_enumeration(ase.context.tiledbContext, ase.tiledbArraySchemaEvolution, e.tiledbEnum)
 	if ret != C.TILEDB_OK {
@@ -498,7 +498,7 @@ func (ase *ArraySchemaEvolution) ApplyExtendedEnumeration(e *Enumeration) error 
 	return nil
 }
 
-// DeserializeLoadEnumerationsRequest deserializes a LoadEnumerationsRequests. This is used by TileDB-Cloud
+// DeserializeLoadEnumerationsRequest deserializes a LoadEnumerationsRequests. This is used by TileDB-Cloud.
 func DeserializeLoadEnumerationsRequest(array *Array, serializationType SerializationType, request *Buffer) (*Buffer, error) {
 	response, err := NewBuffer(array.context)
 	if err != nil {

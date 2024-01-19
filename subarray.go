@@ -34,7 +34,7 @@ func (a *Array) NewSubarray() (*Subarray, error) {
 	return subarray, nil
 }
 
-// SetConfig sets the subarray config. Currently it overrides only sm.read_range_oob
+// SetConfig sets the subarray config. Currently it overrides only sm.read_range_oob.
 func (sa *Subarray) SetConfig(cfg *Config) error {
 	ret := C.tiledb_subarray_set_config(sa.context.tiledbContext, sa.subarray, cfg.tiledbConfig)
 	if ret != C.TILEDB_OK {

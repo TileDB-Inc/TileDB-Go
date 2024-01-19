@@ -12,7 +12,7 @@ import (
 	"unsafe"
 )
 
-// Domain Represents the domain of an array.
+// Domain represents the domain of an array.
 // A Domain defines the set of Dimension objects for a given array.
 // The properties of a Domain derive from the underlying dimensions.
 // A Domain is a component of an ArraySchema.
@@ -21,7 +21,7 @@ type Domain struct {
 	context      *Context
 }
 
-// NewDomain alloc a new domainuration
+// NewDomain allocates a new domain.
 func NewDomain(tdbCtx *Context) (*Domain, error) {
 	domain := Domain{context: tdbCtx}
 	ret := C.tiledb_domain_alloc(domain.context.tiledbContext, &domain.tiledbDomain)
@@ -44,12 +44,12 @@ func (d *Domain) Free() {
 	}
 }
 
-// Context exposes the internal TileDB context used to initialize the domain
+// Context exposes the internal TileDB context used to initialize the domain.
 func (d *Domain) Context() *Context {
 	return d.context
 }
 
-// Type returns a domains type deduced from dimensions
+// Type returns a domain's type deduced from dimensions.
 func (d *Domain) Type() (Datatype, error) {
 	var datatype C.tiledb_datatype_t
 	ret := C.tiledb_domain_get_type(d.context.tiledbContext, d.tiledbDomain, &datatype)
@@ -59,7 +59,7 @@ func (d *Domain) Type() (Datatype, error) {
 	return Datatype(datatype), nil
 }
 
-// NDim returns the number of dimensions
+// NDim returns the number of dimensions.
 func (d *Domain) NDim() (uint, error) {
 	var ndim C.uint32_t
 	ret := C.tiledb_domain_get_ndim(d.context.tiledbContext, d.tiledbDomain, &ndim)
@@ -84,7 +84,7 @@ func (d *Domain) DimensionFromIndex(index uint) (*Dimension, error) {
 	return &dimension, nil
 }
 
-// DimensionFromName retrieves a dimension object from a domain by name (key)
+// DimensionFromName retrieves a dimension object from a domain by name (key).
 func (d *Domain) DimensionFromName(name string) (*Dimension, error) {
 	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
@@ -98,7 +98,7 @@ func (d *Domain) DimensionFromName(name string) (*Dimension, error) {
 	return &dimension, nil
 }
 
-// AddDimensions adds one or more dimensions to a domain
+// AddDimensions adds one or more dimensions to a domain.
 func (d *Domain) AddDimensions(dimensions ...*Dimension) error {
 	for _, dimension := range dimensions {
 		ret := C.tiledb_domain_add_dimension(d.context.tiledbContext, d.tiledbDomain, dimension.tiledbDimension)
@@ -109,7 +109,7 @@ func (d *Domain) AddDimensions(dimensions ...*Dimension) error {
 	return nil
 }
 
-// HasDimension returns true if dimension: `dimName` is part of the domain
+// HasDimension returns true if dimension `dimName` is part of the domain.
 func (d *Domain) HasDimension(dimName string) (bool, error) {
 	var hasDim C.int32_t
 	cDimName := C.CString(dimName)
@@ -126,7 +126,7 @@ func (d *Domain) HasDimension(dimName string) (bool, error) {
 	return true, nil
 }
 
-// DumpSTDOUT Dumps the domain in ASCII format to stdout
+// DumpSTDOUT dumps the domain in ASCII format to stdout.
 func (d *Domain) DumpSTDOUT() error {
 	ret := C.tiledb_domain_dump(d.context.tiledbContext, d.tiledbDomain, C.stdout)
 	if ret != C.TILEDB_OK {
@@ -135,7 +135,7 @@ func (d *Domain) DumpSTDOUT() error {
 	return nil
 }
 
-// Dump Dumps the domain in ASCII format in the selected output.
+// Dump dumps the domain in ASCII format to the given path.
 func (d *Domain) Dump(path string) error {
 
 	if _, err := os.Stat(path); err == nil {

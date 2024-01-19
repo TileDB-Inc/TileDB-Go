@@ -17,7 +17,7 @@ import (
 	"fmt"
 )
 
-// SerializeArraySchemaEvolution serializes the given array schema evolution
+// SerializeArraySchemaEvolution serializes the given array schema evolution.
 func SerializeArraySchemaEvolution(arraySchemaEvolution *ArraySchemaEvolution, serializationType SerializationType, clientSide bool) ([]byte, error) {
 	var cClientSide C.int32_t
 	if clientSide {
@@ -42,7 +42,7 @@ func SerializeArraySchemaEvolution(arraySchemaEvolution *ArraySchemaEvolution, s
 	return buffer.Serialize(serializationType)
 }
 
-// DeserializeArraySchemaEvolution deserializes a new array schema evolution object from the given buffer
+// DeserializeArraySchemaEvolution deserializes a new array schema evolution object from the given buffer.
 func DeserializeArraySchemaEvolution(buffer *Buffer, serializationType SerializationType, clientSide bool) (*ArraySchemaEvolution, error) {
 	arraySchemaEvolution := ArraySchemaEvolution{context: buffer.context}
 

@@ -40,7 +40,7 @@ func (v *VFSfh) Free() {
 	}
 }
 
-// Context exposes the internal TileDB context used to initialize the vfsh
+// Context exposes the internal TileDB context used to initialize the vfsh.
 func (v *VFSfh) Context() *Context {
 	return v.context
 }
@@ -100,12 +100,12 @@ func (v *VFS) Free() {
 	}
 }
 
-// Context exposes the internal TileDB context used to initialize the vfs
+// Context exposes the internal TileDB context used to initialize the vfs.
 func (v *VFS) Context() *Context {
 	return v.context
 }
 
-// Config retrieves a copy of the config from vfs
+// Config retrieves a copy of the config from vfs.
 func (v *VFS) Config() (*Config, error) {
 	var config Config
 	ret := C.tiledb_vfs_get_config(v.context.tiledbContext, v.tiledbVFS,
@@ -147,7 +147,7 @@ func (v *VFS) RemoveBucket(uri string) error {
 	return nil
 }
 
-// EmptyBucket empty a bucket
+// EmptyBucket empties a bucket.
 func (v *VFS) EmptyBucket(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -160,7 +160,7 @@ func (v *VFS) EmptyBucket(uri string) error {
 	return nil
 }
 
-// IsEmptyBucket check if a bucket is empty
+// IsEmptyBucket checks if a bucket is empty.
 func (v *VFS) IsEmptyBucket(uri string) (bool, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -351,7 +351,7 @@ func (v *VFS) Open(uri string, mode VFSMode) (*VFSfh, error) {
 	return fh, nil
 }
 
-// Close a file. This is flushes the buffered data into the file when the file
+// Close closes a file. This is flushes the buffered data into the file when the file
 // was opened in write (or append) mode. It is particularly important to be
 // called after S3 writes, as otherwise the writes will not take effect.
 func (v *VFS) Close(fh *VFSfh) error {
@@ -366,7 +366,7 @@ func (v *VFS) Close(fh *VFSfh) error {
 	return nil
 }
 
-// Read part of a file
+// Read reads part of a file.
 func (v *VFS) Read(fh *VFSfh, offset uint64, nbytes uint64) ([]byte, error) {
 	bytes := make([]byte, nbytes)
 	cbuffer := unsafe.Pointer(&bytes[0])
@@ -379,9 +379,9 @@ func (v *VFS) Read(fh *VFSfh, offset uint64, nbytes uint64) ([]byte, error) {
 	return bytes, nil
 }
 
-// Write the contents of a buffer into a file. Note that this function only
+// Write writes the contents of a buffer into a file. Note that this function only
 // appends data at the end of the file. If the file does not exist,
-// it will be created
+// it will be created.
 func (v *VFS) Write(fh *VFSfh, bytes []byte) error {
 	cbuffer := C.CBytes(bytes)
 	ret := C.tiledb_vfs_write(v.context.tiledbContext, fh.tiledbVFSfh, cbuffer, C.uint64_t(len(bytes)))
@@ -393,7 +393,7 @@ func (v *VFS) Write(fh *VFSfh, bytes []byte) error {
 	return nil
 }
 
-// Sync (flushes) a file.
+// Sync flushes a file.
 func (v *VFS) Sync(fh *VFSfh) error {
 	ret := C.tiledb_vfs_sync(v.context.tiledbContext, fh.tiledbVFSfh)
 
@@ -404,7 +404,7 @@ func (v *VFS) Sync(fh *VFSfh) error {
 	return nil
 }
 
-// Touch a file, i.e., creates a new empty file.
+// Touch touches a file, i.e., creates a new empty file.
 func (v *VFS) Touch(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -455,7 +455,7 @@ func numOfFragmentsInPath(path *C.cchar_t, data unsafe.Pointer) int32 {
 	return 1
 }
 
-// NumOfFragmentsInPath returns number of folders in a path
+// NumOfFragmentsInPath returns the number of folders in a path.
 func (v *VFS) NumOfFragmentsInPath(path string) (int, error) {
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
@@ -475,7 +475,7 @@ func (v *VFS) NumOfFragmentsInPath(path string) (int, error) {
 	return numOfFragmentsData.NumOfFolders, nil
 }
 
-// Close a file. This is flushes the buffered data into the file when the file
+// Close closes a file. This flushes the buffered data into the file when the file
 // was opened in write (or append) mode. It is particularly important to be
 // called after S3 writes, as otherwise the writes will not take effect.
 func (v *VFSfh) Close() error {
@@ -490,7 +490,7 @@ func (v *VFSfh) Close() error {
 	return nil
 }
 
-// Read part of a file
+// Read reads part of a file.
 func (v *VFSfh) Read(p []byte) (int, error) {
 	nbytes := uint64(len(p))
 
@@ -522,9 +522,9 @@ func (v *VFSfh) Read(p []byte) (int, error) {
 	return int(nbytes), nil
 }
 
-// Write the contents of a buffer into a file. Note that this function only
+// Write writes the contents of a buffer into a file. Note that this function only
 // appends data at the end of the file. If the file does not exist,
-// it will be created
+// it will be created.
 func (v *VFSfh) Write(bytes []byte) (int, error) {
 	if len(bytes) == 0 {
 		return 0, nil
@@ -539,7 +539,7 @@ func (v *VFSfh) Write(bytes []byte) (int, error) {
 	return len(bytes), nil
 }
 
-// Sync (flushes) a file.
+// Sync flushes a file.
 func (v *VFSfh) Sync() error {
 	ret := C.tiledb_vfs_sync(v.context.tiledbContext, v.tiledbVFSfh)
 
@@ -550,7 +550,7 @@ func (v *VFSfh) Sync() error {
 	return nil
 }
 
-// Seek to an offset
+// Seek seeks to an offset.
 func (v *VFSfh) Seek(offset int64, whence int) (int64, error) {
 	if v.size == nil {
 		if err := v.fetchAndSetSize(); err != nil {
@@ -624,7 +624,7 @@ func vfsLs(path *C.cchar_t, data unsafe.Pointer) int32 {
 	return 1
 }
 
-// List returns list of folders and files in a path
+// List returns list of folders and files in a path.
 func (v *VFS) List(path string) ([]string, []string, error) {
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))

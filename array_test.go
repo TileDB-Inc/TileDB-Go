@@ -50,7 +50,7 @@ func ExampleNewArray() {
 		return
 	}
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute, err := NewAttribute(context, "a1", TILEDB_INT32)
 
 	if err != nil {
@@ -103,12 +103,12 @@ func buildArraySchema(context *Context, t testing.TB) *ArraySchema {
 	require.NoError(t, err)
 	assert.NotNil(t, arraySchema)
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute, err := NewAttribute(context, "a1", TILEDB_INT32)
 	require.NoError(t, err)
 	assert.NotNil(t, attribute)
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute2, err := NewAttribute(context, "a2", TILEDB_STRING_ASCII)
 	require.NoError(t, err)
 	assert.NotNil(t, attribute2)

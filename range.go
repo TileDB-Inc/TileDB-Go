@@ -24,7 +24,7 @@ func MakeRange[T DimensionType](start, end T) Range {
 
 // ExtractRange extracts the endpoints of the range.
 // It returns []T{start, end, stride}. The stride is not supported by TileDB core yet,
-// so it gets the zero value of T
+// so it gets the zero value of T.
 func ExtractRange[T DimensionType](r Range) ([]T, error) {
 	// we compare reflect.Kind because they give more versatility. Reflect.Type is more strict
 	// Consider:
@@ -46,8 +46,8 @@ func ExtractRange[T DimensionType](r Range) ([]T, error) {
 	return res, nil
 }
 
-// Endpoints return the endpoint of the range. This is useful
-// to print the range or serialize it, without infering the type first
+// Endpoints returns the endpoint of the range. This is useful
+// to print the range or serialize it, without infering the type first.
 func (r Range) Endpoints() (start, end any) {
 	return r.start, r.end
 }

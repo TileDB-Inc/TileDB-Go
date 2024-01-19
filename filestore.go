@@ -121,7 +121,7 @@ type File struct {
 	bytesRead int64    // the total bytes read so far. Used as an offset for read operations
 }
 
-// Read satisfies io.Reader
+// Read satisfies io.Reader.
 func (f *File) Read(p []byte) (n int, err error) {
 	bytesRemaining := f.arraySize - f.bytesRead
 	if bytesRemaining == 0 {
@@ -157,7 +157,7 @@ func OpenFile(tdbCtx *Context, arrayURI string) (*File, error) {
 	}, nil
 }
 
-// NewArraySchemaForFile allocs a new ArraySchema optimized for the storage of file.
+// NewArraySchemaForFile allocates a new ArraySchema optimized for the storage of file.
 // An empty path returns a general schema suitable for any file.
 func NewArraySchemaForFile(tdbCtx *Context, filePath string) (*ArraySchema, error) {
 	var fileURI *C.char
