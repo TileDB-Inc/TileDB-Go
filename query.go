@@ -34,7 +34,7 @@ type RangeLimits struct {
 	end   interface{}
 }
 
-// MarshalJSON implements the Marshaler interface for RangeLimits
+// MarshalJSON implements the Marshaler interface for RangeLimits.
 func (r RangeLimits) MarshalJSON() ([]byte, error) {
 	rangeLimitMap := make(map[string]interface{})
 	rangeLimitMap["end"] = r.end
@@ -44,7 +44,7 @@ func (r RangeLimits) MarshalJSON() ([]byte, error) {
 }
 
 /*
-NewQuery Creates a TileDB query object.
+NewQuery creates a TileDB query object.
 
 The query type (read or write) must be the same as the type used
 to open the array object.
@@ -91,12 +91,12 @@ func (q *Query) Free() {
 	}
 }
 
-// Context exposes the internal TileDB context used to initialize the query
+// Context exposes the internal TileDB context used to initialize the query.
 func (q *Query) Context() *Context {
 	return q.context
 }
 
-// SetSubArray Sets a subarray, defined in the order dimensions were added.
+// SetSubArray sets a subarray, defined in the order dimensions were added.
 // Coordinates are inclusive. For the case of writes, this is meaningful only
 // for dense arrays, and specifically dense writes.
 //
@@ -193,7 +193,7 @@ func (q *Query) SetSubArray(subArray interface{}) error {
 	return nil
 }
 
-// SetBufferUnsafe Sets the buffer for a fixed-sized attribute to a query
+// SetBufferUnsafe sets the buffer for a fixed-sized attribute to a query.
 // This takes an unsafe pointer which is passsed straight to tiledb c_api
 // for advanced usage
 //
@@ -219,8 +219,8 @@ func (q *Query) SetBufferUnsafe(attribute string, buffer unsafe.Pointer, bufferS
 	return &bufferSize, nil
 }
 
-// SetBuffer Sets the buffer for a fixed-sized attribute to a query
-// The buffer must be an initialized slice
+// SetBuffer sets the buffer for a fixed-sized attribute to a query.
+// The buffer must be an initialized slice.
 //
 // Deprecated: Use SetDataBuffer
 func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uint64,
@@ -447,9 +447,9 @@ func (q *Query) SetBuffer(attributeOrDimension string, buffer interface{}) (*uin
 	return &bufferSize, nil
 }
 
-// SetBufferNullableUnsafe Sets the buffer for a fixed-sized nullable attribute to a query
+// SetBufferNullableUnsafe sets the buffer for a fixed-sized nullable attribute to a query.
 // This takes an unsafe pointer which is passsed straight to tiledb c_api
-// for advanced usage
+// for advanced usage.
 //
 // Deprecated: Use SetDataBufferUnsafe and SetValidityBufferUnsafe
 func (q *Query) SetBufferNullableUnsafe(attribute string, buffer unsafe.Pointer, bufferSize uint64, bufferValidity unsafe.Pointer, bufferValiditySize uint64) (*uint64, *uint64, error) {
@@ -485,8 +485,8 @@ func (q *Query) SetBufferNullableUnsafe(attribute string, buffer unsafe.Pointer,
 	return &bufferSize, &bufferValiditySize, nil
 }
 
-// SetBufferNullable Sets the buffer for a fixed-sized nullable attribute to a query
-// The buffer must be an initialized slice
+// SetBufferNullable sets the buffer for a fixed-sized nullable attribute to a query.
+// The buffer must be an initialized slice.
 //
 // Deprecated: Use SetDataBuffer and SetValidityBuffer
 func (q *Query) SetBufferNullable(attributeOrDimension string, buffer interface{}, bufferValidity []uint8) (*uint64, *uint64, error) {
@@ -858,8 +858,8 @@ func (q *Query) AddRangeByName(dimName string, start interface{}, end interface{
 	return nil
 }
 
-// AddRangeVar adds a range applicable to variable-sized dimensions
-// Applicable only to string dimensions
+// AddRangeVar adds a range applicable to variable-sized dimensions.
+// Applicable only to string dimensions.
 //
 // Deprecated: Use Subarrays
 func (q *Query) AddRangeVar(dimIdx uint32, start interface{}, end interface{}) error {
@@ -944,8 +944,8 @@ func (q *Query) AddRangeVar(dimIdx uint32, start interface{}, end interface{}) e
 	return nil
 }
 
-// AddRangeVarByName adds a range applicable to variable-sized dimensions
-// Applicable only to string dimensions
+// AddRangeVarByName adds a range applicable to variable-sized dimensions.
+// Applicable only to string dimensions.
 //
 // Deprecated: Use Subarrays
 func (q *Query) AddRangeVarByName(dimName string, start interface{}, end interface{}) error {
@@ -1035,9 +1035,9 @@ func (q *Query) AddRangeVarByName(dimName string, start interface{}, end interfa
 
 // GetRange retrieves a specific range of the query subarray
 // along a given dimension.
-// Returns (start, end, error)
-// If start size or end size is 0 returns nil, nil, nil
-// Stride is not supported at the moment, always nil
+// Returns (start, end, error).
+// If start size or end size is 0, returns nil, nil, nil.
+// Stride is not supported at the moment, always nil.
 //
 // Deprecated: Use Subarrays
 func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface{}, error) {
@@ -1166,9 +1166,9 @@ func (q *Query) GetRange(dimIdx uint32, rangeNum uint64) (interface{}, interface
 
 // GetRangeFromName retrieves a specific range of the query subarray
 // along a given dimension.
-// Returns (start, end, error)
-// If start size or end size is 0 returns nil, nil, nil
-// Stride is not supported at the moment, always nil
+// Returns (start, end, error).
+// If start size or end size is 0, returns nil, nil, nil.
+// Stride is not supported at the moment, always nil.
 //
 // Deprecated: Use Subarrays
 func (q *Query) GetRangeFromName(dimName string, rangeNum uint64) (interface{}, interface{}, error) {
@@ -1301,22 +1301,22 @@ func (q *Query) GetRangeFromName(dimName string, rangeNum uint64) (interface{}, 
 	return start, end, nil
 }
 
-// GetRangeVar exists for continuinity with other TileDB APIs
-// GetRange in Golang supports the variable length attribute also
+// GetRangeVar exists for continuinity with other TileDB APIs.
+// GetRange in Golang supports the variable length attribute also.
 // The function retrieves a specific range of the query subarray
 // along a given dimension.
-// Returns (start, end, error)
+// Returns (start, end, error).
 //
 // Deprecated: Use Subarrays
 func (q *Query) GetRangeVar(dimIdx uint32, rangeNum uint64) (interface{}, interface{}, error) {
 	return q.GetRange(dimIdx, rangeNum)
 }
 
-// GetRangeVarFromName exists for continuinity with other TileDB APIs
-// GetRange in Golang supports the variable length attribute also
+// GetRangeVarFromName exists for continuinity with other TileDB APIs.
+// GetRange in Golang supports the variable length attribute also.
 // The function retrieves a specific range of the query subarray
 // along a given dimension.
-// Returns (start, end, error)
+// Returns (start, end, error).
 //
 // Deprecated: Use Subarrays
 func (q *Query) GetRangeVarFromName(dimName string, rangeNum uint64) (interface{}, interface{}, error) {
@@ -1324,7 +1324,7 @@ func (q *Query) GetRangeVarFromName(dimName string, rangeNum uint64) (interface{
 }
 
 // GetRanges gets the number of dimensions from the array under current query
-// and builds an array of dimensions that have as memmbers arrays of ranges
+// and builds an array of dimensions that have as memmbers arrays of ranges.
 //
 // Deprecated: Use Subarrays
 func (q *Query) GetRanges() (map[string][]RangeLimits, error) {
@@ -1429,7 +1429,7 @@ func (q *Query) GetRangeNumFromName(dimName string) (*uint64, error) {
 	return &rangeNum, nil
 }
 
-// Buffer returns a slice backed by the underlying c buffer from tiledb
+// Buffer returns a slice backed by the underlying c buffer from tiledb.
 //
 // Deprecated: Use GetDataBuffer
 func (q *Query) Buffer(attributeOrDimension string) (interface{}, error) {
@@ -1578,7 +1578,7 @@ func (q *Query) Buffer(attributeOrDimension string) (interface{}, error) {
 }
 
 // BufferNullable returns a slice backed by the underlying c buffer from tiledb for
-// validities, and values
+// validities, and values.
 //
 // Deprecated: Use GetDataBuffer and GetValidityBuffer
 func (q *Query) BufferNullable(attributeOrDimension string) (interface{}, []uint8, error) {
@@ -1735,9 +1735,9 @@ func (q *Query) BufferNullable(attributeOrDimension string) (interface{}, []uint
 	return buffer, validities, nil
 }
 
-// SetBufferVarUnsafe Sets the buffer for a variable sized attribute to a query
+// SetBufferVarUnsafe sets the buffer for a variable sized attribute to a query.
 // This takes unsafe pointers which is passsed straight to tiledb c_api
-// for advanced usage
+// for advanced usage.
 //
 // Deprecated: Use SetDataBufferUnsafe and SetOffsetsBufferUnsafe
 func (q *Query) SetBufferVarUnsafe(attribute string, offset unsafe.Pointer, offsetSize uint64, buffer unsafe.Pointer, bufferSize uint64) (*uint64, *uint64, error) {
@@ -1771,8 +1771,8 @@ func (q *Query) SetBufferVarUnsafe(attribute string, offset unsafe.Pointer, offs
 	return &offsetSize, &bufferSize, nil
 }
 
-// SetBufferVar Sets the buffer for a variable sized attribute/dimension to a query
-// The buffer must be an initialized slice
+// SetBufferVar sets the buffer for a variable sized attribute/dimension to a query.
+// The buffer must be an initialized slice.
 //
 // Deprecated: Use SetDataBuffer and SetOffsetsBuffer
 func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffer interface{}) (*uint64, *uint64, error) {
@@ -2019,9 +2019,9 @@ func (q *Query) SetBufferVar(attributeOrDimension string, offset []uint64, buffe
 	return &offsetSize, &bufferSize, nil
 }
 
-// SetBufferVarNullableUnsafe Sets the buffer for a variable sized nullable attribute to a query
+// SetBufferVarNullableUnsafe sets the buffer for a variable sized nullable attribute to a query.
 // This takes unsafe pointers which is passsed straight to tiledb c_api
-// for advanced usage
+// for advanced usage.
 //
 // Deprecated: Use SetDataBufferUnsafe and SetOffsetsBufferUnsafe and SetValidityBufferUnsafe
 func (q *Query) SetBufferVarNullableUnsafe(attribute string, offset unsafe.Pointer, offsetSize uint64, buffer unsafe.Pointer, bufferSize uint64, bufferValidity unsafe.Pointer, bufferValiditySize uint64) (*uint64, *uint64, *uint64, error) {
@@ -2067,8 +2067,8 @@ func (q *Query) SetBufferVarNullableUnsafe(attribute string, offset unsafe.Point
 	return &offsetSize, &bufferSize, &bufferValiditySize, nil
 }
 
-// SetBufferVarNullable Sets the buffer for a variable sized nullable attribute/dimension to a query
-// The buffer must be an initialized slice
+// SetBufferVarNullable sets the buffer for a variable sized nullable attribute/dimension to a query.
+// The buffer must be an initialized slice.
 //
 // Deprecated: Use SetDataBuffer and SetOffsetsBuffer and SetValidityBuffer
 func (q *Query) SetBufferVarNullable(attributeOrDimension string, offset []uint64, buffer interface{}, bufferValidity []uint8) (*uint64, *uint64, *uint64, error) {
@@ -2440,7 +2440,7 @@ func (q *Query) ResultBufferElements() (map[string][3]uint64, error) {
 }
 
 // BufferVar returns a slice backed by the underlying c buffer from tiledb for
-// offets and values
+// offsets and values.
 //
 // Deprecated: Use GetDataBuffer and GetOffsetsBuffer
 func (q *Query) BufferVar(attributeOrDimension string) ([]uint64, interface{}, error) {
@@ -2635,7 +2635,7 @@ func (q *Query) BufferVar(attributeOrDimension string) ([]uint64, interface{}, e
 }
 
 // BufferVarNullable returns a slice backed by the underlying c buffer from tiledb for
-// offets, validities, and values
+// offsets, validities, and values.
 //
 // Deprecated: Use GetDataBuffer and GetOffsetsBuffer and GetValidityBuffer
 func (q *Query) BufferVarNullable(attributeOrDimension string) ([]uint64, interface{}, []uint8, error) {
@@ -2801,7 +2801,7 @@ func (q *Query) BufferVarNullable(attributeOrDimension string) ([]uint64, interf
 	return offsets, buffer, validities, nil
 }
 
-// BufferSizeVar returns the size (in num elements) of the backing C buffers for the given variable-length attribute
+// BufferSizeVar returns the size (in num elements) of the backing C buffers for the given variable-length attribute.
 //
 // Deprecated: Use GetExpectedDataBufferLength and GetExpectedValidityBufferLength
 func (q *Query) BufferSizeVar(attributeOrDimension string) (uint64, uint64, error) {
@@ -2891,7 +2891,7 @@ func (q *Query) BufferSizeVar(attributeOrDimension string) (uint64, uint64, erro
 	return offsetNumElements, dataNumElements, nil
 }
 
-// BufferSizeVarNullable returns the size (in num elements) of the backing C buffers for the given variable-length nullable attribute
+// BufferSizeVarNullable returns the size (in num elements) of the backing C buffers for the given variable-length nullable attribute.
 //
 // Deprecated: Use GetExpectedDataBufferLength and GetExpectedValidityBufferLength and GetExpectedOffsetsBufferLength
 func (q *Query) BufferSizeVarNullable(attributeName string) (uint64, uint64, uint64, error) {
@@ -2964,7 +2964,7 @@ func (q *Query) BufferSizeVarNullable(attributeName string) (uint64, uint64, uin
 	return offsetNumElements, dataNumElements, validityNumElements, nil
 }
 
-// BufferSize returns the size (in num elements) of the backing C buffer for the given attribute
+// BufferSize returns the size (in num elements) of the backing C buffer for the given attribute.
 //
 // Deprecated: Use GetExpectedDataBufferLength
 func (q *Query) BufferSize(attributeNameOrDimension string) (uint64, error) {
@@ -3038,7 +3038,7 @@ func (q *Query) BufferSize(attributeNameOrDimension string) (uint64, error) {
 	return dataNumElements, nil
 }
 
-// BufferSizeNullable returns the size (in num elements) of the backing C buffer for the given nullable attribute
+// BufferSizeNullable returns the size (in num elements) of the backing C buffer for the given nullable attribute.
 //
 // Deprecated: Use GetExpectedDataBufferLength and GetExpectedValidityBufferLength
 func (q *Query) BufferSizeNullable(attributeName string) (uint64, uint64, error) {
@@ -3096,7 +3096,7 @@ func (q *Query) BufferSizeNullable(attributeName string) (uint64, uint64, error)
 	return dataNumElements, validityNumElements, nil
 }
 
-// SetLayout sets the layout of the cells to be written or read
+// SetLayout sets the layout of the cells to be written or read.
 func (q *Query) SetLayout(layout Layout) error {
 	ret := C.tiledb_query_set_layout(q.context.tiledbContext, q.tiledbQuery, C.tiledb_layout_t(layout))
 	if ret != C.TILEDB_OK {
@@ -3105,7 +3105,7 @@ func (q *Query) SetLayout(layout Layout) error {
 	return nil
 }
 
-// SetQueryCondition sets a query condition on a read query
+// SetQueryCondition sets a query condition on a read query.
 func (q *Query) SetQueryCondition(cond *QueryCondition) error {
 	if ret := C.tiledb_query_set_condition(q.context.tiledbContext, q.tiledbQuery, cond.cond); ret != C.TILEDB_OK {
 		return fmt.Errorf("Error getting config from query: %s", q.context.LastError())
@@ -3113,7 +3113,7 @@ func (q *Query) SetQueryCondition(cond *QueryCondition) error {
 	return nil
 }
 
-// Finalize Flushes all internal state of a query object and finalizes the
+// Finalize flushes all internal state of a query object and finalizes the
 // query. This is applicable only to global layout writes. It has no effect
 // for any other query type.
 func (q *Query) Finalize() error {
@@ -3155,7 +3155,7 @@ func (q *Query) Submit() error {
 }
 
 /*
-SubmitAsync a TileDB query
+SubmitAsync submits a TileDB query.
 
 Async does not currently support the callback function parameter
 To monitor progress of a query in a non blocking manner the status can be
@@ -3179,7 +3179,7 @@ func (q *Query) SubmitAsync() error {
 	return nil
 }
 
-// Status returns the status of a query
+// Status returns the status of a query.
 func (q *Query) Status() (QueryStatus, error) {
 	var status C.tiledb_query_status_t
 	ret := C.tiledb_query_get_status(q.context.tiledbContext, q.tiledbQuery, &status)
@@ -3189,7 +3189,7 @@ func (q *Query) Status() (QueryStatus, error) {
 	return QueryStatus(status), nil
 }
 
-// Type returns the query type
+// Type returns the query type.
 func (q *Query) Type() (QueryType, error) {
 	var queryType C.tiledb_query_type_t
 	ret := C.tiledb_query_get_type(q.context.tiledbContext, q.tiledbQuery, &queryType)
@@ -3199,8 +3199,8 @@ func (q *Query) Type() (QueryType, error) {
 	return QueryType(queryType), nil
 }
 
-// HasResults Returns true if the query has results
-// Applicable only to read queries (it returns false for write queries)
+// HasResults returns true if the query has results.
+// Applicable only to read queries (it returns false for write queries).
 func (q *Query) HasResults() (bool, error) {
 	var hasResults C.int32_t
 	ret := C.tiledb_query_has_results(q.context.tiledbContext, q.tiledbQuery, &hasResults)
@@ -3210,7 +3210,7 @@ func (q *Query) HasResults() (bool, error) {
 	return int(hasResults) == 1, nil
 }
 
-// EstResultSize gets the query estimated result size in bytes for an attribute
+// EstResultSize gets the query estimated result size in bytes for an attribute.
 func (q *Query) EstResultSize(attributeName string) (*uint64, error) {
 	cAttributeName := C.CString(attributeName)
 	defer C.free(unsafe.Pointer(cAttributeName))
@@ -3229,7 +3229,7 @@ func (q *Query) EstResultSize(attributeName string) (*uint64, error) {
 	return &size, nil
 }
 
-// EstResultSizeVar gets the query estimated result size in bytes for a var sized attribute
+// EstResultSizeVar gets the query estimated result size in bytes for a var sized attribute.
 func (q *Query) EstResultSizeVar(attributeName string) (*uint64, *uint64, error) {
 	cAttributeName := C.CString(attributeName)
 	defer C.free(unsafe.Pointer(cAttributeName))
@@ -3249,7 +3249,7 @@ func (q *Query) EstResultSizeVar(attributeName string) (*uint64, *uint64, error)
 	return &sizeOff, &sizeVal, nil
 }
 
-// EstResultSizeNullable gets the query estimated result size in bytes for an attribute
+// EstResultSizeNullable gets the query estimated result size in bytes for an attribute.
 func (q *Query) EstResultSizeNullable(attributeName string) (*uint64, *uint64, error) {
 	cAttributeName := C.CString(attributeName)
 	defer C.free(unsafe.Pointer(cAttributeName))
@@ -3269,7 +3269,7 @@ func (q *Query) EstResultSizeNullable(attributeName string) (*uint64, *uint64, e
 	return &size, &sizeValidity, nil
 }
 
-// EstResultSizeVarNullable gets the query estimated result size in bytes for a var sized attribute
+// EstResultSizeVarNullable gets the query estimated result size in bytes for a var sized attribute.
 func (q *Query) EstResultSizeVarNullable(attributeName string) (*uint64, *uint64, *uint64, error) {
 	cAttributeName := C.CString(attributeName)
 	defer C.free(unsafe.Pointer(cAttributeName))
@@ -3291,8 +3291,8 @@ func (q *Query) EstResultSizeVarNullable(attributeName string) (*uint64, *uint64
 }
 
 /*
-EstimateBufferElements compute an upper bound on the buffer elements needed to
-read a subarray or range(s)
+EstimateBufferElements computes an upper bound on the buffer elements needed to
+read a subarray or range(s).
 Returns a map of attribute or dimension name to the maximum
 number of elements that can be read in the given subarray. For each attribute,
 a pair of numbers are returned. The first, for variable-length attributes, is
@@ -3437,7 +3437,7 @@ func (q *Query) EstimateBufferElements() (map[string][3]uint64, error) {
 	return ret, nil
 }
 
-// GetFragmentNum returns num of fragments
+// GetFragmentNum returns num of fragments.
 func (q *Query) GetFragmentNum() (*uint32, error) {
 	var num uint32
 
@@ -3452,7 +3452,7 @@ func (q *Query) GetFragmentNum() (*uint32, error) {
 	return &num, nil
 }
 
-// GetFragmentURI returns uri for a fragment
+// GetFragmentURI returns the uri for a fragment.
 func (q *Query) GetFragmentURI(num uint64) (*string, error) {
 	var cURI *C.char
 
@@ -3471,7 +3471,7 @@ func (q *Query) GetFragmentURI(num uint64) (*string, error) {
 
 }
 
-// GetFragmentTimestampRange returns timestamp range for a fragment
+// GetFragmentTimestampRange returns timestamp range for a fragment.
 func (q *Query) GetFragmentTimestampRange(num uint64) (*uint64, *uint64, error) {
 	var t1, t2 uint64
 
@@ -3488,7 +3488,7 @@ func (q *Query) GetFragmentTimestampRange(num uint64) (*uint64, *uint64, error) 
 	return &t1, &t2, nil
 }
 
-// Array returns array used by query
+// Array returns array used by query.
 func (q *Query) Array() (*Array, error) {
 	array := Array{context: q.context}
 	ret := C.tiledb_query_get_array(q.context.tiledbContext, q.tiledbQuery, &array.tiledbArray)
@@ -3499,7 +3499,7 @@ func (q *Query) Array() (*Array, error) {
 	return &array, nil
 }
 
-// SetConfig config on query
+// SetConfig sets the config of query.
 func (q *Query) SetConfig(config *Config) error {
 	q.config = config
 
@@ -3511,7 +3511,7 @@ func (q *Query) SetConfig(config *Config) error {
 	return nil
 }
 
-// Config get config on query
+// Config gets the config of query.
 func (q *Query) Config() (*Config, error) {
 	config := Config{}
 	ret := C.tiledb_query_get_config(q.context.tiledbContext, q.tiledbQuery, &config.tiledbConfig)
@@ -3527,7 +3527,7 @@ func (q *Query) Config() (*Config, error) {
 	return &config, nil
 }
 
-// Stats gets stats for a query as json bytes
+// Stats gets stats for a query as json bytes.
 func (q *Query) Stats() ([]byte, error) {
 	var stats *C.char
 	if ret := C.tiledb_query_get_stats(q.context.tiledbContext, q.tiledbQuery, &stats); ret != C.TILEDB_OK {
@@ -3558,8 +3558,8 @@ func (q *Query) setResultBufferPointer(attribute string, pos int, ptr *uint64) {
 	q.resultBufferElements[attribute] = ptrs
 }
 
-// SetDataBufferUnsafe sets the buffer for a fixed-sized attribute to a query
-// This takes an unsafe pointer which is passsed straight to tiledb c_api for advanced usage
+// SetDataBufferUnsafe sets the buffer for a fixed-sized attribute to a query.
+// This takes an unsafe pointer which is passsed straight to tiledb c_api for advanced usage.
 func (q *Query) SetDataBufferUnsafe(attribute string, buffer unsafe.Pointer, bufferSize uint64) (*uint64, error) {
 	q.bufferMutex.Lock()
 	defer q.bufferMutex.Unlock()
@@ -3583,7 +3583,7 @@ func (q *Query) SetDataBufferUnsafe(attribute string, buffer unsafe.Pointer, buf
 	return &bufferSize, nil
 }
 
-// SetDataBuffer sets the buffer for a fixed-sized attribute to a query
+// SetDataBuffer sets the buffer for a fixed-sized attribute to a query.
 func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (*uint64, error) {
 	bufferReflectType := reflect.TypeOf(buffer)
 	bufferReflectValue := reflect.ValueOf(buffer)
@@ -3814,13 +3814,13 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 
 }
 
-// GetDataBuffer retrieves the data buffer of an attribute/dimension
+// GetDataBuffer retrieves the data buffer of an attribute/dimension.
 func (q *Query) GetDataBuffer(attributeOrDimension string) (interface{}, error) {
 	buf, _, err := q.getDataBufferAndSize(attributeOrDimension)
 	return buf, err
 }
 
-// GetExpectedDataBufferLength retrieves the size of the data buffer of an attribute/dimension
+// GetExpectedDataBufferLength retrieves the size of the data buffer of an attribute/dimension.
 // This is equivalent to calling GetDataBuffer and taking the length of the returned buffer except
 // in the case of a deserialized server side read query where GetDataBuffer returns nil.
 // Serialization of server side read queries serializes
@@ -4004,8 +4004,8 @@ func (q *Query) getDataBufferAndSize(attributeOrDimension string) (interface{}, 
 	return buffer, dataNumElements, nil
 }
 
-// SetValidityBufferUnsafe sets the validity buffer for nullable attribute/dimension
-// This takes an unsafe pointer which is passed straight to tiledb c_api for advanced usage
+// SetValidityBufferUnsafe sets the validity buffer for nullable attribute/dimension.
+// This takes an unsafe pointer which is passed straight to tiledb c_api for advanced usage.
 func (q *Query) SetValidityBufferUnsafe(attribute string, buffer unsafe.Pointer, bufferSize uint64) (*uint64, error) {
 	q.bufferMutex.Lock()
 	defer q.bufferMutex.Unlock()
@@ -4029,7 +4029,7 @@ func (q *Query) SetValidityBufferUnsafe(attribute string, buffer unsafe.Pointer,
 	return &bufferSize, nil
 }
 
-// SetValidityBuffer sets the validity buffer for nullable attribute/dimension
+// SetValidityBuffer sets the validity buffer for nullable attribute/dimension.
 func (q *Query) SetValidityBuffer(attributeOrDimension string, buffer []uint8) (*uint64, error) {
 	q.bufferMutex.Lock()
 	defer q.bufferMutex.Unlock()
@@ -4058,13 +4058,13 @@ func (q *Query) SetValidityBuffer(attributeOrDimension string, buffer []uint8) (
 	return &bufferSize, nil
 }
 
-// GetValidityBuffer retrieves the validity buffer for a nullable attribute/dimension
+// GetValidityBuffer retrieves the validity buffer for a nullable attribute/dimension.
 func (q *Query) GetValidityBuffer(attributeOrDimension string) ([]uint8, error) {
 	buf, _, err := q.getValidityBufferAndSize(attributeOrDimension)
 	return buf, err
 }
 
-// GetExpectedValidityBufferLength retrieves the size of the validity buffer for a nullable attribute/dimension
+// GetExpectedValidityBufferLength retrieves the size of the validity buffer for a nullable attribute/dimension.
 // This is equivalent to calling GetValidityBuffer and taking the length of the returned buffer except
 // in the case of a deserialized read query where GetValidityBuffer returns nil. Serialization of read queries serializes
 // only lengths not buffers. The caller should use this method to get the size and allocate a buffer for the read query.
@@ -4106,8 +4106,8 @@ func (q *Query) getValidityBufferAndSize(attributeOrDimension string) ([]uint8, 
 	return validities, validityNumElements, nil
 }
 
-// SetOffsetsBufferUnsafe sets the offset buffer for a var-sized attribute/dimension
-// This takes an unsafe pointer which is passed straight to tiledb c_api for advanced usage
+// SetOffsetsBufferUnsafe sets the offset buffer for a var-sized attribute/dimension.
+// This takes an unsafe pointer which is passed straight to tiledb c_api for advanced usage.
 func (q *Query) SetOffsetsBufferUnsafe(attribute string, offset unsafe.Pointer, offsetSize uint64) (*uint64, error) {
 	q.bufferMutex.Lock()
 	defer q.bufferMutex.Unlock()
@@ -4131,7 +4131,7 @@ func (q *Query) SetOffsetsBufferUnsafe(attribute string, offset unsafe.Pointer, 
 	return &offsetSize, nil
 }
 
-// SetOffsetsBuffer sets the offset buffer for a var-sized attribute/dimension
+// SetOffsetsBuffer sets the offset buffer for a var-sized attribute/dimension.
 func (q *Query) SetOffsetsBuffer(attributeOrDimension string, offset []uint64) (*uint64, error) {
 	q.bufferMutex.Lock()
 	defer q.bufferMutex.Unlock()
@@ -4160,13 +4160,13 @@ func (q *Query) SetOffsetsBuffer(attributeOrDimension string, offset []uint64) (
 	return &offsetSize, nil
 }
 
-// GetOffsetsBuffer retrieves the offset buffer for a var-sized attribute/dimension
+// GetOffsetsBuffer retrieves the offset buffer for a var-sized attribute/dimension.
 func (q *Query) GetOffsetsBuffer(attributeOrDimension string) ([]uint64, error) {
 	buf, _, err := q.getOffsetsBufferAndSize(attributeOrDimension)
 	return buf, err
 }
 
-// GetExpectedOffsetsBufferLength retrieves the size of the offset buffer for a var-sized attribute/dimension
+// GetExpectedOffsetsBufferLength retrieves the size of the offset buffer for a var-sized attribute/dimension.
 // This is equivalent to calling GetOffsetsBuffer and taking the length of the returned buffer except
 // in the case of a deserialized read query where GetOffsetsBuffer returns nil. Serialization of read queries serializes
 // only lengths not buffers. The caller should use this method to get the size and allocate a buffer for the read query.
@@ -4208,7 +4208,7 @@ func (q *Query) getOffsetsBufferAndSize(attributeOrDimension string) ([]uint64, 
 	return offsets, offsetNumElements, nil
 }
 
-// SetSubarray sets the subarray for the query
+// SetSubarray sets the subarray for the query.
 func (q *Query) SetSubarray(sa *Subarray) error {
 	ret := C.tiledb_query_set_subarray_t(q.context.tiledbContext, q.tiledbQuery, sa.subarray)
 	if ret != C.TILEDB_OK {
@@ -4217,7 +4217,7 @@ func (q *Query) SetSubarray(sa *Subarray) error {
 	return nil
 }
 
-// GetSubarray get the subarray set on the query
+// GetSubarray gets the subarray set on the query.
 func (q *Query) GetSubarray() (*Subarray, error) {
 	var sa *C.tiledb_subarray_t
 

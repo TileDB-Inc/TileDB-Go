@@ -10,7 +10,7 @@ package tiledb
 import "C"
 import "fmt"
 
-// HasDimensionLabel Checks whether the array schema has a dimension label of the given name.
+// HasDimensionLabel checks whether the array schema has a dimension label of the given name.
 func (a *ArraySchema) HasDimensionLabel(name string) (bool, error) {
 	return false, nil
 }

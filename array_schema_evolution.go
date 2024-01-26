@@ -73,7 +73,7 @@ func (ase *ArraySchemaEvolution) AddAttribute(attribute *Attribute) error {
 	return nil
 }
 
-// DropAttribute drops an attribute to an array schema evolution
+// DropAttribute drops an attribute to an array schema evolution.
 func (ase *ArraySchemaEvolution) DropAttribute(name string) error {
 	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
@@ -88,7 +88,7 @@ func (ase *ArraySchemaEvolution) DropAttribute(name string) error {
 	return nil
 }
 
-// Evolve evolves array schema of an array
+// Evolve evolves array schema of an array.
 func (ase *ArraySchemaEvolution) Evolve(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))

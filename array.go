@@ -36,7 +36,7 @@ type ArrayMetadata struct {
 	Value    interface{}
 }
 
-// MarshalJSON implements the Marshaler interface for ArrayMetadata
+// MarshalJSON implements the Marshaler interface for ArrayMetadata.
 func (a ArrayMetadata) MarshalJSON() ([]byte, error) {
 	switch v := a.Value.(type) {
 	case []byte:
@@ -52,7 +52,7 @@ type NonEmptyDomain struct {
 	Bounds        interface{}
 }
 
-// NewArray alloc a new array
+// NewArray allocates a new array.
 func NewArray(tdbCtx *Context, uri string) (*Array, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -78,12 +78,12 @@ func (a *Array) Free() {
 	}
 }
 
-// Context exposes the internal TileDB context used to initialize the array
+// Context exposes the internal TileDB context used to initialize the array.
 func (a *Array) Context() *Context {
 	return a.context
 }
 
-// ArrayOpenOptions define the flexibile parameters in which arrays can be opened with.
+// ArrayOpenOptions defines the flexible parameters in which arrays can be opened with.
 type ArrayOpenOption func(tdbArray *Array) error
 
 // WithEndTimestamp sets the subsequent Open call to use the end_timestamp of the passed value.
@@ -109,14 +109,14 @@ func WithStartTimestamp(startTimestamp uint64) ArrayOpenOption {
 }
 
 /*
-	Open the array with options. The array is opened using a query type as input.
-	This is to indicate that queries created for this Array object will inherit
-	the query type. In other words, Array objects are opened to receive only one
-	type of query. They can always be closed and be re-opened with another query
-	type. Also there may be many different Array objects created and opened with
-	different query types. For instance, one may create and open an array object
-	array_read for reads and another one array_write for writes, and interleave
-	creation and submission of queries for both these array objects.
+OpenWithOptions opens the array with options. The array is opened using a query type as input.
+This is to indicate that queries created for this Array object will inherit
+the query type. In other words, Array objects are opened to receive only one
+type of query. They can always be closed and be re-opened with another query
+type. Also there may be many different Array objects created and opened with
+different query types. For instance, one may create and open an array object
+array_read for reads and another one array_write for writes, and interleave
+creation and submission of queries for both these array objects.
 */
 func (a *Array) OpenWithOptions(queryType QueryType, opts ...ArrayOpenOption) error {
 	for _, opt := range opts {
@@ -165,7 +165,7 @@ func (a *Array) Reopen() error {
 	return nil
 }
 
-// Close a tiledb array, this is called on garbage collection automatically
+// Close closes a tiledb array. This is automatically called on garbage collection.
 func (a *Array) Close() error {
 	ret := C.tiledb_array_close(a.context.tiledbContext, a.tiledbArray)
 	if ret != C.TILEDB_OK {
@@ -174,7 +174,7 @@ func (a *Array) Close() error {
 	return nil
 }
 
-// Create a new TileDB array given an input schema.
+// Create creates a new TileDB array given an input schema.
 func (a *Array) Create(arraySchema *ArraySchema) error {
 	curi := C.CString(a.uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -185,7 +185,7 @@ func (a *Array) Create(arraySchema *ArraySchema) error {
 	return nil
 }
 
-// Consolidate Consolidates the fragments of an array into a single fragment.
+// Consolidate consolidates the fragments of an array into a single fragment.
 // You must first finalize all queries to the array before consolidation can
 // begin (as consolidation temporarily acquires an exclusive lock on the array).
 func (a *Array) Consolidate(config *Config) error {
@@ -199,12 +199,12 @@ func (a *Array) Consolidate(config *Config) error {
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error consolidating tiledb array: %s", a.context.LastError())
 	}
-	
+
 	runtime.KeepAlive(config)
 	return nil
 }
 
-// Vacuum cleans up the array, such as consolidated fragments and array metadata
+// Vacuum cleans up the array, such as consolidated fragments and array metadata.
 func (a *Array) Vacuum(config *Config) error {
 	if config == nil {
 		return fmt.Errorf("Config must not be nil for Vacuum")
@@ -216,12 +216,12 @@ func (a *Array) Vacuum(config *Config) error {
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error vacuumimg tiledb array: %s", a.context.LastError())
 	}
-	
+
 	runtime.KeepAlive(config)
 	return nil
 }
 
-// Schema returns the ArraySchema for the array
+// Schema returns the ArraySchema for the array.
 func (a *Array) Schema() (*ArraySchema, error) {
 	arraySchema := ArraySchema{context: a.context}
 	ret := C.tiledb_array_get_schema(a.context.tiledbContext, a.tiledbArray, &arraySchema.tiledbArraySchema)
@@ -232,7 +232,7 @@ func (a *Array) Schema() (*ArraySchema, error) {
 	return &arraySchema, nil
 }
 
-// QueryType return the current query type of an open array
+// QueryType returns the current query type of an open array.
 func (a *Array) QueryType() (QueryType, error) {
 	var queryType C.tiledb_query_type_t
 	ret := C.tiledb_array_get_query_type(a.context.tiledbContext, a.tiledbArray, &queryType)
@@ -242,7 +242,7 @@ func (a *Array) QueryType() (QueryType, error) {
 	return QueryType(queryType), nil
 }
 
-// OpenStartTimestamp returns the current start_timestamp value of an open array
+// OpenStartTimestamp returns the current start_timestamp value of an open array.
 func (a *Array) OpenStartTimestamp() (uint64, error) {
 	var start C.uint64_t
 	ret := C.tiledb_array_get_open_timestamp_start(a.context.tiledbContext, a.tiledbArray, &start)
@@ -252,7 +252,7 @@ func (a *Array) OpenStartTimestamp() (uint64, error) {
 	return uint64(start), nil
 }
 
-// OpenEndTimestamp returns the current end_timestamp value of an open array
+// OpenEndTimestamp returns the current end_timestamp value of an open array.
 func (a *Array) OpenEndTimestamp() (uint64, error) {
 	var end C.uint64_t
 	ret := C.tiledb_array_get_open_timestamp_end(a.context.tiledbContext, a.tiledbArray, &end)
@@ -262,7 +262,7 @@ func (a *Array) OpenEndTimestamp() (uint64, error) {
 	return uint64(end), nil
 }
 
-// getNonEmptyDomainForDim creates a NonEmptyDomain from a generic dimension-typed slice
+// getNonEmptyDomainForDim creates a NonEmptyDomain from a generic dimension-typed slice.
 func getNonEmptyDomainForDim(dimension *Dimension, bounds interface{}) (*NonEmptyDomain, error) {
 	dimensionType, err := dimension.Type()
 	if err != nil {
@@ -316,8 +316,8 @@ func makeNonEmptyDomain[T any](name string, bounds []T) (*NonEmptyDomain, error)
 	return &NonEmptyDomain{DimensionName: name, Bounds: []T{bounds[0], bounds[1]}}, nil
 }
 
-// NonEmptyDomain retrieves the non-empty domain from an array
-// This returns the bounding coordinates for each dimension
+// NonEmptyDomain retrieves the non-empty domain from an array.
+// This returns the bounding coordinates for each dimension.
 func (a *Array) NonEmptyDomain() ([]NonEmptyDomain, bool, error) {
 	schema, err := a.Schema()
 	if err != nil {
@@ -384,7 +384,7 @@ func (a *Array) NonEmptyDomain() ([]NonEmptyDomain, bool, error) {
 
 // NonEmptyDomainMap returns a map[string]interface{} where key is the
 // dimension name and value is the non empty domain for the given dimension or
-// the empty interface. It covers both var-sized and non-var-sized dimensions
+// the empty interface. It covers both var-sized and non-var-sized dimensions.
 func (a *Array) NonEmptyDomainMap() (map[string]interface{}, error) {
 	schema, err := a.Schema()
 	if err != nil {
@@ -472,7 +472,7 @@ func (a *Array) NonEmptyDomainMap() (map[string]interface{}, error) {
 
 // NonEmptyDomainVarFromName retrieves the non-empty domain from an array for a
 // given var-sized dimension name. Supports only TILEDB_STRING_ASCII type
-// Returns the bounding coordinates for the dimension
+// Returns the bounding coordinates for the dimension.
 func (a *Array) NonEmptyDomainVarFromName(dimName string) (*NonEmptyDomain, bool, error) {
 
 	schema, err := a.Schema()
@@ -571,7 +571,7 @@ func (a *Array) NonEmptyDomainVarFromName(dimName string) (*NonEmptyDomain, bool
 
 // NonEmptyDomainVarFromIndex retrieves the non-empty domain from an array for a
 // given var-sized dimension index. Supports only TILEDB_STRING_ASCII type
-// Returns the bounding coordinates for the dimension
+// Returns the bounding coordinates for the dimension.
 func (a *Array) NonEmptyDomainVarFromIndex(dimIdx uint) (*NonEmptyDomain, bool, error) {
 
 	schema, err := a.Schema()
@@ -725,7 +725,7 @@ func (a Array) GetNonEmptyDomainSliceFromName(dimName string) (*Dimension, inter
 
 // NonEmptyDomainFromIndex retrieves the non-empty domain from an array for a
 // given fixed-sized dimension index.
-// Returns the bounding coordinates for the dimension
+// Returns the bounding coordinates for the dimension.
 func (a *Array) NonEmptyDomainFromIndex(dimIdx uint) (*NonEmptyDomain, bool, error) {
 	dimension, tmpDimension, tmpDimensionPtr, err := a.GetNonEmptyDomainSliceFromIndex(dimIdx)
 	if err != nil {
@@ -755,8 +755,8 @@ func (a *Array) NonEmptyDomainFromIndex(dimIdx uint) (*NonEmptyDomain, bool, err
 }
 
 // NonEmptyDomainFromName retrieves the non-empty domain from an array for a
-// given fixed-sized dimension name
-// Returns the bounding coordinates for the dimension
+// given fixed-sized dimension name.
+// Returns the bounding coordinates for the dimension.
 func (a *Array) NonEmptyDomainFromName(dimName string) (*NonEmptyDomain, bool, error) {
 	dimension, tmpDimension, tmpDimensionPtr, err := a.GetNonEmptyDomainSliceFromName(dimName)
 	if err != nil {
@@ -788,7 +788,7 @@ func (a *Array) NonEmptyDomainFromName(dimName string) (*NonEmptyDomain, bool, e
 	return nonEmptyDomain, false, nil
 }
 
-// URI returns the array's uri
+// URI returns the array's uri.
 func (a *Array) URI() (string, error) {
 	var curi *C.char
 	C.tiledb_array_get_uri(a.context.tiledbContext, a.tiledbArray, &curi)
@@ -799,7 +799,7 @@ func (a *Array) URI() (string, error) {
 	return uri, nil
 }
 
-// PutCharMetadata adds char metadata to array
+// PutCharMetadata adds char metadata to the array.
 func (a *Array) PutCharMetadata(key string, charData string) error {
 	ckey := C.CString(key)
 	defer C.free(unsafe.Pointer(ckey))
@@ -976,7 +976,7 @@ func (a *Array) GetMetadataFromIndex(index uint64) (*ArrayMetadata, error) {
 // error out.
 // limit parameter limits the number of values returned if string or array
 // This is helpful for pushdown of limitting metadata. If nil value is returned
-// in full
+// in full.
 func (a *Array) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*ArrayMetadata, error) {
 	var cKey *C.char
 
@@ -1019,17 +1019,17 @@ func (a *Array) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 
 // GetMetadataMap returns a map[string]*ArrayMetadata where key is the key of
 // each metadata added and value is an ArrayMetadata struct. The map contains
-// all array metadata previously added
+// all array metadata previously added.
 func (a *Array) GetMetadataMap() (map[string]*ArrayMetadata, error) {
 	return a.GetMetadataMapWithValueLimit(nil)
 }
 
 // GetMetadataMapWithValueLimit returns a map[string]*ArrayMetadata where key is the key of
 // each metadata added and value is an ArrayMetadata struct. The map contains
-// all array metadata previously added
-// limit parameter limits the number of values returned if string or array
-// This is helpful for pushdown of limitting metadata. If nil value is returned
-// in full
+// all array metadata previously added.
+// The limit parameter limits the number of values returned if string or array.
+// This is helpful for pushdown of limitting metadata. If nil, value is returned
+// in full.
 func (a *Array) GetMetadataMapWithValueLimit(limit *uint) (map[string]*ArrayMetadata, error) {
 	metadataMap := make(map[string]*ArrayMetadata)
 
@@ -1050,7 +1050,7 @@ func (a *Array) GetMetadataMapWithValueLimit(limit *uint) (map[string]*ArrayMeta
 	return metadataMap, nil
 }
 
-// SetConfig config on query
+// SetConfig sets the array config.
 func (a *Array) SetConfig(config *Config) error {
 	a.config = config
 
@@ -1062,7 +1062,7 @@ func (a *Array) SetConfig(config *Config) error {
 	return nil
 }
 
-// Config get config on query
+// Config gets the array config.
 func (a *Array) Config() (*Config, error) {
 	config := Config{}
 	ret := C.tiledb_array_get_config(a.context.tiledbContext, a.tiledbArray, &config.tiledbConfig)
@@ -1079,7 +1079,7 @@ func (a *Array) Config() (*Config, error) {
 	return &config, nil
 }
 
-// DeleteFragments delete the range of fragments from startTimestamp to endTimestamp. The array needs to be opened modify exclusive.
+// DeleteFragments deletes the range of fragments from startTimestamp to endTimestamp. The array needs to be opened modify exclusive.
 // Deprecated: Use the module DeleteFragments
 func (a *Array) DeleteFragments(startTimestamp, endTimestamp uint64) error {
 	curi := C.CString(a.uri)
@@ -1094,7 +1094,7 @@ func (a *Array) DeleteFragments(startTimestamp, endTimestamp uint64) error {
 	return nil
 }
 
-// DeleteFragments deletes the range of fragments from startTimestamp to endTimestamp
+// DeleteFragments deletes the range of fragments from startTimestamp to endTimestamp.
 func DeleteFragments(tdbCtx *Context, uri string, startTimestamp, endTimestamp uint64) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -1108,7 +1108,7 @@ func DeleteFragments(tdbCtx *Context, uri string, startTimestamp, endTimestamp u
 	return nil
 }
 
-// DeleteFragmentsList deletes the fragments of the list
+// DeleteFragmentsList deletes the fragments of the list.
 func DeleteFragmentsList(tdbCtx *Context, uri string, fragmentURIs []string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))

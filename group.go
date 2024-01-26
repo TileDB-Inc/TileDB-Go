@@ -14,8 +14,8 @@ import (
 )
 
 /*
-   	
-   	
+
+
 	#include <tiledb/tiledb_experimental.h>
 	#include <tiledb/tiledb_serialization.h>
 	#include <stdlib.h>
@@ -30,7 +30,7 @@ type Group struct {
 	config  *Config
 }
 
-// NewGroup allocates an embedded group
+// NewGroup allocates an embedded group.
 func NewGroup(tdbCtx *Context, uri string) (*Group, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -44,7 +44,7 @@ func NewGroup(tdbCtx *Context, uri string) (*Group, error) {
 	return &group, nil
 }
 
-// Deserialize deserializes the group from the given buffer
+// Deserialize deserializes the group from the given buffer.
 func (g *Group) Deserialize(buffer *Buffer, serializationType SerializationType, clientSide bool) error {
 	var cClientSide C.int32_t
 	if clientSide {
@@ -71,7 +71,7 @@ func (g *Group) Deserialize(buffer *Buffer, serializationType SerializationType,
 	return nil
 }
 
-// Create a new TileDB group
+// Create creates a new TileDB group.
 func (g *Group) Create() error {
 	curi := C.CString(g.uri)
 	defer C.free(unsafe.Pointer(curi))

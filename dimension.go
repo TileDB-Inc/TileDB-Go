@@ -23,7 +23,7 @@ type Dimension struct {
 	context         *Context
 }
 
-// NewDimension alloc a new dimension
+// NewDimension allocates a new dimension.
 func NewDimension(context *Context, name string, datatype Datatype, domain interface{}, extent interface{}) (*Dimension, error) {
 	dimension := Dimension{context: context}
 	cname := C.CString(name)
@@ -242,7 +242,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 	return &dimension, nil
 }
 
-// NewStringDimension alloc a new string dimension
+// NewStringDimension allocates a new string dimension.
 func NewStringDimension(context *Context, name string) (*Dimension, error) {
 	dimension := Dimension{context: context}
 	cname := C.CString(name)
@@ -273,12 +273,12 @@ func (d *Dimension) Free() {
 	}
 }
 
-// Context exposes the internal TileDB context used to initialize the dimension
+// Context exposes the internal TileDB context used to initialize the dimension.
 func (d *Dimension) Context() *Context {
 	return d.context
 }
 
-// SetFilterList sets the dimension filterList
+// SetFilterList sets the dimension filterList.
 func (d *Dimension) SetFilterList(filterlist *FilterList) error {
 	ret := C.tiledb_dimension_set_filter_list(d.context.tiledbContext, d.tiledbDimension, filterlist.tiledbFilterList)
 	if ret != C.TILEDB_OK {
@@ -287,7 +287,7 @@ func (d *Dimension) SetFilterList(filterlist *FilterList) error {
 	return nil
 }
 
-// FilterList returns a copy of the filter list for attribute
+// FilterList returns a copy of the filter list for attribute.
 func (d *Dimension) FilterList() (*FilterList, error) {
 	filterList := FilterList{context: d.context}
 	ret := C.tiledb_dimension_get_filter_list(d.context.tiledbContext, d.tiledbDimension, &filterList.tiledbFilterList)
@@ -299,7 +299,7 @@ func (d *Dimension) FilterList() (*FilterList, error) {
 	return &filterList, nil
 }
 
-// SetCellValNum Sets the number of values per cell for a dimension.
+// SetCellValNum sets the number of values per cell for a dimension.
 // If this is not used, the default is `1`.
 // This is inferred from the type parameter of the NewDimension
 // function, but can also be set manually.
@@ -312,7 +312,7 @@ func (d *Dimension) SetCellValNum(val uint32) error {
 	return nil
 }
 
-// CellValNum returns number of values of one cell on this attribute.
+// CellValNum returns the number of values of one cell on this attribute.
 // For variable-sized attributes returns TILEDB_VAR_NUM.
 func (d *Dimension) CellValNum() (uint32, error) {
 	var cellValNum C.uint32_t
@@ -324,7 +324,7 @@ func (d *Dimension) CellValNum() (uint32, error) {
 	return uint32(cellValNum), nil
 }
 
-// Name returns the name of the dimension
+// Name returns the name of the dimension.
 func (d *Dimension) Name() (string, error) {
 	var cName *C.char
 	ret := C.tiledb_dimension_get_name(d.context.tiledbContext, d.tiledbDimension, &cName)
@@ -335,7 +335,7 @@ func (d *Dimension) Name() (string, error) {
 	return C.GoString(cName), nil
 }
 
-// Type returns the type of the dimension
+// Type returns the type of the dimension.
 func (d *Dimension) Type() (Datatype, error) {
 	var cType C.tiledb_datatype_t
 	ret := C.tiledb_dimension_get_type(d.context.tiledbContext, d.tiledbDimension, &cType)
@@ -346,7 +346,7 @@ func (d *Dimension) Type() (Datatype, error) {
 	return Datatype(cType), nil
 }
 
-// Domain returns the dimension's domain
+// Domain returns the dimension's domain.
 func (d *Dimension) Domain() (interface{}, error) {
 	datatype, err := d.Type()
 	if err != nil {
@@ -480,7 +480,7 @@ func (d *Dimension) Domain() (interface{}, error) {
 	return domain, nil
 }
 
-// Extent returns the dimension's extent
+// Extent returns the dimension's extent.
 func (d *Dimension) Extent() (interface{}, error) {
 	datatype, err := d.Type()
 	if err != nil {
@@ -557,7 +557,7 @@ func (d *Dimension) Extent() (interface{}, error) {
 	return extent, nil
 }
 
-// DumpSTDOUT Dumps the dimension in ASCII format to stdout
+// DumpSTDOUT dumps the dimension in ASCII format to stdout.
 func (d *Dimension) DumpSTDOUT() error {
 	ret := C.tiledb_dimension_dump(d.context.tiledbContext, d.tiledbDimension, C.stdout)
 	if ret != C.TILEDB_OK {
@@ -566,7 +566,7 @@ func (d *Dimension) DumpSTDOUT() error {
 	return nil
 }
 
-// Dump Dumps the dimension in ASCII format in the selected output.
+// Dump dumps the dimension in ASCII format to the given path.
 func (d *Dimension) Dump(path string) error {
 
 	if _, err := os.Stat(path); err == nil {

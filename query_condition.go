@@ -17,7 +17,7 @@ type QueryCondition struct {
 	cond    *C.tiledb_query_condition_t
 }
 
-// NewQueryCondition allocates and initializes a new query condition
+// NewQueryCondition allocates and initializes a new query condition.
 func NewQueryCondition(tdbCtx *Context, attributeName string, op QueryConditionOp, value interface{}) (*QueryCondition, error) {
 	qc := QueryCondition{context: tdbCtx}
 	if ret := C.tiledb_query_condition_alloc(qc.context.tiledbContext, &qc.cond); ret != C.TILEDB_OK {
@@ -33,7 +33,7 @@ func NewQueryCondition(tdbCtx *Context, attributeName string, op QueryConditionO
 }
 
 // NewQueryConditionCombination combines two query conditions to create a new query condition. The underlying conditions
-// are unchanged
+// are unchanged.
 func NewQueryConditionCombination(tdbCtx *Context, left *QueryCondition, op QueryConditionCombinationOp, right *QueryCondition) (*QueryCondition, error) {
 	qc := QueryCondition{context: tdbCtx}
 	if ret := C.tiledb_query_condition_combine(qc.context.tiledbContext, left.cond, right.cond, C.tiledb_query_condition_combination_op_t(op), &qc.cond); ret != C.TILEDB_OK {
@@ -44,8 +44,8 @@ func NewQueryConditionCombination(tdbCtx *Context, left *QueryCondition, op Quer
 	return &qc, nil
 }
 
-// NewQueryConditionNegated return the negation of the query condition. The initial condition
-// is unchanged
+// NewQueryConditionNegated returns the negation of the query condition. The initial condition
+// is unchanged.
 func NewQueryConditionNegated(tdbCtx *Context, qc *QueryCondition) (*QueryCondition, error) {
 	nqc := QueryCondition{context: tdbCtx}
 	if ret := C.tiledb_query_condition_negate(qc.context.tiledbContext, qc.cond, &nqc.cond); ret != C.TILEDB_OK {
