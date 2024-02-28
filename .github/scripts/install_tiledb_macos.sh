@@ -1,3 +1,4 @@
 set -e -x
-curl --location -o tiledb.tar.gz https://github.com/TileDB-Inc/TileDB/releases/download/2.19.1/tiledb-macos-x86_64-2.19.1-29ceb3e7.tar.gz \
+source "$(dirname $0)/tiledb-version.sh"
+curl --location -o tiledb.tar.gz https://github.com/TileDB-Inc/TileDB/releases/download/${TILEDB_VERSION}/tiledb-macos-x86_64-${TILEDB_VERSION}-${COMMIT_ID}.tar.gz \
 && sudo tar -C /usr/local -xf tiledb.tar.gz
