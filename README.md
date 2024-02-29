@@ -81,6 +81,7 @@ as such the below table reference which versions are compatible.
 | 0.23.0            | 2.17.X         |
 | 0.24.0            | 2.18.X         |
 | 0.25.0            | 2.19.X         |
+| 0.26.0            | 2.20.X         |
 
 
 ## Missing Functionality
@@ -89,11 +90,6 @@ The following TileDB core library features are missing from the Go API:
 
 - TileDB generic object management
 - TileDB group creation
-
-### 0.25.0
-
-Release does not include bindings for consolidation plan `tiledb_consolidation_plan_create_with_mbr` and
-query plan `tiledb_query_get_plan`. These will be included in 0.26.0
 
 ## Deprecated Functionality
 
