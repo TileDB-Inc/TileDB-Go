@@ -1,5 +1,4 @@
 set -e -x
-source "$(dirname $0)/tiledb-version.sh"
 git clone https://github.com/TileDB-Inc/TileDB.git -b ${CORE_VERSION}
 cd TileDB
 mkdir build && cd build
