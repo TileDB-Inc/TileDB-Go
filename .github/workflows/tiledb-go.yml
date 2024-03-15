@@ -7,6 +7,12 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  # The version of TileDB to test against.
+  CORE_VERSION: "2.20.1"
+  # The abbreviated git commit hash to use.
+  CORE_HASH: "249c024"
+
 jobs:
   golangci:
     name: lint
