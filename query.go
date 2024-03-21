@@ -1668,7 +1668,7 @@ func (q *Query) BufferNullable(attributeOrDimension string) (interface{}, []uint
 		length := (*cbufferSize) / C.sizeof_int64_t
 		buffer = (*[1 << 46]int64)(cbuffer)[:length:length]
 
-	case TILEDB_UINT8, TILEDB_BLOB:
+	case TILEDB_UINT8, TILEDB_BLOB, TILEDB_GEOM_WKB, TILEDB_GEOM_WKT:
 		length := (*cbufferSize) / C.sizeof_uint8_t
 		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
 
@@ -3937,7 +3937,7 @@ func (q *Query) getDataBufferAndSize(attributeOrDimension string) (interface{}, 
 		length := (*cbufferSize) / C.sizeof_int64_t
 		buffer = (*[1 << 46]int64)(cbuffer)[:length:length]
 
-	case TILEDB_UINT8, TILEDB_BLOB:
+	case TILEDB_UINT8, TILEDB_BLOB, TILEDB_GEOM_WKB, TILEDB_GEOM_WKT:
 		length := (*cbufferSize) / C.sizeof_uint8_t
 		buffer = (*[1 << 46]uint8)(cbuffer)[:length:length]
 
