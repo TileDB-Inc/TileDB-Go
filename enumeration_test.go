@@ -283,7 +283,7 @@ func TestEnumerationQueryCondition(t *testing.T) {
 		_, err = rQuery.SetDataBuffer("cols", colsBuffer)
 		require.NoError(t, err)
 		err = rQuery.Submit()
-		require.Error(t, err)
+		require.NoError(t, err)
 		require.Contains(t, err.Error(), "Enumeration value not found")
 		require.NoError(t, array.Close())
 	})
