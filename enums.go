@@ -114,6 +114,10 @@ const (
 	TILEDB_BLOB Datatype = C.TILEDB_BLOB
 	// TILEDB_BOOL 8-bit boolean type
 	TILEDB_BOOL Datatype = C.TILEDB_BOOL
+	// TILEDB_GEOM_WKB 8-bit unsigned integer (or std::byte)
+	TILEDB_GEOM_WKB Datatype = C.TILEDB_GEOM_WKB
+	// TILEDB_GEOM_WKT 8-bit unsigned integer (or std::byte)
+	TILEDB_GEOM_WKT Datatype = C.TILEDB_GEOM_WKT
 )
 
 // String returns a string representation.
