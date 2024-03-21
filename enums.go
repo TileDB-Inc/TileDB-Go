@@ -114,6 +114,10 @@ const (
 	TILEDB_BLOB Datatype = C.TILEDB_BLOB
 	// TILEDB_BOOL 8-bit boolean type
 	TILEDB_BOOL Datatype = C.TILEDB_BOOL
+	// TILEDB_GEOM_WKB 8-bit unsigned integer (or std::byte)
+	TILEDB_GEOM_WKB Datatype = C.TILEDB_GEOM_WKB
+	// TILEDB_GEOM_WKT 8-bit unsigned integer (or std::byte)
+	TILEDB_GEOM_WKT Datatype = C.TILEDB_GEOM_WKT
 )
 
 // String returns a string representation.
@@ -167,7 +171,7 @@ func (d Datatype) ReflectKind() reflect.Kind {
 		return reflect.Int32
 	case TILEDB_INT64:
 		return reflect.Int64
-	case TILEDB_UINT8, TILEDB_BLOB:
+	case TILEDB_UINT8, TILEDB_BLOB, TILEDB_GEOM_WKB, TILEDB_GEOM_WKT:
 		return reflect.Uint8
 	case TILEDB_UINT16:
 		return reflect.Uint16
@@ -215,7 +219,7 @@ func (d Datatype) ReflectType() reflect.Type {
 		return reflect.TypeOf(int32(0))
 	case TILEDB_INT64:
 		return reflect.TypeOf(int64(0))
-	case TILEDB_UINT8, TILEDB_BLOB:
+	case TILEDB_UINT8, TILEDB_BLOB, TILEDB_GEOM_WKB, TILEDB_GEOM_WKT:
 		return reflect.TypeOf(uint8(0))
 	case TILEDB_UINT16:
 		return reflect.TypeOf(uint16(0))
@@ -276,7 +280,7 @@ func (d Datatype) MakeSlice(numElements uint64) (interface{}, unsafe.Pointer, er
 		slice := make([]int64, numElements)
 		return slice, unsafe.Pointer(&slice[0]), nil
 
-	case TILEDB_UINT8, TILEDB_CHAR, TILEDB_STRING_ASCII, TILEDB_STRING_UTF8, TILEDB_BLOB:
+	case TILEDB_UINT8, TILEDB_CHAR, TILEDB_STRING_ASCII, TILEDB_STRING_UTF8, TILEDB_BLOB, TILEDB_GEOM_WKB, TILEDB_GEOM_WKT:
 		slice := make([]uint8, numElements)
 		return slice, unsafe.Pointer(&slice[0]), nil
 
@@ -364,7 +368,7 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 			return tmpValue, nil
 		}
 		return *(*int64)(cvalue), nil
-	case TILEDB_UINT8, TILEDB_BLOB:
+	case TILEDB_UINT8, TILEDB_BLOB, TILEDB_GEOM_WKB, TILEDB_GEOM_WKT:
 		if cvalue == nil {
 			return uint8(0), nil
 		}
