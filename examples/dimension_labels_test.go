@@ -1,5 +1,3 @@
-//go:build experimental
-
 package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
