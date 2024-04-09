@@ -123,6 +123,24 @@ func (b *Buffer) SetBuffer(buffer []byte) error {
 	return nil
 }
 
+func (b *Buffer) Bytes() ([]byte, error) {
+	var cbuffer unsafe.Pointer
+	var csize C.uint64_t
+
+	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer, &cbuffer, &csize)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error getting tiledb buffer data: %s", b.context.LastError())
+	}
+
+	if cbuffer == nil {
+		return nil, nil
+	}
+
+	buffer := (*[1 << 46]byte)(cbuffer)[:csize:csize]
+
+	return buffer, nil
+}
+
 // dataCopy returns a copy of the bytes stored in the buffer.
 func (b *Buffer) dataCopy() ([]byte, error) {
 	var cbuffer unsafe.Pointer
