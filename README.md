@@ -83,6 +83,7 @@ as such the below table reference which versions are compatible.
 | 0.25.0            | 2.19.X         |
 | 0.26.0            | 2.20.X         |
 | 0.27.0            | 2.21.X         |
+| 0.28.0            | 2.22.X         |
 
 
 ## Missing Functionality
