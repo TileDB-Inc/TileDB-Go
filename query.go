@@ -3170,6 +3170,8 @@ polled:
 	  }
 	  // Do something when query is finished
 	}(query)
+
+Deprecated: Call Submit on a goroutine
 */
 func (q *Query) SubmitAsync() error {
 	ret := C.tiledb_query_submit_async(q.context.tiledbContext, q.tiledbQuery, nil, nil)
