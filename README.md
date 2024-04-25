@@ -2,7 +2,6 @@
 
 # TileDB Go Bindings
 
-
 [![GoDoc](https://godoc.org/github.com/TileDB-Inc/TileDB-Go?status.svg)](http://godoc.org/github.com/TileDB-Inc/TileDB-Go)
 [![Build Status](https://dev.azure.com/TileDB-Inc/CI/_apis/build/status/TileDB-Inc.TileDB-Go?branchName=refs%2Fpull%2F123%2Fmerge)](https://dev.azure.com/TileDB-Inc/CI/_build/latest?definitionId=25&branchName=refs%2Fpull%2F123%2Fmerge)
 
