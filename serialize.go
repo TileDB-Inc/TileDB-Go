@@ -373,7 +373,7 @@ func SerializeArray(array *Array, serializationType SerializationType, clientSid
 }
 
 // DeserializeArray deserializes a new array from the given buffer.
-func DeserializeArray(buffer *Buffer, serializationType SerializationType, clientSide bool) (*Array, error) {
+func DeserializeArray(buffer *Buffer, serializationType SerializationType, clientSide bool, arrayURI string) (*Array, error) {
 	array := Array{context: buffer.context}
 
 	var cClientSide C.int32_t
@@ -383,7 +383,10 @@ func DeserializeArray(buffer *Buffer, serializationType SerializationType, clien
 		cClientSide = 0
 	}
 
-	ret := C.tiledb_deserialize_array(array.context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, &array.tiledbArray)
+	cArrayURI := C.CString(arrayURI)
+	defer C.free(unsafe.Pointer(cArrayURI))
+
+	ret := C.tiledb_deserialize_array(array.context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, cArrayURI, &array.tiledbArray)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error deserializing array: %s", array.context.LastError())
 	}
