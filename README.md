@@ -15,9 +15,9 @@ free'ing of C heap allocated structures.
 
 ## Quick Links
 
-- GoDoc API documentation: https://pkg.go.dev/github.com/TileDB-Inc/TileDB-Go
+- GoDoc API documentation: [https://pkg.go.dev/github.com/TileDB-Inc/TileDB-Go](https://pkg.go.dev/github.com/TileDB-Inc/TileDB-Go)
 - Full Installation Docs: [https://docs.tiledb.com/main/how-to/installation](https://docs.tiledb.com/main/how-to/installation)
-- Quickstart: [https://docs.tiledb.com/quickstart](https://docs.tiledb.com/main/solutions/tiledb-embedded/installation/quick-install)
+- Quick Install: [https://docs.tiledb.com/main/how-to/installation/quick-install](https://docs.tiledb.com/main/how-to/installation/quick-install)
 - Full developer documentation for all APIs and integrations: [https://docs.tiledb.com](https://docs.tiledb.com)
 
 ## Installation
@@ -31,8 +31,20 @@ Currently the following platforms are supported:
 
 ### Prerequisites
 This package requires the TileDB shared library be installed and on the system path. See the
-[official TileDB installation instructions](https://docs.tiledb.com/main/solutions/tiledb-embedded/installation)
+[official TileDB installation instructions](https://docs.tiledb.com/main/how-to/installation)
 for installation methods. TileDB must be compiled with serialization support enabled.
+
+### Environment setup
+
+Make sure you have Go installed on your system. This guide assumes you are using Go 1.17 or later, which fully supports
+modules. You can check your Go version by running `go version`.
+
+### Initialization steps
+
+```bash
+go mod init github.com/<github_username>/repository_name
+```
+
 
 ### Go Installation
 
@@ -42,11 +54,13 @@ To install these bindings you can use `go get`:
  go get -v github.com/TileDB-Inc/TileDB-Go
 ```
 
-To install package test dependencies:
+To install package with test dependencies:
 
 ```bash
 go get -v -t github.com/TileDB-Inc/TileDB-Go
 ```
+
+### Go Testing
 
 Package tests can be run with:
 
