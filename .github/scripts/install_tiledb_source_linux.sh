@@ -3,6 +3,5 @@ git clone https://github.com/TileDB-Inc/TileDB.git -b ${CORE_VERSION}
 cd TileDB
 mkdir build && cd build
 cmake -DTILEDB_WERROR=OFF -DTILEDB_VCPKG=ON -DTILEDB_VERBOSE=OFF -DTILEDB_S3=ON -DTILEDB_SERIALIZATION=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local ..
-make -j$(nproc)
-sudo make -C tiledb install
+sudo make -j$(nproc) install-tiledb
 sudo ldconfig
