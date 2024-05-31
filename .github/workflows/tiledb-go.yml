@@ -9,9 +9,9 @@ on:
 
 env:
   # The version of TileDB to test against.
-  CORE_VERSION: "2.23.0"
+  CORE_VERSION: "2.24.0-rc0"
   # The abbreviated git commit hash to use.
-  CORE_HASH: "152093b"
+  CORE_HASH: "52713e1"
 
 jobs:
   golangci:
