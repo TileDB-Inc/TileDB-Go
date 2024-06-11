@@ -9,10 +9,6 @@ This package provides [TileDB](https://github.com/TileDB-Inc/TileDB) golang bind
 designed to be idomatic Go. `runtime.SetFinalizer` is used to ensure proper
 free'ing of C heap allocated structures.
 
-> [!CAUTION]
-> As of May 14, 2024, TileDB-Go is temporarily incompatible with [TileDB](https://github.com/TileDB-Inc/TileDB)'s dev branch.
-> TileDB-Go continues to work with TileDB's v2.23.X as only the dev branch is affected.
-
 ## Quick Links
 
 - GoDoc API documentation: [https://pkg.go.dev/github.com/TileDB-Inc/TileDB-Go](https://pkg.go.dev/github.com/TileDB-Inc/TileDB-Go)
@@ -103,6 +99,7 @@ as such the below table reference which versions are compatible.
 | 0.27.0            | 2.21.X         |
 | 0.28.0            | 2.22.X         |
 | 0.29.0            | 2.23.X         |
+| 0.30.0            | 2.24.X         |
 
 
 ## Missing Functionality
