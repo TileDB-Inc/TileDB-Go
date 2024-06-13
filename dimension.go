@@ -385,18 +385,18 @@ func (d *Dimension) Domain() (interface{}, error) {
 	case TILEDB_STRING_ASCII:
 		return nil, nil
 	}
-	return nil, fmt.Errorf("Unrecognized domain type: %d", datatype)
+	return nil, fmt.Errorf("unrecognized domain type: %d", datatype)
 }
 
 func domainInternal[T any](d *Dimension) ([]T, error) {
 	// tiledb_dimension_get_domain writes *a pointer to the memory it owns*
-	// into cDomain, so we need to ensure that the domain stays alive for
+	// into cDomain, so we need to ensure that the dimension stays alive for
 	// the entire duration of this call.
 	defer runtime.KeepAlive(d)
 	var cDomain unsafe.Pointer
 	ret := C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cDomain)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting tiledb dimension's domain: %s", d.context.LastError())
+		return nil, fmt.Errorf("could not get tiledb dimension's domain: %w", d.context.LastError())
 	}
 	asArray := (*[2]T)(cDomain)
 	return []T{asArray[0], asArray[1]}, nil
@@ -435,7 +435,7 @@ func (d *Dimension) Extent() (interface{}, error) {
 	case TILEDB_STRING_ASCII:
 		return nil, nil
 	}
-	return nil, fmt.Errorf("Unrecognized extent type: %d", datatype)
+	return nil, fmt.Errorf("unrecognized extent type: %d", datatype)
 }
 
 func extentInternal[T any](d *Dimension) (T, error) {
