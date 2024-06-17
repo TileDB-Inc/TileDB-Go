@@ -1,7 +1,6 @@
 package tiledb
 
 import (
-	"reflect"
 	"unsafe"
 )
 
@@ -17,6 +16,5 @@ type scalarType interface {
 
 // slicePtr gives you an unsafe pointer to the start of a slice.
 func slicePtr[T any](slc []T) unsafe.Pointer {
-	hdr := (*reflect.SliceHeader)(unsafe.Pointer(&slc))
-	return unsafe.Pointer(hdr.Data)
+	return unsafe.Pointer(unsafe.SliceData(slc))
 }
