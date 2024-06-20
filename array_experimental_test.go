@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetConsolidationPlan(t *testing.T) {
-	// Create an 1d array
+func createTestArray(t *testing.T) *Array {
+	// Create a 1d array
 
 	// Create configuration
 	config, err := NewConfig()
@@ -63,10 +63,12 @@ func TestGetConsolidationPlan(t *testing.T) {
 	err = array.Create(arraySchema)
 	require.NoError(t, err)
 
-	// Write to array
+	return array
+}
 
+func writeTestArray(t *testing.T, array *Array, data []int32) {
 	// Open array for writing
-	err = array.Open(TILEDB_WRITE)
+	err := array.Open(TILEDB_WRITE)
 	require.NoError(t, err)
 
 	// Create subarray
@@ -76,15 +78,14 @@ func TestGetConsolidationPlan(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create write query
-	query, err := NewQuery(context, array)
+	query, err := NewQuery(array.context, array)
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 	err = query.SetSubarray(subarray)
 	require.NoError(t, err)
 
 	// Initialize the data buffer
-	bufferV := []int32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-	_, err = query.SetDataBuffer("v", bufferV)
+	_, err = query.SetDataBuffer("v", data)
 	require.NoError(t, err)
 
 	// Submit write query
@@ -99,6 +100,12 @@ func TestGetConsolidationPlan(t *testing.T) {
 	// close array
 	err = array.Close()
 	require.NoError(t, err)
+}
+
+func TestGetConsolidationPlan(t *testing.T) {
+	array := createTestArray(t)
+
+	writeTestArray(t, array, []int32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
 
 	checkConsolidationPlan := func(t *testing.T, cplan *ConsolidationPlan) {
 		numNodes, err := cplan.NumNodes()
@@ -113,7 +120,7 @@ func TestGetConsolidationPlan(t *testing.T) {
 			require.NoError(t, err)
 
 			// fragment uris in the plan are relative
-			fullPath := filepath.Join(tmpArrayPath, "__fragments", fragmentURI)
+			fullPath := filepath.Join(array.uri, "__fragments", fragmentURI)
 			_, err = os.Stat(fullPath)
 			require.NoError(t, err)
 		}
@@ -121,7 +128,7 @@ func TestGetConsolidationPlan(t *testing.T) {
 
 	tdbCtx, err := NewContext(nil)
 	require.NoError(t, err)
-	arr, err := NewArray(tdbCtx, tmpArrayPath)
+	arr, err := NewArray(tdbCtx, array.uri)
 	require.NoError(t, err)
 	require.NoError(t, arr.Open(TILEDB_READ))
 	t.Cleanup(func() { arr.Close() })
@@ -130,4 +137,51 @@ func TestGetConsolidationPlan(t *testing.T) {
 	require.NoError(t, err)
 
 	checkConsolidationPlan(t, cplan)
+}
+
+func TestConsolidateFragments(t *testing.T) {
+	array := createTestArray(t)
+
+	numFrags := uint32(5)
+	for i := uint32(0); i < numFrags; i++ {
+		writeTestArray(t, array, []int32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+	}
+
+	fragmentInfo, err := NewFragmentInfo(array.context, array.uri)
+	require.NoError(t, err)
+
+	err = fragmentInfo.Load()
+	require.NoError(t, err)
+
+	fragInfoNum, err := fragmentInfo.GetFragmentNum()
+	require.NoError(t, err)
+	require.Equal(t, numFrags, fragInfoNum)
+	fragUris := make([]string, numFrags)
+	for i := uint32(0); i < numFrags; i++ {
+		uri, err := fragmentInfo.GetFragmentURI(i)
+		require.NoError(t, err)
+
+		// TODO: Remove temp (shouldn't need to split fragment URI string?)
+		// Seems to be a bug here if we supply full `file://` URIs for the fragment list.
+		// https://github.com/TileDB-Inc/TileDB/blob/dev/tiledb/sm/consolidator/fragment_consolidator.cc#L362-L388
+		//temp := strings.SplitAfter(uri, "__fragments/")[1]
+		fragUris[i] = uri
+	}
+
+	// Default consolidation mode is 'fragments'.
+	config, err := array.context.Config()
+
+	err = array.ConsolidateFragments(config, fragUris)
+	require.NoError(t, err)
+	// Check that the new consolidated fragment was created.
+	require.Equal(t, numFrags+1, fragInfoNum+1)
+
+	err = array.Vacuum(config)
+	require.NoError(t, err)
+
+	err = fragmentInfo.Load()
+	require.NoError(t, err)
+	fragInfoNum, err = fragmentInfo.GetFragmentNum()
+	require.NoError(t, err)
+	require.Equal(t, uint32(1), fragInfoNum)
 }

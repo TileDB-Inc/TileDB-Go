@@ -1,5 +1,9 @@
 package tiledb
 
+/*
+#include <stdlib.h>
+*/
+import "C"
 import (
 	"reflect"
 	"unsafe"
@@ -19,4 +23,19 @@ type scalarType interface {
 func slicePtr[T any](slc []T) unsafe.Pointer {
 	hdr := (*reflect.SliceHeader)(unsafe.Pointer(&slc))
 	return unsafe.Pointer(hdr.Data)
+}
+
+// cStringArray takes an array of Go strings and converts it to an array of CStrings.
+// The function returned should be deferred by the caller to free allocated memory.
+func cStringArray(stringList []string) ([]*C.char, func()) {
+	list := make([]*C.char, len(stringList))
+	for i, str := range stringList {
+		list[i] = C.CString(str)
+	}
+
+	return list, func() {
+		for _, str := range list {
+			C.free(unsafe.Pointer(str))
+		}
+	}
 }

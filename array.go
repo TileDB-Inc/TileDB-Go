@@ -1098,12 +1098,8 @@ func DeleteFragmentsList(tdbCtx *Context, uri string, fragmentURIs []string) err
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
 
-	var list []*C.char
-	for _, furi := range fragmentURIs {
-		cfuri := C.CString(furi)
-		defer C.free(unsafe.Pointer(cfuri))
-		list = append(list, cfuri)
-	}
+	list, freeMemory := cStringArray(fragmentURIs)
+	defer freeMemory()
 
 	ret := C.tiledb_array_delete_fragments_list(tdbCtx.tiledbContext, curi, (**C.char)(unsafe.Pointer(&list[0])), C.size_t(len(list)))
 	if ret != C.TILEDB_OK {
