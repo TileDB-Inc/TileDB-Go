@@ -170,18 +170,29 @@ func TestConsolidateFragments(t *testing.T) {
 
 	// Default consolidation mode is 'fragments'.
 	config, err := array.context.Config()
+	require.NoError(t, err)
 
 	err = array.ConsolidateFragments(config, fragUris)
 	require.NoError(t, err)
+
 	// Check that the new consolidated fragment was created.
-	require.Equal(t, numFrags+1, fragInfoNum+1)
-
-	err = array.Vacuum(config)
-	require.NoError(t, err)
-
 	err = fragmentInfo.Load()
 	require.NoError(t, err)
 	fragInfoNum, err = fragmentInfo.GetFragmentNum()
 	require.NoError(t, err)
-	require.Equal(t, uint32(1), fragInfoNum)
+	fragToVacuumNum, err := fragmentInfo.GetToVacuumNum()
+	require.NoError(t, err)
+	require.Equal(t, numFrags+1, fragToVacuumNum+fragInfoNum)
+
+	err = array.Vacuum(config)
+	require.NoError(t, err)
+
+	// Check for one fragment after vacuum.
+	err = fragmentInfo.Load()
+	require.NoError(t, err)
+	fragInfoNum, err = fragmentInfo.GetFragmentNum()
+	require.NoError(t, err)
+	fragToVacuumNum, err = fragmentInfo.GetToVacuumNum()
+	require.NoError(t, err)
+	require.Equal(t, uint32(1), fragInfoNum+fragToVacuumNum)
 }
