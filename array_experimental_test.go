@@ -160,11 +160,6 @@ func TestConsolidateFragments(t *testing.T) {
 	for i := uint32(0); i < numFrags; i++ {
 		uri, err := fragmentInfo.GetFragmentURI(i)
 		require.NoError(t, err)
-
-		// TODO: Remove temp (shouldn't need to split fragment URI string?)
-		// Seems to be a bug here if we supply full `file://` URIs for the fragment list.
-		// https://github.com/TileDB-Inc/TileDB/blob/dev/tiledb/sm/consolidator/fragment_consolidator.cc#L362-L388
-		//temp := strings.SplitAfter(uri, "__fragments/")[1]
 		fragUris[i] = uri
 	}
 
@@ -182,7 +177,8 @@ func TestConsolidateFragments(t *testing.T) {
 	require.NoError(t, err)
 	fragToVacuumNum, err := fragmentInfo.GetToVacuumNum()
 	require.NoError(t, err)
-	require.Equal(t, numFrags+1, fragToVacuumNum+fragInfoNum)
+	require.Equal(t, numFrags, fragToVacuumNum)
+	require.Equal(t, uint32(1), fragInfoNum)
 
 	err = array.Vacuum(config)
 	require.NoError(t, err)
@@ -194,5 +190,6 @@ func TestConsolidateFragments(t *testing.T) {
 	require.NoError(t, err)
 	fragToVacuumNum, err = fragmentInfo.GetToVacuumNum()
 	require.NoError(t, err)
-	require.Equal(t, uint32(1), fragInfoNum+fragToVacuumNum)
+	require.Equal(t, uint32(1), fragInfoNum)
+	require.Equal(t, uint32(0), fragToVacuumNum)
 }
