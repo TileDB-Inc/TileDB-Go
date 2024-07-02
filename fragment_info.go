@@ -1,8 +1,6 @@
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb.h>
 #include <stdlib.h>
 */
@@ -27,7 +25,7 @@ type FragmentInfo struct {
 	config             *Config
 }
 
-// NewFragmentInfo alloc a new fragment info for a given array and fetches all
+// NewFragmentInfo allocates a new fragment info for a given array and fetches all
 // the fragment information for that array.
 func NewFragmentInfo(tdbCtx *Context, uri string) (*FragmentInfo, error) {
 	curi := C.CString(uri)
@@ -54,7 +52,7 @@ func (fI *FragmentInfo) Free() {
 	}
 }
 
-// Context exposes the internal TileDB context used to initialize the fragment info
+// Context exposes the internal TileDB context used to initialize the fragment info.
 func (fI *FragmentInfo) Context() *Context {
 	return fI.context
 }
@@ -572,6 +570,7 @@ func (fI *FragmentInfo) DumpSTDOUT() error {
 	return nil
 }
 
+// SetConfig sets the fragment config.
 func (fI *FragmentInfo) SetConfig(config *Config) error {
 	ret := C.tiledb_fragment_info_set_config(fI.context.tiledbContext, fI.tiledbFragmentInfo, config.tiledbConfig)
 	if ret != C.TILEDB_OK {
@@ -581,6 +580,7 @@ func (fI *FragmentInfo) SetConfig(config *Config) error {
 	return nil
 }
 
+// Config gets the fragment config.
 func (fI *FragmentInfo) Config() (*Config, error) {
 	var config Config
 	ret := C.tiledb_fragment_info_get_config(fI.context.tiledbContext, fI.tiledbFragmentInfo, &config.tiledbConfig)

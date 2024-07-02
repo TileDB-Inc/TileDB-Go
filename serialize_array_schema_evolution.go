@@ -1,15 +1,6 @@
-//go:build experimental
-
-// This file declares Go bindings for experimental features in TileDB.
-// Experimental APIs to do not fall under the API compatibility guarantees and
-// might change between TileDB versions
-
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
-#include <tiledb/tiledb_experimental.h>
 #include <tiledb/tiledb_serialization.h>
 #include <stdlib.h>
 */
@@ -19,7 +10,7 @@ import (
 	"fmt"
 )
 
-// SerializeArraySchemaEvolution serializes the given array schema evolution
+// SerializeArraySchemaEvolution serializes the given array schema evolution.
 func SerializeArraySchemaEvolution(arraySchemaEvolution *ArraySchemaEvolution, serializationType SerializationType, clientSide bool) ([]byte, error) {
 	var cClientSide C.int32_t
 	if clientSide {
@@ -44,7 +35,7 @@ func SerializeArraySchemaEvolution(arraySchemaEvolution *ArraySchemaEvolution, s
 	return buffer.Serialize(serializationType)
 }
 
-// DeserializeArraySchemaEvolution deserializes a new array schema evolution object from the given buffer
+// DeserializeArraySchemaEvolution deserializes a new array schema evolution object from the given buffer.
 func DeserializeArraySchemaEvolution(buffer *Buffer, serializationType SerializationType, clientSide bool) (*ArraySchemaEvolution, error) {
 	arraySchemaEvolution := ArraySchemaEvolution{context: buffer.context}
 

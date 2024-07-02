@@ -1,14 +1,6 @@
-//go:build experimental
-
-// This file declares Go bindings for experimental features in TileDB.
-// Experimental APIs to do not fall under the API compatibility guarantees and
-// might change between TileDB versions
-
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb_experimental.h>
 #include <stdlib.h>
 */
@@ -75,7 +67,7 @@ func (ase *ArraySchemaEvolution) AddAttribute(attribute *Attribute) error {
 	return nil
 }
 
-// DropAttribute drops an attribute to an array schema evolution
+// DropAttribute drops an attribute to an array schema evolution.
 func (ase *ArraySchemaEvolution) DropAttribute(name string) error {
 	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
@@ -90,7 +82,7 @@ func (ase *ArraySchemaEvolution) DropAttribute(name string) error {
 	return nil
 }
 
-// Evolve evolves array schema of an array
+// Evolve evolves array schema of an array.
 func (ase *ArraySchemaEvolution) Evolve(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))

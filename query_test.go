@@ -54,28 +54,28 @@ func ExampleNewQuery() {
 		return
 	}
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute, err := NewAttribute(context, "a1", TILEDB_INT32)
 	if err != nil {
 		// Handle error
 		return
 	}
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute2, err := NewAttribute(context, "a2", TILEDB_STRING_ASCII)
 	if err != nil {
 		// Handle error
 		return
 	}
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute3, err := NewAttribute(context, "a3", TILEDB_FLOAT32)
 	if err != nil {
 		// Handle error
 		return
 	}
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute4, err := NewAttribute(context, "a4", TILEDB_STRING_UTF8)
 	if err != nil {
 		// Handle error
@@ -1425,7 +1425,7 @@ func TestQueryReadEmpty(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, attribute3)
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute4, err := NewAttribute(context, "a4", TILEDB_STRING_UTF8)
 	require.NoError(t, err)
 	assert.NotNil(t, attribute4)
@@ -1538,32 +1538,32 @@ func TestDenseQueryWrite(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, arraySchema)
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute, err := NewAttribute(context, "a1", TILEDB_INT32)
 	require.NoError(t, err)
 	assert.NotNil(t, attribute)
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute2, err := NewAttribute(context, "a2", TILEDB_STRING_ASCII)
 	require.NoError(t, err)
 	assert.NotNil(t, attribute2)
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute3, err := NewAttribute(context, "a3", TILEDB_FLOAT32)
 	require.NoError(t, err)
 	assert.NotNil(t, attribute3)
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute4, err := NewAttribute(context, "a4", TILEDB_STRING_UTF8)
 	require.NoError(t, err)
 	assert.NotNil(t, attribute4)
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute5, err := NewAttribute(context, "a5", TILEDB_CHAR)
 	require.NoError(t, err)
 	assert.NotNil(t, attribute5)
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute6, err := NewAttribute(context, "a6", TILEDB_CHAR)
 	require.NoError(t, err)
 	assert.NotNil(t, attribute5)
@@ -2023,7 +2023,7 @@ func TestSparseQueryWrite(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, arraySchema)
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute, err := NewAttribute(context, "a1", TILEDB_INT32)
 	require.NoError(t, err)
 	assert.NotNil(t, attribute)
@@ -2173,7 +2173,7 @@ func TestSparseQueryWriteNullable(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, arraySchema)
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute, err := NewAttribute(context, "a1", TILEDB_INT32)
 	require.NoError(t, err)
 	assert.NotNil(t, attribute)

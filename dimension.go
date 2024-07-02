@@ -1,8 +1,6 @@
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb.h>
 #include <stdlib.h>
 */
@@ -12,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"runtime"
 	"strconv"
 	"unsafe"
 )
@@ -24,7 +23,7 @@ type Dimension struct {
 	context         *Context
 }
 
-// NewDimension alloc a new dimension
+// NewDimension allocates a new dimension.
 func NewDimension(context *Context, name string, datatype Datatype, domain interface{}, extent interface{}) (*Dimension, error) {
 	dimension := Dimension{context: context}
 	cname := C.CString(name)
@@ -50,8 +49,14 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 
 	var ret C.int32_t
 	// Convert domain to type then to void*
+	// Use domainPtr to ensure cdomain is not collected before it is passed to tiledb.
+	var domainPtr any
+	defer runtime.KeepAlive(domainPtr)
 	var cdomain unsafe.Pointer
 	// Convert extent to type then to void*
+	// Use extentPtr to ensure cdomain is not collected before it is passed to tiledb.
+	var extentPtr any
+	defer runtime.KeepAlive(extentPtr)
 	var cextent unsafe.Pointer
 	// Switch on datatype type to create void* for domain and extent.
 	// Extent has already checked to be same type as domain so this is safe
@@ -63,9 +68,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]int8)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(int8))
+		tmpExtent := extent.(int8)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_INT16:
 		if domainType != reflect.Int16 {
@@ -74,9 +81,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]int16)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(int16))
+		tmpExtent := extent.(int16)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_INT32:
 		if domainType != reflect.Int32 && domainType != reflect.Int {
@@ -90,9 +99,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]int32)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(int32))
+		tmpExtent := extent.(int32)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
 		if domainType != reflect.Int64 && domainType != reflect.Int {
@@ -106,9 +117,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]int64)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(int64))
+		tmpExtent := extent.(int64)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_UINT8:
 		if domainType != reflect.Uint8 {
@@ -117,9 +130,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]uint8)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(uint8))
+		tmpExtent := extent.(uint8)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_UINT16:
 		if domainType != reflect.Uint16 {
@@ -128,9 +143,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]uint16)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(uint16))
+		tmpExtent := extent.(uint16)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_UINT32:
 		if domainType != reflect.Uint32 && domainType != reflect.Uint {
@@ -144,9 +161,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]uint32)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(uint32))
+		tmpExtent := extent.(uint32)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_UINT64:
 		if domainType != reflect.Uint64 && domainType != reflect.Uint {
@@ -160,9 +179,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]uint64)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(uint64))
+		tmpExtent := extent.(uint64)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_FLOAT32:
 		if domainType != reflect.Float32 {
@@ -171,9 +192,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]float32)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(float32))
+		tmpExtent := extent.(float32)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_FLOAT64:
 		if domainType != reflect.Float64 {
@@ -182,9 +205,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]float64)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(float64))
+		tmpExtent := extent.(float64)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	case TILEDB_BOOL:
 		if domainType != reflect.Bool {
@@ -193,9 +218,11 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		}
 		// Create domain void*
 		tmpDomain := domain.([]bool)
+		domainPtr = &tmpDomain
 		cdomain = unsafe.Pointer(&tmpDomain[0])
 		// Create extent void*
-		tmpExtent := (extent.(bool))
+		tmpExtent := extent.(bool)
+		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	default:
 		return nil, fmt.Errorf("Unrecognized datatype passed: %s", datatype.String())
@@ -215,7 +242,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 	return &dimension, nil
 }
 
-// NewStringDimension alloc a new string dimension
+// NewStringDimension allocates a new string dimension.
 func NewStringDimension(context *Context, name string) (*Dimension, error) {
 	dimension := Dimension{context: context}
 	cname := C.CString(name)
@@ -246,12 +273,12 @@ func (d *Dimension) Free() {
 	}
 }
 
-// Context exposes the internal TileDB context used to initialize the dimension
+// Context exposes the internal TileDB context used to initialize the dimension.
 func (d *Dimension) Context() *Context {
 	return d.context
 }
 
-// SetFilterList sets the dimension filterList
+// SetFilterList sets the dimension filterList.
 func (d *Dimension) SetFilterList(filterlist *FilterList) error {
 	ret := C.tiledb_dimension_set_filter_list(d.context.tiledbContext, d.tiledbDimension, filterlist.tiledbFilterList)
 	if ret != C.TILEDB_OK {
@@ -260,7 +287,7 @@ func (d *Dimension) SetFilterList(filterlist *FilterList) error {
 	return nil
 }
 
-// FilterList returns a copy of the filter list for attribute
+// FilterList returns a copy of the filter list for attribute.
 func (d *Dimension) FilterList() (*FilterList, error) {
 	filterList := FilterList{context: d.context}
 	ret := C.tiledb_dimension_get_filter_list(d.context.tiledbContext, d.tiledbDimension, &filterList.tiledbFilterList)
@@ -272,7 +299,7 @@ func (d *Dimension) FilterList() (*FilterList, error) {
 	return &filterList, nil
 }
 
-// SetCellValNum Sets the number of values per cell for a dimension.
+// SetCellValNum sets the number of values per cell for a dimension.
 // If this is not used, the default is `1`.
 // This is inferred from the type parameter of the NewDimension
 // function, but can also be set manually.
@@ -285,7 +312,7 @@ func (d *Dimension) SetCellValNum(val uint32) error {
 	return nil
 }
 
-// CellValNum returns number of values of one cell on this attribute.
+// CellValNum returns the number of values of one cell on this attribute.
 // For variable-sized attributes returns TILEDB_VAR_NUM.
 func (d *Dimension) CellValNum() (uint32, error) {
 	var cellValNum C.uint32_t
@@ -297,7 +324,7 @@ func (d *Dimension) CellValNum() (uint32, error) {
 	return uint32(cellValNum), nil
 }
 
-// Name returns the name of the dimension
+// Name returns the name of the dimension.
 func (d *Dimension) Name() (string, error) {
 	var cName *C.char
 	ret := C.tiledb_dimension_get_name(d.context.tiledbContext, d.tiledbDimension, &cName)
@@ -308,7 +335,7 @@ func (d *Dimension) Name() (string, error) {
 	return C.GoString(cName), nil
 }
 
-// Type returns the type of the dimension
+// Type returns the type of the dimension.
 func (d *Dimension) Type() (Datatype, error) {
 	var cType C.tiledb_datatype_t
 	ret := C.tiledb_dimension_get_type(d.context.tiledbContext, d.tiledbDimension, &cType)
@@ -319,218 +346,113 @@ func (d *Dimension) Type() (Datatype, error) {
 	return Datatype(cType), nil
 }
 
-// Domain returns the dimension's domain
+// Domain returns the dimension's domain.
 func (d *Dimension) Domain() (interface{}, error) {
 	datatype, err := d.Type()
 	if err != nil {
 		return nil, err
 	}
 
-	var ret C.int32_t
-	var domain interface{}
 	switch datatype {
 	case TILEDB_INT8:
-		cdomain := C.malloc(2 * C.sizeof_int8_t)
-		defer C.free(cdomain)
-		tmpDomain := make([]int8, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.int8_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = int8(s)
-		}
-		domain = tmpDomain
+		return domainInternal[int8](d)
 	case TILEDB_INT16:
-		cdomain := C.malloc(2 * C.sizeof_int16_t)
-		defer C.free(cdomain)
-		tmpDomain := make([]int16, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.int16_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = int16(s)
-		}
-		domain = tmpDomain
+		return domainInternal[int16](d)
 	case TILEDB_INT32:
-		cdomain := C.malloc(2 * C.sizeof_int32_t)
-		defer C.free(cdomain)
-		tmpDomain := make([]int32, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.int32_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = int32(s)
-		}
-		domain = tmpDomain
+		return domainInternal[int32](d)
 	case TILEDB_INT64:
-		cdomain := C.malloc(2 * C.sizeof_int64_t)
-		defer C.free(cdomain)
-		tmpDomain := make([]int64, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.int64_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = int64(s)
-		}
-		domain = tmpDomain
+		return domainInternal[int64](d)
 	case TILEDB_UINT8:
-		cdomain := C.malloc(2 * C.sizeof_uint8_t)
-		defer C.free(cdomain)
-		tmpDomain := make([]uint8, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.uint8_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = uint8(s)
-		}
-		domain = tmpDomain
+		return domainInternal[uint8](d)
 	case TILEDB_UINT16:
-		cdomain := C.malloc(2 * C.sizeof_uint16_t)
-		defer C.free(cdomain)
-		tmpDomain := make([]uint16, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.uint16_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = uint16(s)
-		}
-		domain = tmpDomain
+		return domainInternal[uint16](d)
 	case TILEDB_UINT32:
-		cdomain := C.malloc(2 * C.sizeof_uint32_t)
-		defer C.free(cdomain)
-		tmpDomain := make([]uint32, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.uint32_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = uint32(s)
-		}
-		domain = tmpDomain
+		return domainInternal[uint32](d)
 	case TILEDB_UINT64:
-		cdomain := C.malloc(2 * C.sizeof_uint64_t)
-		defer C.free(cdomain)
-		tmpDomain := make([]uint64, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.uint64_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = uint64(s)
-		}
-		domain = tmpDomain
+		return domainInternal[uint64](d)
 	case TILEDB_FLOAT32:
-		cdomain := C.malloc(2 * C.sizeof_float)
-		defer C.free(cdomain)
-		tmpDomain := make([]float32, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.float)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = float32(s)
-		}
-		domain = tmpDomain
+		return domainInternal[float32](d)
 	case TILEDB_FLOAT64:
-		cdomain := C.malloc(2 * C.sizeof_double)
-		defer C.free(cdomain)
-		tmpDomain := make([]float64, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.double)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			tmpDomain[i] = float64(s)
-		}
-		domain = tmpDomain
+		return domainInternal[float64](d)
 	case TILEDB_BOOL:
-		cdomain := C.malloc(2 * C.sizeof_double)
-		defer C.free(cdomain)
-		tmpDomain := make([]bool, 2)
-		ret = C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cdomain)
-		tmpslice := (*[1 << 46]C.uint8_t)(unsafe.Pointer(cdomain))[:2:2]
-		for i, s := range tmpslice {
-			if s != 0 {
-				tmpDomain[i] = true
-			}
+		// Ensure that our booleans are in canonical true/false form in case they're
+		// a value other than 0 or 1.
+		asUints, err := domainInternal[uint8](d)
+		if err != nil {
+			return nil, err
 		}
-		domain = tmpDomain
+		return []bool{asUints[0] != 0, asUints[1] != 0}, nil
 	case TILEDB_STRING_ASCII:
-		domain = nil
-	default:
-		return nil, fmt.Errorf("Unrecognized domain type: %d", datatype)
+		return nil, nil
 	}
-	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting tiledb dimension's domain: %s", d.context.LastError())
-	}
-
-	return domain, nil
+	return nil, fmt.Errorf("unrecognized domain type: %d", datatype)
 }
 
-// Extent returns the dimension's extent
+func domainInternal[T any](d *Dimension) ([]T, error) {
+	// tiledb_dimension_get_domain writes *a pointer to the memory it owns*
+	// into cDomain, so we need to ensure that the dimension stays alive for
+	// the entire duration of this call.
+	defer runtime.KeepAlive(d)
+	var cDomain unsafe.Pointer
+	ret := C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cDomain)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("could not get tiledb dimension's domain: %w", d.context.LastError())
+	}
+	asArray := (*[2]T)(cDomain)
+	return []T{asArray[0], asArray[1]}, nil
+}
+
+// Extent returns the dimension's extent.
 func (d *Dimension) Extent() (interface{}, error) {
 	datatype, err := d.Type()
 	if err != nil {
 		return nil, err
 	}
-
-	var ret C.int32_t
-	var extent interface{}
 	switch datatype {
 	case TILEDB_INT8:
-		cextent := C.malloc(C.sizeof_int8_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*int8)(unsafe.Pointer(cextent))
+		return extentInternal[int8](d)
 	case TILEDB_INT16:
-		cextent := C.malloc(C.sizeof_int16_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*int16)(unsafe.Pointer(cextent))
+		return extentInternal[int16](d)
 	case TILEDB_INT32:
-		cextent := C.malloc(C.sizeof_int32_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*int32)(unsafe.Pointer(cextent))
+		return extentInternal[int32](d)
 	case TILEDB_INT64:
-		cextent := C.malloc(C.sizeof_int64_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*int64)(unsafe.Pointer(cextent))
+		return extentInternal[int64](d)
 	case TILEDB_UINT8:
-		cextent := C.malloc(C.sizeof_uint8_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*uint8)(unsafe.Pointer(cextent))
+		return extentInternal[uint8](d)
 	case TILEDB_UINT16:
-		cextent := C.malloc(C.sizeof_uint16_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*uint16)(unsafe.Pointer(cextent))
+		return extentInternal[uint16](d)
 	case TILEDB_UINT32:
-		cextent := C.malloc(C.sizeof_uint32_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*uint32)(unsafe.Pointer(cextent))
+		return extentInternal[uint32](d)
 	case TILEDB_UINT64:
-		cextent := C.malloc(C.sizeof_uint64_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*uint64)(unsafe.Pointer(cextent))
+		return extentInternal[uint64](d)
 	case TILEDB_FLOAT32:
-		cextent := C.malloc(C.sizeof_float)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*float32)(unsafe.Pointer(cextent))
+		return extentInternal[float32](d)
 	case TILEDB_FLOAT64:
-		cextent := C.malloc(C.sizeof_double)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*float64)(unsafe.Pointer(cextent))
+		return extentInternal[float64](d)
 	case TILEDB_BOOL:
-		cextent := C.malloc(C.sizeof_uint8_t)
-		defer C.free(cextent)
-		ret = C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cextent)
-		extent = *(*bool)(unsafe.Pointer(cextent))
+		xt, err := extentInternal[uint8](d)
+		return xt != 0, err
 	case TILEDB_STRING_ASCII:
-		extent = nil
-	default:
-		return nil, fmt.Errorf("Unrecognized extent type: %d", datatype)
+		return nil, nil
 	}
-	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting tiledb dimension's extent: %s", d.context.LastError())
-	}
-
-	return extent, nil
+	return nil, fmt.Errorf("unrecognized extent type: %d", datatype)
 }
 
-// DumpSTDOUT Dumps the dimension in ASCII format to stdout
+func extentInternal[T any](d *Dimension) (T, error) {
+	// As in domainInternal, tiledb_dimension_get_tile_extent writes a pointer
+	// to memory it owns into cExtent. Ensure this Dimension stays alive.
+	defer runtime.KeepAlive(d)
+	var cExtent unsafe.Pointer
+	var output T
+	cRet := C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cExtent)
+	if cRet != C.TILEDB_OK {
+		return output, fmt.Errorf("could not get TileDB dimension's extent: %w", d.context.LastError())
+	}
+	output = *(*T)(cExtent)
+	return output, nil
+}
+
+// DumpSTDOUT dumps the dimension in ASCII format to stdout.
 func (d *Dimension) DumpSTDOUT() error {
 	ret := C.tiledb_dimension_dump(d.context.tiledbContext, d.tiledbDimension, C.stdout)
 	if ret != C.TILEDB_OK {
@@ -539,7 +461,7 @@ func (d *Dimension) DumpSTDOUT() error {
 	return nil
 }
 
-// Dump Dumps the dimension in ASCII format in the selected output.
+// Dump dumps the dimension in ASCII format to the given path.
 func (d *Dimension) Dump(path string) error {
 
 	if _, err := os.Stat(path); err == nil {

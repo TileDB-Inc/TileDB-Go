@@ -50,7 +50,7 @@ func ExampleNewArray() {
 		return
 	}
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute, err := NewAttribute(context, "a1", TILEDB_INT32)
 
 	if err != nil {
@@ -103,12 +103,12 @@ func buildArraySchema(context *Context, t testing.TB) *ArraySchema {
 	require.NoError(t, err)
 	assert.NotNil(t, arraySchema)
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute, err := NewAttribute(context, "a1", TILEDB_INT32)
 	require.NoError(t, err)
 	assert.NotNil(t, attribute)
 
-	// Crete attribute to add to schema
+	// Create attribute to add to schema
 	attribute2, err := NewAttribute(context, "a2", TILEDB_STRING_ASCII)
 	require.NoError(t, err)
 	assert.NotNil(t, attribute2)
@@ -459,6 +459,127 @@ func TestArray_DeleteFragments(t *testing.T) {
 	bounds := domain.Bounds.([]int8)
 	require.Equal(t, int8(5), bounds[0])
 	require.Equal(t, int8(10), bounds[1])
+}
+
+func TestDeleteFragments(t *testing.T) {
+	// Create an array with domain [1, 10].
+	// Create fragments [1,2] [3,4] [5,6] [7,8] [9,10]
+	// Delete the first 2 fragments and verify the non empty domain is [5, 10]
+
+	// create an array and write 5 fragments
+	array, err := newTestArray(t)
+	require.NoError(t, err)
+
+	testStarted := time.Now()
+	var fragmentCreatedAt []time.Time
+
+	context, err := NewContext(nil)
+	require.NoError(t, err)
+	require.NoError(t, array.Open(TILEDB_WRITE))
+	for i := 1; i <= 10; i += 2 {
+		time.Sleep(100 * time.Millisecond) // give fragments some time distance
+
+		query, err := NewQuery(context, array)
+		require.NoError(t, err)
+		require.NotNil(t, query)
+
+		err = query.AddRangeByName("dim1", int32(i), int32(i+1))
+		require.NoError(t, err)
+		_, err = query.SetBuffer("a1", []int32{int32(i), int32(i + 1)})
+		_, _, err = query.SetBufferVar("a2", []uint64{0, 1}, []byte("aa"))
+		require.NoError(t, err)
+
+		err = query.Submit()
+		require.NoError(t, err)
+
+		status, err := query.Status()
+		require.NoError(t, err)
+		assert.Equal(t, TILEDB_COMPLETED, status)
+
+		fragmentCreatedAt = append(fragmentCreatedAt, time.Now())
+	}
+	err = array.Close()
+	require.NoError(t, err)
+
+	// delete the first two fragments
+	uri, err := array.URI()
+	require.NoError(t, err)
+	err = DeleteFragments(context, uri, uint64(testStarted.UnixMilli()), uint64(fragmentCreatedAt[1].UnixMilli()))
+	require.NoError(t, err)
+
+	// verify deletion
+	err = array.Open(TILEDB_READ)
+	require.NoError(t, err)
+	domain, _, err := array.NonEmptyDomainFromName("dim1")
+	require.NoError(t, err)
+	bounds := domain.Bounds.([]int8)
+	require.Equal(t, int8(5), bounds[0])
+	require.Equal(t, int8(10), bounds[1])
+}
+
+func TestDeleteFragmentsList(t *testing.T) {
+	// Create an array with domain [1, 10].
+	// Create fragments [1,2] [3,4] [5,6] [7,8] [9,10]
+	// Delete the first 2 fragments and verify the others
+
+	// create an array and write 5 fragments
+	array, err := newTestArray(t)
+	require.NoError(t, err)
+
+	context, err := NewContext(nil)
+	require.NoError(t, err)
+	err = array.Open(TILEDB_WRITE)
+	require.NoError(t, err)
+	for i := 1; i <= 10; i += 2 {
+		time.Sleep(100 * time.Millisecond)
+
+		query, err := NewQuery(context, array)
+		require.NoError(t, err)
+		require.NotNil(t, query)
+
+		err = query.AddRangeByName("dim1", int32(i), int32(i+1))
+		require.NoError(t, err)
+		_, err = query.SetBuffer("a1", []int32{int32(i), int32(i + 1)})
+		_, _, err = query.SetBufferVar("a2", []uint64{0, 1}, []byte("aa"))
+		require.NoError(t, err)
+
+		err = query.Submit()
+		require.NoError(t, err)
+
+		status, err := query.Status()
+		require.NoError(t, err)
+		assert.Equal(t, TILEDB_COMPLETED, status)
+	}
+	err = array.Close()
+	require.NoError(t, err)
+
+	uri, err := array.URI()
+	require.NoError(t, err)
+
+	getFragments := func() []string {
+		var fragmentURIs []string
+		fragmentInfo, err := NewFragmentInfo(context, uri)
+		require.NoError(t, err)
+		err = fragmentInfo.Load()
+		require.NoError(t, err)
+		fragmentNum, err := fragmentInfo.GetFragmentNum()
+		require.NoError(t, err)
+		for i := uint32(0); i < fragmentNum; i++ {
+			uri, err := fragmentInfo.GetFragmentURI(i)
+			require.NoError(t, err)
+			fragmentURIs = append(fragmentURIs, uri)
+		}
+		return fragmentURIs
+	}
+	fragmentURIsInitial := getFragments()
+
+	// delete the first two fragments
+	err = DeleteFragmentsList(context, uri, fragmentURIsInitial[0:2])
+	require.NoError(t, err)
+
+	// verify deletion
+	fragmentURIsAfter := getFragments()
+	require.ElementsMatch(t, fragmentURIsInitial[2:], fragmentURIsAfter)
 }
 
 func newTestArray(t *testing.T) (*Array, error) {

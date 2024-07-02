@@ -1,8 +1,6 @@
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +13,7 @@ import (
 	"unsafe"
 )
 
-// StatsEnable enable internal statistics gathering
+// StatsEnable enables internal statistics gathering.
 func StatsEnable() error {
 	ret := C.tiledb_stats_enable()
 	if ret != C.TILEDB_OK {
@@ -24,7 +22,7 @@ func StatsEnable() error {
 	return nil
 }
 
-// StatsDisable disable internal statistics gathering.
+// StatsDisable disables internal statistics gathering.
 func StatsDisable() error {
 	ret := C.tiledb_stats_disable()
 	if ret != C.TILEDB_OK {
@@ -33,7 +31,7 @@ func StatsDisable() error {
 	return nil
 }
 
-// StatsReset reset all internal statistics counters to 0.
+// StatsReset resets all internal statistics counters to 0.
 func StatsReset() error {
 	ret := C.tiledb_stats_reset()
 	if ret != C.TILEDB_OK {
@@ -42,7 +40,7 @@ func StatsReset() error {
 	return nil
 }
 
-// StatsDumpSTDOUT prints internal stats to stdout
+// StatsDumpSTDOUT prints internal stats to stdout.
 func StatsDumpSTDOUT() error {
 	ret := C.tiledb_stats_dump(C.stdout)
 	if ret != C.TILEDB_OK {
@@ -51,7 +49,7 @@ func StatsDumpSTDOUT() error {
 	return nil
 }
 
-// StatsDump prints internal stats to file path given
+// StatsDump prints internal stats to the given file path.
 func StatsDump(path string) error {
 
 	if _, err := os.Stat(path); err == nil {
@@ -78,7 +76,7 @@ func StatsDump(path string) error {
 	return nil
 }
 
-// Stats returns internal stats as string
+// Stats returns internal stats as string.
 func Stats() (string, error) {
 	var msg *C.char
 
@@ -97,7 +95,7 @@ func Stats() (string, error) {
 	return s, nil
 }
 
-// StatsRawDumpSTDOUT prints internal raw (json) stats to stdout
+// StatsRawDumpSTDOUT prints internal raw (json) stats to stdout.
 func StatsRawDumpSTDOUT() error {
 	ret := C.tiledb_stats_raw_dump(C.stdout)
 	if ret != C.TILEDB_OK {
@@ -106,7 +104,7 @@ func StatsRawDumpSTDOUT() error {
 	return nil
 }
 
-// StatsRawDump prints internal raw (json) stats to file path given
+// StatsRawDump prints internal raw (json) stats to the given file path.
 func StatsRawDump(path string) error {
 
 	if _, err := os.Stat(path); err == nil {
@@ -133,7 +131,7 @@ func StatsRawDump(path string) error {
 	return nil
 }
 
-// StatsRaw returns internal raw (json) stats as string
+// StatsRaw returns internal raw (json) stats as string.
 func StatsRaw() (string, error) {
 	var msg *C.char
 

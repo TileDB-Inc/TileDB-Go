@@ -1,8 +1,6 @@
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb.h>
 #include <stdlib.h>
 */
@@ -13,12 +11,12 @@ import (
 	"unsafe"
 )
 
-// Config Carries configuration parameters for a context.
+// Config carries configuration parameters for a context.
 type Config struct {
 	tiledbConfig *C.tiledb_config_t
 }
 
-// NewConfig alloc a new configuration
+// NewConfig allocates a new configuration.
 func NewConfig() (*Config, error) {
 	var config Config
 	var err *C.tiledb_error_t
@@ -34,7 +32,7 @@ func NewConfig() (*Config, error) {
 	return &config, nil
 }
 
-// Set Sets a config parameter-value pair.
+// Set sets a config parameter-value pair.
 func (c *Config) Set(param string, value string) error {
 	var err *C.tiledb_error_t
 	cparam := C.CString(param)
@@ -53,7 +51,7 @@ func (c *Config) Set(param string, value string) error {
 	return nil
 }
 
-// Get Get a parameter from the configuration by key.
+// Get gets a parameter from the configuration by key.
 func (c *Config) Get(param string) (string, error) {
 	var err *C.tiledb_error_t
 	var val *C.char
@@ -73,7 +71,7 @@ func (c *Config) Get(param string) (string, error) {
 	return value, nil
 }
 
-// Unset Resets a config parameter to its default value.
+// Unset resets a config parameter to its default value.
 func (c *Config) Unset(param string) error {
 	var err *C.tiledb_error_t
 	cparam := C.CString(param)
@@ -90,7 +88,7 @@ func (c *Config) Unset(param string) error {
 	return nil
 }
 
-// SaveToFile Saves the config parameters to a (local) text file.
+// SaveToFile saves the config parameters to a (local) text file.
 func (c *Config) SaveToFile(file string) error {
 	var err *C.tiledb_error_t
 	cfile := C.CString(file)
@@ -107,7 +105,7 @@ func (c *Config) SaveToFile(file string) error {
 	return nil
 }
 
-// LoadConfig reads a configuration from a given uri
+// LoadConfig reads a configuration from the given uri.
 func LoadConfig(uri string) (*Config, error) {
 
 	if uri == "" {
@@ -149,15 +147,16 @@ func (c *Config) Free() {
 	}
 }
 
-// Iterate configuration
-// for iter, err := config.Iterate(); !iter.Done(); iter.Next(){
-//    param, value, err := iter.Here()
-// }
+// Iterate iterates over configuration.
+//
+//	for iter, err := config.Iterate(); !iter.Done(); iter.Next(){
+//	   param, value, err := iter.Here()
+//	}
 func (c *Config) Iterate(prefix string) (*ConfigIter, error) {
 	return NewConfigIter(c, prefix)
 }
 
-// Cmp Compare two configs
+// Cmp compares two configs.
 func (c *Config) Cmp(other *Config) bool {
 	var equal C.uint8_t
 	C.tiledb_config_compare(c.tiledbConfig, other.tiledbConfig, &equal)

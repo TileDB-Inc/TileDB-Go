@@ -1,8 +1,6 @@
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb.h>
 #include <tiledb/tiledb_serialization.h>
 #include <stdlib.h>
@@ -16,21 +14,21 @@ import (
 )
 
 /*
-ArraySchema Schema describing an array.
+ArraySchema describes an array.
 
 The schema is an independent description of an array. A schema can be used to create multiple array’s, and stores information about its domain, cell types, and compression details. An array schema is composed of:
 
-    A Domain
-    A set of Attributes
-    Memory layout definitions: tile and cell
-    Compression details for Array level factors like offsets and coordinates
+	A Domain
+	A set of Attributes
+	Memory layout definitions: tile and cell
+	Compression details for Array level factors like offsets and coordinates
 */
 type ArraySchema struct {
 	tiledbArraySchema *C.tiledb_array_schema_t
 	context           *Context
 }
 
-// MarshalJSON marshal arraySchema struct to json using tiledb
+// MarshalJSON marshals arraySchema struct to json using tiledb.
 func (a *ArraySchema) MarshalJSON() ([]byte, error) {
 	bs, err := SerializeArraySchema(a, TILEDB_JSON, false)
 	if err != nil {
@@ -39,12 +37,12 @@ func (a *ArraySchema) MarshalJSON() ([]byte, error) {
 	return bs, nil
 }
 
-// Context exposes the internal TileDB context used to initialize the array schema
+// Context exposes the internal TileDB context used to initialize the array schema.
 func (a *ArraySchema) Context() *Context {
 	return a.context
 }
 
-// UnmarshalJSON marshal arraySchema struct to json using tiledb
+// UnmarshalJSON marshals arraySchema struct to json using tiledb.
 func (a *ArraySchema) UnmarshalJSON(b []byte) error {
 	var err error
 	if a.context == nil {
@@ -93,7 +91,7 @@ func (a *ArraySchema) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// NewArraySchema alloc a new ArraySchema
+// NewArraySchema allocates a new ArraySchema.
 func NewArraySchema(tdbCtx *Context, arrayType ArrayType) (*ArraySchema, error) {
 	arraySchema := ArraySchema{context: tdbCtx}
 	ret := C.tiledb_array_schema_alloc(arraySchema.context.tiledbContext, C.tiledb_array_type_t(arrayType), &arraySchema.tiledbArraySchema)
@@ -115,7 +113,7 @@ func (a *ArraySchema) Free() {
 	}
 }
 
-// AddAttributes add one or more attributes to the array
+// AddAttributes adds one or more attributes to the array.
 func (a *ArraySchema) AddAttributes(attributes ...*Attribute) error {
 	for _, attribute := range attributes {
 		ret := C.tiledb_array_schema_add_attribute(a.context.tiledbContext, a.tiledbArraySchema, attribute.tiledbAttribute)
@@ -126,7 +124,7 @@ func (a *ArraySchema) AddAttributes(attributes ...*Attribute) error {
 	return nil
 }
 
-// AttributeNum returns the number of attributes
+// AttributeNum returns the number of attributes.
 func (a *ArraySchema) AttributeNum() (uint, error) {
 	var attrNum C.uint32_t
 	ret := C.tiledb_array_schema_get_attribute_num(a.context.tiledbContext, a.tiledbArraySchema, &attrNum)
@@ -136,7 +134,7 @@ func (a *ArraySchema) AttributeNum() (uint, error) {
 	return uint(attrNum), nil
 }
 
-// AttributeFromIndex get a copy of an Attribute in the schema by name.
+// AttributeFromIndex gets a copy of an Attribute in the schema by name.
 func (a *ArraySchema) AttributeFromIndex(index uint) (*Attribute, error) {
 	attr := Attribute{context: a.context}
 	ret := C.tiledb_array_schema_get_attribute_from_index(
@@ -151,7 +149,7 @@ func (a *ArraySchema) AttributeFromIndex(index uint) (*Attribute, error) {
 	return &attr, nil
 }
 
-// AttributeFromName Get a copy of an Attribute in the schema by index.
+// AttributeFromName gets a copy of an Attribute in the schema by index.
 // Attributes are ordered the same way they were defined when
 // constructing the array schema.
 func (a *ArraySchema) AttributeFromName(attrName string) (*Attribute, error) {
@@ -166,7 +164,7 @@ func (a *ArraySchema) AttributeFromName(attrName string) (*Attribute, error) {
 	return &attr, nil
 }
 
-// HasAttribute returns true if attribute: `attrName` is part of the schema
+// HasAttribute returns true if attribute: `attrName` is part of the schema.
 func (a *ArraySchema) HasAttribute(attrName string) (bool, error) {
 	var hasAttr C.int32_t
 	cAttrName := C.CString(attrName)
@@ -183,8 +181,7 @@ func (a *ArraySchema) HasAttribute(attrName string) (bool, error) {
 	return true, nil
 }
 
-// SetAllowsDups
-// Sets whether the array can allow coordinate duplicates or not.
+// SetAllowsDups sets whether the array can allow coordinate duplicates or not.
 // Applicable only to sparse arrays (it errors out if set to `1` for dense
 // arrays).
 func (a *ArraySchema) SetAllowsDups(allowsDups bool) error {
@@ -202,8 +199,7 @@ func (a *ArraySchema) SetAllowsDups(allowsDups bool) error {
 	return nil
 }
 
-// AllowsDups
-// Gets whether the array can allow coordinate duplicates or not.
+// AllowsDups gets whether the array can allow coordinate duplicates or not.
 // It should always be `0` for dense arrays.
 func (a *ArraySchema) AllowsDups() (bool, error) {
 	var allowsDups C.int32_t
@@ -238,7 +234,7 @@ func (a *ArraySchema) Attributes() ([]*Attribute, error) {
 	return attributes, nil
 }
 
-// SetDomain sets the array domain
+// SetDomain sets the array domain.
 func (a *ArraySchema) SetDomain(domain *Domain) error {
 	ret := C.tiledb_array_schema_set_domain(a.context.tiledbContext, a.tiledbArraySchema, domain.tiledbDomain)
 	if ret != C.TILEDB_OK {
@@ -247,7 +243,7 @@ func (a *ArraySchema) SetDomain(domain *Domain) error {
 	return nil
 }
 
-// Domain returns the array's domain
+// Domain returns the array's domain.
 func (a *ArraySchema) Domain() (*Domain, error) {
 	domain := Domain{context: a.context}
 	ret := C.tiledb_array_schema_get_domain(a.context.tiledbContext, a.tiledbArraySchema, &domain.tiledbDomain)
@@ -277,7 +273,7 @@ func (a *ArraySchema) Capacity() (uint64, error) {
 	return uint64(capacity), nil
 }
 
-// SetCellOrder set the cell order
+// SetCellOrder sets the cell order.
 func (a *ArraySchema) SetCellOrder(cellOrder Layout) error {
 	ret := C.tiledb_array_schema_set_cell_order(a.context.tiledbContext, a.tiledbArraySchema, C.tiledb_layout_t(cellOrder))
 	if ret != C.TILEDB_OK {
@@ -286,7 +282,7 @@ func (a *ArraySchema) SetCellOrder(cellOrder Layout) error {
 	return nil
 }
 
-// CellOrder return the cell order
+// CellOrder returns the cell order.
 func (a *ArraySchema) CellOrder() (Layout, error) {
 	var cellOrder C.tiledb_layout_t
 	ret := C.tiledb_array_schema_get_cell_order(a.context.tiledbContext, a.tiledbArraySchema, &cellOrder)
@@ -296,7 +292,7 @@ func (a *ArraySchema) CellOrder() (Layout, error) {
 	return Layout(cellOrder), nil
 }
 
-// SetTileOrder set the tile order
+// SetTileOrder sets the tile order.
 func (a *ArraySchema) SetTileOrder(tileOrder Layout) error {
 	ret := C.tiledb_array_schema_set_tile_order(a.context.tiledbContext, a.tiledbArraySchema, C.tiledb_layout_t(tileOrder))
 	if ret != C.TILEDB_OK {
@@ -305,7 +301,7 @@ func (a *ArraySchema) SetTileOrder(tileOrder Layout) error {
 	return nil
 }
 
-// TileOrder return the tile order
+// TileOrder returns the tile order.
 func (a *ArraySchema) TileOrder() (Layout, error) {
 	var cellOrder C.tiledb_layout_t
 	ret := C.tiledb_array_schema_get_tile_order(a.context.tiledbContext, a.tiledbArraySchema, &cellOrder)
@@ -315,7 +311,7 @@ func (a *ArraySchema) TileOrder() (Layout, error) {
 	return Layout(cellOrder), nil
 }
 
-// SetCoordsFilterList sets the filter list used for coordinates
+// SetCoordsFilterList sets the filter list used for coordinates.
 func (a *ArraySchema) SetCoordsFilterList(filterList *FilterList) error {
 	ret := C.tiledb_array_schema_set_coords_filter_list(a.context.tiledbContext, a.tiledbArraySchema, filterList.tiledbFilterList)
 	if ret != C.TILEDB_OK {
@@ -324,7 +320,7 @@ func (a *ArraySchema) SetCoordsFilterList(filterList *FilterList) error {
 	return nil
 }
 
-// CoordsFilterList Returns a copy of the filter list of the coordinates.
+// CoordsFilterList returns a copy of the filter list of the coordinates.
 func (a *ArraySchema) CoordsFilterList() (*FilterList, error) {
 	filterList := FilterList{context: a.context}
 	ret := C.tiledb_array_schema_get_coords_filter_list(a.context.tiledbContext, a.tiledbArraySchema, &filterList.tiledbFilterList)
@@ -336,7 +332,7 @@ func (a *ArraySchema) CoordsFilterList() (*FilterList, error) {
 }
 
 // SetOffsetsFilterList sets the filter list for the offsets of
-// variable-length attributes
+// variable-length attributes.
 func (a *ArraySchema) SetOffsetsFilterList(filterList *FilterList) error {
 	ret := C.tiledb_array_schema_set_offsets_filter_list(a.context.tiledbContext, a.tiledbArraySchema, filterList.tiledbFilterList)
 	if ret != C.TILEDB_OK {
@@ -357,7 +353,7 @@ func (a *ArraySchema) OffsetsFilterList() (*FilterList, error) {
 	return &filterList, nil
 }
 
-// Check validates the schema
+// Check validates the schema.
 func (a *ArraySchema) Check() error {
 	ret := C.tiledb_array_schema_check(a.context.tiledbContext, a.tiledbArraySchema)
 	if ret != C.TILEDB_OK {
@@ -366,7 +362,7 @@ func (a *ArraySchema) Check() error {
 	return nil
 }
 
-// LoadArraySchema reads a directory for a ArraySchema
+// LoadArraySchema reads a directory for an ArraySchema.
 func LoadArraySchema(context *Context, path string) (*ArraySchema, error) {
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
@@ -379,7 +375,7 @@ func LoadArraySchema(context *Context, path string) (*ArraySchema, error) {
 	return &a, nil
 }
 
-// DumpSTDOUT Dumps the array schema in ASCII format to stdout
+// DumpSTDOUT dumps the array schema in ASCII format to stdout.
 func (a *ArraySchema) DumpSTDOUT() error {
 	ret := C.tiledb_array_schema_dump(a.context.tiledbContext, a.tiledbArraySchema, C.stdout)
 	if ret != C.TILEDB_OK {
@@ -388,7 +384,7 @@ func (a *ArraySchema) DumpSTDOUT() error {
 	return nil
 }
 
-// Dump Dumps the array schema in ASCII format in the selected output.
+// Dump dumps the array schema in ASCII format to the given path.
 func (a *ArraySchema) Dump(path string) error {
 
 	if _, err := os.Stat(path); err == nil {
@@ -415,7 +411,7 @@ func (a *ArraySchema) Dump(path string) error {
 	return nil
 }
 
-// Type fetch the tiledb array type
+// Type fetches the tiledb array type.
 func (a *ArraySchema) Type() (ArrayType, error) {
 	var arrayType C.tiledb_array_type_t
 	ret := C.tiledb_array_schema_get_array_type(a.context.tiledbContext, a.tiledbArraySchema, &arrayType)

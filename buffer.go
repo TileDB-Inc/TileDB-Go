@@ -1,8 +1,6 @@
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb.h>
 #include <stdlib.h>
 */
@@ -39,7 +37,7 @@ type Buffer struct {
 	data byteBuffer
 }
 
-// NewBuffer Allocs a new buffer
+// NewBuffer allocates a new buffer.
 func NewBuffer(context *Context) (*Buffer, error) {
 	buffer := Buffer{context: context}
 
@@ -68,12 +66,12 @@ func (b *Buffer) Free() {
 	}
 }
 
-// Context exposes the internal TileDB context used to initialize the buffer
+// Context exposes the internal TileDB context used to initialize the buffer.
 func (b *Buffer) Context() *Context {
 	return b.context
 }
 
-// SetType sets buffer datatype
+// SetType sets the buffer datatype.
 func (b *Buffer) SetType(datatype Datatype) error {
 	ret := C.tiledb_buffer_set_type(b.context.tiledbContext, b.tiledbBuffer, C.tiledb_datatype_t(datatype))
 	if ret != C.TILEDB_OK {
@@ -82,7 +80,7 @@ func (b *Buffer) SetType(datatype Datatype) error {
 	return nil
 }
 
-// Type returns the buffer datatype
+// Type returns the buffer datatype.
 func (b *Buffer) Type() (Datatype, error) {
 	var bufferType C.tiledb_datatype_t
 	ret := C.tiledb_buffer_get_type(b.context.tiledbContext, b.tiledbBuffer, &bufferType)

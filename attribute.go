@@ -1,8 +1,6 @@
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb.h>
 #include <stdlib.h>
 */
@@ -19,16 +17,16 @@ Attribute describes an attribute of an Array cell.
 
 An attribute specifies a name and datatype for a particular value in each array cell. There are 3 supported attribute types:
 
-    Fundamental types, such as char, int, double, uint64, etc..
-    Fixed sized arrays: [N]T or make([]T, N), where T is a fundamental type
-    Variable length data: string, []T, where T is a fundamental type
+	Fundamental types, such as char, int, double, uint64, etc..
+	Fixed sized arrays: [N]T or make([]T, N), where T is a fundamental type
+	Variable length data: string, []T, where T is a fundamental type
 */
 type Attribute struct {
 	tiledbAttribute *C.tiledb_attribute_t
 	context         *Context
 }
 
-// NewAttribute alloc a new attribute
+// NewAttribute allocates a new attribute.
 func NewAttribute(context *Context, name string, datatype Datatype) (*Attribute, error) {
 	attribute := Attribute{context: context}
 	cname := C.CString(name)
@@ -54,12 +52,12 @@ func (a *Attribute) Free() {
 	}
 }
 
-// Context exposes the internal TileDB context used to initialize the attribute
+// Context exposes the internal TileDB context used to initialize the attribute.
 func (a *Attribute) Context() *Context {
 	return a.context
 }
 
-// SetFilterList sets the attribute filterList
+// SetFilterList sets the attribute filterList.
 func (a *Attribute) SetFilterList(filterlist *FilterList) error {
 	ret := C.tiledb_attribute_set_filter_list(a.context.tiledbContext, a.tiledbAttribute, filterlist.tiledbFilterList)
 	if ret != C.TILEDB_OK {
@@ -68,7 +66,7 @@ func (a *Attribute) SetFilterList(filterlist *FilterList) error {
 	return nil
 }
 
-// FilterList returns a copy of the filter list for attribute
+// FilterList returns a copy of the filter list for attribute.
 func (a *Attribute) FilterList() (*FilterList, error) {
 	filterList := FilterList{context: a.context}
 	ret := C.tiledb_attribute_get_filter_list(a.context.tiledbContext, a.tiledbAttribute, &filterList.tiledbFilterList)
@@ -80,7 +78,7 @@ func (a *Attribute) FilterList() (*FilterList, error) {
 	return &filterList, nil
 }
 
-// SetCellValNum Sets the number of attribute values per cell.
+// SetCellValNum sets the number of attribute values per cell.
 // This is inferred from the type parameter of the NewAttribute
 // function, but can also be set manually.
 func (a *Attribute) SetCellValNum(val uint32) error {
@@ -104,7 +102,7 @@ func (a *Attribute) CellValNum() (uint32, error) {
 	return uint32(cellValNum), nil
 }
 
-// CellSize gets attribute cell size
+// CellSize gets the attribute cell size.
 func (a *Attribute) CellSize() (uint64, error) {
 	var cellSize C.uint64_t
 	ret := C.tiledb_attribute_get_cell_size(a.context.tiledbContext, a.tiledbAttribute, &cellSize)
@@ -115,18 +113,21 @@ func (a *Attribute) CellSize() (uint64, error) {
 	return uint64(cellSize), nil
 }
 
-// SetFillValue Sets the default fill value for the input attribute. This value will
+// SetFillValue sets the default fill value for the input attribute. This value will
 // be used for the input attribute whenever querying (1) an empty cell in
 // a dense array, or (2) a non-empty cell (in either dense or sparse array)
 // when values on the input attribute are missing (e.g., if the user writes
 // a subset of the attributes in a write operation).
 // Applicable to var-sized attributes.
 // @note A call to `tiledb_attribute_cell_val_num` sets the fill value
-//      of the attribute to its default. Therefore, make sure you invoke
-//      `tiledb_attribute_set_fill_value` after deciding on the number
-//      of values this attribute will hold in each cell.
+//
+//	of the attribute to its default. Therefore, make sure you invoke
+//	`tiledb_attribute_set_fill_value` after deciding on the number
+//	of values this attribute will hold in each cell.
+//
 // @note For fixed-sized attributes, the input `size` should be equal
-//      to the cell size.
+//
+//	to the cell size.
 func (a *Attribute) SetFillValue(value interface{}) error {
 	switch value := value.(type) {
 	case int:
@@ -192,18 +193,21 @@ func attributeSetFillValueInternal(a *Attribute, value unsafe.Pointer, valueSize
 	return nil
 }
 
-// SetFillValueNullable Sets the default fill value for the input attribute. This value will
+// SetFillValueNullable sets the default fill value for the input attribute. This value will
 // be used for the input attribute whenever querying (1) an empty cell in
 // a dense array, or (2) a non-empty cell (in either dense or sparse array)
 // when values on the input attribute are missing (e.g., if the user writes
 // a subset of the attributes in a write operation).
 // Applicable to var-sized attributes.
 // @note A call to `tiledb_attribute_cell_val_num` sets the fill value
-//      of the attribute to its default. Therefore, make sure you invoke
-//      `tiledb_attribute_set_fill_value` after deciding on the number
-//      of values this attribute will hold in each cell.
+//
+//	of the attribute to its default. Therefore, make sure you invoke
+//	`tiledb_attribute_set_fill_value` after deciding on the number
+//	of values this attribute will hold in each cell.
+//
 // @note For fixed-sized attributes, the input `size` should be equal
-//      to the cell size.
+//
+//	to the cell size.
 func (a *Attribute) SetFillValueNullable(value interface{}, valid bool) error {
 	switch value := value.(type) {
 	case int:
@@ -274,7 +278,7 @@ func attributeSetFillValueNullableInternal(a *Attribute, value unsafe.Pointer, v
 	return nil
 }
 
-// GetFillValue Gets the default fill value for the input attribute. This value will
+// GetFillValue gets the default fill value for the input attribute. This value will
 // be used for the input attribute whenever querying (1) an empty cell in
 // a dense array, or (2) a non-empty cell (in either dense or sparse array)
 // when values on the input attribute are missing (e.g., if the user writes
@@ -302,7 +306,7 @@ func (a *Attribute) GetFillValue() (interface{}, uint64, error) {
 	return value, uint64(fillValueSize), nil
 }
 
-// GetFillValueNullable Gets the default fill value for the input attribute. This value will
+// GetFillValueNullable gets the default fill value for the input attribute. This value will
 // be used for the input attribute whenever querying (1) an empty cell in
 // a dense array, or (2) a non-empty cell (in either dense or sparse array)
 // when values on the input attribute are missing (e.g., if the user writes
@@ -331,7 +335,7 @@ func (a *Attribute) GetFillValueNullable() (interface{}, uint64, bool, error) {
 	return value, uint64(fillValueSize), cvalid == 1, nil
 }
 
-// Name returns name of attribute
+// Name returns the name of the attribute.
 func (a *Attribute) Name() (string, error) {
 	var cName *C.char
 	ret := C.tiledb_attribute_get_name(a.context.tiledbContext, a.tiledbAttribute, &cName)
@@ -342,7 +346,7 @@ func (a *Attribute) Name() (string, error) {
 	return C.GoString(cName), nil
 }
 
-// Type returns the attribute datatype
+// Type returns the attribute datatype.
 func (a *Attribute) Type() (Datatype, error) {
 	var attrType C.tiledb_datatype_t
 	ret := C.tiledb_attribute_get_type(a.context.tiledbContext, a.tiledbAttribute, &attrType)
@@ -352,7 +356,7 @@ func (a *Attribute) Type() (Datatype, error) {
 	return Datatype(attrType), nil
 }
 
-// DumpSTDOUT Dumps the attribute in ASCII format to stdout
+// DumpSTDOUT dumps the attribute in ASCII format to stdout.
 func (a *Attribute) DumpSTDOUT() error {
 	ret := C.tiledb_attribute_dump(a.context.tiledbContext, a.tiledbAttribute, C.stdout)
 	if ret != C.TILEDB_OK {
@@ -361,7 +365,7 @@ func (a *Attribute) DumpSTDOUT() error {
 	return nil
 }
 
-// Dump Dumps the attribute in ASCII format in the selected output.
+// Dump dumps the attribute in ASCII format to the given path.
 func (a *Attribute) Dump(path string) error {
 
 	if _, err := os.Stat(path); err == nil {
@@ -388,7 +392,7 @@ func (a *Attribute) Dump(path string) error {
 	return nil
 }
 
-// SetNullable Sets if the attribute is nullable or not.
+// SetNullable sets if the attribute is nullable or not.
 func (a *Attribute) SetNullable(nullable bool) error {
 	var cNullable C.uint8_t
 	if nullable {

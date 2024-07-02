@@ -7,10 +7,16 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  # The version of TileDB to test against.
+  CORE_VERSION: "2.24.1"
+  # The abbreviated git commit hash to use.
+  CORE_HASH: "db03540"
+
 jobs:
   golangci:
     name: lint
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
 
     # Checks out repository
@@ -30,15 +36,20 @@ jobs:
         version: v1.35.2
 
   Linux_Test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         # Will be checking following versions
-        go: ["1.19", "1.20"]
+        go: ["1.20", "1.21"]
     steps:
 
     # Checks out repository
     - uses: actions/checkout@v2
+
+    # Log details for the runner. Useful for debugging
+    - name: Run lscpu for runner details
+      run: lscpu
+      shell: bash
 
     # Downloads TileDB-Core from release assets and install
     - name: Run TileDB install script
@@ -70,14 +81,19 @@ jobs:
       run: go test -v ./...
 
   Macos_Test:
-    runs-on: macos-11
+    runs-on: macos-12
     strategy:
       matrix:
         # Will be checking following versions
-        go: ["1.19", "1.20"]
+        go: ["1.20", "1.21"]
     steps:
     # Checks out repository
     - uses: actions/checkout@v2
+
+    # Log details for the runner. Useful for debugging
+    - name: Run sysctl for runner details
+      run: sysctl -a
+      shell: bash
 
     # Downloads TileDB-Core from release assets and install
     - name: Run TileDB install script
@@ -108,94 +124,20 @@ jobs:
     - name: Test TileDB-Go
       run: go test -v ./...
 
-  Linux_Experimental_Test:
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        # Will be checking following versions
-        go: ["1.19", "1.20"]
-    steps:
-
-    # Checks out repository
-    - uses: actions/checkout@v2
-
-    # Downloads TileDB-Core from release assets and install
-    - name: Run TileDB install script
-      run: ./.github/scripts/install_tiledb_linux.sh
-      shell: bash
-
-    # Following action sets up Go and uses the strategy matrix to test on
-    # specific versions
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go }}
-
-    - name: Cache dependencies
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-experimental
-        restore-keys: |
-          ${{ runner.os }}-go-
-
-    - name: Install dependencies
-      run: go get -t .
-
-    # Tests TileDB-Go
-    - name: Test TileDB-Go
-      run: go test -tags=experimental -v ./...
-
-  Macos_Experimental_Test:
-    runs-on: macos-11
-    strategy:
-      matrix:
-        # Will be checking following versions
-        go: ["1.19", "1.20"]
-    steps:
-    # Checks out repository
-    - uses: actions/checkout@v2
-
-    # Downloads TileDB-Core from release assets and install
-    - name: Run TileDB install script
-      run: ./.github/scripts/install_tiledb_macos.sh
-      shell: bash
-
-    # Following action sets up Go and uses the strategy matrix to test on
-    # specific versions
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go }}
-
-    - name: Cache dependencies
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/Library/Caches/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-experimental
-        restore-keys: |
-          ${{ runner.os }}-go-
-
-    - name: Install dependencies
-      run: go get -t .
-
-    # Tests experimental bindings of TileDB-Go
-    - name: Test TileDB-Go
-      run: go test -tags=experimental -v ./...
-
   Linux_Address_Sanitizer:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         # Will be checking following versions
-        go: ["1.19", "1.20"]
+        go: ["1.20", "1.21"]
     steps:
     # Checks out repository
     - uses: actions/checkout@v2
+
+    # Log details for the runner. Useful for debugging
+    - name: Run lscpu for runner details
+      run: lscpu
+      shell: bash
 
     # Downloads TileDB-Core from release assets and install
     - name: Run TileDB install script
