@@ -52,6 +52,101 @@ func (sa *Subarray) Free() {
 	}
 }
 
+// SetSubarray sets a subarray, defined in the order dimensions were added.
+// Coordinates are inclusive. For the case of writes, this is meaningful only
+// for dense arrays, and specifically dense writes.
+func (sa *Subarray) SetSubArray(subArray interface{}) error {
+
+	if reflect.TypeOf(subArray).Kind() != reflect.Slice {
+		return fmt.Errorf("Subarray passed must be a slice, type passed was: %s", reflect.TypeOf(subArray).Kind().String())
+	}
+
+	subArrayType := reflect.TypeOf(subArray).Elem().Kind()
+
+	schema, err := sa.array.Schema()
+	if err != nil {
+		return fmt.Errorf("Could not get array schema from query array: %s", err)
+	}
+
+	domain, err := schema.Domain()
+	if err != nil {
+		return fmt.Errorf("Could not get domain from array schema: %s", err)
+	}
+
+	domainType, err := domain.Type()
+	if err != nil {
+		return fmt.Errorf("Could not get domain type: %s", err)
+	}
+
+	if subArrayType != domainType.ReflectKind() {
+		return fmt.Errorf("Domain and subarray do not have the same data types. Domain: %s, Extent: %s", domainType.ReflectKind().String(), subArrayType.String())
+	}
+
+	var csubArray unsafe.Pointer
+	switch subArrayType {
+	case reflect.Int:
+		// Create subArray void*
+		tmpSubArray := subArray.([]int)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Int8:
+		// Create subArray void*
+		tmpSubArray := subArray.([]int8)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Int16:
+		// Create subArray void*
+		tmpSubArray := subArray.([]int16)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Int32:
+		// Create subArray void*
+		tmpSubArray := subArray.([]int32)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Int64:
+		// Create subArray void*
+		tmpSubArray := subArray.([]int64)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Uint:
+		// Create subArray void*
+		tmpSubArray := subArray.([]uint)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Uint8:
+		// Create subArray void*
+		tmpSubArray := subArray.([]uint8)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Uint16:
+		// Create subArray void*
+		tmpSubArray := subArray.([]uint16)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Uint32:
+		// Create subArray void*
+		tmpSubArray := subArray.([]uint32)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Uint64:
+		// Create subArray void*
+		tmpSubArray := subArray.([]uint64)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Float32:
+		// Create subArray void*
+		tmpSubArray := subArray.([]float32)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Float64:
+		// Create subArray void*
+		tmpSubArray := subArray.([]float64)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Bool:
+		// Create subArray void*
+		tmpSubArray := subArray.([]bool)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	default:
+		return fmt.Errorf("Unrecognized subArray type passed: %s", subArrayType.String())
+	}
+
+	ret := C.tiledb_subarray_set_subarray(sa.context.tiledbContext, sa.subarray, csubArray)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error setting query subarray: %s", sa.context.LastError())
+	}
+	return nil
+}
+
 // SetCoalesceRanges sets coalesce_ranges property on a TileDB subarray object.
 // Intended to be used just after array.NewSubarray to replace the initial coalesce_ranges == true with coalesce_ranges = false if needed.
 func (sa *Subarray) SetCoalesceRanges(b bool) error {
