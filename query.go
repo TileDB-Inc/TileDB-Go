@@ -1325,9 +1325,10 @@ func (q *Query) GetRangeVarFromName(dimName string, rangeNum uint64) (interface{
 
 // GetRanges gets the number of dimensions from the array under current query
 // and builds an array of dimensions that have as memmbers arrays of ranges.
-//
-// Deprecated: Use Subarrays
 func (q *Query) GetRanges() (map[string][]RangeLimits, error) {
+	// In order to be able to remove this API and add an equivalent to Subarray,
+	// we need a C API to get the array of a subarray object.
+
 	// We need to infer the datatype of the dimension represented by index
 	// dimIdx. That said:
 	// Get array schema
@@ -1344,6 +1345,11 @@ func (q *Query) GetRanges() (map[string][]RangeLimits, error) {
 
 	// Use the index to retrieve the dimension object
 	nDim, err := domain.NDim()
+	if err != nil {
+		return nil, err
+	}
+
+	subarray, err := q.GetSubarray()
 	if err != nil {
 		return nil, err
 	}
@@ -1365,21 +1371,21 @@ func (q *Query) GetRanges() (map[string][]RangeLimits, error) {
 		}
 
 		// Get number of renges to iterate
-		numOfRanges, err := q.GetRangeNum(uint32(dimIdx))
+		numOfRanges, err := subarray.GetRangeNum(uint32(dimIdx))
 		if err != nil {
 			return nil, err
 		}
 
 		var I uint64
 		rangeArray := make([]RangeLimits, 0)
-		for I = 0; I < *numOfRanges; I++ {
+		for I = 0; I < numOfRanges; I++ {
 
-			start, end, err := q.GetRange(uint32(dimIdx), I)
+			r, err := subarray.GetRange(uint32(dimIdx), I)
 			if err != nil {
 				return nil, err
 			}
 			// Append range to range Array
-			rangeArray = append(rangeArray, RangeLimits{start: start, end: end})
+			rangeArray = append(rangeArray, RangeLimits{start: r.start, end: r.end})
 		}
 		// key: name (string), value: rangeArray ([]RangeLimits)
 		rangeMap[name] = rangeArray
