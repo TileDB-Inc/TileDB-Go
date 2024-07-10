@@ -69,11 +69,17 @@ func TestGetConsolidationPlan(t *testing.T) {
 	err = array.Open(TILEDB_WRITE)
 	require.NoError(t, err)
 
+	// Create subarray
+	subarray, err := array.NewSubarray()
+	require.NoError(t, err)
+	err = subarray.SetSubArray([]int8{0, 9})
+	require.NoError(t, err)
+
 	// Create write query
 	query, err := NewQuery(context, array)
 	require.NoError(t, err)
 	assert.NotNil(t, query)
-	err = query.SetSubArray([]int8{0, 9})
+	err = query.SetSubarray(subarray)
 	require.NoError(t, err)
 
 	// Initialize the data buffer

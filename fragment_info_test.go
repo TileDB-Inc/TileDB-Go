@@ -154,9 +154,11 @@ func writeToArray(t testing.TB, context *Context, tmpArrayPath string) {
 	query, err := NewQuery(context, array)
 	require.NoError(t, err)
 	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
-	_, err = query.SetBuffer("a1", a1)
+	_, err = query.SetDataBuffer("a1", a1)
 	require.NoError(t, err)
-	_, _, err = query.SetBufferVar("a2", a2Off, a2)
+	_, err = query.SetDataBuffer("a2", a2)
+	require.NoError(t, err)
+	_, err = query.SetOffsetsBuffer("a2", a2Off)
 	require.NoError(t, err)
 
 	require.NoError(t, query.Submit())

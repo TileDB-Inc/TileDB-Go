@@ -71,11 +71,18 @@ func TestQueryStatusDetails(t *testing.T) {
 	err = array.Open(TILEDB_WRITE)
 	require.NoError(t, err)
 
+	// Create subarray
+	subarray, err := array.NewSubarray()
+	require.NoError(t, err)
+	assert.NotNil(t, subarray)
+	err = subarray.SetSubArray([]int8{0, 9})
+	require.NoError(t, err)
+
 	// Create write query
 	query, err := NewQuery(context, array)
 	require.NoError(t, err)
 	assert.NotNil(t, query)
-	err = query.SetSubArray([]int8{0, 9})
+	err = query.SetSubarray(subarray)
 	require.NoError(t, err)
 
 	// Initialize the data buffer
@@ -101,11 +108,18 @@ func TestQueryStatusDetails(t *testing.T) {
 	err = array.Open(TILEDB_READ)
 	require.NoError(t, err)
 
+	// Create subarray
+	subarray, err = array.NewSubarray()
+	require.NoError(t, err)
+	assert.NotNil(t, subarray)
+	err = subarray.SetSubArray([]int8{0, 9}) // we want to read the whole array, 2 full tiles
+	require.NoError(t, err)
+
 	// Create read query
 	query, err = NewQuery(context, array)
 	require.NoError(t, err)
 	assert.NotNil(t, query)
-	err = query.SetSubArray([]int8{0, 9}) // we want to read the whole array, 2 full tiles
+	err = query.SetSubarray(subarray)
 	require.NoError(t, err)
 
 	// Initialize the data buffer
@@ -246,11 +260,18 @@ func TestQueryPlan(t *testing.T) {
 	err = array.Open(TILEDB_WRITE)
 	require.NoError(t, err)
 
+	// Create subarray
+	subarray, err := array.NewSubarray()
+	require.NoError(t, err)
+	assert.NotNil(t, subarray)
+	err = subarray.SetSubArray([]int8{0, 9})
+	require.NoError(t, err)
+
 	// Create write query
 	query, err := NewQuery(context, array)
 	require.NoError(t, err)
 	assert.NotNil(t, query)
-	err = query.SetSubArray([]int8{0, 9})
+	err = query.SetSubarray(subarray)
 	require.NoError(t, err)
 
 	// Initialize the data buffer
@@ -276,11 +297,18 @@ func TestQueryPlan(t *testing.T) {
 	err = array.Open(TILEDB_READ)
 	require.NoError(t, err)
 
+	// Create subarray
+	subarray, err = array.NewSubarray()
+	require.NoError(t, err)
+	assert.NotNil(t, subarray)
+	err = subarray.SetSubArray([]int8{0, 9}) // we want to read the whole array, 2 full tiles
+	require.NoError(t, err)
+
 	// Create read query
 	query, err = NewQuery(context, array)
 	require.NoError(t, err)
 	assert.NotNil(t, query)
-	err = query.SetSubArray([]int8{0, 9}) // we want to read the whole array, 2 full tiles
+	err = query.SetSubarray(subarray)
 	require.NoError(t, err)
 
 	// Initialize the data buffer

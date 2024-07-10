@@ -66,7 +66,7 @@ func testQueryConditionInt32(t *testing.T, array *Array) {
 			require.NoError(t, err)
 			assert.NotNil(t, query)
 
-			_, err = query.SetBuffer("a1", a1DataRead)
+			_, err = query.SetDataBuffer("a1", a1DataRead)
 			require.NoError(t, err)
 			assert.NotNil(t, query)
 
@@ -138,7 +138,7 @@ func testQueryConditionInt32(t *testing.T, array *Array) {
 			require.NoError(t, err)
 			assert.NotNil(t, query)
 
-			_, err = query.SetBuffer("a1", a1DataRead)
+			_, err = query.SetDataBuffer("a1", a1DataRead)
 			require.NoError(t, err)
 			assert.NotNil(t, query)
 
@@ -196,7 +196,7 @@ func testQueryConditionTime(t *testing.T, array *Array) {
 			require.NoError(t, err)
 			assert.NotNil(t, query)
 
-			_, err = query.SetBuffer("a3", a3DataRead)
+			_, err = query.SetDataBuffer("a3", a3DataRead)
 			require.NoError(t, err)
 			assert.NotNil(t, query)
 			qc, err := NewQueryCondition(array.context, "a3", c.op, c.opValue)
@@ -244,7 +244,8 @@ func testQueryConditionBytes(t *testing.T, array *Array) {
 			require.NoError(t, err)
 			assert.NotNil(t, query)
 
-			_, _, err = query.SetBufferVar("a2", a2OffsetRead, a2DataRead)
+			_, err = query.SetDataBuffer("a2", a2DataRead)
+			_, err = query.SetOffsetsBuffer("a2", a2OffsetRead)
 			require.NoError(t, err)
 			assert.NotNil(t, query)
 			qc, err := NewQueryCondition(array.context, "a2", c.op, c.opValue)
@@ -325,19 +326,22 @@ func createBasicTestArray(t testing.TB, identifier string) (*Array, error) {
 	if err := query.SetLayout(TILEDB_UNORDERED); err != nil {
 		return nil, err
 	}
-	if _, err = query.SetBuffer("a1", testAttributeValues.Attribute1); err != nil {
+	if _, err = query.SetDataBuffer("a1", testAttributeValues.Attribute1); err != nil {
 		return nil, err
 	}
-	if _, _, err = query.SetBufferVar("a2", testAttributeValues.Attribute2Offset, testAttributeValues.Attribute2); err != nil {
+	if _, err = query.SetDataBuffer("a2", testAttributeValues.Attribute2); err != nil {
 		return nil, err
 	}
-	if _, err = query.SetBuffer("a3", testAttributeValues.Attribute3); err != nil {
+	if _, err = query.SetOffsetsBuffer("a2", testAttributeValues.Attribute2Offset); err != nil {
 		return nil, err
 	}
-	if _, err := query.SetBuffer("rows", buffD1); err != nil {
+	if _, err = query.SetDataBuffer("a3", testAttributeValues.Attribute3); err != nil {
 		return nil, err
 	}
-	if _, err := query.SetBuffer("cols", buffD2); err != nil {
+	if _, err := query.SetDataBuffer("rows", buffD1); err != nil {
+		return nil, err
+	}
+	if _, err := query.SetDataBuffer("cols", buffD2); err != nil {
 		return nil, err
 	}
 
