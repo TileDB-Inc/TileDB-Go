@@ -261,6 +261,69 @@ func (sa *Subarray) GetRangeNumFromName(dimName string) (uint64, error) {
 	return rangeNum, nil
 }
 
+// GetRanges gets the number of dimensions from the array under current query
+// and builds an array of dimensions that have as memmbers arrays of ranges.
+func (s *Subarray) GetRanges() (map[string][]Range, error) {
+	// We need to infer the datatype of the dimension represented by index
+	// dimIdx. That said:
+	// Get array schema
+	schema, err := s.array.Schema()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the domain object
+	domain, err := schema.Domain()
+	if err != nil {
+		return nil, err
+	}
+
+	// Use the index to retrieve the dimension object
+	nDim, err := domain.NDim()
+	if err != nil {
+		return nil, err
+	}
+
+	var dimIdx uint
+
+	rangeMap := make(map[string][]Range)
+	for dimIdx = 0; dimIdx < nDim; dimIdx++ {
+		// Get dimension object
+		dimension, err := domain.DimensionFromIndex(dimIdx)
+		if err != nil {
+			return nil, err
+		}
+
+		// Get name from dimension
+		name, err := dimension.Name()
+		if err != nil {
+			return nil, err
+		}
+
+		// Get number of renges to iterate
+		numOfRanges, err := s.GetRangeNum(uint32(dimIdx))
+		if err != nil {
+			return nil, err
+		}
+
+		var I uint64
+		rangeArray := make([]Range, 0)
+		for I = 0; I < numOfRanges; I++ {
+
+			r, err := s.GetRange(uint32(dimIdx), I)
+			if err != nil {
+				return nil, err
+			}
+			// Append range to range Array
+			rangeArray = append(rangeArray, r)
+		}
+		// key: name (string), value: rangeArray ([]RangeLimits)
+		rangeMap[name] = rangeArray
+	}
+
+	return rangeMap, err
+}
+
 // GetRange retrieves a specific range of the subarray along a given dimension index.
 func (sa *Subarray) GetRange(dimIdx uint32, rangeNum uint64) (Range, error) {
 	dt, isVar, err := datatypeOfDimensionFromIndex(sa.array, dimIdx)

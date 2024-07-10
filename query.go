@@ -98,10 +98,9 @@ func (q *Query) Context() *Context {
 
 // GetRanges gets the number of dimensions from the array under current query
 // and builds an array of dimensions that have as memmbers arrays of ranges.
+//
+// Deprecated: Use Subarrays
 func (q *Query) GetRanges() (map[string][]RangeLimits, error) {
-	// In order to be able to remove this API and add an equivalent to Subarray,
-	// we need a C API to get the array of a subarray object.
-
 	// We need to infer the datatype of the dimension represented by index
 	// dimIdx. That said:
 	// Get array schema
