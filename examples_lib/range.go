@@ -81,7 +81,7 @@ func writeRangeArray(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
 
 	// Perform the write and close the array.
@@ -106,24 +106,21 @@ func addRange(dir string) {
 	checkError(err)
 	defer array.Close()
 
-	// Prepare the query
-	query, err := tiledb.NewQuery(ctx, array)
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
 	checkError(err)
-	defer query.Free()
+	defer subarray.Free()
 
 	// Try with invalid dimension types
-	err = query.AddRange(0, float32(1), float32(3))
+	err = subarray.AddRange(0, tiledb.MakeRange[float32](1, 3))
 	fmt.Println(err)
 
 	// Try with invalid dimension index
-	err = query.AddRange(2, int32(1), int32(3))
+	err = subarray.AddRange(2, tiledb.MakeRange[int32](1, 3))
 	fmt.Println(err)
 
 	// Try using valid index, range
-	err = query.AddRange(0, int32(1), int32(3))
-	checkError(err)
-
-	err = query.Finalize()
+	err = subarray.AddRange(0, tiledb.MakeRange[int32](1, 3))
 	checkError(err)
 }
 
@@ -140,25 +137,22 @@ func getRangeNum(dir string) {
 	checkError(err)
 	defer array.Close()
 
-	// Prepare the query
-	query, err := tiledb.NewQuery(ctx, array)
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
 	checkError(err)
-	defer query.Free()
+	defer subarray.Free()
 
 	// Try using valid index
-	rangeNum, err := query.GetRangeNum(0)
+	rangeNum, err := subarray.GetRangeNum(0)
 	checkError(err)
 
-	fmt.Printf("Number of ranges across dimension 0 is: %d\n", *rangeNum)
+	fmt.Printf("Number of ranges across dimension 0 is: %d\n", rangeNum)
 
 	// Try using valid dim name
-	rangeNum, err = query.GetRangeNumFromName("rows")
+	rangeNum, err = subarray.GetRangeNumFromName("rows")
 	checkError(err)
 
-	fmt.Printf("Number of ranges across dimension `rows` is: %d\n", *rangeNum)
-
-	err = query.Finalize()
-	checkError(err)
+	fmt.Printf("Number of ranges across dimension `rows` is: %d\n", rangeNum)
 }
 
 func getRange(dir string) {
@@ -175,20 +169,18 @@ func getRange(dir string) {
 	checkError(err)
 	defer array.Close()
 
-	// Prepare the query
-	query, err := tiledb.NewQuery(ctx, array)
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
 	checkError(err)
-	defer query.Free()
+	defer subarray.Free()
 
 	// Try using valid dimension index and range index
-	start, end, err := query.GetRange(0, 0)
+	r, err := subarray.GetRange(0, 0)
 	checkError(err)
+	start, end := r.Endpoints()
 
 	fmt.Printf("Range start for dimension 0, range 0 is: %d\n", start.(int32))
 	fmt.Printf("Range end for dimension 0, range 0 is: %d\n", end.(int32))
-
-	err = query.Finalize()
-	checkError(err)
 }
 
 // RunRange shows an example of creation, writing of a dense array

@@ -2,14 +2,13 @@
 //
 // If built with "-tags asan", it will also perform an ASAN check after running:
 //
-//     go run -tags asan ./cmd/tiledb-go-examples
+//	go run -tags asan ./cmd/tiledb-go-examples
 package main
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
 func main() {
 	examples_lib.RunArrayMetadataArray()
-	examples_lib.RunAsyncArray()
 	examples_lib.RunConfig()
 	examples_lib.RunDeserializeSparseLayouts()
 	examples_lib.RunEncryptedArray()

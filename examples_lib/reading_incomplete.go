@@ -96,13 +96,15 @@ func writeReadingIncompleteArray(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_GLOBAL_ORDER)
 	checkError(err)
-	_, err = query.SetBuffer("a1", a1Data)
+	_, err = query.SetDataBuffer("a1", a1Data)
 	checkError(err)
-	_, _, err = query.SetBufferVar("a2", a2Off, a2Data)
+	_, err = query.SetDataBuffer("a2", a2Data)
 	checkError(err)
-	_, err = query.SetBuffer("rows", buffD1)
+	_, err = query.SetOffsetsBuffer("a2", a2Off)
 	checkError(err)
-	_, err = query.SetBuffer("cols", buffD2)
+	_, err = query.SetDataBuffer("rows", buffD1)
+	checkError(err)
+	_, err = query.SetDataBuffer("cols", buffD2)
 	checkError(err)
 
 	// Perform the write, finalize and close the array.
@@ -206,17 +208,26 @@ func readReadingIncompleteArray(dir string) {
 	checkError(err)
 	defer query.Free()
 
-	err = query.SetSubArray(subArray)
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+
+	err = subarray.SetSubArray(subArray)
+	checkError(err)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a1", a1Data)
+	_, err = query.SetDataBuffer("a1", a1Data)
 	checkError(err)
-	_, _, err = query.SetBufferVar("a2", a2Off, a2Data)
+	_, err = query.SetDataBuffer("a2", a2Data)
 	checkError(err)
-	_, err = query.SetBuffer("rows", rows)
+	_, err = query.SetOffsetsBuffer("a2", a2Off)
 	checkError(err)
-	_, err = query.SetBuffer("cols", cols)
+	_, err = query.SetDataBuffer("rows", rows)
+	checkError(err)
+	_, err = query.SetDataBuffer("cols", cols)
 	checkError(err)
 
 	var queryStatus tiledb.QueryStatus
@@ -236,13 +247,15 @@ func readReadingIncompleteArray(dir string) {
 
 		if queryStatus == tiledb.TILEDB_INCOMPLETE && resultNum == 0 {
 			reallocateBuffers(&rows, &cols, &a1Data, &a2Off, &a2Data)
-			_, err = query.SetBuffer("a1", a1Data)
+			_, err = query.SetDataBuffer("a1", a1Data)
 			checkError(err)
-			_, _, err = query.SetBufferVar("a2", a2Off, a2Data)
+			_, err = query.SetDataBuffer("a2", a2Data)
 			checkError(err)
-			_, err = query.SetBuffer("rows", rows)
+			_, err = query.SetOffsetsBuffer("a2", a2Off)
 			checkError(err)
-			_, err = query.SetBuffer("cols", cols)
+			_, err = query.SetDataBuffer("rows", rows)
+			checkError(err)
+			_, err = query.SetDataBuffer("cols", cols)
 			checkError(err)
 		} else {
 			elements, err := query.ResultBufferElements()

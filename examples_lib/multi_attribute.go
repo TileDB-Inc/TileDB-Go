@@ -94,9 +94,9 @@ func writeMultiAttributeArray(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a1", a1)
+	_, err = query.SetDataBuffer("a1", a1)
 	checkError(err)
-	_, err = query.SetBuffer("a2", a2)
+	_, err = query.SetDataBuffer("a2", a2)
 	checkError(err)
 
 	// Perform the write and close the array.
@@ -130,7 +130,14 @@ func readMultiAttributeArray(dir string) {
 	checkError(err)
 	defer query.Free()
 
-	err = query.SetSubArray(subArray)
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+
+	err = subarray.SetSubArray(subArray)
+	checkError(err)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 
 	// Prepare the vector that will hold the result
@@ -143,9 +150,9 @@ func readMultiAttributeArray(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a1", a1Data)
+	_, err = query.SetDataBuffer("a1", a1Data)
 	checkError(err)
-	_, err = query.SetBuffer("a2", a2Data)
+	_, err = query.SetDataBuffer("a2", a2Data)
 	checkError(err)
 
 	// Submit the query and close the array.
@@ -186,7 +193,14 @@ func readMultiAttributeArraySubSelect(dir string) {
 	checkError(err)
 	defer query.Free()
 
-	err = query.SetSubArray(subArray)
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+
+	err = subarray.SetSubArray(subArray)
+	checkError(err)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 
 	// Prepare the vector that will hold the result
@@ -197,7 +211,7 @@ func readMultiAttributeArraySubSelect(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a1", a1Data)
+	_, err = query.SetDataBuffer("a1", a1Data)
 	checkError(err)
 
 	// Submit the query and close the array.

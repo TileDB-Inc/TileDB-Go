@@ -79,11 +79,11 @@ func writeSparseHeterDimArray(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
 	checkError(err)
-	_, err = query.SetBuffer("d1", buffD1)
+	_, err = query.SetDataBuffer("d1", buffD1)
 	checkError(err)
-	_, err = query.SetBuffer("d2", buffD2)
+	_, err = query.SetDataBuffer("d2", buffD2)
 	checkError(err)
-	_, err = query.SetBuffer("a", buffA)
+	_, err = query.SetDataBuffer("a", buffA)
 	checkError(err)
 
 	// Perform the write and close the array.
@@ -127,17 +127,24 @@ func readSparseHeterDimArray(dir string) {
 	checkError(err)
 	defer query.Free()
 
-	_, err = query.SetBuffer("d1", buffD1R)
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
 	checkError(err)
-	_, err = query.SetBuffer("d2", buffD2R)
+	defer subarray.Free()
+	err = subarray.AddRange(0, tiledb.MakeRange[float32](1.0, 20.0))
 	checkError(err)
-	_, err = query.SetBuffer("a", buffAR)
+	err = subarray.AddRange(1, tiledb.MakeRange[int64](1, 30))
+	checkError(err)
+
+	_, err = query.SetDataBuffer("d1", buffD1R)
+	checkError(err)
+	_, err = query.SetDataBuffer("d2", buffD2R)
+	checkError(err)
+	_, err = query.SetDataBuffer("a", buffAR)
 	checkError(err)
 	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
 	checkError(err)
-	err = query.AddRange(0, float32(1.0), float32(20.0))
-	checkError(err)
-	err = query.AddRange(1, int64(1), int64(30))
+	err = query.SetSubarray(subarray)
 	checkError(err)
 
 	// Submit the query and close the array.

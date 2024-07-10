@@ -110,9 +110,13 @@ func writeVariableLengthArray(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, _, err = query.SetBufferVar("a1", a1Off, a1Data)
+	_, err = query.SetDataBuffer("a1", a1Data)
 	checkError(err)
-	_, _, err = query.SetBufferVar("a2", a2Off, a2Data)
+	_, err = query.SetOffsetsBuffer("a1", a1Off)
+	checkError(err)
+	_, err = query.SetDataBuffer("a2", a2Data)
+	checkError(err)
+	_, err = query.SetOffsetsBuffer("a2", a2Off)
 	checkError(err)
 
 	// Perform the write
@@ -200,7 +204,14 @@ func readVariableLengthArray(dir string) {
 	checkError(err)
 	defer query.Free()
 
-	err = query.SetSubArray(subArray)
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+
+	err = subarray.SetSubArray(subArray)
+	checkError(err)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 
 	bufferElements, err := query.EstimateBufferElements()
@@ -213,9 +224,13 @@ func readVariableLengthArray(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, _, err = query.SetBufferVar("a1", a1Off, a1Data)
+	_, err = query.SetDataBuffer("a1", a1Data)
 	checkError(err)
-	_, _, err = query.SetBufferVar("a2", a2Off, a2Data)
+	_, err = query.SetOffsetsBuffer("a1", a1Off)
+	checkError(err)
+	_, err = query.SetDataBuffer("a2", a2Data)
+	checkError(err)
+	_, err = query.SetOffsetsBuffer("a2", a2Off)
 	checkError(err)
 
 	sizeOff, sizeVal, err := query.EstResultSizeVar("a1")
