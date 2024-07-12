@@ -489,7 +489,7 @@ func TestDeleteFragmentsList(t *testing.T) {
 
 		subarray, err := array.NewSubarray()
 		require.NoError(t, err)
-		require.NotNil(t, query)
+		require.NotNil(t, subarray)
 
 		err = subarray.AddRangeByName("dim1", MakeRange(int8(i), int8(i+1)))
 		require.NoError(t, err)

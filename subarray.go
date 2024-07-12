@@ -52,7 +52,7 @@ func (sa *Subarray) Free() {
 	}
 }
 
-// SetSubarray sets a subarray, defined in the order dimensions were added.
+// SetSubArray sets a subarray, defined in the order dimensions were added.
 // Coordinates are inclusive. For the case of writes, this is meaningful only
 // for dense arrays, and specifically dense writes.
 func (sa *Subarray) SetSubArray(subArray interface{}) error {
@@ -65,7 +65,7 @@ func (sa *Subarray) SetSubArray(subArray interface{}) error {
 
 	schema, err := sa.array.Schema()
 	if err != nil {
-		return fmt.Errorf("Could not get array schema from query array: %s", err)
+		return fmt.Errorf("Could not get array schema from array: %s", err)
 	}
 
 	domain, err := schema.Domain()
@@ -142,7 +142,7 @@ func (sa *Subarray) SetSubArray(subArray interface{}) error {
 
 	ret := C.tiledb_subarray_set_subarray(sa.context.tiledbContext, sa.subarray, csubArray)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting query subarray: %s", sa.context.LastError())
+		return fmt.Errorf("Error setting subarray: %s", sa.context.LastError())
 	}
 	return nil
 }
@@ -261,7 +261,7 @@ func (sa *Subarray) GetRangeNumFromName(dimName string) (uint64, error) {
 	return rangeNum, nil
 }
 
-// GetRanges gets the number of dimensions from the array under current query
+// GetRanges gets the number of dimensions from the array under current subarray
 // and builds an array of dimensions that have as memmbers arrays of ranges.
 func (s *Subarray) GetRanges() (map[string][]Range, error) {
 	// We need to infer the datatype of the dimension represented by index
