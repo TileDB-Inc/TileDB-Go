@@ -531,23 +531,6 @@ func HandleLoadArraySchemaRequest(array *Array, serializationType SerializationT
 	return response, nil
 }
 
-// HandleLoadEnumerationsRequest passes to core a request to load enumerations and is returned serialized bytes to return to client
-func HandleLoadEnumerationsRequest(array *Array, serializationType SerializationType, request *Buffer) (*Buffer, error) {
-	response, err := NewBuffer(array.context)
-	if err != nil {
-		return nil, fmt.Errorf("error deserializing load enumerations request: %s", array.context.LastError())
-	}
-
-	ret := C.tiledb_handle_load_enumerations_request(array.context.tiledbContext, array.tiledbArray, C.tiledb_serialization_type_t(serializationType), request.tiledbBuffer, response.tiledbBuffer)
-	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error deserializing load enumerations request: %s", array.context.LastError())
-	}
-
-	runtime.KeepAlive(request)
-	runtime.KeepAlive(array)
-	return response, nil
-}
-
 // HandleArrayDeleteFragmentsTimestampsRequest is used by TileDB cloud to handle DeleteFragments with tiledb:// uris.
 func HandleArrayDeleteFragmentsTimestampsRequest(context *Context, array *Array, buffer *Buffer, serializationType SerializationType) error {
 	ret := C.tiledb_handle_array_delete_fragments_timestamps_request(context.tiledbContext, array.tiledbArray,
