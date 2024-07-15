@@ -83,11 +83,11 @@ func writeReadingSparseLayoutsArray(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_GLOBAL_ORDER)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
-	_, err = query.SetBuffer("rows", buffD1)
+	_, err = query.SetDataBuffer("rows", buffD1)
 	checkError(err)
-	_, err = query.SetBuffer("cols", buffD2)
+	_, err = query.SetDataBuffer("cols", buffD2)
 	checkError(err)
 
 	// Perform the write, finalize and close the array.
@@ -130,7 +130,14 @@ func readReadingSparseLayoutsArray(dir string) {
 	checkError(err)
 	defer query.Free()
 
-	err = query.SetSubArray(subArray)
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+
+	err = subarray.SetSubArray(subArray)
+	checkError(err)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 
 	// Prepare the vector that will hold the result
@@ -143,11 +150,11 @@ func readReadingSparseLayoutsArray(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
-	_, err = query.SetBuffer("rows", rows)
+	_, err = query.SetDataBuffer("rows", rows)
 	checkError(err)
-	_, err = query.SetBuffer("cols", cols)
+	_, err = query.SetDataBuffer("cols", cols)
 	checkError(err)
 
 	var queryStatus tiledb.QueryStatus

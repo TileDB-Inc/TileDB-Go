@@ -154,8 +154,22 @@ func ExampleNewQuery() {
 		return
 	}
 
+	// Create subarray
+	subarray, err := array.NewSubarray()
+	if err != nil {
+		// Handle error
+		return
+	}
+
 	// Limit writting to subarray
-	err = query.SetSubArray([]int8{0, 1})
+	err = subarray.SetSubArray([]int8{0, 1})
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Set subarray to query
+	err = query.SetSubarray(subarray)
 	if err != nil {
 		// Handle error
 		return
@@ -170,14 +184,14 @@ func ExampleNewQuery() {
 
 	// Create write buffers
 	bufferA1 := []int32{1, 2}
-	_, err = query.SetBuffer("a1", bufferA1)
+	_, err = query.SetDataBuffer("a1", bufferA1)
 	if err != nil {
 		// Handle error
 		return
 	}
 
 	bufferA2 := []byte("ab")
-	_, err = query.SetBuffer("a2", bufferA2)
+	_, err = query.SetDataBuffer("a2", bufferA2)
 	if err != nil {
 		// Handle error
 		return
@@ -185,7 +199,12 @@ func ExampleNewQuery() {
 
 	bufferA3 := []float32{1.0, 2.0, 3.0, 4.0, 5.0}
 	offsetBufferA3 := []uint64{0, 3}
-	_, _, err = query.SetBufferVar("a3", offsetBufferA3, bufferA3)
+	_, err = query.SetDataBuffer("a3", bufferA3)
+	if err != nil {
+		// Handle error
+		return
+	}
+	_, err = query.SetOffsetsBuffer("a3", offsetBufferA3)
 	if err != nil {
 		// Handle error
 		return
@@ -193,7 +212,12 @@ func ExampleNewQuery() {
 
 	bufferA4 := []byte("hello" + "world")
 	offsetBufferA4 := []uint64{0, 5}
-	_, _, err = query.SetBufferVar("a4", offsetBufferA4, bufferA4)
+	_, err = query.SetDataBuffer("a4", bufferA4)
+	if err != nil {
+		// Handle error
+		return
+	}
+	_, err = query.SetOffsetsBuffer("a4", offsetBufferA4)
 	if err != nil {
 		// Handle error
 		return
@@ -245,8 +269,22 @@ func ExampleNewQuery() {
 		return
 	}
 
+	// Create subarray
+	subarray, err = array.NewSubarray()
+	if err != nil {
+		// Handle error
+		return
+	}
+
 	// Set read subarray to only data that was written
-	err = query.SetSubArray([]int8{0, 1})
+	err = subarray.SetSubArray([]int8{0, 1})
+	if err != nil {
+		// Handle error
+		return
+	}
+
+	// Set subarray to query
+	err = query.SetSubarray(subarray)
 	if err != nil {
 		// Handle error
 		return
@@ -254,14 +292,14 @@ func ExampleNewQuery() {
 
 	// Set empty buffers for reading
 	readBufferA1 := make([]int32, 2)
-	_, err = query.SetBuffer("a1", readBufferA1)
+	_, err = query.SetDataBuffer("a1", readBufferA1)
 	if err != nil {
 		// Handle error
 		return
 	}
 
 	readBufferA2 := make([]byte, 2)
-	_, err = query.SetBuffer("a2", readBufferA2)
+	_, err = query.SetDataBuffer("a2", readBufferA2)
 	if err != nil {
 		// Handle error
 		return
@@ -269,14 +307,24 @@ func ExampleNewQuery() {
 
 	readBufferA3 := make([]float32, 5)
 	readOffsetBufferA3 := make([]uint64, 2)
-	_, _, err = query.SetBufferVar("a3", readOffsetBufferA3, readBufferA3)
+	_, err = query.SetDataBuffer("a3", readBufferA3)
+	if err != nil {
+		// Handle error
+		return
+	}
+	_, err = query.SetOffsetsBuffer("a3", readOffsetBufferA3)
 	if err != nil {
 		// Handle error
 		return
 	}
 	readBufferA4 := make([]byte, 10)
 	readOffsetBufferA4 := make([]uint64, 2)
-	_, _, err = query.SetBufferVar("a4", readOffsetBufferA4, readBufferA4)
+	_, err = query.SetDataBuffer("a4", readBufferA4)
+	if err != nil {
+		// Handle error
+		return
+	}
+	_, err = query.SetOffsetsBuffer("a4", readOffsetBufferA4)
 	if err != nil {
 		// Handle error
 		return
@@ -287,9 +335,8 @@ func ExampleNewQuery() {
 		// Handle error
 		return
 	}
-	// Submit read query async
-	// Async submits do not block
-	err = query.SubmitAsync()
+	// Submit read query
+	err = query.Submit()
 	if err != nil {
 		// Handle error
 		return
@@ -448,7 +495,7 @@ func ExampleDeleteQuery() {
 
 	// Create write buffers
 	bufferA1 := []int32{1, 2, 3, 4}
-	_, err = query.SetBuffer("a1", bufferA1)
+	_, err = query.SetDataBuffer("a1", bufferA1)
 	if err != nil {
 		// Handle error
 		return
@@ -456,7 +503,7 @@ func ExampleDeleteQuery() {
 
 	// Set coordinates, since test is 1d, this is subarray
 	subArray := []int8{0, 1, 2, 3}
-	_, err = query.SetBuffer("dim1", subArray)
+	_, err = query.SetDataBuffer("dim1", subArray)
 	if err != nil {
 		// Handle error
 		return
@@ -464,13 +511,6 @@ func ExampleDeleteQuery() {
 
 	// Submit write query
 	err = query.Submit()
-	if err != nil {
-		// Handle error
-		return
-	}
-
-	// Validate status, since query was used this is should be complete
-	status, err := query.Status()
 	if err != nil {
 		// Handle error
 		return
@@ -554,7 +594,7 @@ func ExampleDeleteQuery() {
 	}
 
 	// Set coordinates, since test is 1d, this is subarray
-	_, err = query.SetBuffer("dim1", subArray)
+	_, err = query.SetDataBuffer("dim1", subArray)
 	if err != nil {
 		// Handle error
 		return
@@ -562,7 +602,7 @@ func ExampleDeleteQuery() {
 
 	// Set empty buffers for reading
 	readBufferA1 := make([]int32, 4)
-	_, err = query.SetBuffer("a1", readBufferA1)
+	_, err = query.SetDataBuffer("a1", readBufferA1)
 	if err != nil {
 		// Handle error
 		return
@@ -576,20 +616,7 @@ func ExampleDeleteQuery() {
 	}
 
 	// Submit read query async
-	err = query.SubmitAsync()
-	if err != nil {
-		// Handle error
-		return
-	}
-
-	// Wait for status to return complete or to error
-	// Loop while status is inprogress
-	for status, err = query.Status(); status == TILEDB_INPROGRESS && err == nil; status, err = query.Status() {
-		if err != nil {
-			// Handle error
-			return
-		}
-	}
+	err = query.Submit()
 	if err != nil {
 		// Handle error
 		return
@@ -696,22 +723,26 @@ func TestQueryEffectiveBufferSize(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 	require.NoError(t, query.SetLayout(TILEDB_GLOBAL_ORDER))
-	_, _, err = query.SetBufferVar("a1", a1OffWrite, a1DataWrite)
+	_, err = query.SetDataBuffer("a1", a1DataWrite)
 	require.NoError(t, err)
-	_, err = query.SetBuffer("rows", buffD1)
+	_, err = query.SetOffsetsBuffer("a1", a1OffWrite)
 	require.NoError(t, err)
-	_, err = query.SetBuffer("cols", buffD2)
+	_, err = query.SetDataBuffer("rows", buffD1)
+	require.NoError(t, err)
+	_, err = query.SetDataBuffer("cols", buffD2)
 	require.NoError(t, err)
 
 	// Check the buffer sizes
-	offsetSize, dataSize, err := query.BufferSizeVar("a1")
+	dataSize, err := query.GetExpectedDataBufferLength("a1")
+	require.NoError(t, err)
+	offsetSize, err := query.GetExpectedOffsetsBufferLength("a1")
 	require.NoError(t, err)
 	assert.Equal(t, len(a1OffWrite), int(offsetSize))
 	assert.Equal(t, len(a1DataWrite), int(dataSize))
-	rowsDataSize, err := query.BufferSize("rows")
+	rowsDataSize, err := query.GetExpectedDataBufferLength("rows")
 	require.NoError(t, err)
 	assert.Equal(t, len(buffD1), int(rowsDataSize))
-	colsDataSize, err := query.BufferSize("cols")
+	colsDataSize, err := query.GetExpectedDataBufferLength("cols")
 	require.NoError(t, err)
 	assert.Equal(t, len(buffD2), int(colsDataSize))
 
@@ -723,7 +754,10 @@ func TestQueryEffectiveBufferSize(t *testing.T) {
 	require.NoError(t, array.Open(TILEDB_READ))
 
 	// Read value at cell 2, 2
-	subArray := []int32{2, 2, 2, 2}
+	subarray, err := array.NewSubarray()
+	require.NoError(t, err)
+	assert.NotNil(t, subarray)
+	subarray.SetSubArray([]int32{2, 2, 2, 2})
 
 	// Prepare buffers
 	rows := make([]int32, 2)
@@ -737,15 +771,16 @@ func TestQueryEffectiveBufferSize(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 
-	require.NoError(t, query.SetSubArray(subArray))
+	require.NoError(t, query.SetSubarray(subarray))
 	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
-	offsetBufferSize, effectiveBufferSize, err := query.SetBufferVar("a1",
-		a1OffRead, a1DataRead)
+	effectiveBufferSize, err := query.SetDataBuffer("a1", a1DataRead)
+	require.NoError(t, err)
+	offsetBufferSize, err := query.SetOffsetsBuffer("a1", a1OffRead)
 	require.NoError(t, err)
 	assert.NotNil(t, query)
-	_, err = query.SetBuffer("rows", rows)
+	_, err = query.SetDataBuffer("rows", rows)
 	require.NoError(t, err)
-	_, err = query.SetBuffer("cols", cols)
+	_, err = query.SetDataBuffer("cols", cols)
 	require.NoError(t, err)
 
 	// Submit the query
@@ -867,34 +902,50 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 	require.NoError(t, query.SetLayout(TILEDB_GLOBAL_ORDER))
-	_, _, err = query.SetBufferVar("a1", a1OffWrite, a1DataWrite)
+	_, err = query.SetDataBuffer("a1", a1DataWrite)
 	require.NoError(t, err)
-	_, err = query.SetBuffer("rows", rowsWrite)
+	_, err = query.SetOffsetsBuffer("a1", a1OffWrite)
 	require.NoError(t, err)
-	_, err = query.SetBuffer("cols", colsWrite)
+	_, err = query.SetDataBuffer("rows", rowsWrite)
 	require.NoError(t, err)
-	_, _, _, err = query.SetBufferVarNullable("a2", a2OffWrite, a2DataWrite, a2Validity)
+	_, err = query.SetDataBuffer("cols", colsWrite)
 	require.NoError(t, err)
-	_, _, err = query.SetBufferNullable("a3", a3DataWrite, a3Validity)
+	_, err = query.SetDataBuffer("a2", a2DataWrite)
+	require.NoError(t, err)
+	_, err = query.SetOffsetsBuffer("a2", a2OffWrite)
+	require.NoError(t, err)
+	_, err = query.SetValidityBuffer("a2", a2Validity)
+	require.NoError(t, err)
+	_, err = query.SetDataBuffer("a3", a3DataWrite)
+	require.NoError(t, err)
+	_, err = query.SetValidityBuffer("a3", a3Validity)
 	require.NoError(t, err)
 
 	// Check the buffer sizes
-	offsetSize, dataSize, err := query.BufferSizeVar("a1")
+	dataSize, err := query.GetExpectedDataBufferLength("a1")
+	require.NoError(t, err)
+	offsetSize, err := query.GetExpectedOffsetsBufferLength("a1")
 	require.NoError(t, err)
 	assert.Equal(t, len(a1OffWrite), int(offsetSize))
 	assert.Equal(t, len(a1DataWrite), int(dataSize))
-	dataSize, err = query.BufferSize("rows")
+	dataSize, err = query.GetExpectedDataBufferLength("rows")
 	require.NoError(t, err)
 	assert.Equal(t, len(rowsWrite), int(dataSize))
-	dataSize, err = query.BufferSize("cols")
+	dataSize, err = query.GetExpectedDataBufferLength("cols")
 	require.NoError(t, err)
 	assert.Equal(t, len(colsWrite), int(dataSize))
-	offsetSize, dataSize, validitySize, err := query.BufferSizeVarNullable("a2")
+	dataSize, err = query.GetExpectedDataBufferLength("a2")
+	require.NoError(t, err)
+	offsetSize, err = query.GetExpectedOffsetsBufferLength("a2")
+	require.NoError(t, err)
+	validitySize, err := query.GetExpectedValidityBufferLength("a2")
 	require.NoError(t, err)
 	assert.Equal(t, len(a2OffWrite), int(offsetSize))
 	assert.Equal(t, len(a2DataWrite), int(dataSize))
 	assert.Equal(t, len(a2Validity), int(validitySize))
-	dataSize, validitySize, err = query.BufferSizeNullable("a3")
+	dataSize, err = query.GetExpectedDataBufferLength("a3")
+	require.NoError(t, err)
+	validitySize, err = query.GetExpectedValidityBufferLength("a3")
 	require.NoError(t, err)
 	assert.Equal(t, len(a3DataWrite), int(dataSize))
 	assert.Equal(t, len(a3Validity), int(validitySize))
@@ -931,29 +982,36 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 
-	require.NoError(t, query.AddRange(0, rowsRange[0], rowsRange[1]))
-	require.NoError(t, query.AddRange(1, colsRange[0], colsRange[1]))
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	require.NoError(t, err)
+	assert.NotNil(t, subarray)
+	require.NoError(t, subarray.AddRange(0, MakeRange(rowsRange[0], rowsRange[1])))
+	require.NoError(t, subarray.AddRange(1, MakeRange(colsRange[0], colsRange[1])))
+
+	require.NoError(t, query.SetSubarray(subarray))
 	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
-	offsetBufferSize, effectiveBufferSize, err := query.SetBufferVar("a1",
-		a1OffRead, a1DataRead)
+	effectiveBufferSize, err := query.SetDataBuffer("a1", a1DataRead)
+	require.NoError(t, err)
+	offsetBufferSize, err := query.SetOffsetsBuffer("a1", a1OffRead)
 	require.NoError(t, err)
 	assert.NotNil(t, query)
-	_, err = query.SetBuffer("rows", rowsRead)
+	_, err = query.SetDataBuffer("rows", rowsRead)
 	require.NoError(t, err)
-	_, err = query.SetBuffer("cols", colsRead)
+	_, err = query.SetDataBuffer("cols", colsRead)
 	require.NoError(t, err)
 
 	// Get Range for rows
-	rangeStart, rangeEnd, err := query.GetRange(0, 0)
+	r, err := subarray.GetRange(0, 0)
 	require.NoError(t, err)
-	assert.EqualValues(t, rowsRange[0], rangeStart)
-	assert.EqualValues(t, rowsRange[1], rangeEnd)
+	assert.EqualValues(t, rowsRange[0], r.start)
+	assert.EqualValues(t, rowsRange[1], r.end)
 
 	// Get Range for cols
-	rangeStart, rangeEnd, err = query.GetRange(1, 0)
+	r, err = subarray.GetRange(1, 0)
 	require.NoError(t, err)
-	assert.EqualValues(t, colsRange[0], rangeStart)
-	assert.EqualValues(t, colsRange[1], rangeEnd)
+	assert.EqualValues(t, colsRange[0], r.start)
+	assert.EqualValues(t, colsRange[1], r.end)
 
 	// Submit the query
 	require.NoError(t, query.Submit())
@@ -981,34 +1039,41 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	// Reopen the array
 	require.NoError(t, array.Open(TILEDB_READ))
 
-	// Prepare the query for add / get ranges by name
+	// Prepare the query
 	query, err = NewQuery(context, array)
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 
-	require.NoError(t, query.AddRangeByName("rows", rowsRange[0], rowsRange[1]))
-	require.NoError(t, query.AddRangeByName("cols", colsRange[0], colsRange[1]))
+	// Prepare the subarray for add / get ranges by name
+	subarray, err = array.NewSubarray()
+	require.NoError(t, err)
+	assert.NotNil(t, subarray)
+	require.NoError(t, subarray.AddRangeByName("rows", MakeRange(rowsRange[0], rowsRange[1])))
+	require.NoError(t, subarray.AddRangeByName("cols", MakeRange(colsRange[0], colsRange[1])))
+
+	require.NoError(t, query.SetSubarray(subarray))
 	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
-	offsetBufferSize, effectiveBufferSize, err = query.SetBufferVar("a1",
-		a1OffRead, a1DataRead)
+	effectiveBufferSize, err = query.SetDataBuffer("a1", a1DataRead)
+	require.NoError(t, err)
+	offsetBufferSize, err = query.SetOffsetsBuffer("a1", a1OffRead)
 	require.NoError(t, err)
 	assert.NotNil(t, query)
-	_, err = query.SetBuffer("rows", rowsRead)
+	_, err = query.SetDataBuffer("rows", rowsRead)
 	require.NoError(t, err)
-	_, err = query.SetBuffer("cols", colsRead)
+	_, err = query.SetDataBuffer("cols", colsRead)
 	require.NoError(t, err)
 
 	// Get Range for rows
-	rangeStart, rangeEnd, err = query.GetRangeFromName("rows", 0)
+	r, err = subarray.GetRangeFromName("rows", 0)
 	require.NoError(t, err)
-	assert.EqualValues(t, rowsRange[0], rangeStart)
-	assert.EqualValues(t, rowsRange[1], rangeEnd)
+	assert.EqualValues(t, rowsRange[0], r.start)
+	assert.EqualValues(t, rowsRange[1], r.end)
 
 	// Get Range for cols
-	rangeStart, rangeEnd, err = query.GetRangeFromName("cols", 0)
+	r, err = subarray.GetRangeFromName("cols", 0)
 	require.NoError(t, err)
-	assert.EqualValues(t, colsRange[0], rangeStart)
-	assert.EqualValues(t, colsRange[1], rangeEnd)
+	assert.EqualValues(t, rowsRange[0], r.start)
+	assert.EqualValues(t, rowsRange[1], r.end)
 
 	// Submit the query
 	require.NoError(t, query.Submit())
@@ -1103,17 +1168,25 @@ func TestQueryEffectiveBufferSizeStrings(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 	require.NoError(t, query.SetLayout(TILEDB_GLOBAL_ORDER))
-	_, _, err = query.SetBufferVar("a1", a1OffWrite, a1DataWrite)
+	_, err = query.SetDataBuffer("a1", a1DataWrite)
 	require.NoError(t, err)
-	_, _, err = query.SetBufferVar("rows", rowsOffWrite, rowsWrite)
+	_, err = query.SetOffsetsBuffer("a1", a1OffWrite)
+	require.NoError(t, err)
+	_, err = query.SetDataBuffer("rows", rowsWrite)
+	require.NoError(t, err)
+	_, err = query.SetOffsetsBuffer("rows", rowsOffWrite)
 	require.NoError(t, err)
 
 	// Check the buffer sizes
-	offsetSize, dataSize, err := query.BufferSizeVar("a1")
+	dataSize, err := query.GetExpectedDataBufferLength("a1")
+	require.NoError(t, err)
+	offsetSize, err := query.GetExpectedOffsetsBufferLength("a1")
 	require.NoError(t, err)
 	assert.Equal(t, len(a1OffWrite), int(offsetSize))
 	assert.Equal(t, len(a1DataWrite), int(dataSize))
-	offsetSize, dataSize, err = query.BufferSizeVar("rows")
+	dataSize, err = query.GetExpectedDataBufferLength("rows")
+	require.NoError(t, err)
+	offsetSize, err = query.GetExpectedOffsetsBufferLength("rows")
 	require.NoError(t, err)
 	assert.Equal(t, len(rowsOffWrite), int(offsetSize))
 	assert.Equal(t, len(rowsWrite), int(dataSize))
@@ -1126,7 +1199,7 @@ func TestQueryEffectiveBufferSizeStrings(t *testing.T) {
 	require.NoError(t, array.Open(TILEDB_READ))
 
 	// Read value at cell "bb"
-	rowsRange := [][]byte{[]byte("bb"), []byte("bb")}
+	rowsRange := []string{"bb", "bb"}
 
 	// Prepare buffers
 	rowsRead := make([]byte, 4)
@@ -1140,20 +1213,28 @@ func TestQueryEffectiveBufferSizeStrings(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 
-	require.NoError(t, query.AddRangeVar(0, rowsRange[0], rowsRange[1]))
+	subarray, err := array.NewSubarray()
+	require.NoError(t, err)
+	assert.NotNil(t, subarray)
+	require.NoError(t, subarray.AddRange(0, MakeRange(rowsRange[0], rowsRange[1])))
+
+	require.NoError(t, query.SetSubarray(subarray))
 	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
-	offsetBufferSize, effectiveBufferSize, err := query.SetBufferVar("a1",
-		a1OffRead, a1DataRead)
+	effectiveBufferSize, err := query.SetDataBuffer("a1", a1DataRead)
+	require.NoError(t, err)
+	offsetBufferSize, err := query.SetOffsetsBuffer("a1", a1OffRead)
 	require.NoError(t, err)
 	assert.NotNil(t, query)
-	_, _, err = query.SetBufferVar("rows", rowsOffRead, rowsRead)
+	_, err = query.SetDataBuffer("rows", rowsRead)
+	require.NoError(t, err)
+	_, err = query.SetOffsetsBuffer("rows", rowsOffRead)
 	require.NoError(t, err)
 
 	// Get Range
-	rangeStart, rangeEnd, err := query.GetRange(0, 0)
+	r, err := subarray.GetRange(0, 0)
 	require.NoError(t, err)
-	assert.EqualValues(t, rowsRange[0], rangeStart)
-	assert.EqualValues(t, rowsRange[1], rangeEnd)
+	assert.EqualValues(t, rowsRange[0], r.start)
+	assert.EqualValues(t, rowsRange[1], r.end)
 
 	// Submit the query
 	require.NoError(t, query.Submit())
@@ -1192,20 +1273,28 @@ func TestQueryEffectiveBufferSizeStrings(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 
-	require.NoError(t, query.AddRangeVarByName("rows", rowsRange[0], rowsRange[1]))
+	subarray, err = array.NewSubarray()
+	require.NoError(t, err)
+	assert.NotNil(t, subarray)
+	require.NoError(t, subarray.AddRangeByName("rows", MakeRange(rowsRange[0], rowsRange[1])))
+
+	require.NoError(t, query.SetSubarray(subarray))
 	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
-	offsetBufferSize, effectiveBufferSize, err = query.SetBufferVar("a1",
-		a1OffRead, a1DataRead)
+	effectiveBufferSize, err = query.SetDataBuffer("a1", a1DataRead)
+	require.NoError(t, err)
+	offsetBufferSize, err = query.SetOffsetsBuffer("a1", a1OffRead)
 	require.NoError(t, err)
 	assert.NotNil(t, query)
-	_, _, err = query.SetBufferVar("rows", rowsOffRead, rowsRead)
+	_, err = query.SetDataBuffer("rows", rowsRead)
+	require.NoError(t, err)
+	_, err = query.SetOffsetsBuffer("rows", rowsOffRead)
 	require.NoError(t, err)
 
 	// Get Range
-	rangeStart, rangeEnd, err = query.GetRangeFromName("rows", 0)
+	r, err = subarray.GetRangeFromName("rows", 0)
 	require.NoError(t, err)
-	assert.EqualValues(t, rowsRange[0], rangeStart)
-	assert.EqualValues(t, rowsRange[1], rangeEnd)
+	assert.EqualValues(t, rowsRange[0], r.start)
+	assert.EqualValues(t, rowsRange[1], r.end)
 
 	// Submit the query
 	require.NoError(t, query.Submit())
@@ -1303,23 +1392,31 @@ func TestQueryEffectiveBufferSizeStringsHeterogeneous(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 	require.NoError(t, query.SetLayout(TILEDB_GLOBAL_ORDER))
-	_, _, err = query.SetBufferVar("a1", a1OffWrite, a1DataWrite)
+	_, err = query.SetDataBuffer("a1", a1DataWrite)
 	require.NoError(t, err)
-	_, _, err = query.SetBufferVar("rows", rowsOffWrite, rowsWrite)
+	_, err = query.SetOffsetsBuffer("a1", a1OffWrite)
 	require.NoError(t, err)
-	_, err = query.SetBuffer("cols", colsWrite)
+	_, err = query.SetDataBuffer("rows", rowsWrite)
+	require.NoError(t, err)
+	_, err = query.SetOffsetsBuffer("rows", rowsOffWrite)
+	require.NoError(t, err)
+	_, err = query.SetDataBuffer("cols", colsWrite)
 	require.NoError(t, err)
 
 	// Check the buffer sizes
-	offsetSize, dataSize, err := query.BufferSizeVar("a1")
+	dataSize, err := query.GetExpectedDataBufferLength("a1")
+	require.NoError(t, err)
+	offsetSize, err := query.GetExpectedOffsetsBufferLength("a1")
 	require.NoError(t, err)
 	assert.Equal(t, len(a1OffWrite), int(offsetSize))
 	assert.Equal(t, len(a1DataWrite), int(dataSize))
-	offsetSize, dataSize, err = query.BufferSizeVar("rows")
+	dataSize, err = query.GetExpectedDataBufferLength("rows")
+	require.NoError(t, err)
+	offsetSize, err = query.GetExpectedOffsetsBufferLength("rows")
 	require.NoError(t, err)
 	assert.Equal(t, len(rowsOffWrite), int(offsetSize))
 	assert.Equal(t, len(rowsWrite), int(dataSize))
-	dataSize, err = query.BufferSize("cols")
+	dataSize, err = query.GetExpectedDataBufferLength("cols")
 	require.NoError(t, err)
 	assert.Equal(t, len(colsWrite), int(dataSize))
 
@@ -1331,7 +1428,7 @@ func TestQueryEffectiveBufferSizeStringsHeterogeneous(t *testing.T) {
 	require.NoError(t, array.Open(TILEDB_READ))
 
 	// Read value at cell "c", 2
-	rowsRange := [][]byte{[]byte("c"), []byte("c")}
+	rowsRange := []string{"c", "c"}
 	colsRange := []int64{2, 2}
 
 	// Prepare buffers
@@ -1347,16 +1444,25 @@ func TestQueryEffectiveBufferSizeStringsHeterogeneous(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 
-	require.NoError(t, query.AddRangeVar(0, rowsRange[0], rowsRange[1]))
-	require.NoError(t, query.AddRange(1, colsRange[0], colsRange[1]))
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	require.NoError(t, err)
+	assert.NotNil(t, subarray)
+
+	require.NoError(t, subarray.AddRange(0, MakeRange(rowsRange[0], rowsRange[1])))
+	require.NoError(t, subarray.AddRange(1, MakeRange(colsRange[0], colsRange[1])))
+	require.NoError(t, query.SetSubarray(subarray))
 	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
-	offsetBufferSize, effectiveBufferSize, err := query.SetBufferVar("a1",
-		a1OffRead, a1DataRead)
+	effectiveBufferSize, err := query.SetDataBuffer("a1", a1DataRead)
+	require.NoError(t, err)
+	offsetBufferSize, err := query.SetOffsetsBuffer("a1", a1OffRead)
 	require.NoError(t, err)
 	assert.NotNil(t, query)
-	_, _, err = query.SetBufferVar("rows", rowsOffRead, rowsRead)
+	_, err = query.SetDataBuffer("rows", rowsRead)
 	require.NoError(t, err)
-	_, err = query.SetBuffer("cols", colsRead)
+	_, err = query.SetOffsetsBuffer("rows", rowsOffRead)
+	require.NoError(t, err)
+	_, err = query.SetDataBuffer("cols", colsRead)
 	require.NoError(t, err)
 
 	// Submit the query
@@ -1460,31 +1566,41 @@ func TestQueryReadEmpty(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 
+	// Create Subarray
+	subarray, err := array.NewSubarray()
+	require.NoError(t, err)
+	assert.NotNil(t, subarray)
+
 	// Limit reading to subArray
-	require.NoError(t, query.SetSubArray([]int8{2, 4}))
+	require.NoError(t, subarray.SetSubArray([]int8{2, 4}))
+	require.NoError(t, query.SetSubarray(subarray))
 
 	// Set buffer to incorrect type, should err
 	bufferA1Bad := make([]int8, 4)
-	_, err = query.SetBuffer("a1", bufferA1Bad)
+	_, err = query.SetDataBuffer("a1", bufferA1Bad)
 	assert.Error(t, err)
 
 	// Create read buffers
 	bufferA1 := make([]int32, 4)
-	_, err = query.SetBuffer("a1", bufferA1)
+	_, err = query.SetDataBuffer("a1", bufferA1)
 	require.NoError(t, err)
 
 	bufferA2 := make([]byte, 4)
-	_, err = query.SetBuffer("a2", bufferA2)
+	_, err = query.SetDataBuffer("a2", bufferA2)
 	require.NoError(t, err)
 
 	bufferA3 := make([]float32, 10)
 	offsetBufferA3 := make([]uint64, 6)
-	_, _, err = query.SetBufferVar("a3", offsetBufferA3, bufferA3)
+	_, err = query.SetDataBuffer("a3", bufferA3)
+	require.NoError(t, err)
+	_, err = query.SetOffsetsBuffer("a3", offsetBufferA3)
 	require.NoError(t, err)
 
 	bufferA4 := make([]byte, 8)
 	offsetBufferA4 := make([]uint64, 8)
-	_, _, err = query.SetBufferVar("a4", offsetBufferA4, bufferA4)
+	_, err = query.SetDataBuffer("a4", bufferA4)
+	require.NoError(t, err)
+	_, err = query.SetOffsetsBuffer("a4", offsetBufferA4)
 	require.NoError(t, err)
 
 	// Set read layout
@@ -1615,22 +1731,29 @@ func TestDenseQueryWrite(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 
-	require.NoError(t, query.SetSubArray([]int8{0, 1}))
+	// Create subarray
+	subarray, err := array.NewSubarray()
+	require.NoError(t, err)
+	assert.NotNil(t, subarray)
+	require.NoError(t, subarray.SetSubArray([]int8{0, 1}))
+	require.NoError(t, query.SetSubarray(subarray))
 
 	// Set write layout
 	assert.Nil(t, query.SetLayout(TILEDB_ROW_MAJOR))
 
 	bufferA1 := []int32{1, 2}
-	_, err = query.SetBuffer("a1", bufferA1)
+	_, err = query.SetDataBuffer("a1", bufferA1)
 	require.NoError(t, err)
 
 	bufferA2 := []byte("ab")
-	_, err = query.SetBuffer("a2", bufferA2)
+	_, err = query.SetDataBuffer("a2", bufferA2)
 	require.NoError(t, err)
 
 	bufferA3 := []float32{1.0, 2.0, 3.0, 4.0, 5.0}
 	offsetBufferA3 := []uint64{0, 3}
-	_, _, err = query.SetBufferVar("a3", offsetBufferA3, bufferA3)
+	_, err = query.SetDataBuffer("a3", bufferA3)
+	require.NoError(t, err)
+	_, err = query.SetOffsetsBuffer("a3", offsetBufferA3)
 	require.NoError(t, err)
 
 	bufferA4 := []byte("hello" + "world")
@@ -1640,7 +1763,9 @@ func TestDenseQueryWrite(t *testing.T) {
 	elementsCopied := copy(bufferA4Comparison, bufferA4)
 	assert.Equal(t, len(bufferA4), elementsCopied)
 
-	_, _, err = query.SetBufferVar("a4", offsetBufferA4, bufferA4)
+	_, err = query.SetDataBuffer("a4", bufferA4)
+	require.NoError(t, err)
+	_, err = query.SetOffsetsBuffer("a4", offsetBufferA4)
 	require.NoError(t, err)
 
 	bufferA5 := "hello" + "world"
@@ -1652,12 +1777,16 @@ func TestDenseQueryWrite(t *testing.T) {
 	assert.EqualValues(t, bufferA5, bufferA5Comparison)
 	bufferA5Bytes := []byte(bufferA5)
 
-	_, _, err = query.SetBufferVar("a5", offsetBufferA5, bufferA5Bytes)
+	_, err = query.SetDataBuffer("a5", bufferA5Bytes)
+	require.NoError(t, err)
+	_, err = query.SetOffsetsBuffer("a5", offsetBufferA5)
 	require.NoError(t, err)
 
 	bufferA6 := []byte("ab")
 	validityBufferA6 := []uint8{0, 1}
-	_, _, err = query.SetBufferNullable("a6", bufferA6, validityBufferA6)
+	_, err = query.SetDataBuffer("a6", bufferA6)
+	require.NoError(t, err)
+	_, err = query.SetValidityBuffer("a6", validityBufferA6)
 	require.NoError(t, err)
 
 	bufferA6Comparison := make([]byte, len(bufferA6))
@@ -1674,7 +1803,11 @@ func TestDenseQueryWrite(t *testing.T) {
 	offsetBufferA7 := []uint64{0, 5}
 	validityBufferA7 := []uint8{0, 1}
 	bufferA7Bytes := []byte(bufferA7)
-	_, _, _, err = query.SetBufferVarNullable("a7", offsetBufferA7, bufferA7Bytes, validityBufferA7)
+	_, err = query.SetDataBuffer("a7", bufferA7Bytes)
+	require.NoError(t, err)
+	_, err = query.SetOffsetsBuffer("a7", offsetBufferA7)
+	require.NoError(t, err)
+	_, err = query.SetValidityBuffer("a7", validityBufferA7)
 	require.NoError(t, err)
 
 	bufferA7Comparison := make([]byte, len(bufferA7))
@@ -1721,8 +1854,12 @@ func TestDenseQueryWrite(t *testing.T) {
 	assert.NotNil(t, query)
 
 	// Set read subarray to only data that was written
+	subarray, err = array.NewSubarray()
+	require.NoError(t, err)
+	assert.NotNil(t, subarray)
 	subArray := []int8{0, 1}
-	require.NoError(t, query.SetSubArray(subArray))
+	require.NoError(t, subarray.SetSubArray(subArray))
+	require.NoError(t, query.SetSubarray(subarray))
 
 	bufferElements, err := query.EstimateBufferElements()
 	require.NoError(t, err)
@@ -1739,51 +1876,60 @@ func TestDenseQueryWrite(t *testing.T) {
 
 	// Set empty buffers for reading
 	readBufferA1 := make([]int32, 2)
-	_, err = query.SetBuffer("a1", readBufferA1)
+	_, err = query.SetDataBuffer("a1", readBufferA1)
 	require.NoError(t, err)
 
 	readBufferA2 := make([]byte, 2)
-	_, err = query.SetBuffer("a2", readBufferA2)
+	_, err = query.SetDataBuffer("a2", readBufferA2)
 	require.NoError(t, err)
 
 	readBufferA3 := make([]float32, 5)
 	readOffsetBufferA3 := make([]uint64, 2)
-	_, _, err = query.SetBufferVar("a3", readOffsetBufferA3, readBufferA3)
+	_, err = query.SetDataBuffer("a3", readBufferA3)
+	require.NoError(t, err)
+	_, err = query.SetOffsetsBuffer("a3", readOffsetBufferA3)
 	require.NoError(t, err)
 
 	readBufferA4 := make([]byte, 10)
 	readOffsetBufferA4 := make([]uint64, 2)
-	_, _, err = query.SetBufferVar("a4", readOffsetBufferA4, readBufferA4)
+	_, err = query.SetDataBuffer("a4", readBufferA4)
+	require.NoError(t, err)
+	_, err = query.SetOffsetsBuffer("a4", readOffsetBufferA4)
 	require.NoError(t, err)
 
 	readBufferA5 := make([]byte, 10) // make(string, 10)
 	readOffsetBufferA5 := make([]uint64, 2)
-	_, _, err = query.SetBufferVar("a5", readOffsetBufferA5, readBufferA5)
+	_, err = query.SetDataBuffer("a5", readBufferA5)
+	require.NoError(t, err)
+	_, err = query.SetOffsetsBuffer("a5", readOffsetBufferA5)
 	require.NoError(t, err)
 
 	readBufferA6 := make([]byte, 2)
 	readValidityBufferA6 := make([]uint8, 2)
-	_, _, err = query.SetBufferNullable("a6", readBufferA6, readValidityBufferA6)
+	_, err = query.SetDataBuffer("a6", readBufferA6)
+	require.NoError(t, err)
+	_, err = query.SetValidityBuffer("a6", readValidityBufferA6)
 	require.NoError(t, err)
 
 	readBufferA7 := make([]byte, 10)
 	readOffsetBufferA7 := make([]uint64, 2)
 	readValidityBufferA7 := make([]uint8, 2)
-	_, _, _, err = query.SetBufferVarNullable("a7", readOffsetBufferA7, readBufferA7, readValidityBufferA7)
+	_, err = query.SetDataBuffer("a7", readBufferA7)
+	require.NoError(t, err)
+	_, err = query.SetOffsetsBuffer("a7", readOffsetBufferA7)
+	require.NoError(t, err)
+	_, err = query.SetValidityBuffer("a7", readValidityBufferA7)
 	require.NoError(t, err)
 
 	// Set read layout
 	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
 
 	// Submit read query async
-	require.NoError(t, query.SubmitAsync())
+	require.NoError(t, query.Submit())
 
 	// Wait for status to return complete or to error
 	// Loop while status is inprogress
-	for status, err = query.Status(); status == TILEDB_INPROGRESS && err == nil; status, err = query.Status() {
-		require.NoError(t, err)
-		assert.Equal(t, TILEDB_INPROGRESS, status)
-	}
+	status, err = query.Status()
 	require.NoError(t, err)
 	assert.Equal(t, TILEDB_COMPLETED, status)
 
@@ -1806,26 +1952,36 @@ func TestDenseQueryWrite(t *testing.T) {
 	assert.EqualValues(t, bufferA6Comparison, readBufferA6)
 	assert.EqualValues(t, bufferA7Comparison, readBufferA7)
 
-	bufferA1InterfaceGet, err := query.Buffer("a1")
+	bufferA1InterfaceGet, err := query.GetDataBuffer("a1")
 	require.NoError(t, err)
 	assert.EqualValues(t, bufferA1, bufferA1InterfaceGet.([]int32))
 
-	offsetsBufferA4Get, bufferA4InterfaceGet, err := query.BufferVar("a4")
+	bufferA4InterfaceGet, err := query.GetDataBuffer("a4")
+	require.NoError(t, err)
+	offsetsBufferA4Get, err := query.GetOffsetsBuffer("a4")
 	require.NoError(t, err)
 	assert.EqualValues(t, bufferA4Comparison, bufferA4InterfaceGet.([]byte))
 	assert.EqualValues(t, offsetBufferA4, offsetsBufferA4Get)
 
-	offsetsBufferA5Get, bufferA5InterfaceGet, err := query.BufferVar("a5")
+	bufferA5InterfaceGet, err := query.GetDataBuffer("a5")
+	require.NoError(t, err)
+	offsetsBufferA5Get, err := query.GetOffsetsBuffer("a5")
 	require.NoError(t, err)
 	assert.EqualValues(t, bufferA5Comparison, bufferA5InterfaceGet.([]byte))
 	assert.EqualValues(t, offsetBufferA5, offsetsBufferA5Get)
 
-	bufferA6InterfaceGet, bufferA6ValidityGet, err := query.BufferNullable("a6")
+	bufferA6InterfaceGet, err := query.GetDataBuffer("a6")
+	require.NoError(t, err)
+	bufferA6ValidityGet, err := query.GetValidityBuffer("a6")
 	require.NoError(t, err)
 	assert.EqualValues(t, bufferA6Comparison, bufferA6InterfaceGet.([]byte))
 	assert.EqualValues(t, bufferA6ValidityComparison, bufferA6ValidityGet)
 
-	offsetsBufferA7Get, bufferA7InterfaceGet, bufferA7ValidityGet, err := query.BufferVarNullable("a7")
+	bufferA7InterfaceGet, err := query.GetDataBuffer("a7")
+	require.NoError(t, err)
+	offsetsBufferA7Get, err := query.GetOffsetsBuffer("a7")
+	require.NoError(t, err)
+	bufferA7ValidityGet, err := query.GetValidityBuffer("a7")
 	require.NoError(t, err)
 	assert.EqualValues(t, bufferA7Comparison, bufferA7InterfaceGet.([]byte))
 	assert.EqualValues(t, offsetBufferA7, offsetsBufferA7Get)
@@ -1903,12 +2059,12 @@ func TestSparseQueryDelete(t *testing.T) {
 
 	// Create write buffers
 	bufferA1 := []int32{1, 2, 3, 4}
-	_, err = query.SetBuffer("a1", bufferA1)
+	_, err = query.SetDataBuffer("a1", bufferA1)
 	require.NoError(t, err)
 
 	// Set coordinates, since test is 1d, this is subarray
 	subArray := []int8{0, 1, 2, 3}
-	_, err = query.SetBuffer("dim1", subArray)
+	_, err = query.SetDataBuffer("dim1", subArray)
 	require.NoError(t, err)
 
 	// Submit write query
@@ -1957,26 +2113,22 @@ func TestSparseQueryDelete(t *testing.T) {
 	assert.NotNil(t, query)
 
 	// Set coordinates, since test is 1d, this is subarray
-	_, err = query.SetBuffer("dim1", subArray)
+	_, err = query.SetDataBuffer("dim1", subArray)
 	require.NoError(t, err)
 
 	// Set empty buffers for reading
 	readBufferA1 := make([]int32, 4)
-	_, err = query.SetBuffer("a1", readBufferA1)
+	_, err = query.SetDataBuffer("a1", readBufferA1)
 	require.NoError(t, err)
 
 	// Set read layout
 	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
 
-	// Submit read query async
-	require.NoError(t, query.SubmitAsync())
+	// Submit read query
+	require.NoError(t, query.Submit())
 
-	// Wait for status to return complete or to error
-	// Loop while status is inprogress
-	for status, err = query.Status(); status == TILEDB_INPROGRESS && err == nil; status, err = query.Status() {
-		require.NoError(t, err)
-		assert.Equal(t, TILEDB_INPROGRESS, status)
-	}
+	// Get query status
+	status, err = query.Status()
 	require.NoError(t, err)
 	assert.Equal(t, TILEDB_COMPLETED, status)
 
@@ -2064,12 +2216,12 @@ func TestSparseQueryWrite(t *testing.T) {
 
 	// Create write buffers
 	bufferA1 := []int32{1, 2}
-	_, err = query.SetBuffer("a1", bufferA1)
+	_, err = query.SetDataBuffer("a1", bufferA1)
 	require.NoError(t, err)
 
 	// Set coordinates, since test is 1d, this is subarray
 	subArray := []int8{0, 1}
-	_, err = query.SetBuffer("dim1", subArray)
+	_, err = query.SetDataBuffer("dim1", subArray)
 	require.NoError(t, err)
 
 	// Submit write query
@@ -2102,7 +2254,7 @@ func TestSparseQueryWrite(t *testing.T) {
 	// require.NoError(t, err)
 
 	// Set coordinates, since test is 1d, this is subarray
-	_, err = query.SetBuffer("dim1", subArray)
+	_, err = query.SetDataBuffer("dim1", subArray)
 	require.NoError(t, err)
 
 	bufferElements, err := query.EstimateBufferElements()
@@ -2112,21 +2264,17 @@ func TestSparseQueryWrite(t *testing.T) {
 
 	// Set empty buffers for reading
 	readBufferA1 := make([]int32, 2)
-	_, err = query.SetBuffer("a1", readBufferA1)
+	_, err = query.SetDataBuffer("a1", readBufferA1)
 	require.NoError(t, err)
 
 	// Set read layout
 	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
 
-	// Submit read query async
-	require.NoError(t, query.SubmitAsync())
+	// Submit read query
+	require.NoError(t, query.Submit())
 
-	// Wait for status to return complete or to error
-	// Loop while status is inprogress
-	for status, err = query.Status(); status == TILEDB_INPROGRESS && err == nil; status, err = query.Status() {
-		require.NoError(t, err)
-		assert.Equal(t, TILEDB_INPROGRESS, status)
-	}
+	// Validate status, since query was used this is should be complete
+	status, err = query.Status()
 	require.NoError(t, err)
 	assert.Equal(t, TILEDB_COMPLETED, status)
 
@@ -2218,12 +2366,14 @@ func TestSparseQueryWriteNullable(t *testing.T) {
 	// Create write buffers
 	bufferA1 := []int32{1, 2, 3}
 	bufferA1Validity := []uint8{1, 1, 0}
-	_, _, err = query.SetBufferNullable("a1", bufferA1, bufferA1Validity)
+	_, err = query.SetDataBuffer("a1", bufferA1)
+	require.NoError(t, err)
+	_, err = query.SetValidityBuffer("a1", bufferA1Validity)
 	require.NoError(t, err)
 
 	// Set coordinates, since test is 1d, this is subarray
 	subArray := []int8{0, 1, 2}
-	_, err = query.SetBuffer("dim1", subArray)
+	_, err = query.SetDataBuffer("dim1", subArray)
 	require.NoError(t, err)
 
 	// Submit write query
@@ -2251,11 +2401,16 @@ func TestSparseQueryWriteNullable(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 
+	subarray, err := array.NewSubarray()
+	require.NoError(t, err)
+	assert.NotNil(t, subarray)
+
 	// Set read subarray to only data that was written
-	require.NoError(t, query.AddRange(0, 0, 3))
+	require.NoError(t, subarray.AddRange(0, MakeRange[int8](0, 3)))
+	require.NoError(t, query.SetSubarray(subarray))
 
 	// Set coordinates, since test is 1d, this is subarray
-	_, err = query.SetBuffer("dim1", subArray)
+	_, err = query.SetDataBuffer("dim1", subArray)
 	require.NoError(t, err)
 
 	bufferElements, err := query.EstimateBufferElements()
@@ -2267,7 +2422,9 @@ func TestSparseQueryWriteNullable(t *testing.T) {
 	// Set empty buffers for reading
 	readBufferA1 := make([]int32, 3)
 	readBufferA1Validity := make([]uint8, 3)
-	_, _, err = query.SetBufferNullable("a1", readBufferA1, readBufferA1Validity)
+	_, err = query.SetDataBuffer("a1", readBufferA1)
+	require.NoError(t, err)
+	_, err = query.SetValidityBuffer("a1", readBufferA1Validity)
 	require.NoError(t, err)
 
 	// Set read layout
@@ -2333,10 +2490,10 @@ func TestSparseQueryWriteHilbertLayout(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 	bufferA1 := []int32{1, 2}
-	_, err = query.SetBuffer("a1", bufferA1)
+	_, err = query.SetDataBuffer("a1", bufferA1)
 	require.NoError(t, err)
 	subArray := []int8{0, 1}
-	_, err = query.SetBuffer("dim1", subArray)
+	_, err = query.SetDataBuffer("dim1", subArray)
 	require.NoError(t, err)
 	// Set write layout
 	// Hilbert order not applicable to write queries
@@ -2350,10 +2507,10 @@ func TestSparseQueryWriteHilbertLayout(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 	bufferA1 = make([]int32, 2)
-	_, err = query.SetBuffer("a1", bufferA1)
+	_, err = query.SetDataBuffer("a1", bufferA1)
 	require.NoError(t, err)
 	subArray = make([]int8, 2)
-	_, err = query.SetBuffer("dim1", subArray)
+	_, err = query.SetDataBuffer("dim1", subArray)
 	require.NoError(t, err)
 	// Set write layout
 	// Hilbert order not applicable to write queries
@@ -2447,22 +2604,26 @@ func TestQueryConfig(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 	require.NoError(t, query.SetLayout(TILEDB_GLOBAL_ORDER))
-	_, _, err = query.SetBufferVar("a1", a1OffWrite, a1DataWrite)
+	_, err = query.SetDataBuffer("a1", a1DataWrite)
 	require.NoError(t, err)
-	_, err = query.SetBuffer("rows", buffD1)
+	_, err = query.SetOffsetsBuffer("a1", a1OffWrite)
 	require.NoError(t, err)
-	_, err = query.SetBuffer("cols", buffD2)
+	_, err = query.SetDataBuffer("rows", buffD1)
+	require.NoError(t, err)
+	_, err = query.SetDataBuffer("cols", buffD2)
 	require.NoError(t, err)
 
 	// Check the buffer sizes
-	offsetSize, dataSize, err := query.BufferSizeVar("a1")
+	dataSize, err := query.GetExpectedDataBufferLength("a1")
+	require.NoError(t, err)
+	offsetSize, err := query.GetExpectedOffsetsBufferLength("a1")
 	require.NoError(t, err)
 	assert.Equal(t, len(a1OffWrite), int(offsetSize))
 	assert.Equal(t, len(a1DataWrite), int(dataSize))
-	rowsDataSize, err := query.BufferSize("rows")
+	rowsDataSize, err := query.GetExpectedDataBufferLength("rows")
 	require.NoError(t, err)
 	assert.Equal(t, len(buffD1), int(rowsDataSize))
-	colsDataSize, err := query.BufferSize("cols")
+	colsDataSize, err := query.GetExpectedDataBufferLength("cols")
 	require.NoError(t, err)
 	assert.Equal(t, len(buffD2), int(colsDataSize))
 
@@ -2485,9 +2646,14 @@ func TestQueryConfig(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 
+	// Create the subarray
+	subarray, err := array.NewSubarray()
+	require.NoError(t, err)
+	assert.NotNil(t, subarray)
+
 	// Read value at cell 2, 2
-	require.NoError(t, query.AddRange(0, 1, 2))
-	require.NoError(t, query.AddRange(1, 1, 2))
+	require.NoError(t, subarray.AddRange(0, MakeRange[int32](1, 2)))
+	require.NoError(t, subarray.AddRange(1, MakeRange[int32](1, 2)))
 
 	// Create configuration
 	configQuery, err := NewConfig()
@@ -2497,13 +2663,13 @@ func TestQueryConfig(t *testing.T) {
 	require.NoError(t, query.SetConfig(configQuery))
 
 	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
-	_, _, err = query.SetBufferVar("a1",
-		a1OffRead, a1DataRead)
+	_, err = query.SetDataBuffer("a1", a1DataRead)
 	require.NoError(t, err)
-	assert.NotNil(t, query)
-	_, err = query.SetBuffer("rows", rows)
+	_, err = query.SetOffsetsBuffer("a1", a1OffRead)
 	require.NoError(t, err)
-	_, err = query.SetBuffer("cols", cols)
+	_, err = query.SetDataBuffer("rows", rows)
+	require.NoError(t, err)
+	_, err = query.SetDataBuffer("cols", cols)
 	require.NoError(t, err)
 
 	// Submit the query
@@ -2605,22 +2771,26 @@ func TestQueryStats(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 	require.NoError(t, query.SetLayout(TILEDB_GLOBAL_ORDER))
-	_, _, err = query.SetBufferVar("a1", a1OffWrite, a1DataWrite)
+	_, err = query.SetDataBuffer("a1", a1DataWrite)
 	require.NoError(t, err)
-	_, err = query.SetBuffer("rows", buffD1)
+	_, err = query.SetOffsetsBuffer("a1", a1OffWrite)
 	require.NoError(t, err)
-	_, err = query.SetBuffer("cols", buffD2)
+	_, err = query.SetDataBuffer("rows", buffD1)
+	require.NoError(t, err)
+	_, err = query.SetDataBuffer("cols", buffD2)
 	require.NoError(t, err)
 
 	// Check the buffer sizes
-	offsetSize, dataSize, err := query.BufferSizeVar("a1")
+	dataSize, err := query.GetExpectedDataBufferLength("a1")
+	require.NoError(t, err)
+	offsetSize, err := query.GetExpectedOffsetsBufferLength("a1")
 	require.NoError(t, err)
 	assert.Equal(t, len(a1OffWrite), int(offsetSize))
 	assert.Equal(t, len(a1DataWrite), int(dataSize))
-	rowsDataSize, err := query.BufferSize("rows")
+	rowsDataSize, err := query.GetExpectedDataBufferLength("rows")
 	require.NoError(t, err)
 	assert.Equal(t, len(buffD1), int(rowsDataSize))
-	colsDataSize, err := query.BufferSize("cols")
+	colsDataSize, err := query.GetExpectedDataBufferLength("cols")
 	require.NoError(t, err)
 	assert.Equal(t, len(buffD2), int(colsDataSize))
 
@@ -2646,15 +2816,22 @@ func TestQueryStats(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 
-	require.NoError(t, query.SetSubArray(subArray))
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	require.NoError(t, err)
+	assert.NotNil(t, subarray)
+	require.NoError(t, subarray.SetSubArray(subArray))
+
+	require.NoError(t, query.SetSubarray(subarray))
 	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
-	offsetBufferSize, effectiveBufferSize, err := query.SetBufferVar("a1",
-		a1OffRead, a1DataRead)
+	effectiveBufferSize, err := query.SetDataBuffer("a1", a1DataRead)
+	require.NoError(t, err)
+	offsetBufferSize, err := query.SetOffsetsBuffer("a1", a1OffRead)
 	require.NoError(t, err)
 	assert.NotNil(t, query)
-	_, err = query.SetBuffer("rows", rows)
+	_, err = query.SetDataBuffer("rows", rows)
 	require.NoError(t, err)
-	_, err = query.SetBuffer("cols", cols)
+	_, err = query.SetDataBuffer("cols", cols)
 	require.NoError(t, err)
 
 	// Submit the query
@@ -2717,7 +2894,10 @@ func TestSetDataBufferUnsafe(t *testing.T) {
 	require.NoError(t, err)
 	q, err := NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 4, 7))
+	s, err := array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](4, 7)))
+	require.NoError(t, q.SetSubarray(s))
 	dataBuffer := []int32{4, 5, 6, 7}
 	dataPtr := unsafe.Pointer((*reflect.SliceHeader)(unsafe.Pointer(&dataBuffer)).Data)
 	n, err := q.SetDataBufferUnsafe("a", dataPtr, 16)
@@ -2736,7 +2916,10 @@ func TestSetDataBufferUnsafe(t *testing.T) {
 	require.NoError(t, err)
 	q, err = NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 1, 10))
+	s, err = array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](1, 10)))
+	require.NoError(t, q.SetSubarray(s))
 	dataBuffer = []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	dataPtr = unsafe.Pointer((*reflect.SliceHeader)(unsafe.Pointer(&dataBuffer)).Data)
 	n, err = q.SetDataBufferUnsafe("a", dataPtr, 40)
@@ -2790,7 +2973,10 @@ func TestGetDataBuffer(t *testing.T) {
 	require.NoError(t, err)
 	q, err := NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 4, 7))
+	s, err := array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](4, 7)))
+	require.NoError(t, q.SetSubarray(s))
 	dataBuffer := []int32{4, 5, 6, 7}
 	_, err = q.SetDataBuffer("a", dataBuffer)
 	require.NoError(t, err)
@@ -2832,7 +3018,10 @@ func TestSetDataBuffer(t *testing.T) {
 	require.NoError(t, err)
 	q, err := NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 4, 7))
+	s, err := array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](4, 7)))
+	require.NoError(t, q.SetSubarray(s))
 	dataBuffer := []int32{4, 5, 6, 7}
 	np, err := q.SetDataBuffer("a", dataBuffer)
 	require.NoError(t, err)
@@ -2850,7 +3039,10 @@ func TestSetDataBuffer(t *testing.T) {
 	require.NoError(t, err)
 	q, err = NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 1, 10))
+	s, err = array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](1, 10)))
+	require.NoError(t, q.SetSubarray(s))
 	dataBuffer = []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	np, err = q.SetDataBuffer("a", dataBuffer)
 	require.NoError(t, err)
@@ -2892,7 +3084,10 @@ func TestGetExpectedDataBufferLength(t *testing.T) {
 	require.NoError(t, array.Open(TILEDB_READ))
 	q, err := NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 4, 7))
+	s, err := array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](4, 7)))
+	require.NoError(t, q.SetSubarray(s))
 	dataBuffer := []int32{0, 0, 0, 0}
 	_, err = q.SetDataBuffer("a", dataBuffer)
 	require.NoError(t, err)
@@ -2979,7 +3174,10 @@ func TestSetValidityBufferUnsafe(t *testing.T) {
 	require.NoError(t, err)
 	q, err := NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 4, 7))
+	s, err := array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](4, 7)))
+	require.NoError(t, q.SetSubarray(s))
 	dataBuffer := []int32{4, 5, 6, 7}
 	_, err = q.SetDataBuffer("a", dataBuffer)
 	require.NoError(t, err)
@@ -3001,7 +3199,10 @@ func TestSetValidityBufferUnsafe(t *testing.T) {
 	require.NoError(t, err)
 	q, err = NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 1, 10))
+	s, err = array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](1, 10)))
+	require.NoError(t, q.SetSubarray(s))
 	dataBuffer = []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	_, err = q.SetDataBuffer("a", dataBuffer)
 	require.NoError(t, err)
@@ -3057,7 +3258,10 @@ func TestGetValidityBuffer(t *testing.T) {
 	require.NoError(t, err)
 	q, err := NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 4, 7))
+	s, err := array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](4, 7)))
+	require.NoError(t, q.SetSubarray(s))
 	validityBuffer := []uint8{1, 1, 0, 1}
 	_, err = q.SetValidityBuffer("a", validityBuffer)
 	require.NoError(t, err)
@@ -3098,7 +3302,10 @@ func TestSetValidityBuffer(t *testing.T) {
 	require.NoError(t, err)
 	q, err := NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 4, 7))
+	s, err := array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](4, 7)))
+	require.NoError(t, q.SetSubarray(s))
 	dataBuffer := []int32{4, 5, 6, 7}
 	np, err := q.SetDataBuffer("a", dataBuffer)
 	require.NoError(t, err)
@@ -3121,7 +3328,10 @@ func TestSetValidityBuffer(t *testing.T) {
 	require.NoError(t, err)
 	q, err = NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 1, 10))
+	s, err = array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](1, 10)))
+	require.NoError(t, q.SetSubarray(s))
 	dataBuffer = []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 	np, err = q.SetDataBuffer("a", dataBuffer)
 	require.NoError(t, err)
@@ -3167,7 +3377,10 @@ func TestGetExpectedValidityBufferLength(t *testing.T) {
 	require.NoError(t, array.Open(TILEDB_READ))
 	q, err := NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 4, 7))
+	s, err := array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](4, 7)))
+	require.NoError(t, q.SetSubarray(s))
 	dataBuffer := []int32{4, 5, 6, 7}
 	_, err = q.SetDataBuffer("a", dataBuffer)
 	require.NoError(t, err)
@@ -3259,7 +3472,10 @@ func TestSetOffsetsBufferUnsafe(t *testing.T) {
 	require.NoError(t, err)
 	q, err := NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 4, 7))
+	s, err := array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](4, 7)))
+	require.NoError(t, q.SetSubarray(s))
 	dataBuffer := []byte("HelloWorldFromTiledb")
 	np, err := q.SetDataBuffer("a", dataBuffer)
 	require.NoError(t, err)
@@ -3283,7 +3499,10 @@ func TestSetOffsetsBufferUnsafe(t *testing.T) {
 	require.NoError(t, err)
 	q, err = NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 1, 10))
+	s, err = array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](1, 10)))
+	require.NoError(t, q.SetSubarray(s))
 	dataBuffer = make([]byte, 40)
 	np, err = q.SetDataBuffer("a", dataBuffer)
 	require.NoError(t, err)
@@ -3338,7 +3557,10 @@ func TestGetOffsetsBuffer(t *testing.T) {
 	require.NoError(t, err)
 	q, err := NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 4, 7))
+	s, err := array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](4, 7)))
+	require.NoError(t, q.SetSubarray(s))
 	offsetsBuffer := []uint64{0, 2, 4, 8}
 	_, err = q.SetOffsetsBuffer("a", offsetsBuffer)
 	require.NoError(t, err)
@@ -3379,7 +3601,10 @@ func TestSetOffsetsBuffer(t *testing.T) {
 	require.NoError(t, err)
 	q, err := NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 4, 7))
+	s, err := array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](4, 7)))
+	require.NoError(t, q.SetSubarray(s))
 	dataBuffer := []byte("HelloWorldFromTiledb")
 	np, err := q.SetDataBuffer("a", dataBuffer)
 	require.NoError(t, err)
@@ -3402,7 +3627,10 @@ func TestSetOffsetsBuffer(t *testing.T) {
 	require.NoError(t, err)
 	q, err = NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 1, 10))
+	s, err = array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](1, 10)))
+	require.NoError(t, q.SetSubarray(s))
 	dataBuffer = make([]byte, 40)
 	np, err = q.SetDataBuffer("a", dataBuffer)
 	require.NoError(t, err)
@@ -3448,7 +3676,10 @@ func TestGetExpectedOffsetsBufferLength(t *testing.T) {
 	require.NoError(t, array.Open(TILEDB_READ))
 	q, err := NewQuery(tdbCtx, array)
 	require.NoError(t, err)
-	require.NoError(t, q.AddRangeByName("x", 4, 7))
+	s, err := array.NewSubarray()
+	require.NoError(t, err)
+	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](4, 7)))
+	require.NoError(t, q.SetSubarray(s))
 	dataBuffer := make([]byte, 40)
 	_, err = q.SetDataBuffer("a", dataBuffer)
 	require.NoError(t, err)

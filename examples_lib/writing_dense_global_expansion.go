@@ -59,7 +59,7 @@ func writeDenseGlobalExpansionArray(dir string) {
 	checkError(err)
 	defer ctx.Free()
 
-	subarray := []int32{1, 4, 1, 2}
+	subArray := []int32{1, 4, 1, 2}
 
 	// Open the array for writing.
 	array, err := tiledb.NewArray(ctx, dir)
@@ -74,12 +74,19 @@ func writeDenseGlobalExpansionArray(dir string) {
 	checkError(err)
 	defer query.Free()
 
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+
 	data := []int32{1, 2, 3, 4, 5, 6, 7, 8}
 	err = query.SetLayout(tiledb.TILEDB_GLOBAL_ORDER)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
-	err = query.SetSubArray(subarray)
+	err = subarray.SetSubArray(subArray)
+	checkError(err)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 
 	// Perform the write
@@ -96,7 +103,7 @@ func writeRowMajorDenseGlobalExpansionArray(dir string) {
 	checkError(err)
 	defer ctx.Free()
 
-	subarray := []int32{1, 4, 3, 3}
+	subArray := []int32{1, 4, 3, 3}
 
 	// Open the array for writing.
 	array, err := tiledb.NewArray(ctx, dir)
@@ -111,12 +118,19 @@ func writeRowMajorDenseGlobalExpansionArray(dir string) {
 	checkError(err)
 	defer query.Free()
 
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+
 	data := []int32{9, 10, 11, 12}
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
-	err = query.SetSubArray(subarray)
+	err = subarray.SetSubArray(subArray)
+	checkError(err)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 
 	// Perform the write and close the array.
@@ -152,11 +166,18 @@ func readDenseGlobalExpansionArray(dir string) {
 	checkError(err)
 	defer query.Free()
 
-	err = query.SetSubArray(subArray)
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+
+	err = subarray.SetSubArray(subArray)
+	checkError(err)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
 
 	// Submit the query and close the array.

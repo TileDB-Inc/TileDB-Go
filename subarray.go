@@ -52,6 +52,101 @@ func (sa *Subarray) Free() {
 	}
 }
 
+// SetSubArray sets a subarray, defined in the order dimensions were added.
+// Coordinates are inclusive. For the case of writes, this is meaningful only
+// for dense arrays, and specifically dense writes.
+func (sa *Subarray) SetSubArray(subArray interface{}) error {
+
+	if reflect.TypeOf(subArray).Kind() != reflect.Slice {
+		return fmt.Errorf("Subarray passed must be a slice, type passed was: %s", reflect.TypeOf(subArray).Kind().String())
+	}
+
+	subArrayType := reflect.TypeOf(subArray).Elem().Kind()
+
+	schema, err := sa.array.Schema()
+	if err != nil {
+		return fmt.Errorf("Could not get array schema from array: %s", err)
+	}
+
+	domain, err := schema.Domain()
+	if err != nil {
+		return fmt.Errorf("Could not get domain from array schema: %s", err)
+	}
+
+	domainType, err := domain.Type()
+	if err != nil {
+		return fmt.Errorf("Could not get domain type: %s", err)
+	}
+
+	if subArrayType != domainType.ReflectKind() {
+		return fmt.Errorf("Domain and subarray do not have the same data types. Domain: %s, Extent: %s", domainType.ReflectKind().String(), subArrayType.String())
+	}
+
+	var csubArray unsafe.Pointer
+	switch subArrayType {
+	case reflect.Int:
+		// Create subArray void*
+		tmpSubArray := subArray.([]int)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Int8:
+		// Create subArray void*
+		tmpSubArray := subArray.([]int8)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Int16:
+		// Create subArray void*
+		tmpSubArray := subArray.([]int16)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Int32:
+		// Create subArray void*
+		tmpSubArray := subArray.([]int32)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Int64:
+		// Create subArray void*
+		tmpSubArray := subArray.([]int64)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Uint:
+		// Create subArray void*
+		tmpSubArray := subArray.([]uint)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Uint8:
+		// Create subArray void*
+		tmpSubArray := subArray.([]uint8)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Uint16:
+		// Create subArray void*
+		tmpSubArray := subArray.([]uint16)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Uint32:
+		// Create subArray void*
+		tmpSubArray := subArray.([]uint32)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Uint64:
+		// Create subArray void*
+		tmpSubArray := subArray.([]uint64)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Float32:
+		// Create subArray void*
+		tmpSubArray := subArray.([]float32)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Float64:
+		// Create subArray void*
+		tmpSubArray := subArray.([]float64)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	case reflect.Bool:
+		// Create subArray void*
+		tmpSubArray := subArray.([]bool)
+		csubArray = unsafe.Pointer(&tmpSubArray[0])
+	default:
+		return fmt.Errorf("Unrecognized subArray type passed: %s", subArrayType.String())
+	}
+
+	ret := C.tiledb_subarray_set_subarray(sa.context.tiledbContext, sa.subarray, csubArray)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error setting subarray: %s", sa.context.LastError())
+	}
+	return nil
+}
+
 // SetCoalesceRanges sets coalesce_ranges property on a TileDB subarray object.
 // Intended to be used just after array.NewSubarray to replace the initial coalesce_ranges == true with coalesce_ranges = false if needed.
 func (sa *Subarray) SetCoalesceRanges(b bool) error {
@@ -164,6 +259,69 @@ func (sa *Subarray) GetRangeNumFromName(dimName string) (uint64, error) {
 	}
 
 	return rangeNum, nil
+}
+
+// GetRanges gets the number of dimensions from the array under current subarray
+// and builds an array of dimensions that have as memmbers arrays of ranges.
+func (s *Subarray) GetRanges() (map[string][]Range, error) {
+	// We need to infer the datatype of the dimension represented by index
+	// dimIdx. That said:
+	// Get array schema
+	schema, err := s.array.Schema()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the domain object
+	domain, err := schema.Domain()
+	if err != nil {
+		return nil, err
+	}
+
+	// Use the index to retrieve the dimension object
+	nDim, err := domain.NDim()
+	if err != nil {
+		return nil, err
+	}
+
+	var dimIdx uint
+
+	rangeMap := make(map[string][]Range)
+	for dimIdx = 0; dimIdx < nDim; dimIdx++ {
+		// Get dimension object
+		dimension, err := domain.DimensionFromIndex(dimIdx)
+		if err != nil {
+			return nil, err
+		}
+
+		// Get name from dimension
+		name, err := dimension.Name()
+		if err != nil {
+			return nil, err
+		}
+
+		// Get number of renges to iterate
+		numOfRanges, err := s.GetRangeNum(uint32(dimIdx))
+		if err != nil {
+			return nil, err
+		}
+
+		var I uint64
+		rangeArray := make([]Range, 0)
+		for I = 0; I < numOfRanges; I++ {
+
+			r, err := s.GetRange(uint32(dimIdx), I)
+			if err != nil {
+				return nil, err
+			}
+			// Append range to range Array
+			rangeArray = append(rangeArray, r)
+		}
+		// key: name (string), value: rangeArray ([]RangeLimits)
+		rangeMap[name] = rangeArray
+	}
+
+	return rangeMap, err
 }
 
 // GetRange retrieves a specific range of the subarray along a given dimension index.

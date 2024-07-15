@@ -71,9 +71,9 @@ func writeVacuumSparseArray(dir string, buffD []int32, data []int32) {
 
 	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
 	checkError(err)
-	_, err = query.SetBuffer("d", buffD)
+	_, err = query.SetDataBuffer("d", buffD)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
 
 	// Perform the write
@@ -103,9 +103,16 @@ func readVacuumSparseArray(dir string) {
 	checkError(err)
 	defer query.Free()
 
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+
 	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
 	checkError(err)
-	err = query.AddRange(0, int32(1), int32(3))
+	err = subarray.AddRange(0, tiledb.MakeRange[int32](1, 3))
+	checkError(err)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 
 	size, err := query.EstResultSize("a")
@@ -118,9 +125,9 @@ func readVacuumSparseArray(dir string) {
 	fmt.Printf("Estimated query size in bytes for dimension 'd': %d\n", *size)
 	buffD := make([]int32, (*size)/bytesizes.Int32)
 
-	_, err = query.SetBuffer("d", buffD)
+	_, err = query.SetDataBuffer("d", buffD)
 	checkError(err)
-	_, err = query.SetBuffer("a", buffA)
+	_, err = query.SetDataBuffer("a", buffA)
 	checkError(err)
 
 	// Submit the query

@@ -81,7 +81,7 @@ func writeDenseArray(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
 
 	// Perform the write and close the array.
@@ -117,11 +117,19 @@ func readDenseArray(dir string) {
 	checkError(err)
 	defer query.Free()
 
-	err = query.SetSubArray(subArray)
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
 	checkError(err)
+	defer subarray.Free()
+
+	err = subarray.SetSubArray(subArray)
+	checkError(err)
+	err = query.SetSubarray(subarray)
+	checkError(err)
+
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
 
 	// Submit the query and close the array.

@@ -48,7 +48,14 @@ func readReadingSparseLayoutsArrayWithConditions(dir string) {
 	checkError(err)
 	defer query.Free()
 
-	err = query.SetSubArray(subArray)
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+
+	err = subarray.SetSubArray(subArray)
+	checkError(err)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 
 	// Prepare the vector that will hold the result
@@ -61,11 +68,11 @@ func readReadingSparseLayoutsArrayWithConditions(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
-	_, err = query.SetBuffer("rows", rows)
+	_, err = query.SetDataBuffer("rows", rows)
 	checkError(err)
-	_, err = query.SetBuffer("cols", cols)
+	_, err = query.SetDataBuffer("cols", cols)
 	checkError(err)
 
 	qc, err := tiledb.NewQueryCondition(ctx, "a", tiledb.TILEDB_QUERY_CONDITION_EQ, uint32(2))
