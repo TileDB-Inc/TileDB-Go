@@ -140,6 +140,10 @@ func TestGetConsolidationPlan(t *testing.T) {
 }
 
 func TestConsolidateFragments(t *testing.T) {
+	// The test is skipped pending a core release for 2.25.0 that includes this fix:
+	// https://github.com/TileDB-Inc/TileDB/pull/5135
+	t.Skip("Skipping fragment list consolidation SC-51140")
+
 	array := createTestArray(t)
 
 	numFrags := uint32(5)
