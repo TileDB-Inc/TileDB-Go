@@ -55,12 +55,3 @@ func (bb byteBuffer) subSlice(sliceStart unsafe.Pointer, sliceBytes uintptr) []b
 	startIdx := uintptr(sliceStart) - uintptr(bb.start())
 	return bb[startIdx:sliceBytes]
 }
-
-// unsafeSlice creates a slice pointing at the given memory.
-func unsafeSlice[T any](ptr unsafe.Pointer, length uint) []T {
-	if ptr == nil {
-		return nil
-	}
-	typedPtr := (*T)(ptr)
-	return unsafe.Slice(typedPtr, length)
-}

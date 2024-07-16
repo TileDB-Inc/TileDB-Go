@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-	"time"
 	"unsafe"
 )
 
@@ -266,113 +265,238 @@ func (d Datatype) Size() uint64 {
 func (d Datatype) MakeSlice(numElements uint64) (interface{}, unsafe.Pointer, error) {
 	switch d {
 	case TILEDB_INT8:
-		return makeSlice[int8](numElements)
+		slice := make([]int8, numElements)
+		return slice, unsafe.Pointer(&slice[0]), nil
+
 	case TILEDB_INT16:
-		return makeSlice[int16](numElements)
+		slice := make([]int16, numElements)
+		return slice, unsafe.Pointer(&slice[0]), nil
+
 	case TILEDB_INT32:
-		return makeSlice[int32](numElements)
+		slice := make([]int32, numElements)
+		return slice, unsafe.Pointer(&slice[0]), nil
+
 	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
-		return makeSlice[int64](numElements)
+		slice := make([]int64, numElements)
+		return slice, unsafe.Pointer(&slice[0]), nil
+
 	case TILEDB_UINT8, TILEDB_CHAR, TILEDB_STRING_ASCII, TILEDB_STRING_UTF8, TILEDB_BLOB, TILEDB_GEOM_WKB, TILEDB_GEOM_WKT:
-		return makeSlice[uint8](numElements)
+		slice := make([]uint8, numElements)
+		return slice, unsafe.Pointer(&slice[0]), nil
+
 	case TILEDB_UINT16, TILEDB_STRING_UTF16, TILEDB_STRING_UCS2:
-		return makeSlice[uint16](numElements)
+		slice := make([]uint16, numElements)
+		return slice, unsafe.Pointer(&slice[0]), nil
+
 	case TILEDB_UINT32, TILEDB_STRING_UTF32, TILEDB_STRING_UCS4:
-		return makeSlice[uint32](numElements)
+		slice := make([]uint32, numElements)
+		return slice, unsafe.Pointer(&slice[0]), nil
+
 	case TILEDB_UINT64:
-		return makeSlice[uint64](numElements)
+		slice := make([]uint64, numElements)
+		return slice, unsafe.Pointer(&slice[0]), nil
+
 	case TILEDB_FLOAT32:
-		return makeSlice[float32](numElements)
+		slice := make([]float32, numElements)
+		return slice, unsafe.Pointer(&slice[0]), nil
+
 	case TILEDB_FLOAT64:
-		return makeSlice[float64](numElements)
+		slice := make([]float64, numElements)
+		return slice, unsafe.Pointer(&slice[0]), nil
+
 	case TILEDB_BOOL:
-		return makeSlice[bool](numElements)
+		slice := make([]bool, numElements)
+		return slice, unsafe.Pointer(&slice[0]), nil
+
 	default:
 		return nil, nil, fmt.Errorf("error making datatype slice; unrecognized datatype: %d", d)
 	}
-}
-
-// makeSlice makes a slice and returns it as well as a pointer to its start.
-// Its return type matches d.MakeSlice for convenience.
-func makeSlice[T any](numElements uint64) (any, unsafe.Pointer, error) {
-	slice := make([]T, numElements)
-	return slice, slicePtr(slice), nil
 }
 
 // GetValue gets value stored in a void pointer for this data type.
 func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, error) {
 	switch d {
 	case TILEDB_INT8:
-		return getValueInternal[int8](valueNum, cvalue)
+		if cvalue == nil {
+			return int8(0), nil
+		}
+		if valueNum > 1 {
+			tmpValue := make([]int8, valueNum)
+			tmpslice := (*[1 << 46]C.int8_t)(cvalue)[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = int8(s)
+			}
+			return tmpValue, nil
+		}
+		return *(*int8)(cvalue), nil
 	case TILEDB_INT16:
-		return getValueInternal[int16](valueNum, cvalue)
+		if cvalue == nil {
+			return int16(0), nil
+		}
+		if valueNum > 1 {
+			tmpValue := make([]int16, valueNum)
+			tmpslice := (*[1 << 46]C.int16_t)(cvalue)[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = int16(s)
+			}
+			return tmpValue, nil
+		}
+		return *(*int16)(cvalue), nil
 	case TILEDB_INT32:
-		return getValueInternal[int32](valueNum, cvalue)
+		if cvalue == nil {
+			return int32(0), nil
+		}
+		if valueNum > 1 {
+			tmpValue := make([]int32, valueNum)
+			tmpslice := (*[1 << 46]C.int32_t)(cvalue)[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = int32(s)
+			}
+			return tmpValue, nil
+		}
+		return *(*int32)(cvalue), nil
 	case TILEDB_INT64:
-		return getValueInternal[int64](valueNum, cvalue)
+		if cvalue == nil {
+			return int64(0), nil
+		}
+		if valueNum > 1 {
+			tmpValue := make([]int64, valueNum)
+			tmpslice := (*[1 << 46]C.int64_t)(cvalue)[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = int64(s)
+			}
+			return tmpValue, nil
+		}
+		return *(*int64)(cvalue), nil
 	case TILEDB_UINT8, TILEDB_BLOB, TILEDB_GEOM_WKB, TILEDB_GEOM_WKT:
-		return getValueInternal[uint8](valueNum, cvalue)
+		if cvalue == nil {
+			return uint8(0), nil
+		}
+		if valueNum > 1 {
+			tmpValue := make([]uint8, valueNum)
+			tmpslice := (*[1 << 46]C.uint8_t)(cvalue)[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = uint8(s)
+			}
+			return tmpValue, nil
+		}
+		return *(*uint8)(cvalue), nil
 	case TILEDB_UINT16:
-		return getValueInternal[uint16](valueNum, cvalue)
+		if cvalue == nil {
+			return uint16(0), nil
+		}
+		if valueNum > 1 {
+			tmpValue := make([]uint16, valueNum)
+			tmpslice := (*[1 << 46]C.uint16_t)(cvalue)[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = uint16(s)
+			}
+			return tmpValue, nil
+		}
+		return *(*uint16)(cvalue), nil
 	case TILEDB_UINT32:
-		return getValueInternal[uint32](valueNum, cvalue)
+		if cvalue == nil {
+			return uint32(0), nil
+		}
+		if valueNum > 1 {
+			tmpValue := make([]uint32, valueNum)
+			tmpslice := (*[1 << 46]C.uint32_t)(cvalue)[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = uint32(s)
+			}
+			return tmpValue, nil
+		}
+		return *(*uint32)(cvalue), nil
 	case TILEDB_UINT64:
-		return getValueInternal[uint64](valueNum, cvalue)
+		if cvalue == nil {
+			return uint64(0), nil
+		}
+		if valueNum > 1 {
+			tmpValue := make([]uint64, valueNum)
+			tmpslice := (*[1 << 46]C.uint64_t)(cvalue)[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = uint64(s)
+			}
+			return tmpValue, nil
+		}
+		return *(*uint64)(cvalue), nil
 	case TILEDB_FLOAT32:
-		return getValueInternal[float32](valueNum, cvalue)
+		if cvalue == nil {
+			return float32(0), nil
+		}
+		if valueNum > 1 {
+			tmpValue := make([]float32, valueNum)
+			tmpslice := (*[1 << 46]C.float)(cvalue)[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = float32(s)
+			}
+			return tmpValue, nil
+		}
+		return *(*float32)(cvalue), nil
 	case TILEDB_FLOAT64:
-		return getValueInternal[float64](valueNum, cvalue)
-	case TILEDB_CHAR, TILEDB_STRING_ASCII, TILEDB_STRING_UTF8:
-		return C.GoStringN((*C.char)(cvalue), C.int(valueNum)), nil
+		if cvalue == nil {
+			return float64(0), nil
+		}
+		if valueNum > 1 {
+			tmpValue := make([]float64, valueNum)
+			tmpslice := (*[1 << 46]C.double)(cvalue)[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = float64(s)
+			}
+			return tmpValue, nil
+		}
+		return *(*float64)(cvalue), nil
+	case TILEDB_CHAR:
+		if cvalue == nil || valueNum == 0 {
+			return "", nil
+		}
+		tmpslice := (*[1 << 46]C.char)(cvalue)[:valueNum:valueNum]
+		// TODO: Handle overflow from unsigned conversion
+		return C.GoStringN(&tmpslice[0], C.int(valueNum))[0:valueNum], nil
+	case TILEDB_STRING_ASCII:
+		if cvalue == nil || valueNum == 0 {
+			return "", nil
+		}
+		tmpslice := (*[1 << 46]C.char)(cvalue)[:valueNum:valueNum]
+		// TODO: Handle overflow from unsigned conversion
+		return C.GoStringN(&tmpslice[0], C.int(valueNum))[0:valueNum], nil
+	case TILEDB_STRING_UTF8:
+		if cvalue == nil || valueNum == 0 {
+			return "", nil
+		}
+		tmpslice := (*[1 << 46]C.char)(cvalue)[:valueNum:valueNum]
+		// TODO: Handle overflow from unsigned conversion
+		return C.GoStringN(&tmpslice[0], C.int(valueNum))[0:valueNum], nil
 	case TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK,
 		TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN,
 		TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US,
 		TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS,
 		TILEDB_DATETIME_AS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
 		if valueNum > 1 {
-			return nil, fmt.Errorf("only 1 timestamp may be returned, not %d", d)
+			return nil, fmt.Errorf("Unrecognized value type: %d", d)
+		} else {
+			if cvalue == nil {
+				return int64(0), nil
+			}
+			var timestamp interface{} = *(*int16)(cvalue)
+			return GetTimeFromTimestamp(d, timestamp.(int64)), nil
 		}
-		if cvalue == nil {
-			return time.Time{}, nil
-		}
-		timestamp := *(*int64)(cvalue)
-		return GetTimeFromTimestamp(d, timestamp), nil
 	case TILEDB_BOOL:
-		// We handle this differently to ensure that our bools are always in the
-		// canonical form (true/1 or false/0).
 		if cvalue == nil {
 			return false, nil
 		}
-		bytes := unsafeSlice[byte](cvalue, valueNum)
-		if valueNum == 1 {
-			return bytes[0] != 0, nil
+		if valueNum > 1 {
+			tmpValue := make([]bool, valueNum)
+			tmpslice := (*[1 << 46]C.int8_t)(cvalue)[:valueNum:valueNum]
+			for i, s := range tmpslice {
+				tmpValue[i] = s != 0
+			}
+			return tmpValue, nil
 		}
-		bools := make([]bool, valueNum)
-		for i, b := range bytes {
-			bools[i] = b != 0
-		}
-		return bools, nil
+		return *(*int8)(cvalue), nil
 	default:
 		return nil, fmt.Errorf("Unrecognized value type: %d", d)
 	}
-}
-
-// getValueInternal handles the internals of Datatype.GetValue. It returns
-// `valueNum` Ts located at `ptr`. As a special case, if valueNum == 1,
-// it returns a T itself rather than a []T.
-func getValueInternal[T any](valueNum uint, ptr unsafe.Pointer) (any, error) {
-	var singleValue T
-	if ptr == nil {
-		return singleValue, nil
-	}
-	if valueNum == 1 {
-		singleValue = *(*T)(ptr)
-		return singleValue, nil
-	}
-	out := make([]T, valueNum)
-	inSlice := unsafeSlice[T](ptr, valueNum)
-	copy(out, inSlice)
-	return out, nil
 }
 
 var tileDBInt, tileDBUint = intUintTypes() // The Datatypes of Go `int` and `uint`.
