@@ -514,8 +514,10 @@ func DeserializeQueryAndArray(context *Context, buffer *Buffer, serializationTyp
 	return array, query, nil
 }
 
-// HandleLoadArraySchemaRequest Pass the array and serialized request to core which returns the serialized response.
-func HandleLoadArraySchemaRequest(array *Array, serializationType SerializationType, request *Buffer) (*Buffer, error) {
+// HandleLoadArraySchemaRequest Passes the array and serialized LoadArraySchemaRequest to core which returns the
+// serialized LoadArraySchemaResponse. The request contains a TileDB Config used to load the schema, the response
+// contains the latest array schema loaded and a map of all array schemas.
+func HandleLoadArraySchemaRequest(array *Array, request *Buffer, serializationType SerializationType) (*Buffer, error) {
 	response, err := NewBuffer(array.context)
 	if err != nil {
 		return nil, fmt.Errorf("error creating LoadArraySchemaResponse buffer: %s", array.context.LastError())
