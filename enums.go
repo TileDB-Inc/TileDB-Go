@@ -323,6 +323,9 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 	case TILEDB_FLOAT64:
 		return getValueInternal[float64](valueNum, cvalue)
 	case TILEDB_CHAR, TILEDB_STRING_ASCII, TILEDB_STRING_UTF8:
+		if cvalue == nil || valueNum == 0 {
+			return "", nil
+		}
 		return C.GoStringN((*C.char)(cvalue), C.int(valueNum)), nil
 	case TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK,
 		TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN,
