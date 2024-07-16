@@ -12,4 +12,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
+// Local triggered panic when referencing enums
+retract v0.30.1
+
 go 1.20
