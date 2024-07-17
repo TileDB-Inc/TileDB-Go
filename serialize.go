@@ -529,7 +529,6 @@ func HandleLoadArraySchemaRequest(array *Array, request *Buffer, serializationTy
 	}
 
 	runtime.KeepAlive(request)
-	runtime.KeepAlive(response)
 	return response, nil
 }
 
