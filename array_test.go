@@ -400,6 +400,21 @@ func TestArray_Metadata(t *testing.T) {
 		a.Close()
 		assert.NoError(t, err)
 	})
+
+	t.Run("empty", func(t *testing.T) {
+		a, err := newTestArray(t)
+		require.NoError(t, err)
+		require.NoError(t, a.Open(TILEDB_WRITE))
+		empty := []byte{}
+		require.NoError(t, arrayPutMetadata(a, TILEDB_STRING_UTF8, testKey, slicePtr(empty), 0))
+		require.NoError(t, a.Close())
+		require.NoError(t, a.Open(TILEDB_READ))
+		dataType, valNum, value, err := a.GetMetadata(testKey)
+		require.NoError(t, err)
+		assert.Equal(t, TILEDB_STRING_UTF8, dataType)
+		assert.EqualValues(t, 1, valNum)
+		assert.Equal(t, "", value.(string))
+	})
 }
 
 func TestDeleteFragments(t *testing.T) {
