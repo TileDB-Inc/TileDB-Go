@@ -113,7 +113,7 @@ func (a *Array) ConsolidateFragments(config *Config, fragmentList []string) erro
 	list, freeMemory := cStringArray(fragmentList)
 	defer freeMemory()
 
-	ret := C.tiledb_array_consolidate_fragments(a.context.tiledbContext, curi, (**C.char)(unsafe.Pointer(&list[0])), C.uint64_t(len(list)), config.tiledbConfig)
+	ret := C.tiledb_array_consolidate_fragments(a.context.tiledbContext, curi, (**C.char)(slicePtr(list)), C.uint64_t(len(list)), config.tiledbConfig)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error consolidating tiledb array fragment list: %s", a.context.LastError())
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func createTestArray(t *testing.T) *Array {
+func create1DTestArray(t *testing.T) *Array {
 	// Create a 1d array
 
 	// Create configuration
@@ -66,7 +66,7 @@ func createTestArray(t *testing.T) *Array {
 	return array
 }
 
-func writeTestArray(t *testing.T, array *Array, data []int32) {
+func write1DTestArray(t *testing.T, array *Array, data []int32) {
 	// Open array for writing
 	err := array.Open(TILEDB_WRITE)
 	require.NoError(t, err)
@@ -103,9 +103,9 @@ func writeTestArray(t *testing.T, array *Array, data []int32) {
 }
 
 func TestGetConsolidationPlan(t *testing.T) {
-	array := createTestArray(t)
+	array := create1DTestArray(t)
 
-	writeTestArray(t, array, []int32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+	write1DTestArray(t, array, []int32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
 
 	checkConsolidationPlan := func(t *testing.T, cplan *ConsolidationPlan) {
 		numNodes, err := cplan.NumNodes()
@@ -144,11 +144,11 @@ func TestConsolidateFragments(t *testing.T) {
 	// https://github.com/TileDB-Inc/TileDB/pull/5135
 	t.Skip("Skipping fragment list consolidation SC-51140")
 
-	array := createTestArray(t)
+	array := create1DTestArray(t)
 
-	numFrags := uint32(5)
-	for i := uint32(0); i < numFrags; i++ {
-		writeTestArray(t, array, []int32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+	numFrags := 5
+	for i := 0; i < numFrags; i++ {
+		write1DTestArray(t, array, []int32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
 	}
 
 	fragmentInfo, err := NewFragmentInfo(array.context, array.uri)
@@ -159,10 +159,10 @@ func TestConsolidateFragments(t *testing.T) {
 
 	fragInfoNum, err := fragmentInfo.GetFragmentNum()
 	require.NoError(t, err)
-	require.Equal(t, numFrags, fragInfoNum)
+	require.EqualValues(t, numFrags, fragInfoNum)
 	fragUris := make([]string, numFrags)
-	for i := uint32(0); i < numFrags; i++ {
-		uri, err := fragmentInfo.GetFragmentURI(i)
+	for i := 0; i < numFrags; i++ {
+		uri, err := fragmentInfo.GetFragmentURI(uint32(i))
 		require.NoError(t, err)
 		fragUris[i] = uri
 	}
@@ -181,7 +181,7 @@ func TestConsolidateFragments(t *testing.T) {
 	require.NoError(t, err)
 	fragToVacuumNum, err := fragmentInfo.GetToVacuumNum()
 	require.NoError(t, err)
-	require.Equal(t, numFrags, fragToVacuumNum)
+	require.EqualValues(t, numFrags, fragToVacuumNum)
 	require.Equal(t, uint32(1), fragInfoNum)
 
 	err = array.Vacuum(config)
