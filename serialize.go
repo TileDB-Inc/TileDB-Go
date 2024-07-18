@@ -514,6 +514,24 @@ func DeserializeQueryAndArray(context *Context, buffer *Buffer, serializationTyp
 	return array, query, nil
 }
 
+// HandleLoadArraySchemaRequest Passes the array and serialized LoadArraySchemaRequest to core which returns the
+// serialized LoadArraySchemaResponse. The request contains a TileDB Config used to load the schema, the response
+// contains the latest array schema loaded and a map of all array schemas.
+func HandleLoadArraySchemaRequest(array *Array, request *Buffer, serializationType SerializationType) (*Buffer, error) {
+	response, err := NewBuffer(array.context)
+	if err != nil {
+		return nil, fmt.Errorf("error creating LoadArraySchemaResponse buffer: %s", array.context.LastError())
+	}
+
+	ret := C.tiledb_handle_load_array_schema_request(array.context.tiledbContext, array.tiledbArray, C.tiledb_serialization_type_t(serializationType), request.tiledbBuffer, response.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error handling LoadArraySchemaRequset: %s", array.context.LastError())
+	}
+
+	runtime.KeepAlive(request)
+	return response, nil
+}
+
 // HandleArrayDeleteFragmentsTimestampsRequest is used by TileDB cloud to handle DeleteFragments with tiledb:// uris.
 func HandleArrayDeleteFragmentsTimestampsRequest(context *Context, array *Array, buffer *Buffer, serializationType SerializationType) error {
 	ret := C.tiledb_handle_array_delete_fragments_timestamps_request(context.tiledbContext, array.tiledbArray,
