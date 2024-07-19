@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetConsolidationPlan(t *testing.T) {
-	// Create an 1d array
+func create1DTestArray(t *testing.T) *Array {
+	// Create a 1d array
 
 	// Create configuration
 	config, err := NewConfig()
@@ -63,10 +63,12 @@ func TestGetConsolidationPlan(t *testing.T) {
 	err = array.Create(arraySchema)
 	require.NoError(t, err)
 
-	// Write to array
+	return array
+}
 
+func write1DTestArray(t *testing.T, array *Array, data []int32) {
 	// Open array for writing
-	err = array.Open(TILEDB_WRITE)
+	err := array.Open(TILEDB_WRITE)
 	require.NoError(t, err)
 
 	// Create subarray
@@ -76,15 +78,14 @@ func TestGetConsolidationPlan(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create write query
-	query, err := NewQuery(context, array)
+	query, err := NewQuery(array.context, array)
 	require.NoError(t, err)
 	assert.NotNil(t, query)
 	err = query.SetSubarray(subarray)
 	require.NoError(t, err)
 
 	// Initialize the data buffer
-	bufferV := []int32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-	_, err = query.SetDataBuffer("v", bufferV)
+	_, err = query.SetDataBuffer("v", data)
 	require.NoError(t, err)
 
 	// Submit write query
@@ -99,6 +100,12 @@ func TestGetConsolidationPlan(t *testing.T) {
 	// close array
 	err = array.Close()
 	require.NoError(t, err)
+}
+
+func TestGetConsolidationPlan(t *testing.T) {
+	array := create1DTestArray(t)
+
+	write1DTestArray(t, array, []int32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
 
 	checkConsolidationPlan := func(t *testing.T, cplan *ConsolidationPlan) {
 		numNodes, err := cplan.NumNodes()
@@ -113,7 +120,7 @@ func TestGetConsolidationPlan(t *testing.T) {
 			require.NoError(t, err)
 
 			// fragment uris in the plan are relative
-			fullPath := filepath.Join(tmpArrayPath, "__fragments", fragmentURI)
+			fullPath := filepath.Join(array.uri, "__fragments", fragmentURI)
 			_, err = os.Stat(fullPath)
 			require.NoError(t, err)
 		}
@@ -121,7 +128,7 @@ func TestGetConsolidationPlan(t *testing.T) {
 
 	tdbCtx, err := NewContext(nil)
 	require.NoError(t, err)
-	arr, err := NewArray(tdbCtx, tmpArrayPath)
+	arr, err := NewArray(tdbCtx, array.uri)
 	require.NoError(t, err)
 	require.NoError(t, arr.Open(TILEDB_READ))
 	t.Cleanup(func() { arr.Close() })
@@ -130,4 +137,63 @@ func TestGetConsolidationPlan(t *testing.T) {
 	require.NoError(t, err)
 
 	checkConsolidationPlan(t, cplan)
+}
+
+func TestConsolidateFragments(t *testing.T) {
+	// The test is skipped pending a core release for 2.25.0 that includes this fix:
+	// https://github.com/TileDB-Inc/TileDB/pull/5135
+	t.Skip("Skipping fragment list consolidation SC-51140")
+
+	array := create1DTestArray(t)
+
+	numFrags := 5
+	for i := 0; i < numFrags; i++ {
+		write1DTestArray(t, array, []int32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+	}
+
+	fragmentInfo, err := NewFragmentInfo(array.context, array.uri)
+	require.NoError(t, err)
+
+	err = fragmentInfo.Load()
+	require.NoError(t, err)
+
+	fragInfoNum, err := fragmentInfo.GetFragmentNum()
+	require.NoError(t, err)
+	require.EqualValues(t, numFrags, fragInfoNum)
+	fragUris := make([]string, numFrags)
+	for i := 0; i < numFrags; i++ {
+		uri, err := fragmentInfo.GetFragmentURI(uint32(i))
+		require.NoError(t, err)
+		fragUris[i] = uri
+	}
+
+	// Default consolidation mode is 'fragments'.
+	config, err := array.context.Config()
+	require.NoError(t, err)
+
+	err = array.ConsolidateFragments(config, fragUris)
+	require.NoError(t, err)
+
+	// Check that the new consolidated fragment was created.
+	err = fragmentInfo.Load()
+	require.NoError(t, err)
+	fragInfoNum, err = fragmentInfo.GetFragmentNum()
+	require.NoError(t, err)
+	fragToVacuumNum, err := fragmentInfo.GetToVacuumNum()
+	require.NoError(t, err)
+	require.EqualValues(t, numFrags, fragToVacuumNum)
+	require.Equal(t, uint32(1), fragInfoNum)
+
+	err = array.Vacuum(config)
+	require.NoError(t, err)
+
+	// Check for one fragment after vacuum.
+	err = fragmentInfo.Load()
+	require.NoError(t, err)
+	fragInfoNum, err = fragmentInfo.GetFragmentNum()
+	require.NoError(t, err)
+	fragToVacuumNum, err = fragmentInfo.GetToVacuumNum()
+	require.NoError(t, err)
+	require.Equal(t, uint32(1), fragInfoNum)
+	require.Equal(t, uint32(0), fragToVacuumNum)
 }

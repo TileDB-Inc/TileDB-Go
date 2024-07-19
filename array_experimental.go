@@ -6,7 +6,11 @@ package tiledb
 #include <stdlib.h>
 */
 import "C"
-import "fmt"
+import (
+	"fmt"
+	"runtime"
+	"unsafe"
+)
 
 // ConsolidationPlan is a consolidation plan for array
 type ConsolidationPlan struct {
@@ -93,4 +97,27 @@ func (cp *ConsolidationPlan) DumpJSON() (string, error) {
 	}
 
 	return json, nil
+}
+
+// ConsolidateFragments consolidates an explicit list of fragments in an array into a single fragment.
+// You must first finalize all queries to the array before consolidation can
+// begin (as consolidation temporarily acquires an exclusive lock on the array).
+func (a *Array) ConsolidateFragments(config *Config, fragmentList []string) error {
+	if config == nil {
+		return fmt.Errorf("Config must not be nil for Consolidate")
+	}
+
+	curi := C.CString(a.uri)
+	defer C.free(unsafe.Pointer(curi))
+
+	list, freeMemory := cStringArray(fragmentList)
+	defer freeMemory()
+
+	ret := C.tiledb_array_consolidate_fragments(a.context.tiledbContext, curi, (**C.char)(slicePtr(list)), C.uint64_t(len(list)), config.tiledbConfig)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error consolidating tiledb array fragment list: %s", a.context.LastError())
+	}
+
+	runtime.KeepAlive(config)
+	return nil
 }
