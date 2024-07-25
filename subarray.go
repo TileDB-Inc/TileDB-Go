@@ -87,55 +87,55 @@ func (sa *Subarray) SetSubArray(subArray interface{}) error {
 	case reflect.Int:
 		// Create subArray void*
 		tmpSubArray := subArray.([]int)
-		csubArray = unsafe.Pointer(&tmpSubArray[0])
+		csubArray = slicePtr(tmpSubArray)
 	case reflect.Int8:
 		// Create subArray void*
 		tmpSubArray := subArray.([]int8)
-		csubArray = unsafe.Pointer(&tmpSubArray[0])
+		csubArray = slicePtr(tmpSubArray)
 	case reflect.Int16:
 		// Create subArray void*
 		tmpSubArray := subArray.([]int16)
-		csubArray = unsafe.Pointer(&tmpSubArray[0])
+		csubArray = slicePtr(tmpSubArray)
 	case reflect.Int32:
 		// Create subArray void*
 		tmpSubArray := subArray.([]int32)
-		csubArray = unsafe.Pointer(&tmpSubArray[0])
+		csubArray = slicePtr(tmpSubArray)
 	case reflect.Int64:
 		// Create subArray void*
 		tmpSubArray := subArray.([]int64)
-		csubArray = unsafe.Pointer(&tmpSubArray[0])
+		csubArray = slicePtr(tmpSubArray)
 	case reflect.Uint:
 		// Create subArray void*
 		tmpSubArray := subArray.([]uint)
-		csubArray = unsafe.Pointer(&tmpSubArray[0])
+		csubArray = slicePtr(tmpSubArray)
 	case reflect.Uint8:
 		// Create subArray void*
 		tmpSubArray := subArray.([]uint8)
-		csubArray = unsafe.Pointer(&tmpSubArray[0])
+		csubArray = slicePtr(tmpSubArray)
 	case reflect.Uint16:
 		// Create subArray void*
 		tmpSubArray := subArray.([]uint16)
-		csubArray = unsafe.Pointer(&tmpSubArray[0])
+		csubArray = slicePtr(tmpSubArray)
 	case reflect.Uint32:
 		// Create subArray void*
 		tmpSubArray := subArray.([]uint32)
-		csubArray = unsafe.Pointer(&tmpSubArray[0])
+		csubArray = slicePtr(tmpSubArray)
 	case reflect.Uint64:
 		// Create subArray void*
 		tmpSubArray := subArray.([]uint64)
-		csubArray = unsafe.Pointer(&tmpSubArray[0])
+		csubArray = slicePtr(tmpSubArray)
 	case reflect.Float32:
 		// Create subArray void*
 		tmpSubArray := subArray.([]float32)
-		csubArray = unsafe.Pointer(&tmpSubArray[0])
+		csubArray = slicePtr(tmpSubArray)
 	case reflect.Float64:
 		// Create subArray void*
 		tmpSubArray := subArray.([]float64)
-		csubArray = unsafe.Pointer(&tmpSubArray[0])
+		csubArray = slicePtr(tmpSubArray)
 	case reflect.Bool:
 		// Create subArray void*
 		tmpSubArray := subArray.([]bool)
-		csubArray = unsafe.Pointer(&tmpSubArray[0])
+		csubArray = slicePtr(tmpSubArray)
 	default:
 		return fmt.Errorf("Unrecognized subArray type passed: %s", subArrayType.String())
 	}
@@ -179,7 +179,7 @@ func (sa *Subarray) AddRange(dimIdx uint32, r Range) error {
 		startSlice := []byte(r.start.(string))
 		endSlice := []byte(r.end.(string))
 		ret = C.tiledb_subarray_add_range_var(sa.context.tiledbContext, sa.subarray, C.uint32_t(dimIdx),
-			unsafe.Pointer(&startSlice[0]), C.uint64_t(len(startSlice)), unsafe.Pointer(&endSlice[0]), C.uint64_t(len(endSlice)))
+			slicePtr(startSlice), C.uint64_t(len(startSlice)), slicePtr(endSlice), C.uint64_t(len(endSlice)))
 		runtime.KeepAlive(startSlice)
 		runtime.KeepAlive(endSlice)
 	} else {
@@ -216,7 +216,7 @@ func (sa *Subarray) AddRangeByName(dimName string, r Range) error {
 		startSlice := []byte(r.start.(string))
 		endSlice := []byte(r.end.(string))
 		ret = C.tiledb_subarray_add_range_var_by_name(sa.context.tiledbContext, sa.subarray, cDimName,
-			unsafe.Pointer(&startSlice[0]), C.uint64_t(len(startSlice)), unsafe.Pointer(&endSlice[0]), C.uint64_t(len(endSlice)))
+			slicePtr(startSlice), C.uint64_t(len(startSlice)), slicePtr(endSlice), C.uint64_t(len(endSlice)))
 		runtime.KeepAlive(startSlice)
 		runtime.KeepAlive(endSlice)
 	} else {
@@ -342,11 +342,11 @@ func (sa *Subarray) GetRange(dimIdx uint32, rangeNum uint64) (Range, error) {
 			var startData, endData []byte
 			if startSize > 0 {
 				startData = make([]byte, int(startSize))
-				sp = unsafe.Pointer(&startData[0])
+				sp = slicePtr(startData)
 			}
 			if endSize > 0 {
 				endData = make([]byte, int(endSize))
-				ep = unsafe.Pointer(&endData[0])
+				ep = slicePtr(endData)
 			}
 			ret = C.tiledb_subarray_get_range_var(sa.context.tiledbContext, sa.subarray,
 				C.uint32_t(dimIdx), C.uint64_t(rangeNum), sp, ep)
@@ -393,11 +393,11 @@ func (sa *Subarray) GetRangeFromName(dimName string, rangeNum uint64) (Range, er
 			var startData, endData []byte
 			if startSize > 0 {
 				startData = make([]byte, int(startSize))
-				sp = unsafe.Pointer(&startData[0])
+				sp = slicePtr(startData)
 			}
 			if endSize > 0 {
 				endData = make([]byte, int(endSize))
-				ep = unsafe.Pointer(&endData[0])
+				ep = slicePtr(endData)
 			}
 			ret = C.tiledb_subarray_get_range_var_from_name(sa.context.tiledbContext, sa.subarray,
 				cDimName, C.uint64_t(rangeNum), sp, ep)
