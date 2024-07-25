@@ -69,7 +69,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		// Create domain void*
 		tmpDomain := domain.([]int8)
 		domainPtr = &tmpDomain
-		cdomain = unsafe.Pointer(&tmpDomain[0])
+		cdomain = slicePtr(tmpDomain)
 		// Create extent void*
 		tmpExtent := extent.(int8)
 		extentPtr = &tmpExtent
@@ -82,7 +82,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		// Create domain void*
 		tmpDomain := domain.([]int16)
 		domainPtr = &tmpDomain
-		cdomain = unsafe.Pointer(&tmpDomain[0])
+		cdomain = slicePtr(tmpDomain)
 		// Create extent void*
 		tmpExtent := extent.(int16)
 		extentPtr = &tmpExtent
@@ -100,7 +100,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		// Create domain void*
 		tmpDomain := domain.([]int32)
 		domainPtr = &tmpDomain
-		cdomain = unsafe.Pointer(&tmpDomain[0])
+		cdomain = slicePtr(tmpDomain)
 		// Create extent void*
 		tmpExtent := extent.(int32)
 		extentPtr = &tmpExtent
@@ -118,7 +118,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		// Create domain void*
 		tmpDomain := domain.([]int64)
 		domainPtr = &tmpDomain
-		cdomain = unsafe.Pointer(&tmpDomain[0])
+		cdomain = slicePtr(tmpDomain)
 		// Create extent void*
 		tmpExtent := extent.(int64)
 		extentPtr = &tmpExtent
@@ -131,7 +131,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		// Create domain void*
 		tmpDomain := domain.([]uint8)
 		domainPtr = &tmpDomain
-		cdomain = unsafe.Pointer(&tmpDomain[0])
+		cdomain = slicePtr(tmpDomain)
 		// Create extent void*
 		tmpExtent := extent.(uint8)
 		extentPtr = &tmpExtent
@@ -144,7 +144,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		// Create domain void*
 		tmpDomain := domain.([]uint16)
 		domainPtr = &tmpDomain
-		cdomain = unsafe.Pointer(&tmpDomain[0])
+		cdomain = slicePtr(tmpDomain)
 		// Create extent void*
 		tmpExtent := extent.(uint16)
 		extentPtr = &tmpExtent
@@ -162,7 +162,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		// Create domain void*
 		tmpDomain := domain.([]uint32)
 		domainPtr = &tmpDomain
-		cdomain = unsafe.Pointer(&tmpDomain[0])
+		cdomain = slicePtr(tmpDomain)
 		// Create extent void*
 		tmpExtent := extent.(uint32)
 		extentPtr = &tmpExtent
@@ -180,7 +180,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		// Create domain void*
 		tmpDomain := domain.([]uint64)
 		domainPtr = &tmpDomain
-		cdomain = unsafe.Pointer(&tmpDomain[0])
+		cdomain = slicePtr(tmpDomain)
 		// Create extent void*
 		tmpExtent := extent.(uint64)
 		extentPtr = &tmpExtent
@@ -193,7 +193,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		// Create domain void*
 		tmpDomain := domain.([]float32)
 		domainPtr = &tmpDomain
-		cdomain = unsafe.Pointer(&tmpDomain[0])
+		cdomain = slicePtr(tmpDomain)
 		// Create extent void*
 		tmpExtent := extent.(float32)
 		extentPtr = &tmpExtent
@@ -206,7 +206,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		// Create domain void*
 		tmpDomain := domain.([]float64)
 		domainPtr = &tmpDomain
-		cdomain = unsafe.Pointer(&tmpDomain[0])
+		cdomain = slicePtr(tmpDomain)
 		// Create extent void*
 		tmpExtent := extent.(float64)
 		extentPtr = &tmpExtent
@@ -219,7 +219,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		// Create domain void*
 		tmpDomain := domain.([]bool)
 		domainPtr = &tmpDomain
-		cdomain = unsafe.Pointer(&tmpDomain[0])
+		cdomain = slicePtr(tmpDomain)
 		// Create extent void*
 		tmpExtent := extent.(bool)
 		extentPtr = &tmpExtent

@@ -369,7 +369,7 @@ func (v *VFS) Close(fh *VFSfh) error {
 // Read reads part of a file.
 func (v *VFS) Read(fh *VFSfh, offset uint64, nbytes uint64) ([]byte, error) {
 	bytes := make([]byte, nbytes)
-	cbuffer := unsafe.Pointer(&bytes[0])
+	cbuffer := slicePtr(bytes)
 	ret := C.tiledb_vfs_read(v.context.tiledbContext, fh.tiledbVFSfh, C.uint64_t(offset), cbuffer, C.uint64_t(nbytes))
 
 	if ret != C.TILEDB_OK {
@@ -511,7 +511,7 @@ func (v *VFSfh) Read(p []byte) (int, error) {
 		return 0, io.EOF
 	}
 
-	cbuffer := unsafe.Pointer(&p[0])
+	cbuffer := slicePtr(p)
 	ret := C.tiledb_vfs_read(v.context.tiledbContext, v.tiledbVFSfh, C.uint64_t(v.offset), cbuffer, C.uint64_t(nbytes))
 
 	if ret != C.TILEDB_OK {
@@ -529,7 +529,7 @@ func (v *VFSfh) Write(bytes []byte) (int, error) {
 	if len(bytes) == 0 {
 		return 0, nil
 	}
-	cbuffer := unsafe.Pointer(&bytes[0])
+	cbuffer := slicePtr(bytes)
 	ret := C.tiledb_vfs_write(v.context.tiledbContext, v.tiledbVFSfh, cbuffer, C.uint64_t(len(bytes)))
 
 	if ret != C.TILEDB_OK {

@@ -1101,7 +1101,7 @@ func DeleteFragmentsList(tdbCtx *Context, uri string, fragmentURIs []string) err
 	list, freeMemory := cStringArray(fragmentURIs)
 	defer freeMemory()
 
-	ret := C.tiledb_array_delete_fragments_list(tdbCtx.tiledbContext, curi, (**C.char)(unsafe.Pointer(&list[0])), C.size_t(len(list)))
+	ret := C.tiledb_array_delete_fragments_list(tdbCtx.tiledbContext, curi, (**C.char)(slicePtr(list)), C.size_t(len(list)))
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error deleting fragments list from array: %s", tdbCtx.LastError())
 	}

@@ -81,7 +81,7 @@ func SerializeArrayNonEmptyDomain(a *Array, serializationType SerializationType)
 
 	var isEmpty C.int32_t
 	tmpDomain := make([]uint8, subarraySize)
-	ret := C.tiledb_array_get_non_empty_domain(a.context.tiledbContext, a.tiledbArray, unsafe.Pointer(&tmpDomain[0]), &isEmpty)
+	ret := C.tiledb_array_get_non_empty_domain(a.context.tiledbContext, a.tiledbArray, slicePtr(tmpDomain), &isEmpty)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error serializing array nonempty domain: %s", a.context.LastError())
 	}
@@ -90,7 +90,7 @@ func SerializeArrayNonEmptyDomain(a *Array, serializationType SerializationType)
 	freeOnGC(&buffer)
 
 	var cClientSide = C.int32_t(0) // Currently this parameter is unused in libtiledb
-	ret = C.tiledb_serialize_array_nonempty_domain(a.context.tiledbContext, a.tiledbArray, unsafe.Pointer(&tmpDomain[0]), isEmpty, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
+	ret = C.tiledb_serialize_array_nonempty_domain(a.context.tiledbContext, a.tiledbArray, slicePtr(tmpDomain), isEmpty, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error serializing array nonempty domain: %s", a.context.LastError())
 	}

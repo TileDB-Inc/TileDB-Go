@@ -178,7 +178,7 @@ func bufferExport(tdbCtx *Context, uri *C.char, off int64, p []byte) error {
 		return nil
 	}
 
-	ret := C.tiledb_filestore_buffer_export(tdbCtx.tiledbContext, uri, C.size_t(off), unsafe.Pointer(&p[0]), C.size_t(len(p)))
+	ret := C.tiledb_filestore_buffer_export(tdbCtx.tiledbContext, uri, C.size_t(off), slicePtr(p), C.size_t(len(p)))
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error exporting buffer data: %s", tdbCtx.LastError())
 	}
@@ -193,7 +193,7 @@ func bufferImport(tdbCtx *Context, uri *C.char, data []byte, mimeType FileStoreM
 		return errors.New("Error importing buffer data: empty data")
 	}
 
-	ret := C.tiledb_filestore_buffer_import(tdbCtx.tiledbContext, uri, unsafe.Pointer(&data[0]), C.size_t(len(data)), C.tiledb_mime_type_t(mimeType))
+	ret := C.tiledb_filestore_buffer_import(tdbCtx.tiledbContext, uri, slicePtr(data), C.size_t(len(data)), C.tiledb_mime_type_t(mimeType))
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error importing buffer data: %s", tdbCtx.LastError())
 	}
