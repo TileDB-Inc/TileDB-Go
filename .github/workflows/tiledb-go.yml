@@ -168,4 +168,4 @@ jobs:
     # Tests TileDB-Go
     - name: Running examples using address sanitizer flags
       continue-on-error: true
-      run: go run -tags asan ./cmd/tiledb-go-examples
+      run: ./.github/scripts/build_with_sanitizer_and_run.sh
