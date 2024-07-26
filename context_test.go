@@ -41,15 +41,6 @@ func ExampleNewContext() {
 		return
 	}
 
-	// Check if S3 is supported:
-	isS3Supported, err := context.IsSupportedFS(TILEDB_S3)
-	if err != nil {
-		// handle error
-		return
-	}
-	// Output: true
-	fmt.Println(isS3Supported)
-
 	stats, err := context.Stats()
 	if err != nil {
 		// Handle error
@@ -59,6 +50,15 @@ func ExampleNewContext() {
 	if len(stats) > 0 {
 		// Do something with stats
 	}
+
+	// Check if S3 is supported:
+	isS3Supported, err := context.IsSupportedFS(TILEDB_S3)
+	if err != nil {
+		// handle error
+		return
+	}
+	// Output: true
+	fmt.Println(isS3Supported)
 }
 
 // TestNewContext tests setting a new context

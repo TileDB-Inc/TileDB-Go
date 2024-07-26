@@ -19,22 +19,19 @@ jobs:
     name: lint
     runs-on: ubuntu-22.04
     steps:
-
-    # Checks out repository
-    - uses: actions/checkout@v2
-
-    # Downloads TileDB-Core from release assets and install
+    - uses: actions/checkout@v4
+    # Install TileDB because the linter needs the C header files.
     - name: Run TileDB install script
       run: ./.github/scripts/install_tiledb_linux.sh
       shell: bash
-
+    - uses: actions/setup-go@v5
+      with:
+        go-version: stable
     - name: golangci-lint
-      uses: golangci/golangci-lint-action@v2
+      uses: golangci/golangci-lint-action@v6
       continue-on-error: true
       with:
-        # Required: the version of golangci-lint is required and must be
-        # specified without patch version: we always use the latest patch version.
-        version: v1.35.2
+        version: latest
 
   Linux_Test:
     runs-on: ubuntu-22.04

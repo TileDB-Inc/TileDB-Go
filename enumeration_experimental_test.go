@@ -354,9 +354,9 @@ func TestEnumerationEvolution(t *testing.T) {
 	// apply the schema evolution
 	ase, err := NewArraySchemaEvolution(tdbCtx)
 	require.NoError(t, err)
-	ase.ApplyExtendedEnumeration(romanEnumExt)
+	err = ase.ApplyExtendedEnumeration(romanEnumExt)
 	require.NoError(t, err)
-	ase.ApplyExtendedEnumeration(greekEnumExt)
+	err = ase.ApplyExtendedEnumeration(greekEnumExt)
 	require.NoError(t, err)
 	err = ase.Evolve(arrayPath)
 	require.NoError(t, err)

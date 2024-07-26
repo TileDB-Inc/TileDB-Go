@@ -109,6 +109,7 @@ func dimLabelCheck(t *testing.T, schema *ArraySchema, arrayURI string, idx int, 
 	assert.True(t, exists)
 
 	dimLabel, err := schema.DimensionLabelFromName(name)
+	require.NoError(t, err)
 	dimLabelType, err := dimLabel.Type()
 	require.NoError(t, err)
 	assert.Equal(t, labelType, dimLabelType)

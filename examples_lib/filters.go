@@ -162,7 +162,8 @@ func readFiltersArray(dir string) {
 	subarray, err := array.NewSubarray()
 	checkError(err)
 	defer subarray.Free()
-	subarray.SetSubArray([]int32{1, 2, 2, 4})
+	err = subarray.SetSubArray([]int32{1, 2, 2, 4})
+	checkError(err)
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)

@@ -1,7 +1,6 @@
 package examples_lib
 
 import (
-	"encoding/json"
 	"fmt"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
@@ -140,16 +139,10 @@ func readReadRangeArray(dir string, dimIdx uint32) {
 	}
 
 	// subarray.GetRanges does not marshal to valid JSON.
-	rangeMap, err := query.GetRanges()
+	rangeMap, err := subarray.GetRanges()
 	checkError(err)
 
 	fmt.Printf("Ranges: %v\n", rangeMap)
-
-	rangesJSON, err := json.Marshal(rangeMap)
-	checkError(err)
-
-	// Print ranges json
-	fmt.Printf("Ranges JSON: %s\n", string(rangesJSON))
 
 	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
@@ -160,9 +153,6 @@ func readReadRangeArray(dir string, dimIdx uint32) {
 
 	err = query.Finalize()
 	checkError(err)
-
-	// Print out the results.
-	// fmt.Println(data)
 }
 
 // RunReadRangeArray shows and example creation, writing and range reading
