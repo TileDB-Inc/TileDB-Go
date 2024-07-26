@@ -33,8 +33,8 @@ func ExampleNewContext() {
 
 	// Create a context directly from a configuration map:
 	context, err = NewContextFromMap(map[string]string{
-		"sm.memory_budget":     "16GB",
-		"sm.memory_budget_var": "32GB",
+		"sm.memory_budget":     "17179869184", // 16 GiB
+		"sm.memory_budget_var": "34359738368", // 32 GiB
 	})
 	if err != nil {
 		// handle error
