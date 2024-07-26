@@ -245,6 +245,7 @@ func testQueryConditionBytes(t *testing.T, array *Array) {
 			assert.NotNil(t, query)
 
 			_, err = query.SetDataBuffer("a2", a2DataRead)
+			require.NoError(t, err)
 			_, err = query.SetOffsetsBuffer("a2", a2OffsetRead)
 			require.NoError(t, err)
 			assert.NotNil(t, query)

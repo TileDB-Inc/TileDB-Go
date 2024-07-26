@@ -136,6 +136,7 @@ func TestEnumerationAndSchema(t *testing.T) {
 		romanEnum, err := array.GetEnumeration("romanNumerals")
 		require.NoError(t, err)
 		romanName, err := romanEnum.Name()
+		require.NoError(t, err)
 		require.Equal(t, "romanNumerals", romanName)
 	})
 
