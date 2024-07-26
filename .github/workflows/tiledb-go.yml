@@ -1,8 +1,9 @@
 name: TileDB-Go
 
 on:
+  release:
+    types: [ published ]
   push:
-    tags: [ v* ]
     branches: [ master ]
   pull_request:
     branches: [ master ]
@@ -125,6 +126,8 @@ jobs:
       run: go test -v ./...
 
   Linux_Address_Sanitizer:
+    # Only run this job for releases
+    if: github.event_name == 'release' && github.event.action == 'published'
     runs-on: ubuntu-22.04
     strategy:
       matrix:
