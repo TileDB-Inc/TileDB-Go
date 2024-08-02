@@ -372,8 +372,8 @@ func ExampleNewQuery() {
 	}
 }
 
-// ExampleNewQuery shows a complete write, delete and read example
-func ExampleDeleteQuery() {
+// ExampleNewQueryCondition shows a complete write, delete and read example
+func ExampleNewQueryCondition() {
 	// Create configuration
 	config, err := NewConfig()
 	if err != nil {
@@ -757,7 +757,8 @@ func TestQueryEffectiveBufferSize(t *testing.T) {
 	subarray, err := array.NewSubarray()
 	require.NoError(t, err)
 	assert.NotNil(t, subarray)
-	subarray.SetSubArray([]int32{2, 2, 2, 2})
+	err = subarray.SetSubArray([]int32{2, 2, 2, 2})
+	require.NoError(t, err)
 
 	// Prepare buffers
 	rows := make([]int32, 2)

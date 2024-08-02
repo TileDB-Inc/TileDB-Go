@@ -1,8 +1,9 @@
 name: TileDB-Go
 
 on:
+  release:
+    types: [ published ]
   push:
-    tags: [ v* ]
     branches: [ master ]
   pull_request:
     branches: [ master ]
@@ -18,22 +19,18 @@ jobs:
     name: lint
     runs-on: ubuntu-22.04
     steps:
-
-    # Checks out repository
-    - uses: actions/checkout@v2
-
-    # Downloads TileDB-Core from release assets and install
+    - uses: actions/checkout@v4
+    # Install TileDB because the linter needs the C header files.
     - name: Run TileDB install script
       run: ./.github/scripts/install_tiledb_linux.sh
       shell: bash
-
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v2
-      continue-on-error: true
+    - uses: actions/setup-go@v5
       with:
-        # Required: the version of golangci-lint is required and must be
-        # specified without patch version: we always use the latest patch version.
-        version: v1.35.2
+        go-version: stable
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: latest
 
   Linux_Test:
     runs-on: ubuntu-22.04
@@ -125,6 +122,8 @@ jobs:
       run: go test -v ./...
 
   Linux_Address_Sanitizer:
+    # Only run this job for releases
+    if: github.event_name == 'release' && github.event.action == 'published'
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -168,4 +167,4 @@ jobs:
     # Tests TileDB-Go
     - name: Running examples using address sanitizer flags
       continue-on-error: true
-      run: go run -tags asan ./cmd/tiledb-go-examples
+      run: ./.github/scripts/build_with_sanitizer_and_run.sh

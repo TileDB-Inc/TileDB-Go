@@ -10,6 +10,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var (
@@ -48,7 +51,8 @@ var (
 // name constructs the name of the constant for the given type.
 func name(typ string, suf string, exported bool) string {
 	if exported {
-		typ = strings.Title(typ)
+		caser := cases.Title(language.AmericanEnglish)
+		typ = caser.String(typ)
 	}
 	return typ + suf
 }
@@ -107,11 +111,12 @@ func generate(pkgName, suffix string, export bool) string {
 	var constArray []string
 	// The array for the kind map reflect.Whatever: WhateverBytes,
 	var kindMap []string
+	caser := cases.Title(language.AmericanEnglish)
 	for _, literal := range kinds {
 		kind := strings.Split(literal, "(")[0]
 		constName := name(kind, suffix, export)
 		constArray = append(constArray, fmt.Sprintf("%s = uint64(unsafe.Sizeof(%s))", constName, literal))
-		kindMap = append(kindMap, fmt.Sprintf("reflect.%s: %s,", strings.Title(kind), constName))
+		kindMap = append(kindMap, fmt.Sprintf("reflect.%s: %s,", caser.String(kind), constName))
 	}
 	for _, pair := range aliases {
 		split := strings.Split(pair, "=")

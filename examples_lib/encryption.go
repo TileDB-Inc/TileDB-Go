@@ -112,7 +112,9 @@ func readEncryptedArray(dir string) {
 
 	// Slice only rows 1, 2 and cols 2, 3, 4
 	subarray, err := array.NewSubarray()
-	subarray.SetSubArray([]int32{1, 2, 2, 4})
+	checkError(err)
+	err = subarray.SetSubArray([]int32{1, 2, 2, 4})
+	checkError(err)
 
 	// Prepare the vector that will hold the result (of size 6 elements)
 	data := make([]int32, 6)

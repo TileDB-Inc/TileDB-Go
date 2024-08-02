@@ -96,7 +96,6 @@ func ExampleNewVFS() {
 		// Directory exists
 		if isDir {
 			fmt.Println("URI is a directory")
-			// Output: URI is a directory
 		} else {
 			fmt.Println("URI is not a directory")
 			// Output: URI is not a directory

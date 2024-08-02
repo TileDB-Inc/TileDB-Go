@@ -157,7 +157,7 @@ func (q *Query) GetRanges() (map[string][]RangeLimits, error) {
 				return nil, err
 			}
 			// Append range to range Array
-			rangeArray = append(rangeArray, RangeLimits{start: r.start, end: r.end})
+			rangeArray = append(rangeArray, RangeLimits(r))
 		}
 		// key: name (string), value: rangeArray ([]RangeLimits)
 		rangeMap[name] = rangeArray

@@ -1,7 +1,6 @@
 package examples_lib
 
 import (
-	"io/ioutil"
 	"os"
 )
 
@@ -23,7 +22,7 @@ func checkedValue[T any](v T, err error) T {
 // temp creates a temporary directory which contains the given name,
 // or panics if it cannot.
 func temp(name string) string {
-	dir, err := ioutil.TempDir("", name)
+	dir, err := os.MkdirTemp("", name)
 	checkError(err)
 	return dir
 }
