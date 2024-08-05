@@ -125,5 +125,5 @@ The methods will be removed in the release following their removal from TileDB c
 
 ### 0.30.3
 
-All deprecated APIs in TileDB-Go are removed as the corresopnding C-APIs will be removed in
+All deprecated APIs in TileDB-Go are removed as the corresponding C-APIs will be removed in
 the following TileDB release.
