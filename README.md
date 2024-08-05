@@ -103,13 +103,6 @@ as such the below table reference which versions are compatible.
 | 0.31.0            | 2.25.X         |
 
 
-## Missing Functionality
-
-The following TileDB core library features are missing from the Go API:
-
-- TileDB generic object management
-- TileDB group creation
-
 ## Deprecated Functionality
 
 ### 0.21.0
@@ -129,3 +122,8 @@ The methods will be removed in the release following their removal from TileDB c
 
 `Array.DeleteFragments` is deprecated in favor of `tiledb.DeleteFragments` which binds to
 `C.tiledb_array_delete_fragments_v2` the preferred method to delete fragments in TileDB 2.18.0.
+
+### 0.30.3
+
+All deprecated APIs in TileDB-Go are removed as the corresopnding C-APIs will be removed in
+the following TileDB release.
