@@ -162,7 +162,7 @@ func TestArray(t *testing.T) {
 	require.NoError(t, array.Close())
 
 	// Open array for reading At
-	require.NoError(t, array.OpenWithOptions(TILEDB_READ, WithEndTimestamp(uint64(time.Now().UnixNano()/1000000))))
+	require.NoError(t, array.OpenWithOptions(TILEDB_READ, WithEndTime(time.Now())))
 
 	// Get the array schema
 	arraySchema, err = array.Schema()
@@ -282,30 +282,30 @@ func TestArrayEncryption(t *testing.T) {
 
 func TestArray_OpenWithOptions(t *testing.T) {
 	t.Run("StartTime", func(t *testing.T) {
-		startTime := uint64(1621976364000)
+		startTime := time.Date(2021, 5, 25, 20, 59, 24, 0, time.UTC)
 		a, err := newTestArray(t)
 		if err != nil {
 			t.Fatalf("failed to create new test array: %v", err)
 		}
-		err = a.OpenWithOptions(TILEDB_READ, WithStartTimestamp(startTime))
+		err = a.OpenWithOptions(TILEDB_READ, WithStartTime(startTime))
 		assert.NoError(t, err)
 
-		got, err := a.OpenStartTimestamp()
+		got, err := a.OpenStartTime()
 		assert.NoError(t, err)
 
 		assert.Equal(t, startTime, got)
 	})
 
 	t.Run("EndTime", func(t *testing.T) {
-		endTime := uint64(1621976364666)
+		endTime := time.Date(2021, 5, 25, 20, 59, 24, 666000000, time.UTC)
 		a, err := newTestArray(t)
 		if err != nil {
 			t.Fatalf("failed to create new test array: %v", err)
 		}
-		err = a.OpenWithOptions(TILEDB_READ, WithEndTimestamp(endTime))
+		err = a.OpenWithOptions(TILEDB_READ, WithEndTime(endTime))
 		assert.NoError(t, err)
 
-		got, err := a.OpenEndTimestamp()
+		got, err := a.OpenEndTime()
 		assert.NoError(t, err)
 
 		assert.Equal(t, endTime, got)

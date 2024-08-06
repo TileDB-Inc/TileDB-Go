@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime"
+	"time"
 	"unsafe"
 )
 
@@ -85,6 +86,24 @@ func (a *Array) Context() *Context {
 
 // ArrayOpenOptions defines the flexible parameters in which arrays can be opened with.
 type ArrayOpenOption func(tdbArray *Array) error
+
+// WithEndTime sets the subsequent Open call to use the given time
+// as its end timestamp. If "end" is the zero value, does nothing.
+func WithEndTime(end time.Time) ArrayOpenOption {
+	if end.IsZero() {
+		return func(*Array) error { return nil }
+	}
+	return WithEndTimestamp(uint64(end.UnixMilli()))
+}
+
+// WithStartTime sets the subsequent Open call to use the given time
+// as its start timestamp. If "start" is the zero value, does nothing.
+func WithStartTime(start time.Time) ArrayOpenOption {
+	if start.IsZero() {
+		return func(*Array) error { return nil }
+	}
+	return WithStartTimestamp(uint64(start.UnixMilli()))
+}
 
 // WithEndTimestamp sets the subsequent Open call to use the end_timestamp of the passed value.
 func WithEndTimestamp(endTimestamp uint64) ArrayOpenOption {
@@ -240,6 +259,31 @@ func (a *Array) QueryType() (QueryType, error) {
 		return -1, fmt.Errorf("Error getting QueryType for tiledb array: %s", a.context.LastError())
 	}
 	return QueryType(queryType), nil
+}
+
+// OpenStartTime returns the current start_timestamp of an open array,
+// converted to a UTC time.Time.
+func (a *Array) OpenStartTime() (time.Time, error) {
+	ts, err := a.OpenStartTimestamp()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return millisToTime(ts), nil
+}
+
+// OpenEndTime returns the current end_timestamp of an open array,
+// converted to a UTC time.Time.
+func (a *Array) OpenEndTime() (time.Time, error) {
+	ts, err := a.OpenEndTimestamp()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return millisToTime(ts), nil
+}
+
+func millisToTime(epochMillis uint64) time.Time {
+	secs, millis := int64(epochMillis/1000), int64(epochMillis%1000)
+	return time.Unix(secs, millis*1_000_000).UTC()
 }
 
 // OpenStartTimestamp returns the current start_timestamp value of an open array.
