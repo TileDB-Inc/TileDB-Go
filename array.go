@@ -54,7 +54,15 @@ type NonEmptyDomain struct {
 }
 
 // NewArray allocates a new array.
+// If the provided Context is nil, a default context is allocated and used.
 func NewArray(tdbCtx *Context, uri string) (*Array, error) {
+	if tdbCtx == nil {
+		newCtx, err := NewContext(nil)
+		if err != nil {
+			return nil, err
+		}
+		tdbCtx = newCtx
+	}
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
 	array := Array{context: tdbCtx, uri: uri}
