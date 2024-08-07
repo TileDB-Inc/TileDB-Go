@@ -46,9 +46,7 @@ func (r RangeLimits) MarshalJSON() ([]byte, error) {
 /*
 NewQuery creates a TileDB query object.
 
-The query type (read or write) must be the same as the type used
-to open the array object.
-
+If the provided Context is nil, the context of the Array is used instead.
 The storage manager also acquires a shared lock on the array.
 This means multiple read and write queries to the same array can be made
 concurrently (in TileDB, only consolidation requires an exclusive lock for
@@ -57,6 +55,9 @@ a short period of time).
 func NewQuery(tdbCtx *Context, array *Array) (*Query, error) {
 	if array == nil {
 		return nil, fmt.Errorf("Error creating tiledb query: passed array is nil")
+	}
+	if tdbCtx == nil {
+		tdbCtx = array.context
 	}
 
 	queryType, err := array.QueryType()
