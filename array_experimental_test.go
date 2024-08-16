@@ -2,6 +2,7 @@ package tiledb
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
 
@@ -140,60 +141,69 @@ func TestGetConsolidationPlan(t *testing.T) {
 }
 
 func TestConsolidateFragments(t *testing.T) {
-	// The test is skipped pending a core release for 2.25.0 that includes this fix:
-	// https://github.com/TileDB-Inc/TileDB/pull/5135
-	t.Skip("Skipping fragment list consolidation SC-51140")
+	for _, test := range []struct {
+		name         string
+		relativeURIs bool
+	}{
+		{"fragment list consolidation with relative URIs", true},
+		{"fragment list consolidation with absolute URIs", false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			array := create1DTestArray(t)
 
-	array := create1DTestArray(t)
+			numFrags := 5
+			for i := 0; i < numFrags; i++ {
+				write1DTestArray(t, array, []int32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+			}
 
-	numFrags := 5
-	for i := 0; i < numFrags; i++ {
-		write1DTestArray(t, array, []int32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+			fragmentInfo, err := NewFragmentInfo(array.context, array.uri)
+			require.NoError(t, err)
+
+			err = fragmentInfo.Load()
+			require.NoError(t, err)
+
+			fragInfoNum, err := fragmentInfo.GetFragmentNum()
+			require.NoError(t, err)
+			require.EqualValues(t, numFrags, fragInfoNum)
+			fragUris := make([]string, numFrags)
+			for i := 0; i < numFrags; i++ {
+				uri, err := fragmentInfo.GetFragmentURI(uint32(i))
+				require.NoError(t, err)
+				fragUris[i] = uri
+				if test.relativeURIs {
+					fragUris[i] = path.Base(fragUris[i])
+				}
+			}
+
+			// Default consolidation mode is 'fragments'.
+			config, err := array.context.Config()
+			require.NoError(t, err)
+
+			err = array.ConsolidateFragments(config, fragUris)
+			require.NoError(t, err)
+
+			// Check that the new consolidated fragment was created.
+			err = fragmentInfo.Load()
+			require.NoError(t, err)
+			fragInfoNum, err = fragmentInfo.GetFragmentNum()
+			require.NoError(t, err)
+			fragToVacuumNum, err := fragmentInfo.GetToVacuumNum()
+			require.NoError(t, err)
+			require.EqualValues(t, numFrags, fragToVacuumNum)
+			require.Equal(t, uint32(1), fragInfoNum)
+
+			err = array.Vacuum(config)
+			require.NoError(t, err)
+
+			// Check for one fragment after vacuum.
+			err = fragmentInfo.Load()
+			require.NoError(t, err)
+			fragInfoNum, err = fragmentInfo.GetFragmentNum()
+			require.NoError(t, err)
+			fragToVacuumNum, err = fragmentInfo.GetToVacuumNum()
+			require.NoError(t, err)
+			require.Equal(t, uint32(1), fragInfoNum)
+			require.Equal(t, uint32(0), fragToVacuumNum)
+		})
 	}
-
-	fragmentInfo, err := NewFragmentInfo(array.context, array.uri)
-	require.NoError(t, err)
-
-	err = fragmentInfo.Load()
-	require.NoError(t, err)
-
-	fragInfoNum, err := fragmentInfo.GetFragmentNum()
-	require.NoError(t, err)
-	require.EqualValues(t, numFrags, fragInfoNum)
-	fragUris := make([]string, numFrags)
-	for i := 0; i < numFrags; i++ {
-		uri, err := fragmentInfo.GetFragmentURI(uint32(i))
-		require.NoError(t, err)
-		fragUris[i] = uri
-	}
-
-	// Default consolidation mode is 'fragments'.
-	config, err := array.context.Config()
-	require.NoError(t, err)
-
-	err = array.ConsolidateFragments(config, fragUris)
-	require.NoError(t, err)
-
-	// Check that the new consolidated fragment was created.
-	err = fragmentInfo.Load()
-	require.NoError(t, err)
-	fragInfoNum, err = fragmentInfo.GetFragmentNum()
-	require.NoError(t, err)
-	fragToVacuumNum, err := fragmentInfo.GetToVacuumNum()
-	require.NoError(t, err)
-	require.EqualValues(t, numFrags, fragToVacuumNum)
-	require.Equal(t, uint32(1), fragInfoNum)
-
-	err = array.Vacuum(config)
-	require.NoError(t, err)
-
-	// Check for one fragment after vacuum.
-	err = fragmentInfo.Load()
-	require.NoError(t, err)
-	fragInfoNum, err = fragmentInfo.GetFragmentNum()
-	require.NoError(t, err)
-	fragToVacuumNum, err = fragmentInfo.GetToVacuumNum()
-	require.NoError(t, err)
-	require.Equal(t, uint32(1), fragInfoNum)
-	require.Equal(t, uint32(0), fragToVacuumNum)
 }
