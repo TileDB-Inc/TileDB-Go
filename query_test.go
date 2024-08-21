@@ -2,7 +2,6 @@ package tiledb
 
 import (
 	"os"
-	"reflect"
 	"testing"
 	"unsafe"
 
@@ -2900,7 +2899,7 @@ func TestSetDataBufferUnsafe(t *testing.T) {
 	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](4, 7)))
 	require.NoError(t, q.SetSubarray(s))
 	dataBuffer := []int32{4, 5, 6, 7}
-	dataPtr := unsafe.Pointer((*reflect.SliceHeader)(unsafe.Pointer(&dataBuffer)).Data)
+	dataPtr := slicePtr(dataBuffer)
 	n, err := q.SetDataBufferUnsafe("a", dataPtr, 16)
 	require.NoError(t, err)
 	require.NotNil(t, n)
@@ -2922,7 +2921,7 @@ func TestSetDataBufferUnsafe(t *testing.T) {
 	require.NoError(t, s.AddRangeByName("x", MakeRange[int8](1, 10)))
 	require.NoError(t, q.SetSubarray(s))
 	dataBuffer = []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	dataPtr = unsafe.Pointer((*reflect.SliceHeader)(unsafe.Pointer(&dataBuffer)).Data)
+	dataPtr = slicePtr(dataBuffer)
 	n, err = q.SetDataBufferUnsafe("a", dataPtr, 40)
 	require.NoError(t, err)
 	require.NotNil(t, n)
@@ -2941,8 +2940,7 @@ func TestSetDataBufferUnsafe(t *testing.T) {
 	require.NoError(t, err)
 	storedDataBuffer, ok := storedBuffer.([]int32)
 	require.True(t, ok)
-	require.Equal(t, uintptr(dataPtr),
-		((*reflect.SliceHeader)(unsafe.Pointer(&storedDataBuffer)).Data))
+	require.Equal(t, dataPtr, slicePtr(storedDataBuffer))
 }
 
 func TestGetDataBuffer(t *testing.T) {
@@ -2986,8 +2984,7 @@ func TestGetDataBuffer(t *testing.T) {
 	require.NoError(t, err)
 	storedDataBuffer, ok := storedBuffer.([]int32)
 	require.True(t, ok)
-	require.Equal(t, ((*reflect.SliceHeader)(unsafe.Pointer(&dataBuffer)).Data),
-		((*reflect.SliceHeader)(unsafe.Pointer(&storedDataBuffer)).Data))
+	require.Equal(t, slicePtr(dataBuffer), slicePtr(storedDataBuffer))
 }
 
 func TestSetDataBuffer(t *testing.T) {
@@ -3183,7 +3180,7 @@ func TestSetValidityBufferUnsafe(t *testing.T) {
 	_, err = q.SetDataBuffer("a", dataBuffer)
 	require.NoError(t, err)
 	validityBuffer := []uint8{1, 1, 0, 1}
-	validityPtr := unsafe.Pointer((*reflect.SliceHeader)(unsafe.Pointer(&validityBuffer)).Data)
+	validityPtr := slicePtr(validityBuffer)
 	n, err := q.SetValidityBufferUnsafe("a", validityPtr, 4)
 	require.NoError(t, err)
 	require.NotNil(t, n)
@@ -3208,7 +3205,7 @@ func TestSetValidityBufferUnsafe(t *testing.T) {
 	_, err = q.SetDataBuffer("a", dataBuffer)
 	require.NoError(t, err)
 	validityBuffer = []uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	validityPtr = unsafe.Pointer((*reflect.SliceHeader)(unsafe.Pointer(&validityBuffer)).Data)
+	validityPtr = slicePtr(validityBuffer)
 	n, err = q.SetValidityBufferUnsafe("a", validityPtr, 10)
 	require.NoError(t, err)
 	require.NotNil(t, n)
@@ -3225,8 +3222,7 @@ func TestSetValidityBufferUnsafe(t *testing.T) {
 	// verify that GetDataBuffer works for buffers passed unsafe
 	storedValidityBuffer, err := q.GetValidityBuffer("a")
 	require.NoError(t, err)
-	require.Equal(t, uintptr(validityPtr),
-		((*reflect.SliceHeader)(unsafe.Pointer(&storedValidityBuffer)).Data))
+	require.Equal(t, validityPtr, slicePtr(storedValidityBuffer))
 }
 
 func TestGetValidityBuffer(t *testing.T) {
@@ -3269,8 +3265,7 @@ func TestGetValidityBuffer(t *testing.T) {
 
 	storedValidityBuffer, err := q.GetValidityBuffer("a")
 	require.NoError(t, err)
-	require.Equal(t, ((*reflect.SliceHeader)(unsafe.Pointer(&validityBuffer)).Data),
-		((*reflect.SliceHeader)(unsafe.Pointer(&storedValidityBuffer)).Data))
+	require.Equal(t, slicePtr(validityBuffer), slicePtr(storedValidityBuffer))
 }
 
 func TestSetValidityBuffer(t *testing.T) {
@@ -3483,7 +3478,7 @@ func TestSetOffsetsBufferUnsafe(t *testing.T) {
 	require.NotNil(t, np)
 	require.Equal(t, uint64(len(dataBuffer))*uint64(unsafe.Sizeof(dataBuffer[0])), *np)
 	offsetsBuffer := []uint64{0, 5, 10, 14}
-	offsetsPtr := unsafe.Pointer((*reflect.SliceHeader)(unsafe.Pointer(&offsetsBuffer)).Data)
+	offsetsPtr := slicePtr(offsetsBuffer)
 	vnp, err := q.SetOffsetsBufferUnsafe("a", offsetsPtr, 32)
 	require.NoError(t, err)
 	require.NotNil(t, np)
@@ -3510,7 +3505,7 @@ func TestSetOffsetsBufferUnsafe(t *testing.T) {
 	require.NotNil(t, np)
 	require.Equal(t, uint64(len(dataBuffer))*uint64(unsafe.Sizeof(dataBuffer[0])), *np)
 	offsetsBuffer = make([]uint64, 10)
-	offsetsPtr = unsafe.Pointer((*reflect.SliceHeader)(unsafe.Pointer(&offsetsBuffer)).Data)
+	offsetsPtr = slicePtr(offsetsBuffer)
 	vnp, err = q.SetOffsetsBufferUnsafe("a", offsetsPtr, 80)
 	require.NoError(t, err)
 	require.NotNil(t, vnp)
@@ -3524,8 +3519,7 @@ func TestSetOffsetsBufferUnsafe(t *testing.T) {
 	// verify that GetOffsetsBuffer works for buffers passed unsafe
 	storedOffsetsBuffer, err := q.GetOffsetsBuffer("a")
 	require.NoError(t, err)
-	require.Equal(t, uintptr(offsetsPtr),
-		((*reflect.SliceHeader)(unsafe.Pointer(&storedOffsetsBuffer)).Data))
+	require.Equal(t, offsetsPtr, slicePtr(storedOffsetsBuffer))
 }
 
 func TestGetOffsetsBuffer(t *testing.T) {
@@ -3568,8 +3562,7 @@ func TestGetOffsetsBuffer(t *testing.T) {
 
 	storedOffsetsBuffer, err := q.GetOffsetsBuffer("a")
 	require.NoError(t, err)
-	require.Equal(t, ((*reflect.SliceHeader)(unsafe.Pointer(&offsetsBuffer)).Data),
-		((*reflect.SliceHeader)(unsafe.Pointer(&storedOffsetsBuffer)).Data))
+	require.Equal(t, slicePtr(offsetsBuffer), slicePtr(storedOffsetsBuffer))
 }
 
 func TestSetOffsetsBuffer(t *testing.T) {

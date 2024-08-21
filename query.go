@@ -181,11 +181,13 @@ func (q *Query) ResultBufferElements() (map[string][3]uint64, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Could not get schema for ResultBufferElements: %s", err)
 	}
+	defer schema.Free()
 
 	domain, err := schema.Domain()
 	if err != nil {
 		return nil, fmt.Errorf("Could not get domain for ResultBufferElements: %s", err)
 	}
+	defer domain.Free()
 
 	var datatype Datatype
 	for attributeOrDimension, v := range q.resultBufferElements {
@@ -241,6 +243,8 @@ func (q *Query) ResultBufferElements() (map[string][3]uint64, error) {
 				if err != nil {
 					return nil, fmt.Errorf("Could not get dimensionType for SetBuffer: %s", attributeOrDimension)
 				}
+
+				dimension.Free()
 			} else if hasAttr {
 				// Get the attribute
 				attribute, err := schema.AttributeFromName(attributeOrDimension)
@@ -253,6 +257,8 @@ func (q *Query) ResultBufferElements() (map[string][3]uint64, error) {
 				if err != nil {
 					return nil, fmt.Errorf("Could not get attribute type for ResultBufferElements: %s", err)
 				}
+
+				attribute.Free()
 			} else if hasDimLabel {
 				datatype, err = q.getDimensionLabelDataType(attributeOrDimension)
 				if err != nil {
@@ -459,6 +465,7 @@ func (q *Query) EstimateBufferElements() (map[string][3]uint64, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
 	}
+	defer schema.Free()
 
 	attributes, err := schema.Attributes()
 	if err != nil {
@@ -466,69 +473,79 @@ func (q *Query) EstimateBufferElements() (map[string][3]uint64, error) {
 	}
 	// Loop through each attribute
 	for _, attribute := range attributes {
+		// Wrap the body of the for loop in a function to be sure resources are freed by defer calls.
+		err := func() error {
+			defer attribute.Free()
 
-		// Check if attribute is variable attribute or not
-		cellValNum, err := attribute.CellValNum()
-		if err != nil {
-			return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
-		}
-
-		// Get datatype size to convert byte lengths to needed buffer sizes
-		dataType, err := attribute.Type()
-		if err != nil {
-			return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
-		}
-
-		dataTypeSize := dataType.Size()
-
-		// Get attribute name
-		name, err := attribute.Name()
-		if err != nil {
-			return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
-		}
-
-		nullable, err := attribute.Nullable()
-		if err != nil {
-			return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
-		}
-
-		if cellValNum == TILEDB_VAR_NUM {
-			if nullable {
-				bufferOffsetSize, bufferValSize, bufferValiditySize, err := q.EstResultSizeVarNullable(name)
-				if err != nil {
-					return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
-				}
-				// Set sizes for attribute in return map
-				ret[name] = [3]uint64{
-					*bufferOffsetSize / uint64(C.TILEDB_OFFSET_SIZE),
-					*bufferValSize / dataTypeSize,
-					*bufferValiditySize / bytesizes.Uint8}
-			} else {
-				bufferOffsetSize, bufferValSize, err := q.EstResultSizeVar(name)
-				if err != nil {
-					return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
-				}
-				// Set sizes for attribute in return map
-				ret[name] = [3]uint64{
-					*bufferOffsetSize / uint64(C.TILEDB_OFFSET_SIZE),
-					*bufferValSize / dataTypeSize,
-					0}
+			// Check if attribute is variable attribute or not
+			cellValNum, err := attribute.CellValNum()
+			if err != nil {
+				return fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
 			}
-		} else {
-			if nullable {
-				bufferValSize, bufferValiditySize, err := q.EstResultSizeNullable(name)
-				if err != nil {
-					return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
-				}
-				ret[name] = [3]uint64{0, *bufferValSize / dataTypeSize,
-					*bufferValiditySize / bytesizes.Uint8}
-			} else {
-				bufferValSize, err := q.EstResultSize(name)
-				if err != nil {
-					return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
-				}
-				ret[name] = [3]uint64{0, *bufferValSize / dataTypeSize, 0}
+
+			// Get datatype size to convert byte lengths to needed buffer sizes
+			dataType, err := attribute.Type()
+			if err != nil {
+				return fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
 			}
+
+			dataTypeSize := dataType.Size()
+
+			// Get attribute name
+			name, err := attribute.Name()
+			if err != nil {
+				return fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
+			}
+
+			nullable, err := attribute.Nullable()
+			if err != nil {
+				return fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
+			}
+
+			if cellValNum == TILEDB_VAR_NUM {
+				if nullable {
+					bufferOffsetSize, bufferValSize, bufferValiditySize, err := q.EstResultSizeVarNullable(name)
+					if err != nil {
+						return fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
+					}
+					// Set sizes for attribute in return map
+					ret[name] = [3]uint64{
+						*bufferOffsetSize / uint64(C.TILEDB_OFFSET_SIZE),
+						*bufferValSize / dataTypeSize,
+						*bufferValiditySize / bytesizes.Uint8}
+				} else {
+					bufferOffsetSize, bufferValSize, err := q.EstResultSizeVar(name)
+					if err != nil {
+						return fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
+					}
+					// Set sizes for attribute in return map
+					ret[name] = [3]uint64{
+						*bufferOffsetSize / uint64(C.TILEDB_OFFSET_SIZE),
+						*bufferValSize / dataTypeSize,
+						0}
+				}
+			} else {
+				if nullable {
+					bufferValSize, bufferValiditySize, err := q.EstResultSizeNullable(name)
+					if err != nil {
+						return fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
+					}
+					ret[name] = [3]uint64{0, *bufferValSize / dataTypeSize,
+						*bufferValiditySize / bytesizes.Uint8}
+				} else {
+					bufferValSize, err := q.EstResultSize(name)
+					if err != nil {
+						return fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
+					}
+					ret[name] = [3]uint64{0, *bufferValSize / dataTypeSize, 0}
+				}
+			}
+
+			return nil
+		}()
+
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -537,6 +554,7 @@ func (q *Query) EstimateBufferElements() (map[string][3]uint64, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Could not get domain for EstimateBufferElements: %s", err)
 	}
+	defer domain.Free()
 
 	ndims, err := domain.NDim()
 	if err != nil {
@@ -544,44 +562,53 @@ func (q *Query) EstimateBufferElements() (map[string][3]uint64, error) {
 	}
 
 	for dimIdx := uint(0); dimIdx < ndims; dimIdx++ {
-		dim, err := domain.DimensionFromIndex(dimIdx)
+		err = func() error {
+			dim, err := domain.DimensionFromIndex(dimIdx)
+			if err != nil {
+				return err
+			}
+			defer dim.Free()
+
+			dimType, err := dim.Type()
+			if err != nil {
+				return err
+			}
+
+			dataTypeSize := dimType.Size()
+
+			cellValNum, err := dim.CellValNum()
+			if err != nil {
+				return fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+			}
+
+			// Get dimension name
+			name, err := dim.Name()
+			if err != nil {
+				return fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+			}
+
+			if cellValNum == TILEDB_VAR_NUM {
+				bufferOffsetSize, bufferValSize, err := q.EstResultSizeVar(name)
+				if err != nil {
+					return fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+				}
+				// Set sizes for dimension in return map
+				ret[name] = [3]uint64{
+					*bufferOffsetSize / uint64(C.TILEDB_OFFSET_SIZE),
+					*bufferValSize / dataTypeSize, 0}
+			} else {
+				bufferValSize, err := q.EstResultSize(name)
+				if err != nil {
+					return fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+				}
+				ret[name] = [3]uint64{0, *bufferValSize / dataTypeSize, 0}
+			}
+
+			return nil
+		}()
+
 		if err != nil {
 			return nil, err
-		}
-
-		dimType, err := dim.Type()
-		if err != nil {
-			return nil, err
-		}
-
-		dataTypeSize := dimType.Size()
-
-		cellValNum, err := dim.CellValNum()
-		if err != nil {
-			return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
-		}
-
-		// Get dimension name
-		name, err := dim.Name()
-		if err != nil {
-			return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
-		}
-
-		if cellValNum == TILEDB_VAR_NUM {
-			bufferOffsetSize, bufferValSize, err := q.EstResultSizeVar(name)
-			if err != nil {
-				return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
-			}
-			// Set sizes for dimension in return map
-			ret[name] = [3]uint64{
-				*bufferOffsetSize / uint64(C.TILEDB_OFFSET_SIZE),
-				*bufferValSize / dataTypeSize, 0}
-		} else {
-			bufferValSize, err := q.EstResultSize(name)
-			if err != nil {
-				return nil, fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
-			}
-			ret[name] = [3]uint64{0, *bufferValSize / dataTypeSize, 0}
 		}
 	}
 
@@ -748,11 +775,13 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 	if err != nil {
 		return nil, fmt.Errorf("Could not get array schema for SetDataBuffer: %s", err)
 	}
+	defer schema.Free()
 
 	domain, err := schema.Domain()
 	if err != nil {
 		return nil, fmt.Errorf("Could not get domain for SetDataBuffer: %s", attributeOrDimension)
 	}
+	defer domain.Free()
 
 	var attributeOrDimensionType Datatype
 	// If we are setting tiledb coordinates for a sparse array we want to check
@@ -785,6 +814,7 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 				return nil, fmt.Errorf("Could not get attribute or dimension for SetDataBuffer: %s",
 					attributeOrDimension)
 			}
+			defer dimension.Free()
 
 			attributeOrDimensionType, err = dimension.Type()
 			if err != nil {
@@ -797,6 +827,7 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 				return nil, fmt.Errorf("Could not get attribute %s for SetDataBuffer",
 					attributeOrDimension)
 			}
+			defer schemaAttribute.Free()
 
 			attributeOrDimensionType, err = schemaAttribute.Type()
 			if err != nil {

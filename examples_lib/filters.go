@@ -2,7 +2,6 @@ package examples_lib
 
 import (
 	"fmt"
-
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 

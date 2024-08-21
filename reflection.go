@@ -15,16 +15,19 @@ func datatypeOfDimensionFromIndex(arr *Array, dimIdx uint32) (Datatype, bool, er
 	if err != nil {
 		return Datatype(0), false, err
 	}
+	defer schema.Free()
 
 	domain, err := schema.Domain()
 	if err != nil {
 		return Datatype(0), false, err
 	}
+	defer domain.Free()
 
 	dimension, err := domain.DimensionFromIndex(uint(dimIdx))
 	if err != nil {
 		return Datatype(0), false, err
 	}
+	defer dimension.Free()
 
 	datatype, err := dimension.Type()
 	if err != nil {

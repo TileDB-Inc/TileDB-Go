@@ -16,7 +16,7 @@ func createMultipleWritesSparseArray(dir string) {
 	// with domain [1,4].
 	domain, err := tiledb.NewDomain(ctx)
 	checkError(err)
-	defer ctx.Free()
+	defer domain.Free()
 
 	rowDim, err := tiledb.NewDimension(ctx, "rows", tiledb.TILEDB_INT32, []int32{1, 4}, int32(4))
 	checkError(err)
