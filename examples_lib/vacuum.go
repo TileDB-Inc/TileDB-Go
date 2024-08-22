@@ -179,6 +179,7 @@ func consolidateVacuum(dir string) {
 
 	ctx, err := tiledb.NewContext(nil)
 	checkError(err)
+	defer ctx.Free()
 
 	// Prepare the array for reading
 	array, err := tiledb.NewArray(ctx, dir)
@@ -194,6 +195,7 @@ func consolidateVacuum(dir string) {
 
 	config, err := tiledb.NewConfig()
 	checkError(err)
+	defer config.Free()
 
 	err = config.Set("sm.consolidation.buffer_size", "8")
 	checkError(err)

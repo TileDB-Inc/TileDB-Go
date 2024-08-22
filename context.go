@@ -59,6 +59,7 @@ func NewContextFromMap(cfgMap map[string]string) (*Context, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer config.Free()
 	for k, v := range cfgMap {
 		if err := config.Set(k, v); err != nil {
 			// The value is not included in the error message in case it is sensitive,

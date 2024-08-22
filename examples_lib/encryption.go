@@ -32,8 +32,10 @@ func createEncryptedArray(dir string) {
 
 	rowDim, err := tiledb.NewDimension(ctx, "rows", tiledb.TILEDB_INT32, []int32{1, 4}, int32(4))
 	checkError(err)
+	defer rowDim.Free()
 	colDim, err := tiledb.NewDimension(ctx, "cols", tiledb.TILEDB_INT32, []int32{1, 4}, int32(4))
 	checkError(err)
+	defer colDim.Free()
 	err = domain.AddDimensions(rowDim, colDim)
 	checkError(err)
 
@@ -113,6 +115,7 @@ func readEncryptedArray(dir string) {
 	// Slice only rows 1, 2 and cols 2, 3, 4
 	subarray, err := array.NewSubarray()
 	checkError(err)
+	defer subarray.Free()
 	err = subarray.SetSubArray([]int32{1, 2, 2, 4})
 	checkError(err)
 

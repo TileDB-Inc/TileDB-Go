@@ -258,11 +258,13 @@ func (q *Query) getDimensionLabelDataType(labelName string) (Datatype, error) {
 	if err != nil {
 		return 0, fmt.Errorf("Could not get schema for getDimensionLabelDatatype: %s", err)
 	}
+	defer schema.Free()
 
 	dimLabel, err := schema.DimensionLabelFromName(labelName)
 	if err != nil {
 		return 0, fmt.Errorf("Could not get dimension label %s for getDimensionLabelDatatype: %s", labelName, err)
 	}
+	defer dimLabel.Free()
 
 	datatype, err := dimLabel.Type()
 	if err != nil {

@@ -375,11 +375,13 @@ func (a *Array) NonEmptyDomain() ([]NonEmptyDomain, bool, error) {
 	if err != nil {
 		return nil, false, err
 	}
+	defer schema.Free()
 
 	domain, err := schema.Domain()
 	if err != nil {
 		return nil, false, err
 	}
+	defer domain.Free()
 
 	ndims, err := domain.NDim()
 	if err != nil {
@@ -389,41 +391,51 @@ func (a *Array) NonEmptyDomain() ([]NonEmptyDomain, bool, error) {
 	isDomainEmpty := true
 	nonEmptyDomains := make([]NonEmptyDomain, 0)
 	for dimIdx := uint(0); dimIdx < ndims; dimIdx++ {
-		dimension, err := domain.DimensionFromIndex(dimIdx)
-		if err != nil {
-			return nil, false, err
-		}
+		// Wrapped in a function so `dimension` will be cleaned up with defer each time the function completes.
+		err := func() error {
+			dimension, err := domain.DimensionFromIndex(dimIdx)
+			if err != nil {
+				return err
+			}
+			defer dimension.Free()
 
-		dimensionType, err := dimension.Type()
-		if err != nil {
-			return nil, false, err
-		}
+			dimensionType, err := dimension.Type()
+			if err != nil {
+				return err
+			}
 
-		tmpDimension, tmpDimensionPtr, err := dimensionType.MakeSlice(uint64(2))
-		if err != nil {
-			return nil, false, err
-		}
+			tmpDimension, tmpDimensionPtr, err := dimensionType.MakeSlice(uint64(2))
+			if err != nil {
+				return err
+			}
 
-		var isEmpty C.int32_t
-		ret := C.tiledb_array_get_non_empty_domain_from_index(
-			a.context.tiledbContext,
-			a.tiledbArray,
-			(C.uint32_t)(dimIdx),
-			tmpDimensionPtr, &isEmpty)
-		if ret != C.TILEDB_OK {
-			return nil, false, fmt.Errorf("Error in getting non empty domain for dimension: %s", a.context.LastError())
-		}
+			var isEmpty C.int32_t
+			ret := C.tiledb_array_get_non_empty_domain_from_index(
+				a.context.tiledbContext,
+				a.tiledbArray,
+				(C.uint32_t)(dimIdx),
+				tmpDimensionPtr, &isEmpty)
+			if ret != C.TILEDB_OK {
+				return fmt.Errorf("Error in getting non empty domain for dimension: %s", a.context.LastError())
+			}
 
-		if isEmpty == 1 {
-			continue
-		} else {
+			if isEmpty == 1 {
+				return nil
+			}
+
 			// If at least one domain for a dimension is empty the union of domains is non-empty
 			isDomainEmpty = false
 			nonEmptyDomain, err := getNonEmptyDomainForDim(dimension, tmpDimension)
 			if err != nil {
-				return nil, false, err
+				return err
 			}
 			nonEmptyDomains = append(nonEmptyDomains, *nonEmptyDomain)
+
+			return nil
+		}()
+
+		if err != nil {
+			return nil, false, err
 		}
 	}
 
@@ -531,11 +543,13 @@ func (a *Array) NonEmptyDomainVarFromName(dimName string) (*NonEmptyDomain, bool
 	if err != nil {
 		return nil, false, err
 	}
+	defer schema.Free()
 
 	domain, err := schema.Domain()
 	if err != nil {
 		return nil, false, err
 	}
+	defer domain.Free()
 
 	hasDim, err := domain.HasDimension(dimName)
 	if err != nil {
@@ -550,6 +564,7 @@ func (a *Array) NonEmptyDomainVarFromName(dimName string) (*NonEmptyDomain, bool
 	if err != nil {
 		return nil, false, fmt.Errorf("could not get dimension: %s", dimName)
 	}
+	defer dimension.Free()
 
 	dimType, err := dimension.Type()
 	if err != nil {
@@ -630,16 +645,19 @@ func (a *Array) NonEmptyDomainVarFromIndex(dimIdx uint) (*NonEmptyDomain, bool, 
 	if err != nil {
 		return nil, false, err
 	}
+	defer schema.Free()
 
 	domain, err := schema.Domain()
 	if err != nil {
 		return nil, false, err
 	}
+	defer domain.Free()
 
 	dimension, err := domain.DimensionFromIndex(dimIdx)
 	if err != nil {
 		return nil, false, fmt.Errorf("Could not get dimension having index: %d", dimIdx)
 	}
+	defer dimension.Free()
 
 	dimType, err := dimension.Type()
 	if err != nil {

@@ -67,11 +67,13 @@ func (sa *Subarray) SetSubArray(subArray interface{}) error {
 	if err != nil {
 		return fmt.Errorf("Could not get array schema from array: %s", err)
 	}
+	defer schema.Free()
 
 	domain, err := schema.Domain()
 	if err != nil {
 		return fmt.Errorf("Could not get domain from array schema: %s", err)
 	}
+	defer domain.Free()
 
 	domainType, err := domain.Type()
 	if err != nil {
@@ -271,12 +273,14 @@ func (s *Subarray) GetRanges() (map[string][]Range, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer schema.Free()
 
 	// Get the domain object
 	domain, err := schema.Domain()
 	if err != nil {
 		return nil, err
 	}
+	defer domain.Free()
 
 	// Use the index to retrieve the dimension object
 	nDim, err := domain.NDim()
@@ -288,37 +292,46 @@ func (s *Subarray) GetRanges() (map[string][]Range, error) {
 
 	rangeMap := make(map[string][]Range)
 	for dimIdx = 0; dimIdx < nDim; dimIdx++ {
-		// Get dimension object
-		dimension, err := domain.DimensionFromIndex(dimIdx)
-		if err != nil {
-			return nil, err
-		}
-
-		// Get name from dimension
-		name, err := dimension.Name()
-		if err != nil {
-			return nil, err
-		}
-
-		// Get number of renges to iterate
-		numOfRanges, err := s.GetRangeNum(uint32(dimIdx))
-		if err != nil {
-			return nil, err
-		}
-
-		var I uint64
-		rangeArray := make([]Range, 0)
-		for I = 0; I < numOfRanges; I++ {
-
-			r, err := s.GetRange(uint32(dimIdx), I)
+		err = func() error {
+			// Get dimension object
+			dimension, err := domain.DimensionFromIndex(dimIdx)
 			if err != nil {
-				return nil, err
+				return err
 			}
-			// Append range to range Array
-			rangeArray = append(rangeArray, r)
+			defer dimension.Free()
+
+			// Get name from dimension
+			name, err := dimension.Name()
+			if err != nil {
+				return err
+			}
+
+			// Get number of renges to iterate
+			numOfRanges, err := s.GetRangeNum(uint32(dimIdx))
+			if err != nil {
+				return err
+			}
+
+			var I uint64
+			rangeArray := make([]Range, 0)
+			for I = 0; I < numOfRanges; I++ {
+
+				r, err := s.GetRange(uint32(dimIdx), I)
+				if err != nil {
+					return err
+				}
+				// Append range to range Array
+				rangeArray = append(rangeArray, r)
+			}
+			// key: name (string), value: rangeArray ([]RangeLimits)
+			rangeMap[name] = rangeArray
+
+			return nil
+		}()
+
+		if err != nil {
+			return nil, err
 		}
-		// key: name (string), value: rangeArray ([]RangeLimits)
-		rangeMap[name] = rangeArray
 	}
 
 	return rangeMap, err

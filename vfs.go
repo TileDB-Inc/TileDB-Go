@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"runtime"
 	"strings"
 	"unsafe"
 
@@ -383,7 +384,8 @@ func (v *VFS) Read(fh *VFSfh, offset uint64, nbytes uint64) ([]byte, error) {
 // appends data at the end of the file. If the file does not exist,
 // it will be created.
 func (v *VFS) Write(fh *VFSfh, bytes []byte) error {
-	cbuffer := C.CBytes(bytes)
+	cbuffer := slicePtr(bytes)
+	defer runtime.KeepAlive(bytes)
 	ret := C.tiledb_vfs_write(v.context.tiledbContext, fh.tiledbVFSfh, cbuffer, C.uint64_t(len(bytes)))
 
 	if ret != C.TILEDB_OK {
@@ -465,6 +467,7 @@ func (v *VFS) NumOfFragmentsInPath(path string) (int, error) {
 		Vfs:          v,
 	}
 	data := pointer.Save(&numOfFragmentsData)
+	defer C.free(data)
 
 	ret := C._num_of_folders_in_path(v.context.tiledbContext, v.tiledbVFS, cpath, data)
 
