@@ -229,7 +229,7 @@ func readTimestampArrayWithOptions(dir string, timestamp uint64) {
 }
 
 func getTimestamp() uint64 {
-	return uint64(time.Now().UTC().UnixNano() / 1000000)
+	return uint64(time.Now().UTC().UnixMilli())
 }
 
 // RunTimestampArray shows timestamp correlation of written data and metadata
