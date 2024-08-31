@@ -241,12 +241,15 @@ func RunTimestampArray() {
 	// Write data and metadata
 	t1 := getTimestamp()
 	writeTimestampArray(tmpDir1, "meta_key", "Write1", t1, 0)
+	time.Sleep(5 * time.Millisecond)
 	// Write metadata only
 	t2 := getTimestamp()
 	writeTimestampArrayMeta(tmpDir1, "meta_key", "Write2", t2)
+	time.Sleep(5 * time.Millisecond)
 	// Write metadata only
 	t3 := getTimestamp()
 	writeTimestampArrayMeta(tmpDir1, "meta_key", "Write3", t3)
+	time.Sleep(5 * time.Millisecond)
 	// Write metadata only
 	t4 := getTimestamp()
 	writeTimestampArrayMeta(tmpDir1, "meta_key", "Write4", t4)
@@ -262,10 +265,13 @@ func RunTimestampArray() {
 	createTimestampArray(tmpDir2)
 	t1 = getTimestamp()
 	writeTimestampArray(tmpDir2, "meta_key", "Write1", t1, 0)
+	time.Sleep(5 * time.Millisecond)
 	t2 = getTimestamp()
 	writeTimestampArray(tmpDir2, "meta_key", "Write2", t2, 1)
+	time.Sleep(5 * time.Millisecond)
 	t3 = getTimestamp()
 	writeTimestampArray(tmpDir2, "meta_key", "Write3", t3, 2)
+	time.Sleep(5 * time.Millisecond)
 	t4 = getTimestamp()
 	writeTimestampArray(tmpDir2, "meta_key", "Write4", t4, 3)
 	readTimestampArray(tmpDir2, t1)
