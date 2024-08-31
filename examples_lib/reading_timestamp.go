@@ -241,6 +241,8 @@ func RunTimestampArray() {
 	// Write data and metadata
 	t1 := getTimestamp()
 	writeTimestampArray(tmpDir1, "meta_key", "Write1", t1, 0)
+	// Wait a few milliseconds to ensure that we are not going to overwrite
+	// data.
 	time.Sleep(5 * time.Millisecond)
 	// Write metadata only
 	t2 := getTimestamp()
