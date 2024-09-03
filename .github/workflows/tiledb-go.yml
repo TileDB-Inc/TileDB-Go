@@ -99,6 +99,9 @@ jobs:
 
     # Tests TileDB-Go
     - name: Test TileDB-Go
+      # We need to explicitly pass the path to libtiledb.dylib to Go because of
+      # changes in recent macOS versions:
+      # https://github.com/golang/go/issues/36572#issuecomment-817205746
       run: CGO_LDFLAGS="-Wl,-rpath,/usr/local/lib" go test -v ./...
 
   Linux_Address_Sanitizer:
