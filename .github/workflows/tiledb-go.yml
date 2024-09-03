@@ -41,7 +41,7 @@ jobs:
     steps:
 
     # Checks out repository
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     # Log details for the runner. Useful for debugging
     - name: Run lscpu for runner details
@@ -56,12 +56,12 @@ jobs:
     # Following action sets up Go and uses the strategy matrix to test on
     # specific versions
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ matrix.go }}
 
     - name: Cache dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cache/go-build
@@ -85,7 +85,7 @@ jobs:
         go: ["1.20", "1.21", "1.22", "1.23"]
     steps:
     # Checks out repository
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     # Log details for the runner. Useful for debugging
     - name: Run sysctl for runner details
@@ -100,12 +100,12 @@ jobs:
     # Following action sets up Go and uses the strategy matrix to test on
     # specific versions
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ matrix.go }}
 
     - name: Cache dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: |
           ~/Library/Caches/go-build
@@ -131,7 +131,7 @@ jobs:
         go: ["1.20", "1.21", "1.22", "1.23"]
     steps:
     # Checks out repository
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     # Log details for the runner. Useful for debugging
     - name: Run lscpu for runner details
@@ -146,12 +146,12 @@ jobs:
     # Following action sets up Go and uses the strategy matrix to test on
     # specific versions
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ matrix.go }}
 
     - name: Cache dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cache/go-build
