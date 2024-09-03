@@ -17,7 +17,7 @@ env:
 jobs:
   golangci:
     name: lint
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     # Install TileDB because the linter needs the C header files.
@@ -33,7 +33,7 @@ jobs:
         version: latest
 
   Linux_Test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         # Will be checking following versions
@@ -78,7 +78,7 @@ jobs:
       run: go test -v ./...
 
   Macos_Test:
-    runs-on: macos-12
+    runs-on: macos-latest
     strategy:
       matrix:
         # Will be checking following versions
@@ -124,7 +124,7 @@ jobs:
   Linux_Address_Sanitizer:
     # Only run this job for releases
     if: github.event_name == 'release' && github.event.action == 'published'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         # Will be checking following versions
