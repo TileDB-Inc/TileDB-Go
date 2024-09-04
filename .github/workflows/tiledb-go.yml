@@ -17,7 +17,7 @@ env:
 jobs:
   golangci:
     name: lint
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     # Install TileDB because the linter needs the C header files.
@@ -33,15 +33,15 @@ jobs:
         version: latest
 
   Linux_Test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         # Will be checking following versions
-        go: ["1.20", "1.21", "1.22"]
+        go: ["1.20", "1.21", "1.22", "1.23"]
     steps:
 
     # Checks out repository
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     # Log details for the runner. Useful for debugging
     - name: Run lscpu for runner details
@@ -56,19 +56,9 @@ jobs:
     # Following action sets up Go and uses the strategy matrix to test on
     # specific versions
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ matrix.go }}
-
-    - name: Cache dependencies
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
 
     - name: Install dependencies
       run: go get -t .
@@ -78,14 +68,14 @@ jobs:
       run: go test -v ./...
 
   Macos_Test:
-    runs-on: macos-12
+    runs-on: macos-latest
     strategy:
       matrix:
         # Will be checking following versions
-        go: ["1.20", "1.21", "1.22"]
+        go: ["1.20", "1.21", "1.22", "1.23"]
     steps:
     # Checks out repository
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     # Log details for the runner. Useful for debugging
     - name: Run sysctl for runner details
@@ -100,38 +90,31 @@ jobs:
     # Following action sets up Go and uses the strategy matrix to test on
     # specific versions
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ matrix.go }}
-
-    - name: Cache dependencies
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/Library/Caches/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
 
     - name: Install dependencies
       run: go get -t .
 
     # Tests TileDB-Go
     - name: Test TileDB-Go
-      run: go test -v ./...
+      # We need to explicitly pass the path to libtiledb.dylib to Go because of
+      # changes in recent macOS versions:
+      # https://github.com/golang/go/issues/36572#issuecomment-817205746
+      run: CGO_LDFLAGS="-Wl,-rpath,/usr/local/lib" go test -v ./...
 
   Linux_Address_Sanitizer:
     # Only run this job for releases
     if: github.event_name == 'release' && github.event.action == 'published'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         # Will be checking following versions
-        go: ["1.20", "1.21", "1.22"]
+        go: ["1.20", "1.21", "1.22", "1.23"]
     steps:
     # Checks out repository
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     # Log details for the runner. Useful for debugging
     - name: Run lscpu for runner details
@@ -146,20 +129,9 @@ jobs:
     # Following action sets up Go and uses the strategy matrix to test on
     # specific versions
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ matrix.go }}
-
-    - name: Cache dependencies
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-asan
-        restore-keys: |
-          ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          ${{ runner.os }}-go-
 
     - name: Install dependencies
       run: go get -t .
