@@ -10,7 +10,6 @@ import "C"
 
 import (
 	"fmt"
-	"reflect"
 	"runtime"
 	"unsafe"
 )
