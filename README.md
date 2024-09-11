@@ -101,6 +101,7 @@ as such the below table reference which versions are compatible.
 | 0.29.0            | 2.23.X         |
 | 0.30.0            | 2.24.X         |
 | 0.31.0            | 2.25.X         |
+| 0.32.0            | 2.26.X         |
 
 
 ## Deprecated Functionality
