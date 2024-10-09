@@ -8,6 +8,7 @@ import "C"
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"runtime"
 	"unsafe"
 )
@@ -148,6 +149,10 @@ func (b *Buffer) dataCopy() ([]byte, error) {
 		// Since this buffer is TileDB-managed, make sure it's not GC'd before we're
 		// done with its memory.
 		defer runtime.KeepAlive(b)
+
+		if csize > math.MaxInt32 {
+			return nil, fmt.Errorf("TileDB's buffer (%d) larger than maximum allowed CGo buffer (%d)", csize, math.MaxInt32)
+		}
 		return C.GoBytes(cbuffer, C.int(csize)), nil
 	}
 
