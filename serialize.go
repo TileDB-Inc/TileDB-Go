@@ -10,7 +10,6 @@ import "C"
 
 import (
 	"fmt"
-	"reflect"
 	"runtime"
 	"unsafe"
 )
@@ -205,55 +204,6 @@ func DeserializeArrayNonEmptyDomainAllDimensions(a *Array, buffer *Buffer, seria
 	}
 
 	return nil
-}
-
-// SerializeArrayMaxBufferSizes gets and serializes the array max buffer sizes for the given subarray.
-func SerializeArrayMaxBufferSizes(a *Array, subarray interface{}, serializationType SerializationType) ([]byte, error) {
-	// Create subarray void*
-	var cSubarray unsafe.Pointer
-	if reflect.TypeOf(subarray).Kind() != reflect.Slice {
-		return nil, fmt.Errorf("subarray passed must be a slice, type passed was: %s", reflect.TypeOf(subarray).Kind().String())
-	}
-	switch subarray := subarray.(type) {
-	case []int:
-		cSubarray = slicePtr(subarray)
-	case []int8:
-		cSubarray = slicePtr(subarray)
-	case []int16:
-		cSubarray = slicePtr(subarray)
-	case []int32:
-		cSubarray = slicePtr(subarray)
-	case []int64:
-		cSubarray = slicePtr(subarray)
-	case []uint:
-		cSubarray = slicePtr(subarray)
-	case []uint8:
-		cSubarray = slicePtr(subarray)
-	case []uint16:
-		cSubarray = slicePtr(subarray)
-	case []uint32:
-		cSubarray = slicePtr(subarray)
-	case []uint64:
-		cSubarray = slicePtr(subarray)
-	case []float32:
-		cSubarray = slicePtr(subarray)
-	case []float64:
-		cSubarray = slicePtr(subarray)
-	case []bool:
-		cSubarray = slicePtr(subarray)
-	default:
-		return nil, fmt.Errorf("subarray must be a slice of scalars, not a %T", subarray)
-	}
-
-	buffer := Buffer{context: a.context}
-	freeOnGC(&buffer)
-
-	ret := C.tiledb_serialize_array_max_buffer_sizes(a.context.tiledbContext, a.tiledbArray, cSubarray, C.tiledb_serialization_type_t(serializationType), &buffer.tiledbBuffer)
-	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error serializing array max buffer sizes: %s", a.context.LastError())
-	}
-
-	return buffer.Serialize(serializationType)
 }
 
 // SerializeQuery serializes a query.
