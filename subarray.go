@@ -350,17 +350,15 @@ func (sa *Subarray) GetRange(dimIdx uint32, rangeNum uint64) (Range, error) {
 		var startSize, endSize uint64
 		ret = C.tiledb_subarray_get_range_var_size(sa.context.tiledbContext, sa.subarray, C.uint32_t(dimIdx), C.uint64_t(rangeNum),
 			(*C.uint64_t)(unsafe.Pointer(&startSize)), (*C.uint64_t)(unsafe.Pointer(&endSize)))
-		if ret == C.TILEDB_OK {
-			var sp, ep unsafe.Pointer
-			var startData, endData []byte
-			if startSize > 0 {
-				startData = make([]byte, int(startSize))
-				sp = slicePtr(startData)
-			}
-			if endSize > 0 {
-				endData = make([]byte, int(endSize))
-				ep = slicePtr(endData)
-			}
+		if startSize == 0 && endSize == 0 {
+			r.start = ""
+			r.end = ""
+		} else if ret == C.TILEDB_OK {
+			startData := make([]byte, int(startSize))
+			sp := slicePtr(startData)
+			endData := make([]byte, int(endSize))
+			ep := slicePtr(endData)
+
 			ret = C.tiledb_subarray_get_range_var(sa.context.tiledbContext, sa.subarray,
 				C.uint32_t(dimIdx), C.uint64_t(rangeNum), sp, ep)
 			if ret == C.TILEDB_OK {
@@ -401,17 +399,15 @@ func (sa *Subarray) GetRangeFromName(dimName string, rangeNum uint64) (Range, er
 		var startSize, endSize uint64
 		ret = C.tiledb_subarray_get_range_var_size_from_name(sa.context.tiledbContext, sa.subarray, cDimName, C.uint64_t(rangeNum),
 			(*C.uint64_t)(unsafe.Pointer(&startSize)), (*C.uint64_t)(unsafe.Pointer(&endSize)))
-		if ret == C.TILEDB_OK {
-			var sp, ep unsafe.Pointer
-			var startData, endData []byte
-			if startSize > 0 {
-				startData = make([]byte, int(startSize))
-				sp = slicePtr(startData)
-			}
-			if endSize > 0 {
-				endData = make([]byte, int(endSize))
-				ep = slicePtr(endData)
-			}
+		if startSize == 0 && endSize == 0 {
+			r.start = ""
+			r.end = ""
+		} else if ret == C.TILEDB_OK {
+			startData := make([]byte, int(startSize))
+			sp := slicePtr(startData)
+			endData := make([]byte, int(endSize))
+			ep := slicePtr(endData)
+
 			ret = C.tiledb_subarray_get_range_var_from_name(sa.context.tiledbContext, sa.subarray,
 				cDimName, C.uint64_t(rangeNum), sp, ep)
 			if ret == C.TILEDB_OK {
