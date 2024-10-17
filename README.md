@@ -128,3 +128,8 @@ The methods will be removed in the release following their removal from TileDB c
 
 All deprecated APIs in TileDB-Go are removed as the corresponding C-APIs will be removed in
 the following TileDB release.
+
+### 0.33.0
+
+`SerializeArrayMaxBufferSizes` is removed as the underlying core method `tiledb_serialize_array_max_buffer_sizes` is deprecated in
+TileDB 2.27.0.
