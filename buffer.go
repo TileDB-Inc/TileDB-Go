@@ -8,6 +8,7 @@ import "C"
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"math"
 	"runtime"
 	"unsafe"
@@ -110,6 +111,53 @@ func (b *Buffer) Serialize(serializationType SerializationType) ([]byte, error) 
 	}
 	return bs, nil
 }
+
+// WriteTo writes the contents of a Buffer to an io.Writer.
+func (b *Buffer) WriteTo(w io.Writer) (int64, error) {
+	var cbuffer unsafe.Pointer
+	var csize C.uint64_t
+
+	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer, &cbuffer, &csize)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("error getting tiledb buffer data: %s", b.context.LastError())
+	}
+
+	if cbuffer == nil || csize == 0 {
+		return 0, nil
+	}
+
+	remaining := int64(csize)
+
+	// Because io.Writer supports writing up to 2GB of data at a time, we have to use a loop
+	// for the bigger buffers.
+	for remaining > 0 {
+		// TODO: Use min on Go 1.21+
+		var writeSize int32
+		if csize > math.MaxInt32 {
+			writeSize = math.MaxInt32
+		} else {
+			writeSize = int32(csize)
+		}
+
+		// Construct a slice from the buffer's data without copying it.
+		// Keep the buffer alive during the write, to prevent the GC from
+		// collecting the memory while it's being used.
+		n, err := w.Write(unsafe.Slice((*byte)(cbuffer), writeSize))
+		runtime.KeepAlive(b)
+
+		cbuffer = unsafe.Pointer(uintptr(cbuffer) + uintptr(n))
+		remaining -= int64(n)
+
+		if err != nil {
+			return int64(csize) - remaining, fmt.Errorf("error writing buffer to writer: %s", err)
+		}
+	}
+
+	return int64(csize), nil
+}
+
+// Static assert that Buffer implements io.WriterTo.
+var _ io.WriterTo = (*Buffer)(nil)
 
 // SetBuffer sets the buffer to point at the given Go slice. The memory is now
 // Go-managed.

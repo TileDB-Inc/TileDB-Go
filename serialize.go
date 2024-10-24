@@ -14,8 +14,8 @@ import (
 	"unsafe"
 )
 
-// SerializeArraySchema serializes an array schema.
-func SerializeArraySchema(schema *ArraySchema, serializationType SerializationType, clientSide bool) ([]byte, error) {
+// SerializeArraySchemaToBuffer serializes an array schema and returns a Buffer object containing the payload.
+func SerializeArraySchemaToBuffer(schema *ArraySchema, serializationType SerializationType, clientSide bool) (*Buffer, error) {
 	var cClientSide C.int32_t
 	if clientSide {
 		cClientSide = 1
@@ -29,6 +29,16 @@ func SerializeArraySchema(schema *ArraySchema, serializationType SerializationTy
 	ret := C.tiledb_serialize_array_schema(schema.context.tiledbContext, schema.tiledbArraySchema, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error serializing array schema: %s", schema.context.LastError())
+	}
+
+	return &buffer, nil
+}
+
+// SerializeArraySchema serializes an array schema.
+func SerializeArraySchema(schema *ArraySchema, serializationType SerializationType, clientSide bool) ([]byte, error) {
+	buffer, err := SerializeArraySchemaToBuffer(schema, serializationType, clientSide)
+	if err != nil {
+		return nil, err
 	}
 
 	return buffer.Serialize(serializationType)
@@ -59,7 +69,7 @@ func DeserializeArraySchema(buffer *Buffer, serializationType SerializationType,
 }
 
 // SerializeArrayNonEmptyDomain gets and serializes the array nonempty domain.
-func SerializeArrayNonEmptyDomain(a *Array, serializationType SerializationType) ([]byte, error) {
+func SerializeArrayNonEmptyDomainToBuffer(a *Array, serializationType SerializationType) (*Buffer, error) {
 	schema, err := a.Schema()
 	if err != nil {
 		return nil, err
@@ -92,6 +102,16 @@ func SerializeArrayNonEmptyDomain(a *Array, serializationType SerializationType)
 	ret = C.tiledb_serialize_array_nonempty_domain(a.context.tiledbContext, a.tiledbArray, slicePtr(tmpDomain), isEmpty, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error serializing array nonempty domain: %s", a.context.LastError())
+	}
+
+	return &buffer, nil
+}
+
+// SerializeArrayNonEmptyDomainToBuffer gets and serializes the array nonempty domain and returns a Buffer object containing the payload.
+func SerializeArrayNonEmptyDomain(a *Array, serializationType SerializationType) ([]byte, error) {
+	buffer, err := SerializeArrayNonEmptyDomainToBuffer(a, serializationType)
+	if err != nil {
+		return nil, err
 	}
 
 	return buffer.Serialize(serializationType)
@@ -179,8 +199,8 @@ func DeserializeArrayNonEmptyDomain(a *Array, buffer *Buffer, serializationType 
 	return nonEmptyDomains, false, nil
 }
 
-// SerializeArrayNonEmptyDomainAllDimensions gets and serializes the array nonempty domain.
-func SerializeArrayNonEmptyDomainAllDimensions(a *Array, serializationType SerializationType) ([]byte, error) {
+// SerializeArrayNonEmptyDomainAllDimensionsToBuffer gets and serializes the array nonempty domain and returns a Buffer object containing the payload.
+func SerializeArrayNonEmptyDomainAllDimensionsToBuffer(a *Array, serializationType SerializationType) (*Buffer, error) {
 
 	buffer := Buffer{context: a.context}
 	freeOnGC(&buffer)
@@ -189,6 +209,16 @@ func SerializeArrayNonEmptyDomainAllDimensions(a *Array, serializationType Seria
 	ret := C.tiledb_serialize_array_non_empty_domain_all_dimensions(a.context.tiledbContext, a.tiledbArray, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error serializing array nonempty domain: %s", a.context.LastError())
+	}
+
+	return &buffer, nil
+}
+
+// SerializeArrayNonEmptyDomainAllDimensions gets and serializes the array nonempty domain.
+func SerializeArrayNonEmptyDomainAllDimensions(a *Array, serializationType SerializationType) ([]byte, error) {
+	buffer, err := SerializeArrayNonEmptyDomainAllDimensionsToBuffer(a, serializationType)
+	if err != nil {
+		return nil, err
 	}
 
 	return buffer.Serialize(serializationType)
@@ -243,14 +273,24 @@ func DeserializeQuery(query *Query, buffer *Buffer, serializationType Serializat
 	return nil
 }
 
-// SerializeArrayMetadata gets and serializes the array metadata.
-func SerializeArrayMetadata(a *Array, serializationType SerializationType) ([]byte, error) {
+// SerializeArrayMetadataToBuffer gets and serializes the array metadata and returns a Buffer object containing the payload.
+func SerializeArrayMetadataToBuffer(a *Array, serializationType SerializationType) (*Buffer, error) {
 	buffer := Buffer{context: a.context}
 	freeOnGC(&buffer)
 
 	ret := C.tiledb_serialize_array_metadata(a.context.tiledbContext, a.tiledbArray, C.tiledb_serialization_type_t(serializationType), &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error serializing array metadata: %s", a.context.LastError())
+	}
+
+	return &buffer, nil
+}
+
+// SerializeArrayMetadata gets and serializes the array metadata.
+func SerializeArrayMetadata(a *Array, buffer *Buffer, serializationType SerializationType) ([]byte, error) {
+	buffer, err := SerializeArrayMetadataToBuffer(a, serializationType)
+	if err != nil {
+		return nil, err
 	}
 
 	return buffer.Serialize(serializationType)
@@ -265,8 +305,8 @@ func DeserializeArrayMetadata(a *Array, buffer *Buffer, serializationType Serial
 	return nil
 }
 
-// SerializeQueryEstResultSizes gets and serializes the query estimated result sizes.
-func SerializeQueryEstResultSizes(q *Query, serializationType SerializationType, clientSide bool) ([]byte, error) {
+// SerializeQueryEstResultSizesToBuffer gets and serializes the query estimated result sizes and returns a Buffer object containing the payload.
+func SerializeQueryEstResultSizesToBuffer(q *Query, serializationType SerializationType, clientSide bool) (*Buffer, error) {
 	var cClientSide C.int32_t
 	if clientSide {
 		cClientSide = 1
@@ -280,6 +320,16 @@ func SerializeQueryEstResultSizes(q *Query, serializationType SerializationType,
 	ret := C.tiledb_serialize_query_est_result_sizes(q.context.tiledbContext, q.tiledbQuery, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error serializing query est buffer sizes: %s", q.context.LastError())
+	}
+
+	return &buffer, nil
+}
+
+// SerializeQueryEstResultSizes gets and serializes the query estimated result sizes.
+func SerializeQueryEstResultSizes(q *Query, serializationType SerializationType, clientSide bool) ([]byte, error) {
+	buffer, err := SerializeQueryEstResultSizesToBuffer(q, serializationType, clientSide)
+	if err != nil {
+		return nil, err
 	}
 
 	return buffer.Serialize(serializationType)
@@ -301,8 +351,8 @@ func DeserializeQueryEstResultSizes(q *Query, buffer *Buffer, serializationType 
 	return nil
 }
 
-// SerializeArray serializes an array.
-func SerializeArray(array *Array, serializationType SerializationType, clientSide bool) ([]byte, error) {
+// SerializeArrayToBuffer serializes an array and returns a Buffer object containing the payload.
+func SerializeArrayToBuffer(array *Array, serializationType SerializationType, clientSide bool) (*Buffer, error) {
 	var cClientSide C.int32_t
 	if clientSide {
 		cClientSide = 1
@@ -317,6 +367,16 @@ func SerializeArray(array *Array, serializationType SerializationType, clientSid
 	ret := C.tiledb_serialize_array(array.context.tiledbContext, array.tiledbArray, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error serializing array: %s", array.context.LastError())
+	}
+
+	return &buffer, nil
+}
+
+// SerializeArray serializes an array.
+func SerializeArray(array *Array, serializationType SerializationType, clientSide bool) ([]byte, error) {
+	buffer, err := SerializeArrayToBuffer(array, serializationType, clientSide)
+	if err != nil {
+		return nil, err
 	}
 
 	return buffer.Serialize(serializationType)
@@ -350,8 +410,8 @@ func DeserializeArray(buffer *Buffer, serializationType SerializationType, clien
 	return &array, nil
 }
 
-// SerializeFragmentInfo serializes fragment info.
-func SerializeFragmentInfo(fragmentInfo *FragmentInfo, serializationType SerializationType, clientSide bool) ([]byte, error) {
+// SerializeFragmentInfoToBuffer serializes fragment info and returns a Buffer object containing the payload.
+func SerializeFragmentInfoToBuffer(fragmentInfo *FragmentInfo, serializationType SerializationType, clientSide bool) (*Buffer, error) {
 	var cClientSide C.int32_t
 	if clientSide {
 		cClientSide = 1
@@ -366,6 +426,16 @@ func SerializeFragmentInfo(fragmentInfo *FragmentInfo, serializationType Seriali
 	ret := C.tiledb_serialize_fragment_info(fragmentInfo.context.tiledbContext, fragmentInfo.tiledbFragmentInfo, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error serializing array: %s", fragmentInfo.context.LastError())
+	}
+
+	return &buffer, nil
+}
+
+// SerializeFragmentInfo serializes fragment info.
+func SerializeFragmentInfo(fragmentInfo *FragmentInfo, serializationType SerializationType, clientSide bool) ([]byte, error) {
+	buffer, err := SerializeFragmentInfoToBuffer(fragmentInfo, serializationType, clientSide)
+	if err != nil {
+		return nil, err
 	}
 
 	return buffer.Serialize(serializationType)
@@ -391,8 +461,8 @@ func DeserializeFragmentInfo(fragmentInfo FragmentInfo, buffer *Buffer, arrayURI
 	return nil
 }
 
-// SerializeFragmentInfoRequest serializes fragment info.
-func SerializeFragmentInfoRequest(fragmentInfo *FragmentInfo, serializationType SerializationType, clientSide bool) ([]byte, error) {
+// SerializeFragmentInfoRequestToBuffer serializes fragment info and returns a Buffer object containing the payload.
+func SerializeFragmentInfoRequestToBuffer(fragmentInfo *FragmentInfo, serializationType SerializationType, clientSide bool) (*Buffer, error) {
 	var cClientSide C.int32_t
 	if clientSide {
 		cClientSide = 1
@@ -407,6 +477,16 @@ func SerializeFragmentInfoRequest(fragmentInfo *FragmentInfo, serializationType 
 	ret := C.tiledb_serialize_fragment_info_request(fragmentInfo.context.tiledbContext, fragmentInfo.tiledbFragmentInfo, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error serializing array: %s", fragmentInfo.context.LastError())
+	}
+
+	return &buffer, nil
+}
+
+// SerializeFragmentInfoRequest serializes fragment info.
+func SerializeFragmentInfoRequest(fragmentInfo *FragmentInfo, serializationType SerializationType, clientSide bool) ([]byte, error) {
+	buffer, err := SerializeFragmentInfoRequestToBuffer(fragmentInfo, serializationType, clientSide)
+	if err != nil {
+		return nil, err
 	}
 
 	return buffer.Serialize(serializationType)

@@ -95,3 +95,30 @@ func TestBufferSafety(t *testing.T) {
 	t.Log("post gc 2")
 	verify()
 }
+
+type ByteCounter struct {
+	BytesWritten int64
+}
+
+func (b *ByteCounter) Write(x []byte) (int, error) {
+	b.BytesWritten = b.BytesWritten + int64(len(x))
+	return len(x), nil
+}
+
+func TestWriteTo(t *testing.T) {
+	context, err := NewContext(nil)
+	require.NoError(t, err)
+	buffer, err := NewBuffer(context)
+	require.NoError(t, err)
+
+	testSizes := [5]int{0, 16, 256, 65536, 268435456}
+	for _, size := range testSizes {
+		err := buffer.SetBuffer(make([]byte, size))
+		require.NoError(t, err)
+
+		counter := &ByteCounter{BytesWritten: 0}
+		n, err := buffer.WriteTo(counter)
+		require.NoError(t, err)
+		assert.Equal(t, size, int(n))
+	}
+}
