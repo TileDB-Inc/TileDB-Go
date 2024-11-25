@@ -35,6 +35,8 @@ func SerializeArraySchemaToBuffer(schema *ArraySchema, serializationType Seriali
 }
 
 // SerializeArraySchema serializes an array schema.
+//
+// Deprecated: Use SerializeArraySchemaToBuffer instead.
 func SerializeArraySchema(schema *ArraySchema, serializationType SerializationType, clientSide bool) ([]byte, error) {
 	buffer, err := SerializeArraySchemaToBuffer(schema, serializationType, clientSide)
 	if err != nil {
@@ -108,6 +110,8 @@ func SerializeArrayNonEmptyDomainToBuffer(a *Array, serializationType Serializat
 }
 
 // SerializeArrayNonEmptyDomainToBuffer gets and serializes the array nonempty domain and returns a Buffer object containing the payload.
+//
+// Deprecated: Use SerializeArrayNonEmptyDomainToBuffer instead.
 func SerializeArrayNonEmptyDomain(a *Array, serializationType SerializationType) ([]byte, error) {
 	buffer, err := SerializeArrayNonEmptyDomainToBuffer(a, serializationType)
 	if err != nil {
@@ -215,6 +219,8 @@ func SerializeArrayNonEmptyDomainAllDimensionsToBuffer(a *Array, serializationTy
 }
 
 // SerializeArrayNonEmptyDomainAllDimensions gets and serializes the array nonempty domain.
+//
+// Deprecated: Use SerializeArrayNonEmptyDomainAllDimensionsToBuffer instead.
 func SerializeArrayNonEmptyDomainAllDimensions(a *Array, serializationType SerializationType) ([]byte, error) {
 	buffer, err := SerializeArrayNonEmptyDomainAllDimensionsToBuffer(a, serializationType)
 	if err != nil {
@@ -287,6 +293,8 @@ func SerializeArrayMetadataToBuffer(a *Array, serializationType SerializationTyp
 }
 
 // SerializeArrayMetadata gets and serializes the array metadata.
+//
+// Deprecated: Use SerializeArrayMetadataToBuffer instead.
 func SerializeArrayMetadata(a *Array, buffer *Buffer, serializationType SerializationType) ([]byte, error) {
 	buffer, err := SerializeArrayMetadataToBuffer(a, serializationType)
 	if err != nil {
@@ -326,6 +334,8 @@ func SerializeQueryEstResultSizesToBuffer(q *Query, serializationType Serializat
 }
 
 // SerializeQueryEstResultSizes gets and serializes the query estimated result sizes.
+//
+// Deprecated: Use SerializeQueryEstResultSizesToBuffer instead.
 func SerializeQueryEstResultSizes(q *Query, serializationType SerializationType, clientSide bool) ([]byte, error) {
 	buffer, err := SerializeQueryEstResultSizesToBuffer(q, serializationType, clientSide)
 	if err != nil {
@@ -373,6 +383,8 @@ func SerializeArrayToBuffer(array *Array, serializationType SerializationType, c
 }
 
 // SerializeArray serializes an array.
+//
+// Deprecated: Use SerializeArrayToBuffer instead.
 func SerializeArray(array *Array, serializationType SerializationType, clientSide bool) ([]byte, error) {
 	buffer, err := SerializeArrayToBuffer(array, serializationType, clientSide)
 	if err != nil {
@@ -432,6 +444,8 @@ func SerializeFragmentInfoToBuffer(fragmentInfo *FragmentInfo, serializationType
 }
 
 // SerializeFragmentInfo serializes fragment info.
+//
+// Deprecated: Use SerializeFragmentInfoToBuffer instead.
 func SerializeFragmentInfo(fragmentInfo *FragmentInfo, serializationType SerializationType, clientSide bool) ([]byte, error) {
 	buffer, err := SerializeFragmentInfoToBuffer(fragmentInfo, serializationType, clientSide)
 	if err != nil {
@@ -483,6 +497,8 @@ func SerializeFragmentInfoRequestToBuffer(fragmentInfo *FragmentInfo, serializat
 }
 
 // SerializeFragmentInfoRequest serializes fragment info.
+//
+// Deprecated: Use SerializeFragmentInfoRequestToBuffer instead.
 func SerializeFragmentInfoRequest(fragmentInfo *FragmentInfo, serializationType SerializationType, clientSide bool) ([]byte, error) {
 	buffer, err := SerializeFragmentInfoRequestToBuffer(fragmentInfo, serializationType, clientSide)
 	if err != nil {

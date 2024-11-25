@@ -95,6 +95,8 @@ func (b *Buffer) Type() (Datatype, error) {
 }
 
 // Serialize returns a copy of the bytes in the buffer.
+//
+// Deprecated: Use WriteTo instead for increased performance.
 func (b *Buffer) Serialize(serializationType SerializationType) ([]byte, error) {
 	bs, err := b.dataCopy()
 	if err != nil {
