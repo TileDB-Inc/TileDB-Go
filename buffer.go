@@ -106,7 +106,7 @@ func (b *Buffer) Serialize(serializationType SerializationType) ([]byte, error) 
 	case TILEDB_CAPNP:
 		// The entire byte array contains Cap'nP data. Don't bother it.
 	case TILEDB_JSON:
-		// The data is a null-terminated string. Strip off the terminator.
+		// The data might be a null-terminated string. Strip off the terminator.
 		bs = bytes.TrimSuffix(bs, []byte{0})
 	default:
 		return nil, fmt.Errorf("unsupported serialization type: %v", serializationType)
