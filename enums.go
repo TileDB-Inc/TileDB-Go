@@ -1,9 +1,6 @@
 package tiledb
 
 /*
-#cgo CFLAGS: -I/usr/local/include
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb.h>
 #include <tiledb/tiledb_enum.h>
 #include <tiledb/tiledb_serialization.h>
@@ -15,6 +12,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
+	"time"
 	"unsafe"
 )
 
@@ -114,26 +113,32 @@ const (
 	TILEDB_TIME_AS Datatype = C.TILEDB_TIME_AS
 	// TILEDB_BLOB 8-bit unsigned integer (or std::byte)
 	TILEDB_BLOB Datatype = C.TILEDB_BLOB
+	// TILEDB_BOOL 8-bit boolean type
+	TILEDB_BOOL Datatype = C.TILEDB_BOOL
+	// TILEDB_GEOM_WKB 8-bit unsigned integer (or std::byte)
+	TILEDB_GEOM_WKB Datatype = C.TILEDB_GEOM_WKB
+	// TILEDB_GEOM_WKT 8-bit unsigned integer (or std::byte)
+	TILEDB_GEOM_WKT Datatype = C.TILEDB_GEOM_WKT
 )
 
-// String returns string representation
+// String returns a string representation.
 func (d Datatype) String() string {
 	var cname *C.char
 	C.tiledb_datatype_to_str(C.tiledb_datatype_t(d), &cname)
 	return C.GoString(cname)
 }
 
-// MarshalJSON interface for marshaling to json
+// MarshalJSON implements the interface for marshaling to json.
 func (d Datatype) MarshalJSON() ([]byte, error) {
 	return json.Marshal(d.String())
 }
 
-// UnmarshalJSON interface for unmarshaling from json
+// UnmarshalJSON implements the interface for unmarshaling from json.
 func (d *Datatype) UnmarshalJSON(bytes []byte) error {
 	return d.FromString(string(bytes))
 }
 
-// FromString converts from a datatype string to enum
+// FromString converts from a datatype string to enum.
 func (d *Datatype) FromString(s string) error {
 	cname := C.CString(s)
 	defer C.free(unsafe.Pointer(cname))
@@ -146,7 +151,7 @@ func (d *Datatype) FromString(s string) error {
 	return nil
 }
 
-// DatatypeFromString converts from a datatype string to enum
+// DatatypeFromString converts from a datatype string to enum.
 func DatatypeFromString(s string) (Datatype, error) {
 	var d Datatype
 	err := d.FromString(s)
@@ -156,7 +161,7 @@ func DatatypeFromString(s string) (Datatype, error) {
 	return d, nil
 }
 
-// ReflectKind returns the reflect kind given a datatype
+// ReflectKind returns the reflect kind given a datatype.
 func (d Datatype) ReflectKind() reflect.Kind {
 	switch d {
 	case TILEDB_INT8:
@@ -167,7 +172,7 @@ func (d Datatype) ReflectKind() reflect.Kind {
 		return reflect.Int32
 	case TILEDB_INT64:
 		return reflect.Int64
-	case TILEDB_UINT8, TILEDB_BLOB:
+	case TILEDB_UINT8, TILEDB_BLOB, TILEDB_GEOM_WKB, TILEDB_GEOM_WKT:
 		return reflect.Uint8
 	case TILEDB_UINT16:
 		return reflect.Uint16
@@ -197,235 +202,195 @@ func (d Datatype) ReflectKind() reflect.Kind {
 		return reflect.Interface
 	case TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
 		return reflect.Int64
+	case TILEDB_BOOL:
+		return reflect.Bool
 	default:
 		return reflect.Interface
 	}
 }
 
-// Size returns the datatype size in bytes
+// ReflectType returns the reflect type given a datatype.
+func (d Datatype) ReflectType() reflect.Type {
+	switch d {
+	case TILEDB_INT8:
+		return reflect.TypeOf(int8(0))
+	case TILEDB_INT16:
+		return reflect.TypeOf(int16(0))
+	case TILEDB_INT32:
+		return reflect.TypeOf(int32(0))
+	case TILEDB_INT64:
+		return reflect.TypeOf(int64(0))
+	case TILEDB_UINT8, TILEDB_BLOB, TILEDB_GEOM_WKB, TILEDB_GEOM_WKT:
+		return reflect.TypeOf(uint8(0))
+	case TILEDB_UINT16:
+		return reflect.TypeOf(uint16(0))
+	case TILEDB_UINT32:
+		return reflect.TypeOf(uint32(0))
+	case TILEDB_UINT64:
+		return reflect.TypeOf(uint64(0))
+	case TILEDB_FLOAT32:
+		return reflect.TypeOf(float32(0))
+	case TILEDB_FLOAT64:
+		return reflect.TypeOf(float64(0))
+	case TILEDB_CHAR:
+		return reflect.TypeOf(uint8(0))
+	case TILEDB_STRING_ASCII:
+		return reflect.TypeOf(uint8(0))
+	case TILEDB_STRING_UTF8:
+		return reflect.TypeOf(uint8(0))
+	case TILEDB_STRING_UTF16:
+		return reflect.TypeOf(uint16(0))
+	case TILEDB_STRING_UTF32:
+		return reflect.TypeOf(uint32(0))
+	case TILEDB_STRING_UCS2:
+		return reflect.TypeOf(uint16(0))
+	case TILEDB_STRING_UCS4:
+		return reflect.TypeOf(uint32(0))
+	case TILEDB_ANY: // deprecated type since 2.7.0, treat as invalid
+		return reflect.TypeOf(nil)
+	case TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
+		return reflect.TypeOf(int64(0))
+	case TILEDB_BOOL:
+		return reflect.TypeOf(true)
+	default:
+		return reflect.TypeOf(nil)
+	}
+}
+
+// Size returns the datatype size in bytes.
 func (d Datatype) Size() uint64 {
 	return uint64(C.tiledb_datatype_size(C.tiledb_datatype_t(d)))
 }
 
-// MakeSlice makes a slice of the correct type corresponding to the datatype, with a given number of elements
+// MakeSlice makes a slice of the correct type corresponding to the datatype, with a given number of elements.
 func (d Datatype) MakeSlice(numElements uint64) (interface{}, unsafe.Pointer, error) {
 	switch d {
 	case TILEDB_INT8:
-		slice := make([]int8, numElements)
-		return slice, unsafe.Pointer(&slice[0]), nil
-
+		return makeSlice[int8](numElements)
 	case TILEDB_INT16:
-		slice := make([]int16, numElements)
-		return slice, unsafe.Pointer(&slice[0]), nil
-
+		return makeSlice[int16](numElements)
 	case TILEDB_INT32:
-		slice := make([]int32, numElements)
-		return slice, unsafe.Pointer(&slice[0]), nil
-
+		return makeSlice[int32](numElements)
 	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US, TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS, TILEDB_DATETIME_AS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
-		slice := make([]int64, numElements)
-		return slice, unsafe.Pointer(&slice[0]), nil
-
-	case TILEDB_UINT8, TILEDB_CHAR, TILEDB_STRING_ASCII, TILEDB_STRING_UTF8, TILEDB_BLOB:
-		slice := make([]uint8, numElements)
-		return slice, unsafe.Pointer(&slice[0]), nil
-
+		return makeSlice[int64](numElements)
+	case TILEDB_UINT8, TILEDB_CHAR, TILEDB_STRING_ASCII, TILEDB_STRING_UTF8, TILEDB_BLOB, TILEDB_GEOM_WKB, TILEDB_GEOM_WKT:
+		return makeSlice[uint8](numElements)
 	case TILEDB_UINT16, TILEDB_STRING_UTF16, TILEDB_STRING_UCS2:
-		slice := make([]uint16, numElements)
-		return slice, unsafe.Pointer(&slice[0]), nil
-
+		return makeSlice[uint16](numElements)
 	case TILEDB_UINT32, TILEDB_STRING_UTF32, TILEDB_STRING_UCS4:
-		slice := make([]uint32, numElements)
-		return slice, unsafe.Pointer(&slice[0]), nil
-
+		return makeSlice[uint32](numElements)
 	case TILEDB_UINT64:
-		slice := make([]uint64, numElements)
-		return slice, unsafe.Pointer(&slice[0]), nil
-
+		return makeSlice[uint64](numElements)
 	case TILEDB_FLOAT32:
-		slice := make([]float32, numElements)
-		return slice, unsafe.Pointer(&slice[0]), nil
-
+		return makeSlice[float32](numElements)
 	case TILEDB_FLOAT64:
-		slice := make([]float64, numElements)
-		return slice, unsafe.Pointer(&slice[0]), nil
-
+		return makeSlice[float64](numElements)
+	case TILEDB_BOOL:
+		return makeSlice[bool](numElements)
 	default:
 		return nil, nil, fmt.Errorf("error making datatype slice; unrecognized datatype: %d", d)
 	}
 }
 
-// GetValue gets value stored in a void pointer for this data type
+// makeSlice makes a slice and returns it as well as a pointer to its start.
+// Its return type matches d.MakeSlice for convenience.
+func makeSlice[T any](numElements uint64) (any, unsafe.Pointer, error) {
+	slice := make([]T, numElements)
+	return slice, slicePtr(slice), nil
+}
+
+// GetValue gets value stored in a void pointer for this data type.
 func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, error) {
 	switch d {
 	case TILEDB_INT8:
-		if cvalue == nil {
-			return int8(0), nil
-		}
-		if valueNum > 1 {
-			tmpValue := make([]int8, valueNum)
-			tmpslice := (*[1 << 46]C.int8_t)(cvalue)[:valueNum:valueNum]
-			for i, s := range tmpslice {
-				tmpValue[i] = int8(s)
-			}
-			return tmpValue, nil
-		}
-		return *(*int8)(cvalue), nil
+		return getValueInternal[int8](valueNum, cvalue)
 	case TILEDB_INT16:
-		if cvalue == nil {
-			return int16(0), nil
-		}
-		if valueNum > 1 {
-			tmpValue := make([]int16, valueNum)
-			tmpslice := (*[1 << 46]C.int16_t)(cvalue)[:valueNum:valueNum]
-			for i, s := range tmpslice {
-				tmpValue[i] = int16(s)
-			}
-			return tmpValue, nil
-		}
-		return *(*int16)(cvalue), nil
+		return getValueInternal[int16](valueNum, cvalue)
 	case TILEDB_INT32:
-		if cvalue == nil {
-			return int32(0), nil
-		}
-		if valueNum > 1 {
-			tmpValue := make([]int32, valueNum)
-			tmpslice := (*[1 << 46]C.int32_t)(cvalue)[:valueNum:valueNum]
-			for i, s := range tmpslice {
-				tmpValue[i] = int32(s)
-			}
-			return tmpValue, nil
-		}
-		return *(*int32)(cvalue), nil
+		return getValueInternal[int32](valueNum, cvalue)
 	case TILEDB_INT64:
-		if cvalue == nil {
-			return int64(0), nil
-		}
-		if valueNum > 1 {
-			tmpValue := make([]int64, valueNum)
-			tmpslice := (*[1 << 46]C.int64_t)(cvalue)[:valueNum:valueNum]
-			for i, s := range tmpslice {
-				tmpValue[i] = int64(s)
-			}
-			return tmpValue, nil
-		}
-		return *(*int64)(cvalue), nil
-	case TILEDB_UINT8, TILEDB_BLOB:
-		if cvalue == nil {
-			return uint8(0), nil
-		}
-		if valueNum > 1 {
-			tmpValue := make([]uint8, valueNum)
-			tmpslice := (*[1 << 46]C.uint8_t)(cvalue)[:valueNum:valueNum]
-			for i, s := range tmpslice {
-				tmpValue[i] = uint8(s)
-			}
-			return tmpValue, nil
-		}
-		return *(*uint8)(cvalue), nil
+		return getValueInternal[int64](valueNum, cvalue)
+	case TILEDB_UINT8, TILEDB_BLOB, TILEDB_GEOM_WKB, TILEDB_GEOM_WKT:
+		return getValueInternal[uint8](valueNum, cvalue)
 	case TILEDB_UINT16:
-		if cvalue == nil {
-			return uint16(0), nil
-		}
-		if valueNum > 1 {
-			tmpValue := make([]uint16, valueNum)
-			tmpslice := (*[1 << 46]C.uint16_t)(cvalue)[:valueNum:valueNum]
-			for i, s := range tmpslice {
-				tmpValue[i] = uint16(s)
-			}
-			return tmpValue, nil
-		}
-		return *(*uint16)(cvalue), nil
+		return getValueInternal[uint16](valueNum, cvalue)
 	case TILEDB_UINT32:
-		if cvalue == nil {
-			return uint32(0), nil
-		}
-		if valueNum > 1 {
-			tmpValue := make([]uint32, valueNum)
-			tmpslice := (*[1 << 46]C.uint32_t)(cvalue)[:valueNum:valueNum]
-			for i, s := range tmpslice {
-				tmpValue[i] = uint32(s)
-			}
-			return tmpValue, nil
-		}
-		return *(*uint32)(cvalue), nil
+		return getValueInternal[uint32](valueNum, cvalue)
 	case TILEDB_UINT64:
-		if cvalue == nil {
-			return uint64(0), nil
-		}
-		if valueNum > 1 {
-			tmpValue := make([]uint64, valueNum)
-			tmpslice := (*[1 << 46]C.uint64_t)(cvalue)[:valueNum:valueNum]
-			for i, s := range tmpslice {
-				tmpValue[i] = uint64(s)
-			}
-			return tmpValue, nil
-		}
-		return *(*uint64)(cvalue), nil
+		return getValueInternal[uint64](valueNum, cvalue)
 	case TILEDB_FLOAT32:
-		if cvalue == nil {
-			return float32(0), nil
-		}
-		if valueNum > 1 {
-			tmpValue := make([]float32, valueNum)
-			tmpslice := (*[1 << 46]C.float)(cvalue)[:valueNum:valueNum]
-			for i, s := range tmpslice {
-				tmpValue[i] = float32(s)
-			}
-			return tmpValue, nil
-		}
-		return *(*float32)(cvalue), nil
+		return getValueInternal[float32](valueNum, cvalue)
 	case TILEDB_FLOAT64:
-		if cvalue == nil {
-			return float64(0), nil
-		}
-		if valueNum > 1 {
-			tmpValue := make([]float64, valueNum)
-			tmpslice := (*[1 << 46]C.double)(cvalue)[:valueNum:valueNum]
-			for i, s := range tmpslice {
-				tmpValue[i] = float64(s)
-			}
-			return tmpValue, nil
-		}
-		return *(*float64)(cvalue), nil
-	case TILEDB_CHAR:
+		return getValueInternal[float64](valueNum, cvalue)
+	case TILEDB_CHAR, TILEDB_STRING_ASCII, TILEDB_STRING_UTF8:
 		if cvalue == nil || valueNum == 0 {
 			return "", nil
 		}
-		tmpslice := (*[1 << 46]C.char)(cvalue)[:valueNum:valueNum]
-		return C.GoString(&tmpslice[0])[0:valueNum], nil
-	case TILEDB_STRING_ASCII:
-		if cvalue == nil || valueNum == 0 {
-			return "", nil
-		}
-		tmpslice := (*[1 << 46]C.char)(cvalue)[:valueNum:valueNum]
-		return C.GoString(&tmpslice[0])[0:valueNum], nil
-	case TILEDB_STRING_UTF8:
-		if cvalue == nil || valueNum == 0 {
-			return "", nil
-		}
-		tmpslice := (*[1 << 46]C.char)(cvalue)[:valueNum:valueNum]
-		return C.GoString(&tmpslice[0])[0:valueNum], nil
+		return C.GoStringN((*C.char)(cvalue), C.int(valueNum)), nil
 	case TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK,
 		TILEDB_DATETIME_DAY, TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN,
 		TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US,
 		TILEDB_DATETIME_NS, TILEDB_DATETIME_PS, TILEDB_DATETIME_FS,
 		TILEDB_DATETIME_AS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
 		if valueNum > 1 {
-			return nil, fmt.Errorf("Unrecognized value type: %d", d)
-		} else {
-			if cvalue == nil {
-				return int64(0), nil
-			}
-			var timestamp interface{} = *(*int16)(cvalue)
-			return GetTimeFromTimestamp(d, timestamp.(int64)), nil
+			return nil, fmt.Errorf("only 1 timestamp may be returned, not %d", d)
 		}
+		if cvalue == nil {
+			return time.Time{}, nil
+		}
+		timestamp := *(*int64)(cvalue)
+		return GetTimeFromTimestamp(d, timestamp), nil
+	case TILEDB_BOOL:
+		// We handle this differently to ensure that our bools are always in the
+		// canonical form (true/1 or false/0).
+		if cvalue == nil {
+			return false, nil
+		}
+		bytes := unsafeSlice[byte](cvalue, valueNum)
+		if valueNum == 1 {
+			return bytes[0] != 0, nil
+		}
+		bools := make([]bool, valueNum)
+		for i, b := range bytes {
+			bools[i] = b != 0
+		}
+		return bools, nil
 	default:
 		return nil, fmt.Errorf("Unrecognized value type: %d", d)
 	}
 }
 
-// EncryptionType represents different encryption algorithms
+// getValueInternal handles the internals of Datatype.GetValue. It returns
+// `valueNum` Ts located at `ptr`. As a special case, if valueNum == 1,
+// it returns a T itself rather than a []T.
+func getValueInternal[T any](valueNum uint, ptr unsafe.Pointer) (any, error) {
+	var singleValue T
+	if ptr == nil {
+		return singleValue, nil
+	}
+	if valueNum == 1 {
+		singleValue = *(*T)(ptr)
+		return singleValue, nil
+	}
+	out := make([]T, valueNum)
+	inSlice := unsafeSlice[T](ptr, valueNum)
+	copy(out, inSlice)
+	return out, nil
+}
+
+var tileDBInt, tileDBUint = intUintTypes() // The Datatypes of Go `int` and `uint`.
+
+func intUintTypes() (Datatype, Datatype) {
+	switch strconv.IntSize {
+	case 32:
+		return TILEDB_INT32, TILEDB_UINT32
+	case 64:
+		return TILEDB_INT64, TILEDB_UINT64
+	}
+	panic(fmt.Sprintf("can't run on systems with %v-bit integers", strconv.IntSize))
+}
+
+// EncryptionType represents different encryption algorithms.
 type EncryptionType uint8
 
 const (
@@ -435,7 +400,7 @@ const (
 	TILEDB_AES_256_GCM EncryptionType = C.TILEDB_AES_256_GCM
 )
 
-// String returns string representation
+// String returns a string representation.
 func (encryptionType EncryptionType) String() string {
 	var ctype *C.char
 	C.tiledb_encryption_type_to_str(C.tiledb_encryption_type_t(encryptionType), &ctype)
@@ -468,6 +433,10 @@ const (
 	TILEDB_FILTER_BYTESHUFFLE FilterType = C.TILEDB_FILTER_BYTESHUFFLE
 	// TILEDB_FILTER_POSITIVE_DELTA Positive-delta encoding filter.
 	TILEDB_FILTER_POSITIVE_DELTA FilterType = C.TILEDB_FILTER_POSITIVE_DELTA
+	// TILEDB_FILTER_SCALE_FLOAT FILTER_SCALE_FLOAT float scaling filter.
+	TILEDB_FILTER_SCALE_FLOAT FilterType = C.TILEDB_FILTER_SCALE_FLOAT
+	// TILEDB_FILTER_DELTA Delta encoding filter.
+	TILEDB_FILTER_DELTA FilterType = C.TILEDB_FILTER_DELTA
 )
 
 // FilterOption for a given filter
@@ -523,13 +492,43 @@ const (
 	TILEDB_INCOMPLETE QueryStatus = C.TILEDB_INCOMPLETE
 	// TILEDB_UNINITIALIZED Query not initialized.
 	TILEDB_UNINITIALIZED QueryStatus = C.TILEDB_UNINITIALIZED
+	// TILEDB_INITIALIZED Query initialized.
+	TILEDB_INITIALIZED QueryStatus = C.TILEDB_INITIALIZED
 )
 
-// String returns string representation
+// String returns a string representation.
 func (q QueryStatus) String() string {
 	var cname *C.char
 	C.tiledb_query_status_to_str(C.tiledb_query_status_t(q), &cname)
 	return C.GoString(cname)
+}
+
+// QueryStatusDetailsReason indicates extended information about a returned query status in order to
+// allow improved client-side handling of buffers and potential resubmissions.
+type QueryStatusDetailsReason uint8
+
+const (
+	// TILEDB_REASON_NONE No additional details available
+	TILEDB_REASON_NONE QueryStatusDetailsReason = C.TILEDB_REASON_NONE
+	// TILEDB_REASON_USER_BUFFER_SIZE User buffers are too small
+	TILEDB_REASON_USER_BUFFER_SIZE QueryStatusDetailsReason = C.TILEDB_REASON_USER_BUFFER_SIZE
+	// TILEDB_REASON_MEMORY_BUDGET Exceeded memory budget: can resubmit without resize
+	TILEDB_REASON_MEMORY_BUDGET QueryStatusDetailsReason = C.TILEDB_REASON_MEMORY_BUDGET
+)
+
+// String returns a string representation.
+func (r QueryStatusDetailsReason) String() string {
+	// TileDB does not provide tiledb_query_status_details_reason_to_str
+	switch r {
+	case TILEDB_REASON_NONE:
+		return "REASON_NONE"
+	case TILEDB_REASON_USER_BUFFER_SIZE:
+		return "REASON_USER_BUFFER_SIZE"
+	case TILEDB_REASON_MEMORY_BUDGET:
+		return "REASON_MEMORY_BUDGET"
+	}
+
+	return "REASON_UNKNOWN"
 }
 
 // QueryType read or write query
@@ -540,7 +539,23 @@ const (
 	TILEDB_READ QueryType = C.TILEDB_READ
 	// TILEDB_WRITE Write query
 	TILEDB_WRITE QueryType = C.TILEDB_WRITE
+	// TILEDB_DELETE Delete query
+	TILEDB_DELETE QueryType = C.TILEDB_DELETE
+	// TILEDB_MODIFY_EXCLUSIVE Modify exclusive query
+	TILEDB_MODIFY_EXCLUSIVE QueryType = C.TILEDB_MODIFY_EXCLUSIVE
 )
+
+// QueryTypeFromString returns the internal representation of the query type.
+func QueryTypeFromString(s string) (QueryType, error) {
+	cname := C.CString(s)
+	defer C.free(unsafe.Pointer(cname))
+	var cQueryType C.tiledb_query_type_t
+	ret := C.tiledb_query_type_from_str(cname, &cQueryType)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("%q is not a recognized tiledb_query_type_t", s)
+	}
+	return QueryType(cQueryType), nil
+}
 
 // QueryConditionOp operation type for a query condition
 type QueryConditionOp uint8
@@ -643,3 +658,53 @@ var TILEDB_VAR_NUM = uint32(C.TILEDB_VAR_NUM)
 
 // TILEDB_COORDS A special name indicating the coordinates attribute.
 const TILEDB_COORDS = "__coords"
+
+// FileStoreMimeType is an enum for TileDB filestore mime types
+type FileStoreMimeType uint32
+
+// Mime types for TileDB filestore. The store can autodetect mime types
+// but these are provided if the user wants to enforce a type
+const (
+	// Filestore autodetect mime type
+	TILEDB_MIME_AUTODETECT = FileStoreMimeType(C.TILEDB_MIME_AUTODETECT)
+	// Filestore TIFF mime type
+	TILEDB_MIME_TIFF = FileStoreMimeType(C.TILEDB_MIME_TIFF)
+	// Filestore PDF mime type
+	TILEDB_MIME_PDF = FileStoreMimeType(C.TILEDB_MIME_PDF)
+)
+
+// DataOrder
+type DataOrder int8
+
+const (
+	// Unordered dimension label.
+	TILEDB_UNORDERED_DATA DataOrder = C.TILEDB_UNORDERED_DATA
+	// Ordered dimension label with increasing values.
+	TILEDB_INCREASING_DATA DataOrder = C.TILEDB_INCREASING_DATA
+	// Ordered dimension label with decreasing values.
+	TILEDB_DECREASING_DATA DataOrder = C.TILEDB_DECREASING_DATA
+)
+
+// String returns a string representation of a DataOrder.
+func (d DataOrder) String() (string, error) {
+	var dataOrderStr *C.char
+	ret := C.tiledb_data_order_to_str(C.tiledb_data_order_t(d), &dataOrderStr)
+	if ret != C.TILEDB_OK {
+		return "", fmt.Errorf("Error converting DataOrder to string: %d", d)
+	}
+
+	return C.GoString(dataOrderStr), nil
+}
+
+// DataOrderFromString converts from a string to the equivalent DataOrder enum.
+func DataOrderFromString(name string) (DataOrder, error) {
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
+
+	var cDataOrder C.tiledb_data_order_t
+	ret := C.tiledb_data_order_from_str(cName, &cDataOrder)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("Error converting '%s' to tiledb_data_order_t", name)
+	}
+	return DataOrder(cDataOrder), nil
+}

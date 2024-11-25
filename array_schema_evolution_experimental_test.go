@@ -1,6 +1,3 @@
-//go:build experimental
-// +build experimental
-
 package tiledb
 
 import (
@@ -9,8 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-const array_schema_evolution_name = "array_schema_evolution"
 
 func TestArraySchemaEvolution(t *testing.T) {
 	config, err := NewConfig()
@@ -85,6 +80,7 @@ func TestArraySchemaEvolution(t *testing.T) {
 	require.NoError(t, err)
 
 	buff, err := NewBuffer(context)
+	require.NoError(t, err)
 
 	err = buff.SetBuffer(bs)
 	require.NoError(t, err)

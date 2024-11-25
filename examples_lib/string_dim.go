@@ -74,9 +74,11 @@ func writeStringDimArray(dir string) {
 	checkError(err)
 	defer query.Free()
 
-	_, _, err = query.SetBufferVar("d", dOff, dData)
+	_, err = query.SetDataBuffer("d", dData)
 	checkError(err)
-	_, err = query.SetBuffer("a", buffA)
+	_, err = query.SetOffsetsBuffer("d", dOff)
+	checkError(err)
+	_, err = query.SetDataBuffer("a", buffA)
 	checkError(err)
 	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
 	checkError(err)
@@ -124,14 +126,23 @@ func readStringDimArray(dir string) {
 	checkError(err)
 	defer query.Free()
 
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+
 	s1 := "a"
 	s2 := "ee"
-	err = query.AddRangeVar(0, []byte(s1), []byte(s2))
+	err = subarray.AddRange(0, tiledb.MakeRange(s1, s2))
+	checkError(err)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 
 	offsets := make([]uint64, 4)
 	data := make([]byte, 10)
-	_, _, err = query.SetBufferVar("d", offsets, data)
+	_, err = query.SetDataBuffer("d", data)
+	checkError(err)
+	_, err = query.SetOffsetsBuffer("d", offsets)
 	checkError(err)
 
 	// Submit the query and close the array.

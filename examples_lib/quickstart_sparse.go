@@ -2,7 +2,6 @@ package examples_lib
 
 import (
 	"fmt"
-
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 	"github.com/TileDB-Inc/TileDB-Go/bytesizes"
 )
@@ -84,11 +83,11 @@ func writeSparseArray(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
 	checkError(err)
-	_, err = query.SetBuffer("rows", buffD1)
+	_, err = query.SetDataBuffer("rows", buffD1)
 	checkError(err)
-	_, err = query.SetBuffer("cols", buffD2)
+	_, err = query.SetDataBuffer("cols", buffD2)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
 
 	// Perform the write and close the array.
@@ -118,11 +117,15 @@ func readSparseArray(dir string) {
 	checkError(err)
 	defer query.Free()
 
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+
 	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
 	checkError(err)
-	err = query.AddRange(0, int32(1), int32(2))
+	err = subarray.AddRange(0, tiledb.MakeRange[int32](1, 2))
 	checkError(err)
-	err = query.AddRange(1, int32(1), int32(4))
+	err = subarray.AddRange(1, tiledb.MakeRange[int32](1, 4))
 	checkError(err)
 
 	size, err := query.EstResultSize("a")
@@ -140,11 +143,11 @@ func readSparseArray(dir string) {
 	fmt.Printf("Estimated query size in bytes for dimension 'cols': %d\n", *size)
 	buffD2R := make([]int32, (*size)/bytesizes.Int32)
 
-	_, err = query.SetBuffer("rows", buffD1R)
+	_, err = query.SetDataBuffer("rows", buffD1R)
 	checkError(err)
-	_, err = query.SetBuffer("cols", buffD2R)
+	_, err = query.SetDataBuffer("cols", buffD2R)
 	checkError(err)
-	_, err = query.SetBuffer("a", buffAR)
+	_, err = query.SetDataBuffer("a", buffAR)
 	checkError(err)
 
 	// Submit the query and close the array.

@@ -1,8 +1,6 @@
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb.h>
 #include <stdlib.h>
 */
@@ -11,9 +9,8 @@ import "C"
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"runtime"
-	"strconv"
+	"time"
 	"unsafe"
 )
 
@@ -28,6 +25,7 @@ type Array struct {
 	tiledbArray *C.tiledb_array_t
 	context     *Context
 	uri         string
+	config      *Config
 }
 
 // ArrayMetadata defines metadata for the array
@@ -39,7 +37,7 @@ type ArrayMetadata struct {
 	Value    interface{}
 }
 
-// MarshalJSON implements the Marshaler interface for ArrayMetadata
+// MarshalJSON implements the Marshaler interface for ArrayMetadata.
 func (a ArrayMetadata) MarshalJSON() ([]byte, error) {
 	switch v := a.Value.(type) {
 	case []byte:
@@ -55,8 +53,16 @@ type NonEmptyDomain struct {
 	Bounds        interface{}
 }
 
-// NewArray alloc a new array
+// NewArray allocates a new array.
+// If the provided Context is nil, a default context is allocated and used.
 func NewArray(tdbCtx *Context, uri string) (*Array, error) {
+	if tdbCtx == nil {
+		newCtx, err := NewContext(nil)
+		if err != nil {
+			return nil, err
+		}
+		tdbCtx = newCtx
+	}
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
 	array := Array{context: tdbCtx, uri: uri}
@@ -64,11 +70,7 @@ func NewArray(tdbCtx *Context, uri string) (*Array, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb array: %s", array.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&array, func(array *Array) {
-		array.Free()
-	})
+	freeOnGC(&array)
 
 	return &array, nil
 }
@@ -85,13 +87,31 @@ func (a *Array) Free() {
 	}
 }
 
-// Context exposes the internal TileDB context used to initialize the array
+// Context exposes the internal TileDB context used to initialize the array.
 func (a *Array) Context() *Context {
 	return a.context
 }
 
-// ArrayOpenOptions define the flexibile parameters in which arrays can be opened with.
+// ArrayOpenOptions defines the flexible parameters in which arrays can be opened with.
 type ArrayOpenOption func(tdbArray *Array) error
+
+// WithEndTime sets the subsequent Open call to use the given time
+// as its end timestamp. If "end" is the zero value, does nothing.
+func WithEndTime(end time.Time) ArrayOpenOption {
+	if end.IsZero() {
+		return func(*Array) error { return nil }
+	}
+	return WithEndTimestamp(uint64(end.UnixMilli()))
+}
+
+// WithStartTime sets the subsequent Open call to use the given time
+// as its start timestamp. If "start" is the zero value, does nothing.
+func WithStartTime(start time.Time) ArrayOpenOption {
+	if start.IsZero() {
+		return func(*Array) error { return nil }
+	}
+	return WithStartTimestamp(uint64(start.UnixMilli()))
+}
 
 // WithEndTimestamp sets the subsequent Open call to use the end_timestamp of the passed value.
 func WithEndTimestamp(endTimestamp uint64) ArrayOpenOption {
@@ -116,14 +136,14 @@ func WithStartTimestamp(startTimestamp uint64) ArrayOpenOption {
 }
 
 /*
-	Open the array with options. The array is opened using a query type as input.
-	This is to indicate that queries created for this Array object will inherit
-	the query type. In other words, Array objects are opened to receive only one
-	type of query. They can always be closed and be re-opened with another query
-	type. Also there may be many different Array objects created and opened with
-	different query types. For instance, one may create and open an array object
-	array_read for reads and another one array_write for writes, and interleave
-	creation and submission of queries for both these array objects.
+OpenWithOptions opens the array with options. The array is opened using a query type as input.
+This is to indicate that queries created for this Array object will inherit
+the query type. In other words, Array objects are opened to receive only one
+type of query. They can always be closed and be re-opened with another query
+type. Also there may be many different Array objects created and opened with
+different query types. For instance, one may create and open an array object
+array_read for reads and another one array_write for writes, and interleave
+creation and submission of queries for both these array objects.
 */
 func (a *Array) OpenWithOptions(queryType QueryType, opts ...ArrayOpenOption) error {
 	for _, opt := range opts {
@@ -172,7 +192,7 @@ func (a *Array) Reopen() error {
 	return nil
 }
 
-// Close a tiledb array, this is called on garbage collection automatically
+// Close closes a tiledb array. This is automatically called on garbage collection.
 func (a *Array) Close() error {
 	ret := C.tiledb_array_close(a.context.tiledbContext, a.tiledbArray)
 	if ret != C.TILEDB_OK {
@@ -181,7 +201,7 @@ func (a *Array) Close() error {
 	return nil
 }
 
-// Create a new TileDB array given an input schema.
+// Create creates a new TileDB array given an input schema.
 func (a *Array) Create(arraySchema *ArraySchema) error {
 	curi := C.CString(a.uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -192,7 +212,7 @@ func (a *Array) Create(arraySchema *ArraySchema) error {
 	return nil
 }
 
-// Consolidate Consolidates the fragments of an array into a single fragment.
+// Consolidate consolidates the fragments of an array into a single fragment.
 // You must first finalize all queries to the array before consolidation can
 // begin (as consolidation temporarily acquires an exclusive lock on the array).
 func (a *Array) Consolidate(config *Config) error {
@@ -206,10 +226,12 @@ func (a *Array) Consolidate(config *Config) error {
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error consolidating tiledb array: %s", a.context.LastError())
 	}
+
+	runtime.KeepAlive(config)
 	return nil
 }
 
-// Vacuum cleans up the array, such as consolidated fragments and array metadata
+// Vacuum cleans up the array, such as consolidated fragments and array metadata.
 func (a *Array) Vacuum(config *Config) error {
 	if config == nil {
 		return fmt.Errorf("Config must not be nil for Vacuum")
@@ -221,24 +243,23 @@ func (a *Array) Vacuum(config *Config) error {
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error vacuumimg tiledb array: %s", a.context.LastError())
 	}
+
+	runtime.KeepAlive(config)
 	return nil
 }
 
-// Schema returns the ArraySchema for the array
+// Schema returns the ArraySchema for the array.
 func (a *Array) Schema() (*ArraySchema, error) {
 	arraySchema := ArraySchema{context: a.context}
 	ret := C.tiledb_array_get_schema(a.context.tiledbContext, a.tiledbArray, &arraySchema.tiledbArraySchema)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting schema for tiledb array: %s", a.context.LastError())
 	}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&arraySchema, func(arraySchema *ArraySchema) {
-		arraySchema.Free()
-	})
+	freeOnGC(&arraySchema)
 	return &arraySchema, nil
 }
 
-// QueryType return the current query type of an open array
+// QueryType returns the current query type of an open array.
 func (a *Array) QueryType() (QueryType, error) {
 	var queryType C.tiledb_query_type_t
 	ret := C.tiledb_array_get_query_type(a.context.tiledbContext, a.tiledbArray, &queryType)
@@ -248,7 +269,32 @@ func (a *Array) QueryType() (QueryType, error) {
 	return QueryType(queryType), nil
 }
 
-// OpenStartTimestamp returns the current start_timestamp value of an open array
+// OpenStartTime returns the current start_timestamp of an open array,
+// converted to a UTC time.Time.
+func (a *Array) OpenStartTime() (time.Time, error) {
+	ts, err := a.OpenStartTimestamp()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return millisToTime(ts), nil
+}
+
+// OpenEndTime returns the current end_timestamp of an open array,
+// converted to a UTC time.Time.
+func (a *Array) OpenEndTime() (time.Time, error) {
+	ts, err := a.OpenEndTimestamp()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return millisToTime(ts), nil
+}
+
+func millisToTime(epochMillis uint64) time.Time {
+	secs, millis := int64(epochMillis/1000), int64(epochMillis%1000)
+	return time.Unix(secs, millis*1_000_000).UTC()
+}
+
+// OpenStartTimestamp returns the current start_timestamp value of an open array.
 func (a *Array) OpenStartTimestamp() (uint64, error) {
 	var start C.uint64_t
 	ret := C.tiledb_array_get_open_timestamp_start(a.context.tiledbContext, a.tiledbArray, &start)
@@ -258,7 +304,7 @@ func (a *Array) OpenStartTimestamp() (uint64, error) {
 	return uint64(start), nil
 }
 
-// OpenEndTimestamp returns the current end_timestamp value of an open array
+// OpenEndTimestamp returns the current end_timestamp value of an open array.
 func (a *Array) OpenEndTimestamp() (uint64, error) {
 	var end C.uint64_t
 	ret := C.tiledb_array_get_open_timestamp_end(a.context.tiledbContext, a.tiledbArray, &end)
@@ -268,8 +314,8 @@ func (a *Array) OpenEndTimestamp() (uint64, error) {
 	return uint64(end), nil
 }
 
-// getNonEmptyDomainForDim creates a NonEmptyDomain from a generic dimension-typed slice
-func getNonEmptyDomainForDim(dimension *Dimension, dimensionSlice interface{}) (*NonEmptyDomain, error) {
+// getNonEmptyDomainForDim creates a NonEmptyDomain from a generic dimension-typed slice.
+func getNonEmptyDomainForDim(dimension *Dimension, bounds interface{}) (*NonEmptyDomain, error) {
 	dimensionType, err := dimension.Type()
 	if err != nil {
 		return nil, err
@@ -279,65 +325,63 @@ func getNonEmptyDomainForDim(dimension *Dimension, dimensionSlice interface{}) (
 	if err != nil {
 		return nil, err
 	}
-
-	var nonEmptyDomain NonEmptyDomain
-	switch dimensionType {
-	case TILEDB_INT8:
-		tmpDimension := dimensionSlice.([]int8)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []int8{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_INT16:
-		tmpDimension := dimensionSlice.([]int16)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []int16{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_INT32:
-		tmpDimension := dimensionSlice.([]int32)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []int32{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_INT64, TILEDB_DATETIME_YEAR, TILEDB_DATETIME_MONTH, TILEDB_DATETIME_WEEK, TILEDB_DATETIME_DAY,
-		TILEDB_DATETIME_HR, TILEDB_DATETIME_MIN, TILEDB_DATETIME_SEC, TILEDB_DATETIME_MS, TILEDB_DATETIME_US,
-		TILEDB_DATETIME_NS, TILEDB_DATETIME_AS, TILEDB_DATETIME_FS, TILEDB_DATETIME_PS, TILEDB_TIME_HR, TILEDB_TIME_MIN, TILEDB_TIME_SEC, TILEDB_TIME_MS, TILEDB_TIME_US, TILEDB_TIME_NS, TILEDB_TIME_PS, TILEDB_TIME_FS, TILEDB_TIME_AS:
-		tmpDimension := dimensionSlice.([]int64)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []int64{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_UINT8:
-		tmpDimension := dimensionSlice.([]uint8)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []uint8{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_UINT16:
-		tmpDimension := dimensionSlice.([]uint16)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []uint16{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_UINT32:
-		tmpDimension := dimensionSlice.([]uint32)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []uint32{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_UINT64:
-		tmpDimension := dimensionSlice.([]uint64)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []uint64{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_FLOAT32:
-		tmpDimension := dimensionSlice.([]float32)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []float32{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_FLOAT64:
-		tmpDimension := dimensionSlice.([]float64)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []float64{tmpDimension[0], tmpDimension[1]}}
-	case TILEDB_STRING_ASCII:
-		tmpDimension := dimensionSlice.([]interface{})
-		lowBound := tmpDimension[0].([]uint8)
-		highBound := tmpDimension[1].([]uint8)
-		nonEmptyDomain = NonEmptyDomain{DimensionName: name, Bounds: []string{string(lowBound), string(highBound)}}
-	default:
-		return nil, fmt.Errorf("error creating non empty domain: unknown dimension type")
+	switch ds := bounds.(type) {
+	case []int8:
+		return makeNonEmptyDomain(name, ds)
+	case []int16:
+		return makeNonEmptyDomain(name, ds)
+	case []int32:
+		return makeNonEmptyDomain(name, ds)
+	case []int64:
+		return makeNonEmptyDomain(name, ds)
+	case []uint8:
+		return makeNonEmptyDomain(name, ds)
+	case []uint16:
+		return makeNonEmptyDomain(name, ds)
+	case []uint32:
+		return makeNonEmptyDomain(name, ds)
+	case []uint64:
+		return makeNonEmptyDomain(name, ds)
+	case []float32:
+		return makeNonEmptyDomain(name, ds)
+	case []float64:
+		return makeNonEmptyDomain(name, ds)
+	case []bool:
+		return makeNonEmptyDomain(name, ds)
+	case []any:
+		if dimensionType != TILEDB_STRING_ASCII {
+			return nil, fmt.Errorf(
+				"type mismatch between non-empty domain type (%T) and dimension type (%v); expected %v",
+				ds[0], dimensionType, TILEDB_STRING_ASCII,
+			)
+		}
+		lo, hi := ds[0].([]byte), ds[1].([]byte)
+		return &NonEmptyDomain{DimensionName: name, Bounds: []string{string(lo), string(hi)}}, nil
 	}
-
-	return &nonEmptyDomain, nil
+	return nil, fmt.Errorf(
+		"error creating nonempty domain: unknown data type (slice %T; type %v)",
+		bounds, dimensionType,
+	)
 }
 
-// NonEmptyDomain retrieves the non-empty domain from an array
-// This returns the bounding coordinates for each dimension
+func makeNonEmptyDomain[T any](name string, bounds []T) (*NonEmptyDomain, error) {
+	return &NonEmptyDomain{DimensionName: name, Bounds: []T{bounds[0], bounds[1]}}, nil
+}
+
+// NonEmptyDomain retrieves the non-empty domain from an array.
+// This returns the bounding coordinates for each dimension.
 func (a *Array) NonEmptyDomain() ([]NonEmptyDomain, bool, error) {
 	schema, err := a.Schema()
 	if err != nil {
 		return nil, false, err
 	}
+	defer schema.Free()
 
 	domain, err := schema.Domain()
 	if err != nil {
 		return nil, false, err
 	}
+	defer domain.Free()
 
 	ndims, err := domain.NDim()
 	if err != nil {
@@ -347,41 +391,51 @@ func (a *Array) NonEmptyDomain() ([]NonEmptyDomain, bool, error) {
 	isDomainEmpty := true
 	nonEmptyDomains := make([]NonEmptyDomain, 0)
 	for dimIdx := uint(0); dimIdx < ndims; dimIdx++ {
-		dimension, err := domain.DimensionFromIndex(dimIdx)
-		if err != nil {
-			return nil, false, err
-		}
+		// Wrapped in a function so `dimension` will be cleaned up with defer each time the function completes.
+		err := func() error {
+			dimension, err := domain.DimensionFromIndex(dimIdx)
+			if err != nil {
+				return err
+			}
+			defer dimension.Free()
 
-		dimensionType, err := dimension.Type()
-		if err != nil {
-			return nil, false, err
-		}
+			dimensionType, err := dimension.Type()
+			if err != nil {
+				return err
+			}
 
-		tmpDimension, tmpDimensionPtr, err := dimensionType.MakeSlice(uint64(2))
-		if err != nil {
-			return nil, false, err
-		}
+			tmpDimension, tmpDimensionPtr, err := dimensionType.MakeSlice(uint64(2))
+			if err != nil {
+				return err
+			}
 
-		var isEmpty C.int32_t
-		ret := C.tiledb_array_get_non_empty_domain_from_index(
-			a.context.tiledbContext,
-			a.tiledbArray,
-			(C.uint32_t)(dimIdx),
-			tmpDimensionPtr, &isEmpty)
-		if ret != C.TILEDB_OK {
-			return nil, false, fmt.Errorf("Error in getting non empty domain for dimension: %s", a.context.LastError())
-		}
+			var isEmpty C.int32_t
+			ret := C.tiledb_array_get_non_empty_domain_from_index(
+				a.context.tiledbContext,
+				a.tiledbArray,
+				(C.uint32_t)(dimIdx),
+				tmpDimensionPtr, &isEmpty)
+			if ret != C.TILEDB_OK {
+				return fmt.Errorf("Error in getting non empty domain for dimension: %s", a.context.LastError())
+			}
 
-		if isEmpty == 1 {
-			continue
-		} else {
+			if isEmpty == 1 {
+				return nil
+			}
+
 			// If at least one domain for a dimension is empty the union of domains is non-empty
 			isDomainEmpty = false
 			nonEmptyDomain, err := getNonEmptyDomainForDim(dimension, tmpDimension)
 			if err != nil {
-				return nil, false, err
+				return err
 			}
 			nonEmptyDomains = append(nonEmptyDomains, *nonEmptyDomain)
+
+			return nil
+		}()
+
+		if err != nil {
+			return nil, false, err
 		}
 	}
 
@@ -394,7 +448,7 @@ func (a *Array) NonEmptyDomain() ([]NonEmptyDomain, bool, error) {
 
 // NonEmptyDomainMap returns a map[string]interface{} where key is the
 // dimension name and value is the non empty domain for the given dimension or
-// the empty interface. It covers both var-sized and non-var-sized dimensions
+// the empty interface. It covers both var-sized and non-var-sized dimensions.
 func (a *Array) NonEmptyDomainMap() (map[string]interface{}, error) {
 	schema, err := a.Schema()
 	if err != nil {
@@ -482,18 +536,20 @@ func (a *Array) NonEmptyDomainMap() (map[string]interface{}, error) {
 
 // NonEmptyDomainVarFromName retrieves the non-empty domain from an array for a
 // given var-sized dimension name. Supports only TILEDB_STRING_ASCII type
-// Returns the bounding coordinates for the dimension
+// Returns the bounding coordinates for the dimension.
 func (a *Array) NonEmptyDomainVarFromName(dimName string) (*NonEmptyDomain, bool, error) {
 
 	schema, err := a.Schema()
 	if err != nil {
 		return nil, false, err
 	}
+	defer schema.Free()
 
 	domain, err := schema.Domain()
 	if err != nil {
 		return nil, false, err
 	}
+	defer domain.Free()
 
 	hasDim, err := domain.HasDimension(dimName)
 	if err != nil {
@@ -508,6 +564,7 @@ func (a *Array) NonEmptyDomainVarFromName(dimName string) (*NonEmptyDomain, bool
 	if err != nil {
 		return nil, false, fmt.Errorf("could not get dimension: %s", dimName)
 	}
+	defer dimension.Free()
 
 	dimType, err := dimension.Type()
 	if err != nil {
@@ -581,23 +638,26 @@ func (a *Array) NonEmptyDomainVarFromName(dimName string) (*NonEmptyDomain, bool
 
 // NonEmptyDomainVarFromIndex retrieves the non-empty domain from an array for a
 // given var-sized dimension index. Supports only TILEDB_STRING_ASCII type
-// Returns the bounding coordinates for the dimension
+// Returns the bounding coordinates for the dimension.
 func (a *Array) NonEmptyDomainVarFromIndex(dimIdx uint) (*NonEmptyDomain, bool, error) {
 
 	schema, err := a.Schema()
 	if err != nil {
 		return nil, false, err
 	}
+	defer schema.Free()
 
 	domain, err := schema.Domain()
 	if err != nil {
 		return nil, false, err
 	}
+	defer domain.Free()
 
 	dimension, err := domain.DimensionFromIndex(dimIdx)
 	if err != nil {
 		return nil, false, fmt.Errorf("Could not get dimension having index: %d", dimIdx)
 	}
+	defer dimension.Free()
 
 	dimType, err := dimension.Type()
 	if err != nil {
@@ -735,7 +795,7 @@ func (a Array) GetNonEmptyDomainSliceFromName(dimName string) (*Dimension, inter
 
 // NonEmptyDomainFromIndex retrieves the non-empty domain from an array for a
 // given fixed-sized dimension index.
-// Returns the bounding coordinates for the dimension
+// Returns the bounding coordinates for the dimension.
 func (a *Array) NonEmptyDomainFromIndex(dimIdx uint) (*NonEmptyDomain, bool, error) {
 	dimension, tmpDimension, tmpDimensionPtr, err := a.GetNonEmptyDomainSliceFromIndex(dimIdx)
 	if err != nil {
@@ -765,8 +825,8 @@ func (a *Array) NonEmptyDomainFromIndex(dimIdx uint) (*NonEmptyDomain, bool, err
 }
 
 // NonEmptyDomainFromName retrieves the non-empty domain from an array for a
-// given fixed-sized dimension name
-// Returns the bounding coordinates for the dimension
+// given fixed-sized dimension name.
+// Returns the bounding coordinates for the dimension.
 func (a *Array) NonEmptyDomainFromName(dimName string) (*NonEmptyDomain, bool, error) {
 	dimension, tmpDimension, tmpDimensionPtr, err := a.GetNonEmptyDomainSliceFromName(dimName)
 	if err != nil {
@@ -798,7 +858,7 @@ func (a *Array) NonEmptyDomainFromName(dimName string) (*NonEmptyDomain, bool, e
 	return nonEmptyDomain, false, nil
 }
 
-// URI returns the array's uri
+// URI returns the array's uri.
 func (a *Array) URI() (string, error) {
 	var curi *C.char
 	C.tiledb_array_get_uri(a.context.tiledbContext, a.tiledbArray, &curi)
@@ -809,7 +869,7 @@ func (a *Array) URI() (string, error) {
 	return uri, nil
 }
 
-// PutCharMetadata adds char metadata to array
+// PutCharMetadata adds char metadata to the array.
 func (a *Array) PutCharMetadata(key string, charData string) error {
 	ckey := C.CString(key)
 	defer C.free(unsafe.Pointer(ckey))
@@ -830,182 +890,91 @@ func (a *Array) PutCharMetadata(key string, charData string) error {
 // PutMetadata puts a metadata key-value item to an open array. The array must
 // be opened in WRITE mode, otherwise the function will error out.
 func (a *Array) PutMetadata(key string, value interface{}) error {
-	ckey := C.CString(key)
-	defer C.free(unsafe.Pointer(ckey))
-
-	var isSliceValue bool = false
-	if reflect.TypeOf(value).Kind() == reflect.Slice {
-		isSliceValue = true
+	switch value := value.(type) {
+	case int:
+		return arrayPutScalarMetadata(a, tileDBInt, key, value)
+	case []int:
+		return arrayPutSliceMetadata(a, tileDBInt, key, value)
+	case int8:
+		return arrayPutScalarMetadata(a, TILEDB_INT8, key, value)
+	case []int8:
+		return arrayPutSliceMetadata(a, TILEDB_INT8, key, value)
+	case int16:
+		return arrayPutScalarMetadata(a, TILEDB_INT16, key, value)
+	case []int16:
+		return arrayPutSliceMetadata(a, TILEDB_INT16, key, value)
+	case int32:
+		return arrayPutScalarMetadata(a, TILEDB_INT32, key, value)
+	case []int32:
+		return arrayPutSliceMetadata(a, TILEDB_INT32, key, value)
+	case uint:
+		return arrayPutScalarMetadata(a, tileDBUint, key, value)
+	case []uint:
+		return arrayPutSliceMetadata(a, tileDBUint, key, value)
+	case int64:
+		return arrayPutScalarMetadata(a, TILEDB_INT64, key, value)
+	case []int64:
+		return arrayPutSliceMetadata(a, TILEDB_INT64, key, value)
+	case uint8:
+		return arrayPutScalarMetadata(a, TILEDB_UINT8, key, value)
+	case []uint8:
+		return arrayPutSliceMetadata(a, TILEDB_UINT8, key, value)
+	case uint16:
+		return arrayPutScalarMetadata(a, TILEDB_UINT16, key, value)
+	case []uint16:
+		return arrayPutSliceMetadata(a, TILEDB_UINT16, key, value)
+	case uint32:
+		return arrayPutScalarMetadata(a, TILEDB_UINT32, key, value)
+	case []uint32:
+		return arrayPutSliceMetadata(a, TILEDB_UINT32, key, value)
+	case uint64:
+		return arrayPutScalarMetadata(a, TILEDB_UINT64, key, value)
+	case []uint64:
+		return arrayPutSliceMetadata(a, TILEDB_UINT64, key, value)
+	case float32:
+		return arrayPutScalarMetadata(a, TILEDB_FLOAT32, key, value)
+	case []float32:
+		return arrayPutSliceMetadata(a, TILEDB_FLOAT32, key, value)
+	case float64:
+		return arrayPutScalarMetadata(a, TILEDB_FLOAT64, key, value)
+	case []float64:
+		return arrayPutSliceMetadata(a, TILEDB_FLOAT64, key, value)
+	case bool:
+		return arrayPutScalarMetadata(a, TILEDB_BOOL, key, value)
+	case []bool:
+		return arrayPutSliceMetadata(a, TILEDB_BOOL, key, value)
+	case string:
+		valPtr := unsafe.Pointer(C.CString(value))
+		defer C.free(valPtr)
+		return arrayPutMetadata(a, TILEDB_STRING_UTF8, key, valPtr, len(value))
 	}
+	return fmt.Errorf("can't write %q metadata: unrecognized value type %T", key, value)
+}
 
-	var datatype Datatype
-	var valueNum C.uint
-	var valueType reflect.Kind
-
-	valueInterfaceVal := reflect.ValueOf(value)
-	if isSliceValue {
-		if valueInterfaceVal.Len() == 0 {
-			return fmt.Errorf("Value passed must be a non-empty slice, size of slice is: %d", valueInterfaceVal.Len())
-		}
-		valueType = reflect.TypeOf(value).Elem().Kind()
-		valueNum = C.uint(valueInterfaceVal.Len())
-	} else {
-		valueType = reflect.TypeOf(value).Kind()
-		valueNum = 1
+func arrayPutSliceMetadata[T scalarType](a *Array, dt Datatype, key string, value []T) error {
+	if len(value) == 0 {
+		return fmt.Errorf("length of %q metadata %T value must be nonzero", key, value)
 	}
+	return arrayPutMetadata(a, dt, key, slicePtr(value), len(value))
+}
 
-	var ret C.int32_t
-	switch valueType {
-	case reflect.Int:
-		// Check size of int on platform
-		if strconv.IntSize == 32 {
-			datatype = TILEDB_INT32
-			if isSliceValue {
-				tmpValue := value.([]int32)
-				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-			} else {
-				tmpValue := value.(int32)
-				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-			}
-		} else {
-			datatype = TILEDB_INT64
-			if isSliceValue {
-				tmpValue := value.([]int64)
-				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-			} else {
-				tmpValue := value.(int64)
-				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-			}
-		}
-	case reflect.Int8:
-		datatype = TILEDB_INT8
-		if isSliceValue {
-			tmpValue := value.([]int8)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(int8)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Int16:
-		datatype = TILEDB_INT16
-		if isSliceValue {
-			tmpValue := value.([]int16)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(int16)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Int32:
-		datatype = TILEDB_INT32
-		if isSliceValue {
-			tmpValue := value.([]int32)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(int32)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Int64:
-		datatype = TILEDB_INT64
-		if isSliceValue {
-			tmpValue := value.([]int64)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(int64)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Uint:
-		// Check size of uint on platform
-		if strconv.IntSize == 32 {
-			datatype = TILEDB_UINT32
-			if isSliceValue {
-				tmpValue := value.([]uint32)
-				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-			} else {
-				tmpValue := value.(uint32)
-				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-			}
-		} else {
-			datatype = TILEDB_UINT64
-			if isSliceValue {
-				tmpValue := value.([]uint64)
-				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-			} else {
-				tmpValue := value.(uint64)
-				ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-			}
-		}
-	case reflect.Uint8:
-		datatype = TILEDB_UINT8
-		if isSliceValue {
-			tmpValue := value.([]uint8)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(uint8)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Uint16:
-		datatype = TILEDB_UINT16
-		if isSliceValue {
-			tmpValue := value.([]uint16)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(uint16)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Uint32:
-		datatype = TILEDB_UINT32
-		if isSliceValue {
-			tmpValue := value.([]uint32)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(uint32)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Uint64:
-		datatype = TILEDB_UINT64
-		if isSliceValue {
-			tmpValue := value.([]uint64)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(uint64)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Float32:
-		datatype = TILEDB_FLOAT32
-		if isSliceValue {
-			tmpValue := value.([]float32)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(float32)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Float64:
-		datatype = TILEDB_FLOAT64
-		if isSliceValue {
-			tmpValue := value.([]float64)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(float64)
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.String:
-		datatype = TILEDB_STRING_UTF8
-		stringValue := value.(string)
-		valueNum = C.uint(len(stringValue))
-		cTmpValue := C.CString(stringValue)
-		defer C.free(unsafe.Pointer(cTmpValue))
-		if valueNum > 0 {
-			ret = C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(cTmpValue))
-		}
-	default:
-		if isSliceValue {
-			return fmt.Errorf("Unrecognized value type passed: %s", valueInterfaceVal.Index(0).Kind().String())
-		}
-		return fmt.Errorf("Unrecognized value type passed: %s", valueInterfaceVal.Kind().String())
-	}
+func arrayPutScalarMetadata[T scalarType](a *Array, dt Datatype, key string, value T) error {
+	return arrayPutMetadata(a, dt, key, unsafe.Pointer(&value), 1)
+}
 
+func arrayPutMetadata(a *Array, dt Datatype, key string, valuePtr unsafe.Pointer, count int) error {
+	cKey := C.CString(key)
+	defer C.free(unsafe.Pointer(cKey))
+	ret := C.tiledb_array_put_metadata(
+		a.context.tiledbContext,
+		a.tiledbArray,
+		cKey,
+		C.tiledb_datatype_t(dt),
+		C.uint(count),
+		valuePtr,
+	)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error adding metadata to array: %s", a.context.LastError())
+		return fmt.Errorf("could not add metadata to array: %w", a.context.LastError())
 	}
 	return nil
 }
@@ -1077,7 +1046,7 @@ func (a *Array) GetMetadataFromIndex(index uint64) (*ArrayMetadata, error) {
 // error out.
 // limit parameter limits the number of values returned if string or array
 // This is helpful for pushdown of limitting metadata. If nil value is returned
-// in full
+// in full.
 func (a *Array) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*ArrayMetadata, error) {
 	var cKey *C.char
 
@@ -1108,7 +1077,7 @@ func (a *Array) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 	}
 
 	arrayMetadata := ArrayMetadata{
-		Key:      C.GoString(cKey),
+		Key:      C.GoStringN(cKey, C.int(cKeyLen)),
 		KeyLen:   uint32(cKeyLen),
 		Datatype: datatype,
 		ValueNum: valueNum,
@@ -1120,17 +1089,17 @@ func (a *Array) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 
 // GetMetadataMap returns a map[string]*ArrayMetadata where key is the key of
 // each metadata added and value is an ArrayMetadata struct. The map contains
-// all array metadata previously added
+// all array metadata previously added.
 func (a *Array) GetMetadataMap() (map[string]*ArrayMetadata, error) {
 	return a.GetMetadataMapWithValueLimit(nil)
 }
 
 // GetMetadataMapWithValueLimit returns a map[string]*ArrayMetadata where key is the key of
 // each metadata added and value is an ArrayMetadata struct. The map contains
-// all array metadata previously added
-// limit parameter limits the number of values returned if string or array
-// This is helpful for pushdown of limitting metadata. If nil value is returned
-// in full
+// all array metadata previously added.
+// The limit parameter limits the number of values returned if string or array.
+// This is helpful for pushdown of limitting metadata. If nil, value is returned
+// in full.
 func (a *Array) GetMetadataMapWithValueLimit(limit *uint) (map[string]*ArrayMetadata, error) {
 	metadataMap := make(map[string]*ArrayMetadata)
 
@@ -1149,4 +1118,65 @@ func (a *Array) GetMetadataMapWithValueLimit(limit *uint) (map[string]*ArrayMeta
 	}
 
 	return metadataMap, nil
+}
+
+// SetConfig sets the array config.
+func (a *Array) SetConfig(config *Config) error {
+	a.config = config
+
+	ret := C.tiledb_array_set_config(a.context.tiledbContext, a.tiledbArray, a.config.tiledbConfig)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error setting config on array: %s", a.context.LastError())
+	}
+
+	return nil
+}
+
+// Config gets the array config.
+func (a *Array) Config() (*Config, error) {
+	config := Config{}
+	ret := C.tiledb_array_get_config(a.context.tiledbContext, a.tiledbArray, &config.tiledbConfig)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error getting config from array: %s", a.context.LastError())
+	}
+
+	freeOnGC(&config)
+
+	if a.config == nil {
+		a.config = &config
+	}
+
+	return &config, nil
+}
+
+// DeleteFragments deletes the range of fragments from startTimestamp to endTimestamp.
+func DeleteFragments(tdbCtx *Context, uri string, startTimestamp, endTimestamp uint64) error {
+	curi := C.CString(uri)
+	defer C.free(unsafe.Pointer(curi))
+
+	ret := C.tiledb_array_delete_fragments_v2(tdbCtx.tiledbContext, curi,
+		C.uint64_t(startTimestamp), C.uint64_t(endTimestamp))
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deleting fragments from array: %s", tdbCtx.LastError())
+	}
+
+	return nil
+}
+
+// DeleteFragmentsList deletes the fragments of the list.
+func DeleteFragmentsList(tdbCtx *Context, uri string, fragmentURIs []string) error {
+	curi := C.CString(uri)
+	defer C.free(unsafe.Pointer(curi))
+
+	list, freeMemory := cStringArray(fragmentURIs)
+	defer freeMemory()
+
+	ret := C.tiledb_array_delete_fragments_list(tdbCtx.tiledbContext, curi, (**C.char)(slicePtr(list)), C.size_t(len(list)))
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deleting fragments list from array: %s", tdbCtx.LastError())
+	}
+
+	runtime.KeepAlive(list)
+
+	return nil
 }

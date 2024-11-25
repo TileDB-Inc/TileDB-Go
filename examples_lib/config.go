@@ -63,9 +63,9 @@ func setGetConfig() {
 	fmt.Printf("VFS connect timeout in ms is: %s\n", vfsConnectTimeoutMs)
 
 	// Get another value and print it
-	tileCacheSize, err := config.Get("sm.tile_cache_size")
+	memBudget, err := config.Get("sm.memory_budget")
 	checkError(err)
-	fmt.Printf("Tile cache size: %s\n", tileCacheSize)
+	fmt.Printf("Tile cache size: %s\n", memBudget)
 }
 
 func printDefault() {
@@ -167,10 +167,10 @@ func printDefault() {
 	fmt.Printf("\"sm.num_writer_threads\" : \"%s\"\n",
 		smNumWriterThreads)
 
-	smTileCacheSize, err := config.Get("sm.tile_cache_size")
+	smMemBudget, err := config.Get("sm.memory_budget")
 	checkError(err)
-	fmt.Printf("\"sm.tile_cache_size\" : \"%s\"\n",
-		smTileCacheSize)
+	fmt.Printf("\"sm.memory_budget\" : \"%s\"\n",
+		smMemBudget)
 
 	vfsFileMaxParallelOps, err := config.Get("vfs.file.max_parallel_ops")
 	checkError(err)
@@ -314,7 +314,7 @@ func saveLoadConfig() {
 	defer config.Free()
 
 	// Set a value
-	err = config.Set("sm.tile_cache_size", "8")
+	err = config.Set("sm.memory_budget", "4294967296")
 	checkError(err)
 
 	// Save to disk
@@ -326,10 +326,10 @@ func saveLoadConfig() {
 	checkError(err)
 
 	// Print the retrieved value
-	smTileCacheSize, err := newConfig.Get("sm.tile_cache_size")
+	smMemBudget, err := newConfig.Get("sm.memory_budget")
 	checkError(err)
-	fmt.Printf("\"sm.tile_cache_size\" : \"%s\"\n",
-		smTileCacheSize)
+	fmt.Printf("\"sm.memory_budget\" : \"%s\"\n",
+		smMemBudget)
 
 	newConfig.Free()
 }

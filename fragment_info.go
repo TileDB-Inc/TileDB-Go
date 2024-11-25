@@ -1,8 +1,6 @@
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb.h>
 #include <stdlib.h>
 */
@@ -10,7 +8,6 @@ import "C"
 
 import (
 	"fmt"
-	"runtime"
 	"unsafe"
 )
 
@@ -25,9 +22,10 @@ type FragmentInfo struct {
 	context            *Context
 	uri                string
 	array              *Array
+	config             *Config
 }
 
-// NewFragmentInfo alloc a new fragment info for a given array and fetches all
+// NewFragmentInfo allocates a new fragment info for a given array and fetches all
 // the fragment information for that array.
 func NewFragmentInfo(tdbCtx *Context, uri string) (*FragmentInfo, error) {
 	curi := C.CString(uri)
@@ -38,11 +36,7 @@ func NewFragmentInfo(tdbCtx *Context, uri string) (*FragmentInfo, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb fragment info: %s", fI.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&fI, func(fragmentInfo *FragmentInfo) {
-		fragmentInfo.Free()
-	})
+	freeOnGC(&fI)
 
 	return &fI, nil
 }
@@ -58,7 +52,7 @@ func (fI *FragmentInfo) Free() {
 	}
 }
 
-// Context exposes the internal TileDB context used to initialize the fragment info
+// Context exposes the internal TileDB context used to initialize the fragment info.
 func (fI *FragmentInfo) Context() *Context {
 	return fI.context
 }
@@ -574,4 +568,30 @@ func (fI *FragmentInfo) DumpSTDOUT() error {
 		return fmt.Errorf("Error dumping fragment info to stdout: %s", fI.context.LastError())
 	}
 	return nil
+}
+
+// SetConfig sets the fragment config.
+func (fI *FragmentInfo) SetConfig(config *Config) error {
+	ret := C.tiledb_fragment_info_set_config(fI.context.tiledbContext, fI.tiledbFragmentInfo, config.tiledbConfig)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error setting config on group: %s", fI.context.LastError())
+	}
+	fI.config = config
+	return nil
+}
+
+// Config gets the fragment config.
+func (fI *FragmentInfo) Config() (*Config, error) {
+	var config Config
+	ret := C.tiledb_fragment_info_get_config(fI.context.tiledbContext, fI.tiledbFragmentInfo, &config.tiledbConfig)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error getting config from fragment info: %s", fI.context.LastError())
+	}
+	freeOnGC(&config)
+
+	if fI.config == nil {
+		fI.config = &config
+	}
+
+	return &config, nil
 }

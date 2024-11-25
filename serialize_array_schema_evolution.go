@@ -1,16 +1,6 @@
-//go:build experimental
-// +build experimental
-
-// This file declares Go bindings for experimental features in TileDB.
-// Experimental APIs to do not fall under the API compatibility guarantees and
-// might change between TileDB versions
-
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
-#include <tiledb/tiledb_experimental.h>
 #include <tiledb/tiledb_serialization.h>
 #include <stdlib.h>
 */
@@ -18,10 +8,9 @@ import "C"
 
 import (
 	"fmt"
-	"runtime"
 )
 
-// SerializeArraySchemaEvolution serializes the given array schema evolution
+// SerializeArraySchemaEvolution serializes the given array schema evolution.
 func SerializeArraySchemaEvolution(arraySchemaEvolution *ArraySchemaEvolution, serializationType SerializationType, clientSide bool) ([]byte, error) {
 	var cClientSide C.int32_t
 	if clientSide {
@@ -31,10 +20,7 @@ func SerializeArraySchemaEvolution(arraySchemaEvolution *ArraySchemaEvolution, s
 	}
 
 	buffer := Buffer{context: arraySchemaEvolution.context}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
-		buffer.Free()
-	})
+	freeOnGC(&buffer)
 
 	ret := C.tiledb_serialize_array_schema_evolution(
 		arraySchemaEvolution.context.tiledbContext,
@@ -49,7 +35,7 @@ func SerializeArraySchemaEvolution(arraySchemaEvolution *ArraySchemaEvolution, s
 	return buffer.Serialize(serializationType)
 }
 
-// DeserializeArraySchemaEvolution deserializes a new array schema evolution object from the given buffer
+// DeserializeArraySchemaEvolution deserializes a new array schema evolution object from the given buffer.
 func DeserializeArraySchemaEvolution(buffer *Buffer, serializationType SerializationType, clientSide bool) (*ArraySchemaEvolution, error) {
 	arraySchemaEvolution := ArraySchemaEvolution{context: buffer.context}
 
@@ -68,13 +54,10 @@ func DeserializeArraySchemaEvolution(buffer *Buffer, serializationType Serializa
 		return nil, fmt.Errorf("Error deserializing array schema evolution: %s", arraySchemaEvolution.context.LastError())
 	}
 
-	// Set finalizer for free C pointer on gc
 	// This needs to happen *after* the tiledb_deserialize_array_schema_evolution
 	// call because that may leave the schemaEvolution with a non-nil pointer
 	// to already-freed memory.
-	runtime.SetFinalizer(&arraySchemaEvolution, func(arraySchemaEvolution *ArraySchemaEvolution) {
-		arraySchemaEvolution.Free()
-	})
+	freeOnGC(&arraySchemaEvolution)
 
 	return &arraySchemaEvolution, nil
 }

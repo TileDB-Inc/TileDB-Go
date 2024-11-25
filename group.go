@@ -1,25 +1,15 @@
-//go:build experimental
-// +build experimental
-
-// This file declares Go bindings for experimental features in TileDB.
-// Experimental APIs to do not fall under the API compatibility guarantees and
-// might change between TileDB versions
-
 package tiledb
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
-	"runtime"
-	"strconv"
 	"unsafe"
 )
 
 /*
-   	#cgo LDFLAGS: -ltiledb
-   	#cgo linux LDFLAGS: -ldl
+
+
 	#include <tiledb/tiledb_experimental.h>
 	#include <tiledb/tiledb_serialization.h>
 	#include <stdlib.h>
@@ -34,7 +24,7 @@ type Group struct {
 	config  *Config
 }
 
-// NewGroup allocates an embedded group
+// NewGroup allocates an embedded group.
 func NewGroup(tdbCtx *Context, uri string) (*Group, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -43,16 +33,12 @@ func NewGroup(tdbCtx *Context, uri string) (*Group, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb group: %s", group.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&group, func(group *Group) {
-		group.Free()
-	})
+	freeOnGC(&group)
 
 	return &group, nil
 }
 
-// Deserialize deserializes the group from the given buffer
+// Deserialize deserializes the group from the given buffer.
 func (g *Group) Deserialize(buffer *Buffer, serializationType SerializationType, clientSide bool) error {
 	var cClientSide C.int32_t
 	if clientSide {
@@ -61,7 +47,7 @@ func (g *Group) Deserialize(buffer *Buffer, serializationType SerializationType,
 		cClientSide = 0
 	}
 
-	b, err := buffer.bytes()
+	b, err := buffer.dataCopy()
 	if err != nil {
 		return errors.New("failed to retrieve bytes from buffer")
 	}
@@ -79,7 +65,7 @@ func (g *Group) Deserialize(buffer *Buffer, serializationType SerializationType,
 	return nil
 }
 
-// Create a new TileDB group
+// Create creates a new TileDB group.
 func (g *Group) Create() error {
 	curi := C.CString(g.uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -129,10 +115,7 @@ func (g *Group) Config() (*Config, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error getting config from query: %s", g.context.LastError())
 	}
-
-	runtime.SetFinalizer(&config, func(config *Config) {
-		config.Free()
-	})
+	freeOnGC(&config)
 
 	if g.config == nil {
 		g.config = &config
@@ -182,182 +165,91 @@ func (g GroupMetadata) MarshalJSON() ([]byte, error) {
 // PutMetadata puts a metadata key-value item to an open group. The group must
 // be opened in WRITE mode, otherwise the function will error out.
 func (g *Group) PutMetadata(key string, value interface{}) error {
-	ckey := C.CString(key)
-	defer C.free(unsafe.Pointer(ckey))
-
-	var isSliceValue bool = false
-	if reflect.TypeOf(value).Kind() == reflect.Slice {
-		isSliceValue = true
+	switch value := value.(type) {
+	case int:
+		return groupPutScalarMetadata(g, tileDBInt, key, value)
+	case []int:
+		return groupPutSliceMetadata(g, tileDBInt, key, value)
+	case int8:
+		return groupPutScalarMetadata(g, TILEDB_INT8, key, value)
+	case []int8:
+		return groupPutSliceMetadata(g, TILEDB_INT8, key, value)
+	case int16:
+		return groupPutScalarMetadata(g, TILEDB_INT16, key, value)
+	case []int16:
+		return groupPutSliceMetadata(g, TILEDB_INT16, key, value)
+	case int32:
+		return groupPutScalarMetadata(g, TILEDB_INT32, key, value)
+	case []int32:
+		return groupPutSliceMetadata(g, TILEDB_INT32, key, value)
+	case uint:
+		return groupPutScalarMetadata(g, tileDBUint, key, value)
+	case []uint:
+		return groupPutSliceMetadata(g, tileDBUint, key, value)
+	case int64:
+		return groupPutScalarMetadata(g, TILEDB_INT64, key, value)
+	case []int64:
+		return groupPutSliceMetadata(g, TILEDB_INT64, key, value)
+	case uint8:
+		return groupPutScalarMetadata(g, TILEDB_UINT8, key, value)
+	case []uint8:
+		return groupPutSliceMetadata(g, TILEDB_UINT8, key, value)
+	case uint16:
+		return groupPutScalarMetadata(g, TILEDB_UINT16, key, value)
+	case []uint16:
+		return groupPutSliceMetadata(g, TILEDB_UINT16, key, value)
+	case uint32:
+		return groupPutScalarMetadata(g, TILEDB_UINT32, key, value)
+	case []uint32:
+		return groupPutSliceMetadata(g, TILEDB_UINT32, key, value)
+	case uint64:
+		return groupPutScalarMetadata(g, TILEDB_UINT64, key, value)
+	case []uint64:
+		return groupPutSliceMetadata(g, TILEDB_UINT64, key, value)
+	case float32:
+		return groupPutScalarMetadata(g, TILEDB_FLOAT32, key, value)
+	case []float32:
+		return groupPutSliceMetadata(g, TILEDB_FLOAT32, key, value)
+	case float64:
+		return groupPutScalarMetadata(g, TILEDB_FLOAT64, key, value)
+	case []float64:
+		return groupPutSliceMetadata(g, TILEDB_FLOAT64, key, value)
+	case bool:
+		return groupPutScalarMetadata(g, TILEDB_BOOL, key, value)
+	case []bool:
+		return groupPutSliceMetadata(g, TILEDB_BOOL, key, value)
+	case string:
+		valPtr := unsafe.Pointer(C.CString(value))
+		defer C.free(valPtr)
+		return groupPutMetadata(g, TILEDB_STRING_UTF8, key, valPtr, len(value))
 	}
+	return fmt.Errorf("can't write %q metadata: unrecognized value type %T", key, value)
+}
 
-	var datatype Datatype
-	var valueNum C.uint
-	var valueType reflect.Kind
-
-	valueInterfaceVal := reflect.ValueOf(value)
-	if isSliceValue {
-		if valueInterfaceVal.Len() == 0 {
-			return fmt.Errorf("Value passed must be a non-empty slice, size of slice is: %d", valueInterfaceVal.Len())
-		}
-		valueType = reflect.TypeOf(value).Elem().Kind()
-		valueNum = C.uint(valueInterfaceVal.Len())
-	} else {
-		valueType = reflect.TypeOf(value).Kind()
-		valueNum = 1
+func groupPutSliceMetadata[T scalarType](g *Group, dt Datatype, key string, value []T) error {
+	if len(value) == 0 {
+		return fmt.Errorf("length of %q metadata %T value must be nonzero", key, value)
 	}
+	return groupPutMetadata(g, dt, key, slicePtr(value), len(value))
+}
 
-	var ret C.int32_t
-	switch valueType {
-	case reflect.Int:
-		// Check size of int on platform
-		if strconv.IntSize == 32 {
-			datatype = TILEDB_INT32
-			if isSliceValue {
-				tmpValue := value.([]int32)
-				ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-			} else {
-				tmpValue := value.(int32)
-				ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-			}
-		} else {
-			datatype = TILEDB_INT64
-			if isSliceValue {
-				tmpValue := value.([]int64)
-				ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-			} else {
-				tmpValue := value.(int64)
-				ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-			}
-		}
-	case reflect.Int8:
-		datatype = TILEDB_INT8
-		if isSliceValue {
-			tmpValue := value.([]int8)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(int8)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Int16:
-		datatype = TILEDB_INT16
-		if isSliceValue {
-			tmpValue := value.([]int16)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(int16)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Int32:
-		datatype = TILEDB_INT32
-		if isSliceValue {
-			tmpValue := value.([]int32)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(int32)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Int64:
-		datatype = TILEDB_INT64
-		if isSliceValue {
-			tmpValue := value.([]int64)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(int64)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Uint:
-		// Check size of uint on platform
-		if strconv.IntSize == 32 {
-			datatype = TILEDB_UINT32
-			if isSliceValue {
-				tmpValue := value.([]uint32)
-				ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-			} else {
-				tmpValue := value.(uint32)
-				ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-			}
-		} else {
-			datatype = TILEDB_UINT64
-			if isSliceValue {
-				tmpValue := value.([]uint64)
-				ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-			} else {
-				tmpValue := value.(uint64)
-				ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-			}
-		}
-	case reflect.Uint8:
-		datatype = TILEDB_UINT8
-		if isSliceValue {
-			tmpValue := value.([]uint8)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(uint8)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Uint16:
-		datatype = TILEDB_UINT16
-		if isSliceValue {
-			tmpValue := value.([]uint16)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(uint16)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Uint32:
-		datatype = TILEDB_UINT32
-		if isSliceValue {
-			tmpValue := value.([]uint32)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(uint32)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Uint64:
-		datatype = TILEDB_UINT64
-		if isSliceValue {
-			tmpValue := value.([]uint64)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(uint64)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Float32:
-		datatype = TILEDB_FLOAT32
-		if isSliceValue {
-			tmpValue := value.([]float32)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(float32)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.Float64:
-		datatype = TILEDB_FLOAT64
-		if isSliceValue {
-			tmpValue := value.([]float64)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue[0]))
-		} else {
-			tmpValue := value.(float64)
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&tmpValue))
-		}
-	case reflect.String:
-		datatype = TILEDB_STRING_UTF8
-		stringValue := value.(string)
-		valueNum = C.uint(len(stringValue))
-		cTmpValue := C.CString(stringValue)
-		defer C.free(unsafe.Pointer(cTmpValue))
-		if valueNum > 0 {
-			ret = C.tiledb_group_put_metadata(g.context.tiledbContext, g.group, ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(cTmpValue))
-		}
-	default:
-		if isSliceValue {
-			return fmt.Errorf("Unrecognized value type passed: %s", valueInterfaceVal.Index(0).Kind().String())
-		}
-		return fmt.Errorf("Unrecognized value type passed: %s", valueInterfaceVal.Kind().String())
-	}
+func groupPutScalarMetadata[T scalarType](g *Group, dt Datatype, key string, value T) error {
+	return groupPutMetadata(g, dt, key, unsafe.Pointer(&value), 1)
+}
 
+func groupPutMetadata(g *Group, dt Datatype, key string, valuePtr unsafe.Pointer, count int) error {
+	cKey := C.CString(key)
+	defer C.free(unsafe.Pointer(cKey))
+	ret := C.tiledb_group_put_metadata(
+		g.context.tiledbContext,
+		g.group,
+		cKey,
+		C.tiledb_datatype_t(dt),
+		C.uint(count),
+		valuePtr,
+	)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error adding metadata to group: %s", g.context.LastError())
+		return fmt.Errorf("could not add metadata to group: %w", g.context.LastError())
 	}
 	return nil
 }
@@ -382,42 +274,47 @@ func (g *Group) GetMemberCount() (uint64, error) {
 }
 
 func (g *Group) GetMemberFromIndex(index uint64) (string, string, ObjectTypeEnum, error) {
-	var curi *C.char
-	defer C.free(unsafe.Pointer(curi))
+	var curi *C.tiledb_string_t
 
-	var cname *C.char
-	defer C.free(unsafe.Pointer(cname))
+	var cname *C.tiledb_string_t
 
 	var objectTypeEnum C.tiledb_object_t
-	ret := C.tiledb_group_get_member_by_index(g.context.tiledbContext, g.group, C.uint64_t(index), &curi, &objectTypeEnum, &cname)
+	ret := C.tiledb_group_get_member_by_index_v2(g.context.tiledbContext, g.group, C.uint64_t(index), &curi, &objectTypeEnum, &cname)
 	if ret != C.TILEDB_OK {
 		return "", "", TILEDB_INVALID, fmt.Errorf("Error getting member by index for group: %s", g.context.LastError())
 	}
+	defer C.tiledb_string_free(&curi)
+	defer C.tiledb_string_free(&cname)
 
-	uri := C.GoString(curi)
-	if uri == "" {
-		return "", "", TILEDB_INVALID, fmt.Errorf("Error getting URI for member %d: uri is empty", index)
+	uri, err := stringHandleToString(curi)
+	if err != nil {
+		return "", "", TILEDB_INVALID, err
 	}
 
-	return uri, C.GoString(cname), ObjectTypeEnum(objectTypeEnum), nil
+	name, err := stringHandleToString(cname)
+	if err != nil {
+		return "", "", TILEDB_INVALID, err
+	}
+
+	return uri, name, ObjectTypeEnum(objectTypeEnum), nil
 }
 
 func (g *Group) GetMemberByName(name string) (string, string, ObjectTypeEnum, error) {
-	var curi *C.char
-	defer C.free(unsafe.Pointer(curi))
+	var curi *C.tiledb_string_t
 
 	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
 
 	var objectTypeEnum C.tiledb_object_t
-	ret := C.tiledb_group_get_member_by_name(g.context.tiledbContext, g.group, cname, &curi, &objectTypeEnum)
+	ret := C.tiledb_group_get_member_by_name_v2(g.context.tiledbContext, g.group, cname, &curi, &objectTypeEnum)
 	if ret != C.TILEDB_OK {
 		return "", "", TILEDB_INVALID, fmt.Errorf("Error getting member by index for group: %s", g.context.LastError())
 	}
+	defer C.tiledb_string_free(&curi)
 
-	uri := C.GoString(curi)
-	if uri == "" {
-		return "", "", TILEDB_INVALID, fmt.Errorf("Error getting URI for member %s: uri is empty", name)
+	uri, err := stringHandleToString(curi)
+	if err != nil {
+		return "", "", TILEDB_INVALID, err
 	}
 
 	if name == "" {
@@ -512,7 +409,7 @@ func (g *Group) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 	}
 
 	groupMetadata := GroupMetadata{
-		Key:      C.GoString(cKey),
+		Key:      C.GoStringN(cKey, C.int(cKeyLen)),
 		KeyLen:   uint32(cKeyLen),
 		Datatype: datatype,
 		ValueNum: valueNum,
@@ -542,10 +439,7 @@ func (g *Group) Dump(recurse bool) (string, error) {
 // SerializeGroupMetadata gets and serializes the group metadata
 func SerializeGroupMetadata(g *Group, serializationType SerializationType) ([]byte, error) {
 	buffer := Buffer{context: g.context}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&buffer, func(buffer *Buffer) {
-		buffer.Free()
-	})
+	freeOnGC(&buffer)
 
 	ret := C.tiledb_serialize_group_metadata(g.context.tiledbContext, g.group, C.tiledb_serialization_type_t(serializationType), &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
@@ -557,7 +451,7 @@ func SerializeGroupMetadata(g *Group, serializationType SerializationType) ([]by
 
 // DeserializeGroupMetadata deserializes group metadata
 func DeserializeGroupMetadata(g *Group, buffer *Buffer, serializationType SerializationType) error {
-	b, err := buffer.bytes()
+	b, err := buffer.dataCopy()
 	if err != nil {
 		return errors.New("failed to retrieve bytes from buffer")
 	}
@@ -571,5 +465,37 @@ func DeserializeGroupMetadata(g *Group, buffer *Buffer, serializationType Serial
 		return fmt.Errorf("Error deserializing group metadata: %s", g.context.LastError())
 	}
 
+	return nil
+}
+
+// GetIsRelativeURIByName returns whether a named member of the group has a uri relative to the group
+func (g *Group) GetIsRelativeURIByName(name string) (bool, error) {
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
+
+	var isRelative C.uint8_t
+	ret := C.tiledb_group_get_is_relative_uri_by_name(g.context.tiledbContext, g.group, cName, &isRelative)
+	if ret != C.TILEDB_OK {
+		return false, fmt.Errorf("Error getting if member %s has a relative uri: %s", name, g.context.LastError())
+	}
+	return isRelative > 0, nil
+}
+
+// Delete deletes written data from an open group. The group must be opened in MODIFY_EXCLUSIVE mode,
+// otherwise the function will error out.
+// Set recursive true if all data inside the group is to be deleted.
+func (g *Group) Delete(recursive bool) error {
+	curi := C.CString(g.uri)
+	defer C.free(unsafe.Pointer(curi))
+
+	var cRecursive C.uint8_t
+	if recursive {
+		cRecursive = 1
+	}
+
+	ret := C.tiledb_group_delete_group(g.context.tiledbContext, g.group, curi, cRecursive)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deleting group: %s", g.context.LastError())
+	}
 	return nil
 }

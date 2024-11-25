@@ -49,10 +49,8 @@ func ExampleReadRangeArray() {
 	// Range for dimension: 0, start: 1, end: 1
 	// Range for dimension: 0, start: 3, end: 4
 	// Ranges: map[cols:[{1 4}] rows:[{1 1} {3 4}]]
-	// Ranges JSON: {"cols":[{"end":4,"start":1}],"rows":[{"end":1,"start":1},{"end":4,"start":3}]}
 	// Num of Ranges: 2
 	// Range for dimension: 1, start: 1, end: 1
 	// Range for dimension: 1, start: 3, end: 4
 	// Ranges: map[cols:[{1 1} {3 4}] rows:[{1 4}]]
-	// Ranges JSON: {"cols":[{"end":1,"start":1},{"end":4,"start":3}],"rows":[{"end":4,"start":1}]}
 }

@@ -82,11 +82,11 @@ func writeDenseSparseArray(dir string) {
 	buffD1 := []int32{1, 2, 4, 1}
 	buffD2 := []int32{2, 1, 3, 4}
 	data := []int32{1, 2, 3, 4}
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
-	_, err = query.SetBuffer("rows", buffD1)
+	_, err = query.SetDataBuffer("rows", buffD1)
 	checkError(err)
-	_, err = query.SetBuffer("cols", buffD2)
+	_, err = query.SetDataBuffer("cols", buffD2)
 	checkError(err)
 
 	// Perform the write.
@@ -124,15 +124,22 @@ func readDenseSparseArray(dir string) {
 	checkError(err)
 	defer query.Free()
 
-	err = query.SetSubArray(subArray)
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+
+	err = subarray.SetSubArray(subArray)
+	checkError(err)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
-	_, err = query.SetBuffer("rows", rows)
+	_, err = query.SetDataBuffer("rows", rows)
 	checkError(err)
-	_, err = query.SetBuffer("cols", cols)
+	_, err = query.SetDataBuffer("cols", cols)
 	checkError(err)
 
 	// Submit the query and close the array.

@@ -1,8 +1,6 @@
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb.h>
 #include <stdlib.h>
 */
@@ -10,17 +8,16 @@ import "C"
 
 import (
 	"fmt"
-	"runtime"
 	"unsafe"
 )
 
-// ConfigIter Creates a config iterator object.
+// ConfigIter creates a config iterator object.
 type ConfigIter struct {
 	config           *Config
 	tiledbConfigIter *C.tiledb_config_iter_t
 }
 
-// NewConfigIter Creates an iterator for configuration. This can be used
+// NewConfigIter creates an iterator for configuration. This can be used
 // only for reading. This sets the pointer to the first search item.
 func NewConfigIter(config *Config, prefix string) (*ConfigIter, error) {
 	ci := ConfigIter{config: config}
@@ -34,11 +31,7 @@ func NewConfigIter(config *Config, prefix string) (*ConfigIter, error) {
 		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("error creating tiledb config iter: %s", C.GoString(msg))
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&ci, func(ci *ConfigIter) {
-		ci.Free()
-	})
+	freeOnGC(&ci)
 
 	return &ci, nil
 }
@@ -54,8 +47,8 @@ func (ci *ConfigIter) Free() {
 	}
 }
 
-// Here Retrieves the param and value for the item currently pointed by the
-// iterator
+// Here retrieves the param and value for the item currently pointed to by the
+// iterator.
 func (ci *ConfigIter) Here() (*string, *string, error) {
 	var err *C.tiledb_error_t
 	var cparam, cvalue *C.char
@@ -71,7 +64,7 @@ func (ci *ConfigIter) Here() (*string, *string, error) {
 	return &param, &value, nil
 }
 
-// Next Moves the iterator to the next item.
+// Next moves the iterator to the next item.
 func (ci *ConfigIter) Next() error {
 	var err *C.tiledb_error_t
 	C.tiledb_config_iter_next(ci.tiledbConfigIter, &err)
@@ -84,7 +77,7 @@ func (ci *ConfigIter) Next() error {
 	return nil
 }
 
-// Done Checks if the iterator is done.
+// Done checks if the iterator is done.
 func (ci *ConfigIter) Done() (bool, error) {
 	var err *C.tiledb_error_t
 	var cDone C.int32_t
@@ -98,7 +91,7 @@ func (ci *ConfigIter) Done() (bool, error) {
 	return int(cDone) == 1, nil
 }
 
-// IsDone Checks if the iterator is done.
+// IsDone checks if the iterator is done.
 func (ci *ConfigIter) IsDone() bool {
 	var err *C.tiledb_error_t
 	var cDone C.int32_t
@@ -112,7 +105,7 @@ func (ci *ConfigIter) IsDone() bool {
 	return int(cDone) == 1
 }
 
-// Reset a config iterator.
+// Reset resets the config iterator.
 func (ci *ConfigIter) Reset(prefix string) error {
 	var err *C.tiledb_error_t
 	cprefix := C.CString(prefix)

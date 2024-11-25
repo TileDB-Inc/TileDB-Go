@@ -16,7 +16,7 @@ func createMultipleWritesSparseArray(dir string) {
 	// with domain [1,4].
 	domain, err := tiledb.NewDomain(ctx)
 	checkError(err)
-	defer ctx.Free()
+	defer domain.Free()
 
 	rowDim, err := tiledb.NewDimension(ctx, "rows", tiledb.TILEDB_INT32, []int32{1, 4}, int32(4))
 	checkError(err)
@@ -68,11 +68,11 @@ func execQueryUnordered(tdbCtx *tiledb.Context, array *tiledb.Array,
 	checkError(err)
 
 	// Submit query
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
-	_, err = query.SetBuffer("rows", buffD1)
+	_, err = query.SetDataBuffer("rows", buffD1)
 	checkError(err)
-	_, err = query.SetBuffer("cols", buffD2)
+	_, err = query.SetDataBuffer("cols", buffD2)
 	checkError(err)
 
 	// Perform the write.
@@ -142,7 +142,14 @@ func readMultipleWritesSparseArray(dir string) {
 	checkError(err)
 	defer query.Free()
 
-	err = query.SetSubArray(subArray)
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+
+	err = subarray.SetSubArray(subArray)
+	checkError(err)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 
 	// Prepare the vector that will hold the results
@@ -156,11 +163,11 @@ func readMultipleWritesSparseArray(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
-	_, err = query.SetBuffer("rows", rows)
+	_, err = query.SetDataBuffer("rows", rows)
 	checkError(err)
-	_, err = query.SetBuffer("cols", cols)
+	_, err = query.SetDataBuffer("cols", cols)
 	checkError(err)
 
 	// Submit the query and close the array.

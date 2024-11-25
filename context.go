@@ -1,8 +1,6 @@
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb.h>
 #include <tiledb/tiledb_experimental.h>
 #include <stdlib.h>
@@ -24,8 +22,8 @@ type Context struct {
 	tiledbContext *C.tiledb_ctx_t
 }
 
-// NewContext creates a TileDB context with the given configuration
-// If the configuration passed is null it is created with default config
+// NewContext creates a TileDB context with the given configuration.
+// If the configuration passed is nil, it is created with the default config.
 func NewContext(config *Config) (*Context, error) {
 	var context Context
 	var ret C.int32_t
@@ -49,17 +47,16 @@ func NewContext(config *Config) (*Context, error) {
 		}
 		return nil, fmt.Errorf("error creating tiledb context: unknown error")
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&context, func(context *Context) {
-		context.Free()
-	})
+	freeOnGC(&context)
 
 	err := context.setDefaultTags()
 	if err != nil {
 		return nil, fmt.Errorf("error creating tiledb context: %w", err)
 	}
 
+	if config != nil {
+		runtime.KeepAlive(config)
+	}
 	return &context, nil
 }
 
@@ -75,6 +72,7 @@ func NewContextFromMap(cfgMap map[string]string) (*Context, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer config.Free()
 	for k, v := range cfgMap {
 		if err := config.Set(k, v); err != nil {
 			// The value is not included in the error message in case it is sensitive,
@@ -96,7 +94,7 @@ func (c *Context) Free() {
 	}
 }
 
-// CancelAllTasks cancels all currently executing tasks on the context
+// CancelAllTasks cancels all currently executing tasks on the context.
 func (c *Context) CancelAllTasks() error {
 	ret := C.tiledb_ctx_cancel_tasks(c.tiledbContext)
 	if ret != C.TILEDB_OK {
@@ -105,7 +103,7 @@ func (c *Context) CancelAllTasks() error {
 	return nil
 }
 
-// Config retrieves a copy of the config from context
+// Config retrieves a copy of the config from context.
 func (c *Context) Config() (*Config, error) {
 	config := Config{}
 	ret := C.tiledb_ctx_get_config(c.tiledbContext, &config.tiledbConfig)
@@ -115,16 +113,12 @@ func (c *Context) Config() (*Config, error) {
 	} else if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Unknown error in GetConfig")
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&config, func(config *Config) {
-		config.Free()
-	})
+	freeOnGC(&config)
 
 	return &config, nil
 }
 
-// LastError returns the last error from this context
+// LastError returns the last error from this context.
 func (c *Context) LastError() error {
 	var err *C.tiledb_error_t
 	ret := C.tiledb_ctx_get_last_error(c.tiledbContext, &err)
@@ -149,7 +143,7 @@ func (c *Context) LastError() error {
 	return nil
 }
 
-// IsSupportedFS Return true if the given filesystem backend is supported.
+// IsSupportedFS returns true if the given filesystem backend is supported.
 func (c *Context) IsSupportedFS(fs FS) (bool, error) {
 	var isSupported C.int32_t
 	ret := C.tiledb_ctx_is_supported_fs(c.tiledbContext, C.tiledb_filesystem_t(fs), &isSupported)
@@ -165,7 +159,7 @@ func (c *Context) IsSupportedFS(fs FS) (bool, error) {
 	return true, nil
 }
 
-// SetTag, sets context tag
+// SetTag sets the context tag.
 func (c *Context) SetTag(key string, value string) error {
 	ckey := C.CString(key)
 	defer C.free(unsafe.Pointer(ckey))
@@ -200,7 +194,7 @@ func (c *Context) setDefaultTags() error {
 	return nil
 }
 
-// Stats gets stats for a context as json bytes
+// Stats gets stats for a context as json bytes.
 func (c *Context) Stats() ([]byte, error) {
 	var stats *C.char
 	if ret := C.tiledb_ctx_get_stats(c.tiledbContext, &stats); ret != C.TILEDB_OK {

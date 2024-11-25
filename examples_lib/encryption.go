@@ -32,8 +32,10 @@ func createEncryptedArray(dir string) {
 
 	rowDim, err := tiledb.NewDimension(ctx, "rows", tiledb.TILEDB_INT32, []int32{1, 4}, int32(4))
 	checkError(err)
+	defer rowDim.Free()
 	colDim, err := tiledb.NewDimension(ctx, "cols", tiledb.TILEDB_INT32, []int32{1, 4}, int32(4))
 	checkError(err)
+	defer colDim.Free()
 	err = domain.AddDimensions(rowDim, colDim)
 	checkError(err)
 
@@ -89,7 +91,7 @@ func writeEncryptedArray(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
 
 	// Perform the write and close the array.
@@ -111,7 +113,11 @@ func readEncryptedArray(dir string) {
 	defer array.Close()
 
 	// Slice only rows 1, 2 and cols 2, 3, 4
-	subArray := []int32{1, 2, 2, 4}
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+	err = subarray.SetSubArray([]int32{1, 2, 2, 4})
+	checkError(err)
 
 	// Prepare the vector that will hold the result (of size 6 elements)
 	data := make([]int32, 6)
@@ -121,11 +127,11 @@ func readEncryptedArray(dir string) {
 	checkError(err)
 	defer query.Free()
 
-	err = query.SetSubArray(subArray)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
 
 	// Submit the query and close the array.

@@ -2,7 +2,6 @@ package examples_lib
 
 import (
 	"fmt"
-
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
 )
 
@@ -127,13 +126,13 @@ func writeFiltersArray(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_UNORDERED)
 	checkError(err)
-	_, err = query.SetBuffer("a1", dataA1)
+	_, err = query.SetDataBuffer("a1", dataA1)
 	checkError(err)
-	_, err = query.SetBuffer("a2", dataA2)
+	_, err = query.SetDataBuffer("a2", dataA2)
 	checkError(err)
-	_, err = query.SetBuffer("rows", buffD1)
+	_, err = query.SetDataBuffer("rows", buffD1)
 	checkError(err)
-	_, err = query.SetBuffer("cols", buffD2)
+	_, err = query.SetDataBuffer("cols", buffD2)
 	checkError(err)
 
 	// Perform the write and close the array.
@@ -159,14 +158,18 @@ func readFiltersArray(dir string) {
 	defer array.Close()
 
 	// Slice only rows 1, 2 and cols 2, 3, 4
-	subArray := []int32{1, 2, 2, 4}
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+	err = subarray.SetSubArray([]int32{1, 2, 2, 4})
+	checkError(err)
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
 	defer query.Free()
 
-	err = query.SetSubArray(subArray)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 
 	// Prepare the vector that will hold the results
@@ -180,11 +183,11 @@ func readFiltersArray(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a1", data)
+	_, err = query.SetDataBuffer("a1", data)
 	checkError(err)
-	_, err = query.SetBuffer("rows", rows)
+	_, err = query.SetDataBuffer("rows", rows)
 	checkError(err)
-	_, err = query.SetBuffer("cols", cols)
+	_, err = query.SetDataBuffer("cols", cols)
 	checkError(err)
 
 	// Submit the query and close the array.

@@ -1,7 +1,6 @@
 package examples_lib
 
 import (
-	"encoding/json"
 	"fmt"
 
 	tiledb "github.com/TileDB-Inc/TileDB-Go"
@@ -82,7 +81,7 @@ func writeRearRangeArray(dir string) {
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
 
 	// Perform the write and close the array.
@@ -115,34 +114,37 @@ func readReadRangeArray(dir string, dimIdx uint32) {
 	checkError(err)
 	defer query.Free()
 
-	err = query.AddRange(dimIdx, int32(1), int32(1))
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
 	checkError(err)
-	err = query.AddRange(dimIdx, int32(3), int32(4))
+	defer subarray.Free()
+
+	err = subarray.AddRange(dimIdx, tiledb.MakeRange[int32](1, 1))
+	checkError(err)
+	err = subarray.AddRange(dimIdx, tiledb.MakeRange[int32](3, 4))
+	checkError(err)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 
-	numOfRanges, err := query.GetRangeNum(dimIdx)
+	numOfRanges, err := subarray.GetRangeNum(dimIdx)
 	checkError(err)
-	fmt.Printf("Num of Ranges: %d\n", *numOfRanges)
+	fmt.Printf("Num of Ranges: %d\n", numOfRanges)
 
 	var I uint64
-	for I = 0; I < *numOfRanges; I++ {
-		start, end, err := query.GetRange(dimIdx, I)
+	for I = 0; I < numOfRanges; I++ {
+		r, err := subarray.GetRange(dimIdx, I)
 		checkError(err)
+		start, end := r.Endpoints()
 		fmt.Printf("Range for dimension: %d, start: %v, end: %v\n", dimIdx, start, end)
 	}
 
-	rangeMap, err := query.GetRanges()
+	// subarray.GetRanges does not marshal to valid JSON.
+	rangeMap, err := subarray.GetRanges()
 	checkError(err)
 
 	fmt.Printf("Ranges: %v\n", rangeMap)
 
-	rangesJSON, err := json.Marshal(rangeMap)
-	checkError(err)
-
-	// Print ranges json
-	fmt.Printf("Ranges JSON: %s\n", string(rangesJSON))
-
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
 
 	// Submit the query and close the array.
@@ -151,9 +153,6 @@ func readReadRangeArray(dir string, dimIdx uint32) {
 
 	err = query.Finalize()
 	checkError(err)
-
-	// Print out the results.
-	// fmt.Println(data)
 }
 
 // RunReadRangeArray shows and example creation, writing and range reading

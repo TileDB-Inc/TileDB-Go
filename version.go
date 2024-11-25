@@ -1,14 +1,12 @@
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb.h>
 */
 import "C"
 
 // Version returns the TileDB shared library version these bindings are linked
-// against at runtime
+// against at runtime.
 func Version() (major int, minor int, rev int) {
 	var cmajor C.int32_t = -1
 	var cminor C.int32_t = -1

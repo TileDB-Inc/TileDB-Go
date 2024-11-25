@@ -1,8 +1,6 @@
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb.h>
 #include <stdlib.h>
 */
@@ -10,7 +8,6 @@ import "C"
 
 import (
 	"fmt"
-	"runtime"
 	"unsafe"
 )
 
@@ -20,7 +17,7 @@ type Filter struct {
 	context      *Context
 }
 
-// NewFilter Allocs a new filter
+// NewFilter allocates a new filter.
 func NewFilter(context *Context, filterType FilterType) (*Filter, error) {
 	filter := Filter{context: context}
 
@@ -28,11 +25,7 @@ func NewFilter(context *Context, filterType FilterType) (*Filter, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error creating tiledb filter: %s", filter.context.LastError())
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&filter, func(filter *Filter) {
-		filter.Free()
-	})
+	freeOnGC(&filter)
 
 	return &filter, nil
 }
@@ -48,12 +41,12 @@ func (f *Filter) Free() {
 	}
 }
 
-// Context exposes the internal TileDB context used to initialize the filter
+// Context exposes the internal TileDB context used to initialize the filter.
 func (f *Filter) Context() *Context {
 	return f.context
 }
 
-// Type returns the filter type
+// Type returns the filter type.
 func (f *Filter) Type() (FilterType, error) {
 	var filterType C.tiledb_filter_type_t
 	ret := C.tiledb_filter_get_type(f.context.tiledbContext, f.tiledbFilter, &filterType)
@@ -65,7 +58,7 @@ func (f *Filter) Type() (FilterType, error) {
 	return FilterType(filterType), nil
 }
 
-// SetOption set an option on a filter. Options are filter dependent;
+// SetOption sets an option on a filter. Options are filter dependent;
 // this function returns an error if the given option is not valid for the
 // given filter.
 func (f *Filter) SetOption(filterOption FilterOption, valueInterface interface{}) error {
@@ -107,7 +100,7 @@ func (f *Filter) SetOption(filterOption FilterOption, valueInterface interface{}
 	return nil
 }
 
-// Option fetchs the specified option set on a filter. Returns an interface{}
+// Option fetches the specified option set on a filter. Returns an interface{}
 // dependent on the option being fetched
 // var optionValue int32
 // optionValueInterface, err := filter.Option(TILEDB_FILTER_GZIP)

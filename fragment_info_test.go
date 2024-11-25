@@ -1,6 +1,3 @@
-//go:build !experimental
-// +build !experimental
-
 package tiledb
 
 import (
@@ -20,7 +17,7 @@ func TestFragmentInfo(t *testing.T) {
 	require.NoError(t, err)
 
 	fragmentSize := testFragmentInfo(t, context)
-	assert.Equal(t, uint64(4181), fragmentSize)
+	assert.Equal(t, uint64(4290), fragmentSize)
 }
 
 func TestFragmentInfoEncryption(t *testing.T) {
@@ -40,7 +37,7 @@ func TestFragmentInfoEncryption(t *testing.T) {
 	require.NoError(t, err)
 
 	fragmentSize := testFragmentInfo(t, context)
-	assert.Equal(t, uint64(7407), fragmentSize)
+	assert.Equal(t, uint64(7601), fragmentSize)
 }
 
 func testFragmentInfo(t testing.TB, context *Context) uint64 {
@@ -157,9 +154,11 @@ func writeToArray(t testing.TB, context *Context, tmpArrayPath string) {
 	query, err := NewQuery(context, array)
 	require.NoError(t, err)
 	require.NoError(t, query.SetLayout(TILEDB_ROW_MAJOR))
-	_, err = query.SetBuffer("a1", a1)
+	_, err = query.SetDataBuffer("a1", a1)
 	require.NoError(t, err)
-	_, _, err = query.SetBufferVar("a2", a2Off, a2)
+	_, err = query.SetDataBuffer("a2", a2)
+	require.NoError(t, err)
+	_, err = query.SetOffsetsBuffer("a2", a2Off)
 	require.NoError(t, err)
 
 	require.NoError(t, query.Submit())

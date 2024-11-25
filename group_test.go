@@ -1,9 +1,7 @@
-//go:build experimental
-// +build experimental
-
 package tiledb
 
 import (
+	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -188,6 +186,154 @@ func TestDeserializeGroup(t *testing.T) {
 	count, err := memberCount(g)
 	require.NoError(t, err)
 	require.EqualValues(t, uint64(2), count)
+}
+
+func TestGetIsRelativeURIByName(t *testing.T) {
+	// create a group and add 2 members, one relative and one not
+	groupURI := t.TempDir()
+	arrayURI1 := t.TempDir()                       // for the non-relative member
+	arrayURI2 := filepath.Join(groupURI, "array2") // for the relative member
+
+	tdbCtx, err := NewContext(nil)
+	require.NoError(t, err)
+
+	group, err := createTestGroup(tdbCtx, groupURI)
+	require.NoError(t, err)
+
+	arraySchema := buildArraySchema(tdbCtx, t)
+	array1, err := NewArray(tdbCtx, arrayURI1)
+	require.NoError(t, err)
+	err = array1.Create(arraySchema)
+	require.NoError(t, err)
+	array2, err := NewArray(tdbCtx, arrayURI2)
+	require.NoError(t, err)
+	err = array2.Create(arraySchema)
+	require.NoError(t, err)
+
+	require.NoError(t, group.Open(TILEDB_WRITE))
+	require.NoError(t, group.AddMember(array1.uri, "array1", false))
+	require.NoError(t, group.AddMember("array2", "array2", true))
+	require.NoError(t, group.Close())
+
+	// check get relative of each member
+	require.NoError(t, group.Open(TILEDB_READ))
+	isRelative1, err := group.GetIsRelativeURIByName("array1")
+	require.NoError(t, err)
+	require.False(t, isRelative1)
+	isRelative2, err := group.GetIsRelativeURIByName("array2")
+	require.NoError(t, err)
+	require.True(t, isRelative2)
+
+	// check that non-existing members return error
+	_, err = group.GetIsRelativeURIByName("array3")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Error getting")
+
+	require.NoError(t, group.Close())
+}
+
+func TestGroupDelete(t *testing.T) {
+	// setup creates an hierarchy of groups and returns the
+	// members URIs in the following order
+	// outerGroup/
+	//   outerArray
+	//   innerGroup/
+	//     innerArray
+	setup := func(t *testing.T) []string {
+		outerGroupURI := t.TempDir()
+		outerArrayURI := t.TempDir()
+		innerGroupURI := t.TempDir()
+		innerArrayURI := t.TempDir()
+		tdbCtx, err := NewContext(nil)
+		require.NoError(t, err)
+
+		outerGroup, err := createTestGroup(tdbCtx, outerGroupURI)
+		require.NoError(t, err)
+		innerGroup, err := createTestGroup(tdbCtx, innerGroupURI)
+		require.NoError(t, err)
+
+		arraySchema := buildArraySchema(tdbCtx, t)
+		outerArray, err := NewArray(tdbCtx, outerArrayURI)
+		require.NoError(t, err)
+		err = outerArray.Create(arraySchema)
+		require.NoError(t, err)
+		innerArray, err := NewArray(tdbCtx, innerArrayURI)
+		require.NoError(t, err)
+		err = innerArray.Create(arraySchema)
+		require.NoError(t, err)
+
+		require.NoError(t, innerGroup.Open(TILEDB_WRITE))
+		require.NoError(t, innerGroup.AddMember(innerArray.uri, "innerArray", false))
+		require.NoError(t, innerGroup.Close())
+		require.NoError(t, outerGroup.Open(TILEDB_WRITE))
+		require.NoError(t, outerGroup.AddMember(outerArray.uri, "outerArray", false))
+		require.NoError(t, outerGroup.AddMember(innerGroup.uri, "innerGroup", false))
+		require.NoError(t, outerGroup.Close())
+
+		return []string{outerGroupURI, outerArrayURI, innerGroupURI, innerArrayURI}
+	}
+
+	t.Run("recursive", func(t *testing.T) {
+		uris := setup(t)
+
+		tdbCtx, err := NewContext(nil)
+		require.NoError(t, err)
+
+		outerGroup, err := NewGroup(tdbCtx, uris[0])
+		require.NoError(t, err)
+		require.NoError(t, outerGroup.Open(TILEDB_MODIFY_EXCLUSIVE))
+		require.NoError(t, outerGroup.Delete(true))
+
+		tdbCfg, err := NewConfig()
+		require.NoError(t, err)
+		vfs, err := NewVFS(tdbCtx, tdbCfg)
+		require.NoError(t, err)
+
+		exists, err := vfs.IsFile(uris[0] + "/__tiledb_group.tdb")
+		require.NoError(t, err)
+		require.False(t, exists)
+		exists, err = vfs.IsFile(uris[2] + "/__tiledb_group.tdb")
+		require.NoError(t, err)
+		require.False(t, exists)
+
+		exists, err = vfs.IsDir(uris[1] + "/__schema")
+		require.NoError(t, err)
+		require.False(t, exists)
+		exists, err = vfs.IsDir(uris[1] + "/__schema")
+		require.NoError(t, err)
+		require.False(t, exists)
+	})
+
+	t.Run("nonrecursive", func(t *testing.T) {
+		uris := setup(t)
+
+		tdbCtx, err := NewContext(nil)
+		require.NoError(t, err)
+
+		outerGroup, err := NewGroup(tdbCtx, uris[0])
+		require.NoError(t, err)
+		require.NoError(t, outerGroup.Open(TILEDB_MODIFY_EXCLUSIVE))
+		require.NoError(t, outerGroup.Delete(false))
+
+		tdbCfg, err := NewConfig()
+		require.NoError(t, err)
+		vfs, err := NewVFS(tdbCtx, tdbCfg)
+		require.NoError(t, err)
+
+		exists, err := vfs.IsFile(uris[0] + "/__tiledb_group.tdb")
+		require.NoError(t, err)
+		require.False(t, exists)
+		exists, err = vfs.IsFile(uris[2] + "/__tiledb_group.tdb")
+		require.NoError(t, err)
+		require.True(t, exists)
+
+		dirSize, err := vfs.DirSize(uris[1] + "/__schema")
+		require.NoError(t, err)
+		require.True(t, dirSize > 0)
+		dirSize, err = vfs.DirSize(uris[1] + "/__schema")
+		require.NoError(t, err)
+		require.True(t, dirSize > 0)
+	})
 }
 
 func memberCount(group *Group) (uint64, error) {

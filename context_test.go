@@ -33,22 +33,13 @@ func ExampleNewContext() {
 
 	// Create a context directly from a configuration map:
 	context, err = NewContextFromMap(map[string]string{
-		"sm.memory_budget":     "16GB",
-		"sm.memory_budget_var": "32GB",
+		"sm.memory_budget":     "17179869184", // 16 GiB
+		"sm.memory_budget_var": "34359738368", // 32 GiB
 	})
 	if err != nil {
 		// handle error
 		return
 	}
-
-	// Check if S3 is supported:
-	isS3Supported, err := context.IsSupportedFS(TILEDB_S3)
-	if err != nil {
-		// handle error
-		return
-	}
-	// Output: true
-	fmt.Println(isS3Supported)
 
 	stats, err := context.Stats()
 	if err != nil {
@@ -59,6 +50,15 @@ func ExampleNewContext() {
 	if len(stats) > 0 {
 		// Do something with stats
 	}
+
+	// Check if S3 is supported:
+	isS3Supported, err := context.IsSupportedFS(TILEDB_S3)
+	if err != nil {
+		// handle error
+		return
+	}
+	// Output: true
+	fmt.Println(isS3Supported)
 }
 
 // TestNewContext tests setting a new context
@@ -95,16 +95,16 @@ func TestCancelAllTasks(t *testing.T) {
 func TestGetContextConfig(t *testing.T) {
 	// Create a context with a non-default value:
 	context, err := NewContextFromMap(map[string]string{
-		"sm.tile_cache_size": "10",
+		"sm.memory_budget": "4294967296",
 	})
 	require.NoError(t, err)
 	config, err := context.Config()
 	require.NoError(t, err)
 
 	// Validate config has setting changed
-	val, err := config.Get("sm.tile_cache_size")
+	val, err := config.Get("sm.memory_budget")
 	require.NoError(t, err)
-	assert.Equal(t, "10", val)
+	assert.Equal(t, "4294967296", val)
 }
 
 // TestContextLastError tests retrieving the last error

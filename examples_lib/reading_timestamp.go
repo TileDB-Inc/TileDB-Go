@@ -82,7 +82,7 @@ func writeTimestampArray(dir string, key string, value string, timestamp uint64,
 
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
 
 	// Perform the write and close the array.
@@ -141,11 +141,18 @@ func readTimestampArray(dir string, timestamp uint64) {
 	checkError(err)
 	defer query.Free()
 
-	err = query.SetSubArray(subArray)
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+
+	err = subarray.SetSubArray(subArray)
+	checkError(err)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
 
 	// Submit the query and close the array.
@@ -190,11 +197,18 @@ func readTimestampArrayWithOptions(dir string, timestamp uint64) {
 	checkError(err)
 	defer query.Free()
 
-	err = query.SetSubArray(subArray)
+	// Prepare the subarray
+	subarray, err := array.NewSubarray()
+	checkError(err)
+	defer subarray.Free()
+
+	err = subarray.SetSubArray(subArray)
+	checkError(err)
+	err = query.SetSubarray(subarray)
 	checkError(err)
 	err = query.SetLayout(tiledb.TILEDB_ROW_MAJOR)
 	checkError(err)
-	_, err = query.SetBuffer("a", data)
+	_, err = query.SetDataBuffer("a", data)
 	checkError(err)
 
 	// Submit the query and close the array.
@@ -215,7 +229,7 @@ func readTimestampArrayWithOptions(dir string, timestamp uint64) {
 }
 
 func getTimestamp() uint64 {
-	return uint64(time.Now().UTC().UnixNano() / 1000000)
+	return uint64(time.Now().UTC().UnixMilli())
 }
 
 // RunTimestampArray shows timestamp correlation of written data and metadata
@@ -227,15 +241,16 @@ func RunTimestampArray() {
 	// Write data and metadata
 	t1 := getTimestamp()
 	writeTimestampArray(tmpDir1, "meta_key", "Write1", t1, 0)
-	time.Sleep(2000 * time.Millisecond)
+	// Wait a few milliseconds to ensure that our writes are ordered correctly.
+	time.Sleep(5 * time.Millisecond)
 	// Write metadata only
 	t2 := getTimestamp()
 	writeTimestampArrayMeta(tmpDir1, "meta_key", "Write2", t2)
-	time.Sleep(2000 * time.Millisecond)
+	time.Sleep(5 * time.Millisecond)
 	// Write metadata only
 	t3 := getTimestamp()
 	writeTimestampArrayMeta(tmpDir1, "meta_key", "Write3", t3)
-	time.Sleep(2000 * time.Millisecond)
+	time.Sleep(5 * time.Millisecond)
 	// Write metadata only
 	t4 := getTimestamp()
 	writeTimestampArrayMeta(tmpDir1, "meta_key", "Write4", t4)
@@ -251,13 +266,13 @@ func RunTimestampArray() {
 	createTimestampArray(tmpDir2)
 	t1 = getTimestamp()
 	writeTimestampArray(tmpDir2, "meta_key", "Write1", t1, 0)
-	time.Sleep(2000 * time.Millisecond)
+	time.Sleep(5 * time.Millisecond)
 	t2 = getTimestamp()
 	writeTimestampArray(tmpDir2, "meta_key", "Write2", t2, 1)
-	time.Sleep(2000 * time.Millisecond)
+	time.Sleep(5 * time.Millisecond)
 	t3 = getTimestamp()
 	writeTimestampArray(tmpDir2, "meta_key", "Write3", t3, 2)
-	time.Sleep(2000 * time.Millisecond)
+	time.Sleep(5 * time.Millisecond)
 	t4 = getTimestamp()
 	writeTimestampArray(tmpDir2, "meta_key", "Write4", t4, 3)
 	readTimestampArray(tmpDir2, t1)

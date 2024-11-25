@@ -1,8 +1,6 @@
 package tiledb
 
 /*
-#cgo LDFLAGS: -ltiledb
-#cgo linux LDFLAGS: -ldl
 #include <tiledb/tiledb.h>
 #include <stdlib.h>
 #include "clibrary.h"
@@ -12,6 +10,7 @@ import "C"
 import (
 	"fmt"
 	"io"
+	"math"
 	"runtime"
 	"strings"
 	"unsafe"
@@ -42,7 +41,7 @@ func (v *VFSfh) Free() {
 	}
 }
 
-// Context exposes the internal TileDB context used to initialize the vfsh
+// Context exposes the internal TileDB context used to initialize the vfsh.
 func (v *VFSfh) Context() *Context {
 	return v.context
 }
@@ -86,11 +85,7 @@ func NewVFS(context *Context, config *Config) (*VFS, error) {
 		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("error creating tiledb context: %s", C.GoString(msg))
 	}
-
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(&vfs, func(vfs *VFS) {
-		vfs.Free()
-	})
+	freeOnGC(&vfs)
 
 	return &vfs, nil
 }
@@ -106,12 +101,12 @@ func (v *VFS) Free() {
 	}
 }
 
-// Context exposes the internal TileDB context used to initialize the vfs
+// Context exposes the internal TileDB context used to initialize the vfs.
 func (v *VFS) Context() *Context {
 	return v.context
 }
 
-// Config retrieves a copy of the config from vfs
+// Config retrieves a copy of the config from vfs.
 func (v *VFS) Config() (*Config, error) {
 	var config Config
 	ret := C.tiledb_vfs_get_config(v.context.tiledbContext, v.tiledbVFS,
@@ -122,10 +117,7 @@ func (v *VFS) Config() (*Config, error) {
 	} else if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("unknown error in GetConfig")
 	}
-
-	runtime.SetFinalizer(&config, func(config *Config) {
-		config.Free()
-	})
+	freeOnGC(&config)
 
 	return &config, nil
 }
@@ -156,7 +148,7 @@ func (v *VFS) RemoveBucket(uri string) error {
 	return nil
 }
 
-// EmptyBucket empty a bucket
+// EmptyBucket empties a bucket.
 func (v *VFS) EmptyBucket(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -169,7 +161,7 @@ func (v *VFS) EmptyBucket(uri string) error {
 	return nil
 }
 
-// IsEmptyBucket check if a bucket is empty
+// IsEmptyBucket checks if a bucket is empty.
 func (v *VFS) IsEmptyBucket(uri string) (bool, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -347,10 +339,7 @@ func (v *VFS) Open(uri string, mode VFSMode) (*VFSfh, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
 	fh := &VFSfh{context: v.context, uri: uri, vfs: v}
-	// Set finalizer for free C pointer on gc
-	runtime.SetFinalizer(fh, func(fh *VFSfh) {
-		fh.Free()
-	})
+	freeOnGC(fh)
 
 	ret := C.tiledb_vfs_open(v.context.tiledbContext, v.tiledbVFS, curi, C.tiledb_vfs_mode_t(mode), &fh.tiledbVFSfh)
 
@@ -363,7 +352,7 @@ func (v *VFS) Open(uri string, mode VFSMode) (*VFSfh, error) {
 	return fh, nil
 }
 
-// Close a file. This is flushes the buffered data into the file when the file
+// Close closes a file. This is flushes the buffered data into the file when the file
 // was opened in write (or append) mode. It is particularly important to be
 // called after S3 writes, as otherwise the writes will not take effect.
 func (v *VFS) Close(fh *VFSfh) error {
@@ -378,10 +367,10 @@ func (v *VFS) Close(fh *VFSfh) error {
 	return nil
 }
 
-// Read part of a file
+// Read reads part of a file.
 func (v *VFS) Read(fh *VFSfh, offset uint64, nbytes uint64) ([]byte, error) {
 	bytes := make([]byte, nbytes)
-	cbuffer := unsafe.Pointer(&bytes[0])
+	cbuffer := slicePtr(bytes)
 	ret := C.tiledb_vfs_read(v.context.tiledbContext, fh.tiledbVFSfh, C.uint64_t(offset), cbuffer, C.uint64_t(nbytes))
 
 	if ret != C.TILEDB_OK {
@@ -391,11 +380,12 @@ func (v *VFS) Read(fh *VFSfh, offset uint64, nbytes uint64) ([]byte, error) {
 	return bytes, nil
 }
 
-// Write the contents of a buffer into a file. Note that this function only
+// Write writes the contents of a buffer into a file. Note that this function only
 // appends data at the end of the file. If the file does not exist,
-// it will be created
+// it will be created.
 func (v *VFS) Write(fh *VFSfh, bytes []byte) error {
-	cbuffer := C.CBytes(bytes)
+	cbuffer := slicePtr(bytes)
+	defer runtime.KeepAlive(bytes)
 	ret := C.tiledb_vfs_write(v.context.tiledbContext, fh.tiledbVFSfh, cbuffer, C.uint64_t(len(bytes)))
 
 	if ret != C.TILEDB_OK {
@@ -405,7 +395,7 @@ func (v *VFS) Write(fh *VFSfh, bytes []byte) error {
 	return nil
 }
 
-// Sync (flushes) a file.
+// Sync flushes a file.
 func (v *VFS) Sync(fh *VFSfh) error {
 	ret := C.tiledb_vfs_sync(v.context.tiledbContext, fh.tiledbVFSfh)
 
@@ -416,7 +406,7 @@ func (v *VFS) Sync(fh *VFSfh) error {
 	return nil
 }
 
-// Touch a file, i.e., creates a new empty file.
+// Touch touches a file, i.e., creates a new empty file.
 func (v *VFS) Touch(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -467,7 +457,7 @@ func numOfFragmentsInPath(path *C.cchar_t, data unsafe.Pointer) int32 {
 	return 1
 }
 
-// NumOfFragmentsInPath returns number of folders in a path
+// NumOfFragmentsInPath returns the number of folders in a path.
 func (v *VFS) NumOfFragmentsInPath(path string) (int, error) {
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
@@ -477,6 +467,7 @@ func (v *VFS) NumOfFragmentsInPath(path string) (int, error) {
 		Vfs:          v,
 	}
 	data := pointer.Save(&numOfFragmentsData)
+	defer C.free(data)
 
 	ret := C._num_of_folders_in_path(v.context.tiledbContext, v.tiledbVFS, cpath, data)
 
@@ -487,7 +478,7 @@ func (v *VFS) NumOfFragmentsInPath(path string) (int, error) {
 	return numOfFragmentsData.NumOfFolders, nil
 }
 
-// Close a file. This is flushes the buffered data into the file when the file
+// Close closes a file. This flushes the buffered data into the file when the file
 // was opened in write (or append) mode. It is particularly important to be
 // called after S3 writes, as otherwise the writes will not take effect.
 func (v *VFSfh) Close() error {
@@ -502,7 +493,7 @@ func (v *VFSfh) Close() error {
 	return nil
 }
 
-// Read part of a file
+// Read reads part of a file.
 func (v *VFSfh) Read(p []byte) (int, error) {
 	nbytes := uint64(len(p))
 
@@ -523,7 +514,7 @@ func (v *VFSfh) Read(p []byte) (int, error) {
 		return 0, io.EOF
 	}
 
-	cbuffer := unsafe.Pointer(&p[0])
+	cbuffer := slicePtr(p)
 	ret := C.tiledb_vfs_read(v.context.tiledbContext, v.tiledbVFSfh, C.uint64_t(v.offset), cbuffer, C.uint64_t(nbytes))
 
 	if ret != C.TILEDB_OK {
@@ -534,14 +525,14 @@ func (v *VFSfh) Read(p []byte) (int, error) {
 	return int(nbytes), nil
 }
 
-// Write the contents of a buffer into a file. Note that this function only
+// Write writes the contents of a buffer into a file. Note that this function only
 // appends data at the end of the file. If the file does not exist,
-// it will be created
+// it will be created.
 func (v *VFSfh) Write(bytes []byte) (int, error) {
 	if len(bytes) == 0 {
 		return 0, nil
 	}
-	cbuffer := unsafe.Pointer(&bytes[0])
+	cbuffer := slicePtr(bytes)
 	ret := C.tiledb_vfs_write(v.context.tiledbContext, v.tiledbVFSfh, cbuffer, C.uint64_t(len(bytes)))
 
 	if ret != C.TILEDB_OK {
@@ -551,7 +542,7 @@ func (v *VFSfh) Write(bytes []byte) (int, error) {
 	return len(bytes), nil
 }
 
-// Sync (flushes) a file.
+// Sync flushes a file.
 func (v *VFSfh) Sync() error {
 	ret := C.tiledb_vfs_sync(v.context.tiledbContext, v.tiledbVFSfh)
 
@@ -562,38 +553,40 @@ func (v *VFSfh) Sync() error {
 	return nil
 }
 
-// Seek to an offset
+// Seek seeks to an offset.
 func (v *VFSfh) Seek(offset int64, whence int) (int64, error) {
-	absOffset := uint64(offset)
-	if offset <= 0 {
-		absOffset = uint64(-1 * offset)
+	if v.size == nil {
+		if err := v.fetchAndSetSize(); err != nil {
+			return -1, err
+		}
 	}
-	var origin uint64
 
+	var origin uint64
 	switch whence {
 	case io.SeekStart:
 		origin = 0
 	case io.SeekCurrent:
 		origin = v.offset
 	case io.SeekEnd:
-		// If the size is empty, fetch it
-		if v.size == nil {
-			err := v.fetchAndSetSize()
-			if err != nil {
-				return -1, err
-			}
-		}
 		origin = *v.size
 	default:
 		return -1, fmt.Errorf("unknown seek whence")
 	}
 
-	if (offset < 0 && absOffset > origin) ||
-		(offset >= 0 && absOffset > *v.size-origin) {
-		return -1, fmt.Errorf("invalid offset")
+	var newOffset uint64
+	if offset >= 0 {
+		newOffset = origin + uint64(offset)
+		if newOffset > *v.size {
+			return -1, fmt.Errorf("invalid offset, attempt to move beyond end of file")
+		}
+	} else {
+		if offset == math.MinInt64 || uint64(-offset) > origin {
+			return -1, fmt.Errorf("invalid offset, attempt to move before start of file")
+		}
+		newOffset = origin - uint64(-offset)
 	}
 
-	v.offset = uint64(int64(origin) + offset)
+	v.offset = newOffset
 	return int64(v.offset), nil
 }
 
@@ -634,7 +627,7 @@ func vfsLs(path *C.cchar_t, data unsafe.Pointer) int32 {
 	return 1
 }
 
-// List returns list of folders and files in a path
+// List returns list of folders and files in a path.
 func (v *VFS) List(path string) ([]string, []string, error) {
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))

@@ -138,7 +138,7 @@ func secondsFromEpochMonths(numOfMonths int64) int64 {
 }
 
 // GetTimeFromTimestamp returns a time.Time object for a time related TileDB datatype
-// Datetimes in TileDB are deltas from unix epoch with a resolution of the specified time
+// Datetimes in TileDB are deltas from unix epoch with a resolution of the specified time.
 func GetTimeFromTimestamp(datatype Datatype, timestamp int64) time.Time {
 	var then time.Time
 	switch datatype {
