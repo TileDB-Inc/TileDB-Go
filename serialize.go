@@ -295,7 +295,7 @@ func SerializeArrayMetadataToBuffer(a *Array, serializationType SerializationTyp
 // SerializeArrayMetadata gets and serializes the array metadata.
 //
 // Deprecated: Use SerializeArrayMetadataToBuffer instead.
-func SerializeArrayMetadata(a *Array, buffer *Buffer, serializationType SerializationType) ([]byte, error) {
+func SerializeArrayMetadata(a *Array, serializationType SerializationType) ([]byte, error) {
 	buffer, err := SerializeArrayMetadataToBuffer(a, serializationType)
 	if err != nil {
 		return nil, err

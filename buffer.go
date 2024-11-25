@@ -121,7 +121,7 @@ func (b *Buffer) WriteTo(w io.Writer) (int64, error) {
 
 	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer, &cbuffer, &csize)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("error getting tiledb buffer data: %s", b.context.LastError())
+		return 0, fmt.Errorf("error getting tiledb buffer data: %w", b.context.LastError())
 	}
 
 	if cbuffer == nil || csize == 0 {
@@ -135,10 +135,10 @@ func (b *Buffer) WriteTo(w io.Writer) (int64, error) {
 	for remaining > 0 {
 		// TODO: Use min on Go 1.21+
 		var writeSize int32
-		if csize > math.MaxInt32 {
+		if remaining > math.MaxInt32 {
 			writeSize = math.MaxInt32
 		} else {
-			writeSize = int32(csize)
+			writeSize = int32(remaining)
 		}
 
 		// Construct a slice from the buffer's data without copying it.
@@ -151,7 +151,7 @@ func (b *Buffer) WriteTo(w io.Writer) (int64, error) {
 		remaining -= int64(n)
 
 		if err != nil {
-			return int64(csize) - remaining, fmt.Errorf("error writing buffer to writer: %s", err)
+			return int64(csize) - remaining, fmt.Errorf("error writing buffer to writer: %w", err)
 		}
 	}
 
