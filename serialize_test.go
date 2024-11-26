@@ -1,21 +1,13 @@
 package tiledb
 
 import (
+	"bytes"
 	"runtime"
 	"runtime/debug"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-type MemoryBuffer struct {
-	bytes []byte
-}
-
-func (x *MemoryBuffer) Write(buff []byte) (int, error) {
-	x.bytes = append(x.bytes, buff...)
-	return len(buff), nil
-}
 
 func TestSerializeArraySchemaGC(t *testing.T) {
 	disableGC(t)
@@ -51,12 +43,12 @@ func TestSerializeArraySchemaGC(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bytes := &MemoryBuffer{}
+	bytes := &bytes.Buffer{}
 	_, err = buffer.WriteTo(bytes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEmpty(t, bytes.bytes)
+	assert.NotEmpty(t, bytes.Bytes())
 	runtime.GC()
 	runtime.GC()
 }
