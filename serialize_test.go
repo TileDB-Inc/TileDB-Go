@@ -38,7 +38,9 @@ func TestSerializeArraySchemaGC(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	schema.AddAttributes(attr)
+	if err := schema.AddAttributes(attr); err != nil {
+		t.Fatal(err)
+	}
 	buffer, err := SerializeArraySchemaToBuffer(schema, TILEDB_CAPNP, true)
 	if err != nil {
 		t.Fatal(err)
