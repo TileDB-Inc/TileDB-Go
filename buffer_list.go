@@ -113,6 +113,8 @@ func (b *BufferList) TotalSize() (uint64, error) {
 }
 
 // Flatten copies and concatenates all buffers in the list into a new buffer.
+//
+// Deprecated: Use WriteTo instead for increased performance.
 func (b *BufferList) Flatten() (*Buffer, error) {
 	buffer := Buffer{context: b.context}
 	freeOnGC(&buffer)
