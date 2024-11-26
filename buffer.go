@@ -145,7 +145,6 @@ func (b *Buffer) WriteTo(w io.Writer) (int64, error) {
 		// Keep the buffer alive during the write, to prevent the GC from
 		// collecting the memory while it's being used.
 		n, err := w.Write(unsafe.Slice((*byte)(cbuffer), writeSize))
-		runtime.KeepAlive(b)
 
 		cbuffer = unsafe.Pointer(uintptr(cbuffer) + uintptr(n))
 		remaining -= int64(n)

@@ -46,7 +46,7 @@ func (b *BufferList) Context() *Context {
 }
 
 // WriteTo writes the contents of a BufferList to an io.Writer.
-func (b *BufferList) WriteTo(w io.Writer) (n int64, err error) {
+func (b *BufferList) WriteTo(w io.Writer) (int64, error) {
 	nbuffs, err := b.NumBuffers()
 	if err != nil {
 		return 0, err

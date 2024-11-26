@@ -70,7 +70,7 @@ func DeserializeArraySchema(buffer *Buffer, serializationType SerializationType,
 	return &schema, nil
 }
 
-// SerializeArrayNonEmptyDomain gets and serializes the array nonempty domain.
+// SerializeArrayNonEmptyDomainToBuffer gets and serializes the array nonempty domain and returns a Buffer object containing the payload.
 func SerializeArrayNonEmptyDomainToBuffer(a *Array, serializationType SerializationType) (*Buffer, error) {
 	schema, err := a.Schema()
 	if err != nil {
@@ -109,7 +109,7 @@ func SerializeArrayNonEmptyDomainToBuffer(a *Array, serializationType Serializat
 	return &buffer, nil
 }
 
-// SerializeArrayNonEmptyDomainToBuffer gets and serializes the array nonempty domain and returns a Buffer object containing the payload.
+// SerializeArrayNonEmptyDomain gets and serializes the array nonempty domain.
 //
 // Deprecated: Use SerializeArrayNonEmptyDomainToBuffer instead.
 func SerializeArrayNonEmptyDomain(a *Array, serializationType SerializationType) ([]byte, error) {
