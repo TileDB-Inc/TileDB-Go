@@ -59,10 +59,10 @@ func (b *BufferList) WriteTo(w io.Writer) (n int64, err error) {
 		if err != nil {
 			return 0, err
 		}
-		defer buff.Free()
-
 		n, err := buff.WriteTo(w)
 		written += n
+
+		buff.Free()
 
 		if err != nil {
 			return written, err
