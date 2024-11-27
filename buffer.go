@@ -114,6 +114,46 @@ func (b *Buffer) Serialize(serializationType SerializationType) ([]byte, error) 
 	return bs, nil
 }
 
+// ReadAt writes the contents of a Buffer at a given offset to a slice.
+func (b *Buffer) ReadAt(p []byte, off int64) (int, error) {
+	if off < 0 {
+		return 0, fmt.Errorf("offset cannot be negative")
+	}
+
+	var cbuffer unsafe.Pointer
+	var csize C.uint64_t
+
+	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer, &cbuffer, &csize)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("error getting tiledb buffer data: %w", b.context.LastError())
+	}
+
+	if uintptr(off) > uintptr(csize) {
+		return 0, fmt.Errorf("offset cannot be greater than buffer size")
+	}
+
+	if cbuffer == nil || csize == 0 {
+		return 0, nil
+	}
+
+	availableBytes := uint64(csize) - uint64(off)
+	var sizeToRead int
+	if availableBytes > math.MaxInt {
+		sizeToRead = math.MaxInt
+	} else {
+		sizeToRead = int(availableBytes)
+	}
+
+	readSize := copy(p, unsafe.Slice((*byte)(unsafe.Pointer(uintptr(cbuffer)+uintptr(off))), sizeToRead))
+
+	var err error
+	if int64(readSize)+off == int64(csize) {
+		err = io.EOF
+	}
+
+	return readSize, err
+}
+
 // WriteTo writes the contents of a Buffer to an io.Writer.
 func (b *Buffer) WriteTo(w io.Writer) (int64, error) {
 	var cbuffer unsafe.Pointer
@@ -159,6 +199,7 @@ func (b *Buffer) WriteTo(w io.Writer) (int64, error) {
 
 // Static assert that Buffer implements io.WriterTo.
 var _ io.WriterTo = (*Buffer)(nil)
+var _ io.ReaderAt = (*Buffer)(nil)
 
 // SetBuffer sets the buffer to point at the given Go slice. The memory is now
 // Go-managed.

@@ -2,6 +2,7 @@ package tiledb
 
 import (
 	"fmt"
+	"io"
 	"runtime"
 	"testing"
 
@@ -101,7 +102,7 @@ type ByteCounter struct {
 }
 
 func (b *ByteCounter) Write(x []byte) (int, error) {
-	b.BytesWritten = b.BytesWritten + int64(len(x))
+	b.BytesWritten += int64(len(x))
 	return len(x), nil
 }
 
@@ -116,9 +117,39 @@ func TestWriteTo(t *testing.T) {
 		err := buffer.SetBuffer(make([]byte, size))
 		require.NoError(t, err)
 
-		counter := &ByteCounter{BytesWritten: 0}
+		counter := new(ByteCounter)
 		n, err := buffer.WriteTo(counter)
 		require.NoError(t, err)
 		assert.Equal(t, size, int(n))
+	}
+}
+
+func TestReadAt(t *testing.T) {
+	context, err := NewContext(nil)
+	require.NoError(t, err)
+	buffer, err := NewBuffer(context)
+	require.NoError(t, err)
+
+	testSizes := [4]int{16, 256, 65536, 268435456}
+	for _, size := range testSizes {
+		err := buffer.SetBuffer(make([]byte, size))
+		require.NoError(t, err)
+
+		readBuffer := make([]byte, 10)
+		n, err := buffer.ReadAt(readBuffer, 0)
+		require.NoError(t, err)
+		require.Equal(t, 10, n)
+
+		n, err = buffer.ReadAt(readBuffer, int64(size-10))
+		require.Equal(t, io.EOF, err)
+		require.Equal(t, 10, n)
+
+		n, err = buffer.ReadAt(readBuffer, int64(size-5))
+		require.Equal(t, io.EOF, err)
+		require.Equal(t, 5, n)
+
+		n, err = buffer.ReadAt(readBuffer, int64(size))
+		require.Equal(t, io.EOF, err)
+		require.Equal(t, 0, n)
 	}
 }
