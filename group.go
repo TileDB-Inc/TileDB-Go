@@ -436,14 +436,26 @@ func (g *Group) Dump(recurse bool) (string, error) {
 	return C.GoString(cOutput), nil
 }
 
-// SerializeGroupMetadata gets and serializes the group metadata
-func SerializeGroupMetadata(g *Group, serializationType SerializationType) ([]byte, error) {
+// SerializeGroupMetadata gets and serializes the group metadata and returns a Buffer object containing the payload
+func SerializeGroupMetadataToBuffer(g *Group, serializationType SerializationType) (*Buffer, error) {
 	buffer := Buffer{context: g.context}
 	freeOnGC(&buffer)
 
 	ret := C.tiledb_serialize_group_metadata(g.context.tiledbContext, g.group, C.tiledb_serialization_type_t(serializationType), &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error serializing group metadata: %s", g.context.LastError())
+	}
+
+	return &buffer, nil
+}
+
+// SerializeGroupMetadata gets and serializes the group metadata
+//
+// Deprecated: Use SerializeGroupMetadataToBuffer instead.
+func SerializeGroupMetadata(g *Group, serializationType SerializationType) ([]byte, error) {
+	buffer, err := SerializeGroupMetadataToBuffer(g, serializationType)
+	if err != nil {
+		return nil, err
 	}
 
 	return buffer.Serialize(serializationType)

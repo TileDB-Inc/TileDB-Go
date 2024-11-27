@@ -10,8 +10,8 @@ import (
 	"fmt"
 )
 
-// SerializeArraySchemaEvolution serializes the given array schema evolution.
-func SerializeArraySchemaEvolution(arraySchemaEvolution *ArraySchemaEvolution, serializationType SerializationType, clientSide bool) ([]byte, error) {
+// SerializeArraySchemaEvolution serializes the given array schema evolution and serializes the group metadata and returns a Buffer object containing the payload.
+func SerializeArraySchemaEvolutionToBuffer(arraySchemaEvolution *ArraySchemaEvolution, serializationType SerializationType, clientSide bool) (*Buffer, error) {
 	var cClientSide C.int32_t
 	if clientSide {
 		cClientSide = 1
@@ -30,6 +30,18 @@ func SerializeArraySchemaEvolution(arraySchemaEvolution *ArraySchemaEvolution, s
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error serializing array schem evolution: %s",
 			arraySchemaEvolution.context.LastError())
+	}
+
+	return &buffer, nil
+}
+
+// SerializeArraySchemaEvolution serializes the given array schema evolution.
+//
+// Deprecated: Use SerializeArraySchemaEvolutionToBuffer instead.
+func SerializeArraySchemaEvolution(arraySchemaEvolution *ArraySchemaEvolution, serializationType SerializationType, clientSide bool) ([]byte, error) {
+	buffer, err := SerializeArraySchemaEvolutionToBuffer(arraySchemaEvolution, serializationType, clientSide)
+	if err != nil {
+		return nil, err
 	}
 
 	return buffer.Serialize(serializationType)
