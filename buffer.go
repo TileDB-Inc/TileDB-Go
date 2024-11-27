@@ -134,11 +134,11 @@ func (b *Buffer) WriteTo(w io.Writer) (int64, error) {
 	// for the bigger buffers.
 	for remaining > 0 {
 		// TODO: Use min on Go 1.21+
-		var writeSize int32
-		if remaining > math.MaxInt32 {
-			writeSize = math.MaxInt32
+		var writeSize int
+		if remaining > math.MaxInt {
+			writeSize = math.MaxInt
 		} else {
-			writeSize = int32(remaining)
+			writeSize = int(remaining)
 		}
 
 		// Construct a slice from the buffer's data without copying it.
