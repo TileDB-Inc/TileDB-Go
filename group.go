@@ -436,50 +436,6 @@ func (g *Group) Dump(recurse bool) (string, error) {
 	return C.GoString(cOutput), nil
 }
 
-// SerializeGroupMetadata gets and serializes the group metadata and returns a Buffer object containing the payload
-func SerializeGroupMetadataToBuffer(g *Group, serializationType SerializationType) (*Buffer, error) {
-	buffer := Buffer{context: g.context}
-	freeOnGC(&buffer)
-
-	ret := C.tiledb_serialize_group_metadata(g.context.tiledbContext, g.group, C.tiledb_serialization_type_t(serializationType), &buffer.tiledbBuffer)
-	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error serializing group metadata: %s", g.context.LastError())
-	}
-
-	return &buffer, nil
-}
-
-// SerializeGroupMetadata gets and serializes the group metadata
-//
-// Deprecated: Use SerializeGroupMetadataToBuffer instead.
-func SerializeGroupMetadata(g *Group, serializationType SerializationType) ([]byte, error) {
-	buffer, err := SerializeGroupMetadataToBuffer(g, serializationType)
-	if err != nil {
-		return nil, err
-	}
-
-	return buffer.Serialize(serializationType)
-}
-
-// DeserializeGroupMetadata deserializes group metadata
-func DeserializeGroupMetadata(g *Group, buffer *Buffer, serializationType SerializationType) error {
-	b, err := buffer.dataCopy()
-	if err != nil {
-		return errors.New("failed to retrieve bytes from buffer")
-	}
-	// cstrings are null terminated. Go's are not, add it as a suffix
-	if err := buffer.SetBuffer(append(b, []byte("\u0000")...)); err != nil {
-		return errors.New("failed to add null terminator to buffer")
-	}
-
-	ret := C.tiledb_deserialize_group_metadata(g.context.tiledbContext, g.group, C.tiledb_serialization_type_t(serializationType), buffer.tiledbBuffer)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error deserializing group metadata: %s", g.context.LastError())
-	}
-
-	return nil
-}
-
 // GetIsRelativeURIByName returns whether a named member of the group has a uri relative to the group
 func (g *Group) GetIsRelativeURIByName(name string) (bool, error) {
 	cName := C.CString(name)

@@ -9,6 +9,7 @@ package tiledb
 import "C"
 
 import (
+	"errors"
 	"fmt"
 	"runtime"
 	"unsafe"
@@ -68,6 +69,70 @@ func DeserializeArraySchema(buffer *Buffer, serializationType SerializationType,
 	freeOnGC(&schema)
 
 	return &schema, nil
+}
+
+// SerializeArraySchemaEvolution serializes the given array schema evolution and serializes the group metadata and returns a Buffer object containing the payload.
+func SerializeArraySchemaEvolutionToBuffer(arraySchemaEvolution *ArraySchemaEvolution, serializationType SerializationType, clientSide bool) (*Buffer, error) {
+	var cClientSide C.int32_t
+	if clientSide {
+		cClientSide = 1
+	} else {
+		cClientSide = 0
+	}
+
+	buffer := Buffer{context: arraySchemaEvolution.context}
+	freeOnGC(&buffer)
+
+	ret := C.tiledb_serialize_array_schema_evolution(
+		arraySchemaEvolution.context.tiledbContext,
+		arraySchemaEvolution.tiledbArraySchemaEvolution,
+		C.tiledb_serialization_type_t(serializationType),
+		cClientSide, &buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error serializing array schem evolution: %s",
+			arraySchemaEvolution.context.LastError())
+	}
+
+	return &buffer, nil
+}
+
+// SerializeArraySchemaEvolution serializes the given array schema evolution.
+//
+// Deprecated: Use SerializeArraySchemaEvolutionToBuffer instead.
+func SerializeArraySchemaEvolution(arraySchemaEvolution *ArraySchemaEvolution, serializationType SerializationType, clientSide bool) ([]byte, error) {
+	buffer, err := SerializeArraySchemaEvolutionToBuffer(arraySchemaEvolution, serializationType, clientSide)
+	if err != nil {
+		return nil, err
+	}
+
+	return buffer.Serialize(serializationType)
+}
+
+// DeserializeArraySchemaEvolution deserializes a new array schema evolution object from the given buffer.
+func DeserializeArraySchemaEvolution(buffer *Buffer, serializationType SerializationType, clientSide bool) (*ArraySchemaEvolution, error) {
+	arraySchemaEvolution := ArraySchemaEvolution{context: buffer.context}
+
+	var cClientSide C.int32_t
+	if clientSide {
+		cClientSide = 1
+	} else {
+		cClientSide = 0
+	}
+
+	ret := C.tiledb_deserialize_array_schema_evolution(
+		arraySchemaEvolution.context.tiledbContext, buffer.tiledbBuffer,
+		C.tiledb_serialization_type_t(serializationType),
+		cClientSide, &arraySchemaEvolution.tiledbArraySchemaEvolution)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error deserializing array schema evolution: %s", arraySchemaEvolution.context.LastError())
+	}
+
+	// This needs to happen *after* the tiledb_deserialize_array_schema_evolution
+	// call because that may leave the schemaEvolution with a non-nil pointer
+	// to already-freed memory.
+	freeOnGC(&arraySchemaEvolution)
+
+	return &arraySchemaEvolution, nil
 }
 
 // SerializeArrayNonEmptyDomainToBuffer gets and serializes the array nonempty domain and returns a Buffer object containing the payload.
@@ -558,6 +623,50 @@ func DeserializeQueryAndArray(context *Context, buffer *Buffer, serializationTyp
 	// Make sure the buffer stays alive untill after the deserialization is complete
 	runtime.KeepAlive(buffer)
 	return array, query, nil
+}
+
+// SerializeGroupMetadata gets and serializes the group metadata and returns a Buffer object containing the payload
+func SerializeGroupMetadataToBuffer(g *Group, serializationType SerializationType) (*Buffer, error) {
+	buffer := Buffer{context: g.context}
+	freeOnGC(&buffer)
+
+	ret := C.tiledb_serialize_group_metadata(g.context.tiledbContext, g.group, C.tiledb_serialization_type_t(serializationType), &buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("Error serializing group metadata: %s", g.context.LastError())
+	}
+
+	return &buffer, nil
+}
+
+// SerializeGroupMetadata gets and serializes the group metadata
+//
+// Deprecated: Use SerializeGroupMetadataToBuffer instead.
+func SerializeGroupMetadata(g *Group, serializationType SerializationType) ([]byte, error) {
+	buffer, err := SerializeGroupMetadataToBuffer(g, serializationType)
+	if err != nil {
+		return nil, err
+	}
+
+	return buffer.Serialize(serializationType)
+}
+
+// DeserializeGroupMetadata deserializes group metadata
+func DeserializeGroupMetadata(g *Group, buffer *Buffer, serializationType SerializationType) error {
+	b, err := buffer.dataCopy()
+	if err != nil {
+		return errors.New("failed to retrieve bytes from buffer")
+	}
+	// cstrings are null terminated. Go's are not, add it as a suffix
+	if err := buffer.SetBuffer(append(b, []byte("\u0000")...)); err != nil {
+		return errors.New("failed to add null terminator to buffer")
+	}
+
+	ret := C.tiledb_deserialize_group_metadata(g.context.tiledbContext, g.group, C.tiledb_serialization_type_t(serializationType), buffer.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deserializing group metadata: %s", g.context.LastError())
+	}
+
+	return nil
 }
 
 // HandleLoadArraySchemaRequest Passes the array and serialized LoadArraySchemaRequest to core which returns the
