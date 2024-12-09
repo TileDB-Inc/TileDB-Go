@@ -2,16 +2,12 @@ package tiledb
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"unsafe"
 )
 
 /*
-
-
 	#include <tiledb/tiledb_experimental.h>
-	#include <tiledb/tiledb_serialization.h>
 	#include <stdlib.h>
 */
 import "C"
@@ -36,33 +32,6 @@ func NewGroup(tdbCtx *Context, uri string) (*Group, error) {
 	freeOnGC(&group)
 
 	return &group, nil
-}
-
-// Deserialize deserializes the group from the given buffer.
-func (g *Group) Deserialize(buffer *Buffer, serializationType SerializationType, clientSide bool) error {
-	var cClientSide C.int32_t
-	if clientSide {
-		cClientSide = 1
-	} else {
-		cClientSide = 0
-	}
-
-	b, err := buffer.dataCopy()
-	if err != nil {
-		return errors.New("failed to retrieve bytes from buffer")
-	}
-
-	// cstrings are null terminated. Go's are not, add it as a suffix
-	if err := buffer.SetBuffer(append(b, []byte("\u0000")...)); err != nil {
-		return errors.New("failed to add null terminator to buffer")
-	}
-
-	ret := C.tiledb_deserialize_group(g.context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, g.group)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error deserializing group: %s", g.context.LastError())
-	}
-
-	return nil
 }
 
 // Create creates a new TileDB group.

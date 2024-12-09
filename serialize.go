@@ -669,6 +669,33 @@ func DeserializeGroupMetadata(g *Group, buffer *Buffer, serializationType Serial
 	return nil
 }
 
+// Deserialize deserializes the group from the given buffer.
+func (g *Group) Deserialize(buffer *Buffer, serializationType SerializationType, clientSide bool) error {
+	var cClientSide C.int32_t
+	if clientSide {
+		cClientSide = 1
+	} else {
+		cClientSide = 0
+	}
+
+	b, err := buffer.dataCopy()
+	if err != nil {
+		return errors.New("failed to retrieve bytes from buffer")
+	}
+
+	// cstrings are null terminated. Go's are not, add it as a suffix
+	if err := buffer.SetBuffer(append(b, []byte("\u0000")...)); err != nil {
+		return errors.New("failed to add null terminator to buffer")
+	}
+
+	ret := C.tiledb_deserialize_group(g.context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, g.group)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error deserializing group: %s", g.context.LastError())
+	}
+
+	return nil
+}
+
 // HandleLoadArraySchemaRequest Passes the array and serialized LoadArraySchemaRequest to core which returns the
 // serialized LoadArraySchemaResponse. The request contains a TileDB Config used to load the schema, the response
 // contains the latest array schema loaded and a map of all array schemas.
@@ -747,6 +774,25 @@ func HandleConsolidationPlanRequest(array *Array, serializationType Serializatio
 		request.tiledbBuffer, response.tiledbBuffer)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("Error handling consolidation plan request: %s", opContext.LastError())
+	}
+
+	runtime.KeepAlive(request)
+	runtime.KeepAlive(array)
+
+	return response, nil
+}
+
+// DeserializeLoadEnumerationsRequest deserializes a LoadEnumerationsRequests. This is used by TileDB-Cloud.
+func DeserializeLoadEnumerationsRequest(array *Array, serializationType SerializationType, request *Buffer) (*Buffer, error) {
+	response, err := NewBuffer(array.context)
+	if err != nil {
+		return nil, fmt.Errorf("error deserializing load enumerations request: %s", array.context.LastError())
+	}
+
+	ret := C.tiledb_handle_load_enumerations_request(array.context.tiledbContext, array.tiledbArray, C.tiledb_serialization_type_t(serializationType),
+		request.tiledbBuffer, response.tiledbBuffer)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error deserializing load enumerations request: %s", array.context.LastError())
 	}
 
 	runtime.KeepAlive(request)
