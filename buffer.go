@@ -180,9 +180,7 @@ func (b *Buffer) WriteTo(w io.Writer) (int64, error) {
 		}
 
 		// Construct a slice from the buffer's data without copying it.
-		n, err := w.Write(unsafe.Slice((*byte)(cbuffer), writeSize))
-
-		cbuffer = unsafe.Pointer(uintptr(cbuffer) + uintptr(n))
+		n, err := w.Write(unsafe.Slice((*byte)(unsafe.Pointer(uintptr(cbuffer)+uintptr(csize)-uintptr(remaining))), writeSize))
 		remaining -= int64(n)
 
 		if err != nil {
