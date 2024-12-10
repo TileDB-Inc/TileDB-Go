@@ -7,6 +7,7 @@ package tiledb
 import "C"
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -117,7 +118,7 @@ func (b *Buffer) Serialize(serializationType SerializationType) ([]byte, error) 
 // ReadAt writes the contents of a Buffer at a given offset to a slice.
 func (b *Buffer) ReadAt(p []byte, off int64) (int, error) {
 	if off < 0 {
-		return 0, fmt.Errorf("offset cannot be negative")
+		return 0, errors.New("offset cannot be negative")
 	}
 
 	var cbuffer unsafe.Pointer
@@ -128,12 +129,9 @@ func (b *Buffer) ReadAt(p []byte, off int64) (int, error) {
 		return 0, fmt.Errorf("error getting tiledb buffer data: %w", b.context.LastError())
 	}
 
-	if uintptr(off) > uintptr(csize) {
-		return 0, fmt.Errorf("offset cannot be greater than buffer size")
-	}
-
-	if cbuffer == nil || csize == 0 {
-		return 0, nil
+	if uintptr(off) >= uintptr(csize) || cbuffer == nil {
+		// Match ReaderAt behavior of os.File and fail with io.EOF if the offset is greater or equal to the size.
+		return 0, io.EOF
 	}
 
 	availableBytes := uint64(csize) - uint64(off)
@@ -182,8 +180,6 @@ func (b *Buffer) WriteTo(w io.Writer) (int64, error) {
 		}
 
 		// Construct a slice from the buffer's data without copying it.
-		// Keep the buffer alive during the write, to prevent the GC from
-		// collecting the memory while it's being used.
 		n, err := w.Write(unsafe.Slice((*byte)(cbuffer), writeSize))
 
 		cbuffer = unsafe.Pointer(uintptr(cbuffer) + uintptr(n))
