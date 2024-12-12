@@ -570,6 +570,16 @@ func (fI *FragmentInfo) DumpSTDOUT() error {
 	return nil
 }
 
+func (fI *FragmentInfo) String() (string, error) {
+	var tdbString *C.tiledb_string_t
+	C.tiledb_fragment_info_dump_str(fI.context.tiledbContext, fI.tiledbFragmentInfo, &tdbString)
+	dumpStr, err := stringHandleToString(tdbString)
+	if err != nil {
+		return "", fmt.Errorf("Error getting fragment info string: %s", fI.context.LastError())
+	}
+	return dumpStr, nil
+}
+
 // SetConfig sets the fragment config.
 func (fI *FragmentInfo) SetConfig(config *Config) error {
 	ret := C.tiledb_fragment_info_set_config(fI.context.tiledbContext, fI.tiledbFragmentInfo, config.tiledbConfig)
