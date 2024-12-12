@@ -7,6 +7,7 @@ package tiledb
 import "C"
 import (
 	"fmt"
+	"io"
 )
 
 // BufferList A list of TileDB BufferList objects
@@ -43,6 +44,36 @@ func (b *BufferList) Free() {
 func (b *BufferList) Context() *Context {
 	return b.context
 }
+
+// WriteTo writes the contents of a BufferList to an io.Writer.
+func (b *BufferList) WriteTo(w io.Writer) (int64, error) {
+	nbuffs, err := b.NumBuffers()
+	if err != nil {
+		return 0, err
+	}
+
+	written := int64(0)
+
+	for i := uint(0); i < uint(nbuffs); i++ {
+		buff, err := b.GetBuffer(i)
+		if err != nil {
+			return 0, err
+		}
+		n, err := buff.WriteTo(w)
+		written += n
+
+		buff.Free()
+
+		if err != nil {
+			return written, err
+		}
+	}
+
+	return written, nil
+}
+
+// Static assert that BufferList implements io.WriterTo.
+var _ io.WriterTo = (*BufferList)(nil)
 
 // NumBuffers returns number of buffers in the list.
 func (b *BufferList) NumBuffers() (uint64, error) {
@@ -82,6 +113,8 @@ func (b *BufferList) TotalSize() (uint64, error) {
 }
 
 // Flatten copies and concatenates all buffers in the list into a new buffer.
+//
+// Deprecated: Use WriteTo instead for increased performance.
 func (b *BufferList) Flatten() (*Buffer, error) {
 	buffer := Buffer{context: b.context}
 	freeOnGC(&buffer)

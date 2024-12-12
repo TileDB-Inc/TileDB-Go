@@ -1,10 +1,59 @@
 package tiledb
 
 import (
+	"bytes"
 	"runtime"
 	"runtime/debug"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestSerializeArraySchemaGC(t *testing.T) {
+	disableGC(t)
+
+	ctx, err := NewContext(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema, err := NewArraySchema(ctx, TILEDB_DENSE)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dom, err := NewDomain(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dim, err := NewDimension(ctx, "d1", TILEDB_INT32, []int32{1, 10}, int32(2))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := dom.AddDimensions(dim); err != nil {
+		t.Fatal(err)
+	}
+	if err := schema.SetDomain(dom); err != nil {
+		t.Fatal(err)
+	}
+	attr, err := NewAttribute(ctx, "a1", TILEDB_INT32)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := schema.AddAttributes(attr); err != nil {
+		t.Fatal(err)
+	}
+	buffer, err := SerializeArraySchemaToBuffer(schema, TILEDB_CAPNP, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bytes := &bytes.Buffer{}
+	_, err = buffer.WriteTo(bytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.NotEmpty(t, bytes.Bytes())
+	runtime.GC()
+	runtime.GC()
+}
 
 func TestDeserializeArraySchemaGC(t *testing.T) {
 	disableGC(t)

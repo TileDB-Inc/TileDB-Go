@@ -496,25 +496,6 @@ func (ase *ArraySchemaEvolution) ApplyExtendedEnumeration(e *Enumeration) error 
 	return nil
 }
 
-// DeserializeLoadEnumerationsRequest deserializes a LoadEnumerationsRequests. This is used by TileDB-Cloud.
-func DeserializeLoadEnumerationsRequest(array *Array, serializationType SerializationType, request *Buffer) (*Buffer, error) {
-	response, err := NewBuffer(array.context)
-	if err != nil {
-		return nil, fmt.Errorf("error deserializing load enumerations request: %s", array.context.LastError())
-	}
-
-	ret := C.tiledb_handle_load_enumerations_request(array.context.tiledbContext, array.tiledbArray, C.tiledb_serialization_type_t(serializationType),
-		request.tiledbBuffer, response.tiledbBuffer)
-	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error deserializing load enumerations request: %s", array.context.LastError())
-	}
-
-	runtime.KeepAlive(request)
-	runtime.KeepAlive(array)
-
-	return response, nil
-}
-
 // copyUnsafeSliceOfEnumerationValues copies the values returned by tiledb_enumeration_get_data to a slice
 // in go managed memory. This is for safety because the returned data points to unsafe memory handled by core.
 // The tiledb_enumeration_get_data returns the aggregated size (sth like len() * sizeOf) so this methods

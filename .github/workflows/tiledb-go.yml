@@ -65,7 +65,7 @@ jobs:
 
     # Tests TileDB-Go
     - name: Test TileDB-Go
-      run: go test -v ./...
+      run: go test -gcflags=all=-d=checkptr=2 -v ./...
 
   Macos_Test:
     runs-on: macos-latest
