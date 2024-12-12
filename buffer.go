@@ -7,7 +7,9 @@ package tiledb
 import "C"
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"math"
 	"runtime"
 	"unsafe"
@@ -94,6 +96,8 @@ func (b *Buffer) Type() (Datatype, error) {
 }
 
 // Serialize returns a copy of the bytes in the buffer.
+//
+// Deprecated: Use WriteTo or ReadAt instead for increased performance.
 func (b *Buffer) Serialize(serializationType SerializationType) ([]byte, error) {
 	bs, err := b.dataCopy()
 	if err != nil {
@@ -103,13 +107,93 @@ func (b *Buffer) Serialize(serializationType SerializationType) ([]byte, error) 
 	case TILEDB_CAPNP:
 		// The entire byte array contains Cap'nP data. Don't bother it.
 	case TILEDB_JSON:
-		// The data is a null-terminated string. Strip off the terminator.
+		// The data might be a null-terminated string. Strip off the terminator.
 		bs = bytes.TrimSuffix(bs, []byte{0})
 	default:
 		return nil, fmt.Errorf("unsupported serialization type: %v", serializationType)
 	}
 	return bs, nil
 }
+
+// ReadAt writes the contents of a Buffer at a given offset to a slice.
+func (b *Buffer) ReadAt(p []byte, off int64) (int, error) {
+	if off < 0 {
+		return 0, errors.New("offset cannot be negative")
+	}
+
+	var cbuffer unsafe.Pointer
+	var csize C.uint64_t
+
+	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer, &cbuffer, &csize)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("error getting tiledb buffer data: %w", b.context.LastError())
+	}
+
+	if uintptr(off) >= uintptr(csize) || cbuffer == nil {
+		// Match ReaderAt behavior of os.File and fail with io.EOF if the offset is greater or equal to the size.
+		return 0, io.EOF
+	}
+
+	availableBytes := uint64(csize) - uint64(off)
+	var sizeToRead int
+	if availableBytes > math.MaxInt {
+		sizeToRead = math.MaxInt
+	} else {
+		sizeToRead = int(availableBytes)
+	}
+
+	readSize := copy(p, unsafe.Slice((*byte)(unsafe.Pointer(uintptr(cbuffer)+uintptr(off))), sizeToRead))
+
+	var err error
+	if int64(readSize)+off == int64(csize) {
+		err = io.EOF
+	}
+
+	return readSize, err
+}
+
+// WriteTo writes the contents of a Buffer to an io.Writer.
+func (b *Buffer) WriteTo(w io.Writer) (int64, error) {
+	var cbuffer unsafe.Pointer
+	var csize C.uint64_t
+
+	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer, &cbuffer, &csize)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("error getting tiledb buffer data: %w", b.context.LastError())
+	}
+
+	if cbuffer == nil || csize == 0 {
+		return 0, nil
+	}
+
+	remaining := int64(csize)
+
+	// Because io.Writer supports writing up to 2GB of data at a time, we have to use a loop
+	// for the bigger buffers.
+	for remaining > 0 {
+		// TODO: Use min on Go 1.21+
+		var writeSize int
+		if remaining > math.MaxInt {
+			writeSize = math.MaxInt
+		} else {
+			writeSize = int(remaining)
+		}
+
+		// Construct a slice from the buffer's data without copying it.
+		n, err := w.Write(unsafe.Slice((*byte)(unsafe.Pointer(uintptr(cbuffer)+uintptr(csize)-uintptr(remaining))), writeSize))
+		remaining -= int64(n)
+
+		if err != nil {
+			return int64(csize) - remaining, fmt.Errorf("error writing buffer to writer: %w", err)
+		}
+	}
+
+	return int64(csize), nil
+}
+
+// Static assert that Buffer implements io.WriterTo.
+var _ io.WriterTo = (*Buffer)(nil)
+var _ io.ReaderAt = (*Buffer)(nil)
 
 // SetBuffer sets the buffer to point at the given Go slice. The memory is now
 // Go-managed.
