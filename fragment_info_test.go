@@ -136,9 +136,8 @@ func testFragmentInfo(t testing.TB, context *Context) uint64 {
 	_, err = fI.GetToVacuumURI(0)
 	assert.Error(t, err)
 
-	framentInfoStr, err := fI.String()
-	require.NoError(t, err)
-	assert.NotEmpty(t, framentInfoStr)
+	framentInfoStr := fI.String()
+	assert.Contains(t, framentInfoStr, fI.uri)
 
 	fI.Free()
 

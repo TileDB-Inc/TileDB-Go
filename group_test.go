@@ -28,17 +28,13 @@ func TestGroupCreate(t *testing.T) {
 	assert.Error(t, group.Create())
 
 	// Test Group.IsOpen
-	isOpen, err := group.IsOpen()
-	require.NoError(t, err)
-	assert.False(t, isOpen)
+	assert.False(t, group.IsOpen())
 
 	// Dump the created group
 	err = group.Open(TILEDB_READ)
 	require.NoError(t, err)
 
-	isOpen, err = group.IsOpen()
-	require.NoError(t, err)
-	assert.True(t, isOpen)
+	assert.True(t, group.IsOpen())
 
 	dump, err := group.Dump(false)
 	require.NoError(t, err)

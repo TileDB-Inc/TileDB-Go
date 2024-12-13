@@ -390,11 +390,7 @@ func (g *Group) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 
 // Dump the Group to a string value
 func (g *Group) Dump(recurse bool) (string, error) {
-	isOpen, err := g.IsOpen()
-	if err != nil {
-		return "", err
-	}
-	if !isOpen {
+	if !g.IsOpen() {
 		return "", fmt.Errorf("Error dumping group to string: Group must be opened in TILEDB_READ mode")
 	}
 
@@ -472,13 +468,13 @@ func (g *Group) AddMemberWithType(uri, name string, isRelativeURI bool, objectTy
 }
 
 // IsOpen returns true if the Group is open or false if the group is closed
-func (g *Group) IsOpen() (bool, error) {
+func (g *Group) IsOpen() bool {
 	var isOpen C.int32_t
 
 	ret := C.tiledb_group_is_open(g.context.tiledbContext, g.group, &isOpen)
 	if ret != C.TILEDB_OK {
-		return false, fmt.Errorf("Error checking if group is open: %s", g.context.LastError())
+		panic(fmt.Errorf("Error checking if group is open: %s", g.context.LastError()))
 	}
 
-	return isOpen > 0, nil
+	return isOpen > 0
 }

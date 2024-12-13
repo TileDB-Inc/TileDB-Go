@@ -571,14 +571,14 @@ func (fI *FragmentInfo) DumpSTDOUT() error {
 }
 
 // String retrieves the string representation of the FragmentInfo
-func (fI *FragmentInfo) String() (string, error) {
+func (fI *FragmentInfo) String() string {
 	var tdbString *C.tiledb_string_t
 	C.tiledb_fragment_info_dump_str(fI.context.tiledbContext, fI.tiledbFragmentInfo, &tdbString)
 	dumpStr, err := stringHandleToString(tdbString)
 	if err != nil {
-		return "", fmt.Errorf("Error getting fragment info string: %s", fI.context.LastError())
+		return fmt.Sprintf("Error getting fragment info string: %s", fI.context.LastError())
 	}
-	return dumpStr, nil
+	return dumpStr
 }
 
 // SetConfig sets the fragment config.
