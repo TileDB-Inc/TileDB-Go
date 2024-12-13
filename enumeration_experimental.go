@@ -155,6 +155,7 @@ func (e *Enumeration) Name() (string, error) {
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("Error getting name: %s", e.context.LastError())
 	}
+	defer C.tiledb_string_free(&str)
 
 	var cName *C.char
 	var cNameSize C.size_t
@@ -468,6 +469,7 @@ func (a *Attribute) GetEnumerationName() (string, error) {
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("Error getting enumeration name: %s", a.context.LastError())
 	}
+	defer C.tiledb_string_free(&str)
 
 	var cName *C.char
 	var cNameSize C.size_t

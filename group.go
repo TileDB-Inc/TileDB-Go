@@ -405,6 +405,7 @@ func (g *Group) Dump(recurse bool) (string, error) {
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("Error dumping group contents: %s", g.context.LastError())
 	}
+	defer C.tiledb_string_free(&tdbString)
 
 	dumpStr, err := stringHandleToString(tdbString)
 	if err != nil {
