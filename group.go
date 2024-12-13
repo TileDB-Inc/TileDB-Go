@@ -389,20 +389,24 @@ func (g *Group) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 }
 
 func (g *Group) Dump(recurse bool) (string, error) {
-	var cOutput *C.char
-	defer C.free(unsafe.Pointer(cOutput))
+	var tdbString *C.tiledb_string_t
 
 	var cRecurse C.uint8_t
 	if recurse {
 		cRecurse = 1
 	}
 
-	ret := C.tiledb_group_dump_str(g.context.tiledbContext, g.group, &cOutput, cRecurse)
+	ret := C.tiledb_group_dump_str_v2(g.context.tiledbContext, g.group, &tdbString, cRecurse)
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("Error dumping group contents: %s", g.context.LastError())
 	}
 
-	return C.GoString(cOutput), nil
+	dumpStr, err := stringHandleToString(tdbString)
+	if err != nil {
+		return "", fmt.Errorf("Error dumping group contents: %s", g.context.LastError())
+	}
+
+	return dumpStr, nil
 }
 
 // GetIsRelativeURIByName returns whether a named member of the group has a uri relative to the group
@@ -433,6 +437,25 @@ func (g *Group) Delete(recursive bool) error {
 	ret := C.tiledb_group_delete_group(g.context.tiledbContext, g.group, curi, cRecursive)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error deleting group: %s", g.context.LastError())
+	}
+	return nil
+}
+
+func (g *Group) AddMemberWithType(uri, name string, isRelativeURI bool, objectType ObjectTypeEnum) error {
+	curi := C.CString(uri)
+	defer C.free(unsafe.Pointer(curi))
+
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+
+	var cRelative C.uint8_t
+	if isRelativeURI {
+		cRelative = 1
+	}
+
+	ret := C.tiledb_group_add_member_with_type(g.context.tiledbContext, g.group, curi, cRelative, cname, C.tiledb_object_t(objectType))
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("Error adding member by type to group: %s", g.context.LastError())
 	}
 	return nil
 }

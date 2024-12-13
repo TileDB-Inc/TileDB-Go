@@ -27,6 +27,13 @@ func TestGroupCreate(t *testing.T) {
 	require.NoError(t, err)
 	assert.Error(t, group.Create())
 
+	// Dump the created group
+	err = group.Open(TILEDB_READ)
+	require.NoError(t, err)
+
+	dump, err := group.Dump(false)
+	require.NoError(t, err)
+	assert.NotEmpty(t, dump)
 }
 
 func TestGroups_Metadata(t *testing.T) {
@@ -80,13 +87,32 @@ func TestGroups_AddMembers(t *testing.T) {
 
 	// =========================================================================
 	// Test adding members to the group
-	arraySchema := buildArraySchema(tdbCtx, t)
-	require.NoError(t, addTwoArraysToGroup(tdbCtx, group, arraySchema, t.TempDir(), t.TempDir()))
+	t.Run("add members", func(t *testing.T) {
+		arraySchema := buildArraySchema(tdbCtx, t)
 
-	// verify we have two arrays
-	count, err := memberCount(group)
-	require.NoError(t, err)
-	assert.EqualValues(t, uint(2), count)
+		arrayURI1, arrayURI2 := t.TempDir(), t.TempDir()
+		require.NoError(t, addTwoArraysToGroup(tdbCtx, group, arraySchema, arrayURI1, arrayURI2))
+
+		// verify we have two arrays
+		count, err := memberCount(group)
+		require.NoError(t, err)
+		assert.EqualValues(t, uint(2), count)
+
+		// Dump the created group
+		err = group.Open(TILEDB_READ)
+		require.NoError(t, err)
+
+		dump, err := group.Dump(false)
+		require.NoError(t, err)
+		assert.NotEmpty(t, dump)
+		assert.Contains(t, dump, arrayURI1)
+		assert.Contains(t, dump, arrayURI2)
+	})
+
+	// Test adding members to the group with type
+	t.Run("add members with type", func(t *testing.T) {
+		addMembersToGroupWithType(t, tdbCtx, group)
+	})
 }
 
 func TestGroups_RemoveMembers(t *testing.T) {
@@ -401,6 +427,46 @@ func addTwoArraysToGroup(tdbCtx *Context, group *Group, arraySchema *ArraySchema
 	}
 
 	return group.Close()
+}
+
+func addMembersToGroupWithType(t *testing.T, tdbCtx *Context, group *Group) {
+	err := group.Open(TILEDB_WRITE)
+	require.NoError(t, err)
+
+	// Group
+	testGroup, err := createTestGroup(tdbCtx, t.TempDir())
+	require.NoError(t, err)
+
+	// Add Array member to group to test recursive Group.Dump
+	testNestedArray := create1DTestArray(t)
+	require.NoError(t, testGroup.Open(TILEDB_WRITE))
+	err = testGroup.AddMemberWithType(testNestedArray.uri, "testNestedArray", false, TILEDB_ARRAY)
+	require.NoError(t, err)
+	require.NoError(t, testGroup.Close())
+
+	err = group.AddMemberWithType(testGroup.uri, "testGroup", false, TILEDB_GROUP)
+	require.NoError(t, err)
+
+	// Array
+	testArray := create1DTestArray(t)
+	err = group.AddMemberWithType(testArray.uri, "testArray", false, TILEDB_ARRAY)
+	require.NoError(t, err)
+
+	require.NoError(t, group.Close())
+	// Dump the created group
+	err = group.Open(TILEDB_READ)
+	require.NoError(t, err)
+
+	dump, err := group.Dump(true)
+	require.NoError(t, err)
+	assert.NotEmpty(t, dump)
+	assert.Contains(t, dump, "testGroup")
+	assert.Contains(t, dump, "testNestedArray")
+	assert.Contains(t, dump, "testArray")
+
+	count, err := group.GetMemberCount()
+	require.NoError(t, err)
+	assert.EqualValues(t, 2, count)
 }
 
 func setConfigForWrite(group *Group, i int) error {
