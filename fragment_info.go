@@ -570,6 +570,7 @@ func (fI *FragmentInfo) DumpSTDOUT() error {
 	return nil
 }
 
+// String retrieves the string representation of the FragmentInfo
 func (fI *FragmentInfo) String() (string, error) {
 	var tdbString *C.tiledb_string_t
 	C.tiledb_fragment_info_dump_str(fI.context.tiledbContext, fI.tiledbFragmentInfo, &tdbString)

@@ -385,6 +385,7 @@ func (a *ArraySchema) AddEnumeration(e *Enumeration) error {
 	return nil
 }
 
+// EnumerationFromName gets an Enumeration from the ArraySchema by name
 func (a *ArraySchema) EnumerationFromName(name string) (*Enumeration, error) {
 	enum := &Enumeration{context: a.context}
 	cName := C.CString(name)
@@ -397,6 +398,7 @@ func (a *ArraySchema) EnumerationFromName(name string) (*Enumeration, error) {
 	return enum, nil
 }
 
+// EnumerationFromName gets an Enumeration from the ArraySchema by it's Attribute name
 func (a *ArraySchema) EnumerationFromAttributeName(name string) (*Enumeration, error) {
 	enum := &Enumeration{context: a.context}
 	cName := C.CString(name)
