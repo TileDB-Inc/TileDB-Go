@@ -91,12 +91,12 @@ func TestGroups_AddMembers(t *testing.T) {
 	tdbCtx, err := NewContext(nil)
 	require.NoError(t, err)
 
-	group, err := createTestGroup(tdbCtx, t.TempDir())
-	require.NoError(t, err)
-
 	// =========================================================================
 	// Test adding members to the group
 	t.Run("add members", func(t *testing.T) {
+		group, err := createTestGroup(tdbCtx, t.TempDir())
+		require.NoError(t, err)
+
 		arraySchema := buildArraySchema(tdbCtx, t)
 
 		arrayURI1, arrayURI2 := t.TempDir(), t.TempDir()
@@ -120,6 +120,9 @@ func TestGroups_AddMembers(t *testing.T) {
 
 	// Test adding members to the group with type
 	t.Run("add members with type", func(t *testing.T) {
+		group, err := createTestGroup(tdbCtx, t.TempDir())
+		require.NoError(t, err)
+
 		addMembersToGroupWithType(t, tdbCtx, group)
 	})
 }
