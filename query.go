@@ -54,7 +54,7 @@ a short period of time).
 */
 func NewQuery(tdbCtx *Context, array *Array) (*Query, error) {
 	if array == nil {
-		return nil, fmt.Errorf("Error creating tiledb query: passed array is nil")
+		return nil, errors.New("error creating tiledb query: passed array is nil")
 	}
 	if tdbCtx == nil {
 		tdbCtx = array.context
@@ -62,13 +62,13 @@ func NewQuery(tdbCtx *Context, array *Array) (*Query, error) {
 
 	queryType, err := array.QueryType()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting QueryType from passed array %s", err)
+		return nil, fmt.Errorf("error getting QueryType from passed array %w", err)
 	}
 
 	query := Query{context: tdbCtx, array: array}
 	ret := C.tiledb_query_alloc(query.context.tiledbContext, array.tiledbArray, C.tiledb_query_type_t(queryType), &query.tiledbQuery)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error creating tiledb query: %s", query.context.LastError())
+		return nil, fmt.Errorf("error creating tiledb query: %w", query.context.LastError())
 	}
 	freeOnGC(&query)
 
@@ -179,13 +179,13 @@ func (q *Query) ResultBufferElements() (map[string][3]uint64, error) {
 	// Will need the schema to infer data type size for attributes
 	schema, err := q.array.Schema()
 	if err != nil {
-		return nil, fmt.Errorf("Could not get schema for ResultBufferElements: %s", err)
+		return nil, fmt.Errorf("could not get schema for ResultBufferElements: %w", err)
 	}
 	defer schema.Free()
 
 	domain, err := schema.Domain()
 	if err != nil {
-		return nil, fmt.Errorf("Could not get domain for ResultBufferElements: %s", err)
+		return nil, fmt.Errorf("could not get domain for ResultBufferElements: %w", err)
 	}
 	defer domain.Free()
 
@@ -198,7 +198,7 @@ func (q *Query) ResultBufferElements() (map[string][3]uint64, error) {
 
 			domainType, err := domain.Type()
 			if err != nil {
-				return nil, fmt.Errorf("Could not get domainType for ResultBufferElements: %s", err)
+				return nil, fmt.Errorf("could not get domainType for ResultBufferElements: %w", err)
 			}
 
 			// Number of buffer elements is calculated
@@ -236,12 +236,12 @@ func (q *Query) ResultBufferElements() (map[string][3]uint64, error) {
 			if hasDim {
 				dimension, err := domain.DimensionFromName(attributeOrDimension)
 				if err != nil {
-					return nil, fmt.Errorf("Could not get attribute or dimension for SetBuffer: %s", attributeOrDimension)
+					return nil, fmt.Errorf("could not get attribute or dimension for SetBuffer: %s", attributeOrDimension)
 				}
 
 				datatype, err = dimension.Type()
 				if err != nil {
-					return nil, fmt.Errorf("Could not get dimensionType for SetBuffer: %s", attributeOrDimension)
+					return nil, fmt.Errorf("could not get dimensionType for SetBuffer: %s", attributeOrDimension)
 				}
 
 				dimension.Free()
@@ -249,24 +249,24 @@ func (q *Query) ResultBufferElements() (map[string][3]uint64, error) {
 				// Get the attribute
 				attribute, err := schema.AttributeFromName(attributeOrDimension)
 				if err != nil {
-					return nil, fmt.Errorf("Could not get attribute %s for ResultBufferElements: %s", attributeOrDimension, err)
+					return nil, fmt.Errorf("could not get attribute %s for ResultBufferElements: %w", attributeOrDimension, err)
 				}
 
 				// Get datatype size to convert byte lengths to needed buffer sizes
 				datatype, err = attribute.Type()
 				if err != nil {
-					return nil, fmt.Errorf("Could not get attribute type for ResultBufferElements: %s", err)
+					return nil, fmt.Errorf("could not get attribute type for ResultBufferElements: %w", err)
 				}
 
 				attribute.Free()
 			} else if hasDimLabel {
 				datatype, err = q.getDimensionLabelDataType(attributeOrDimension)
 				if err != nil {
-					return nil, fmt.Errorf("Could not get dimension label type for ResultBufferElements: %s", err)
+					return nil, fmt.Errorf("could not get dimension label type for ResultBufferElements: %w", err)
 				}
 			} else {
-				return nil, fmt.Errorf("Error in ResultBufferElements for %s: "+
-					"Attribute/dimension/label does not exist.", attributeOrDimension)
+				return nil, fmt.Errorf("error in ResultBufferElements for %s: "+
+					"Attribute/dimension/label does not exist", attributeOrDimension)
 			}
 
 			// Number of buffer elements is calculated
@@ -282,7 +282,7 @@ func (q *Query) ResultBufferElements() (map[string][3]uint64, error) {
 func (q *Query) SetLayout(layout Layout) error {
 	ret := C.tiledb_query_set_layout(q.context.tiledbContext, q.tiledbQuery, C.tiledb_layout_t(layout))
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting query layout: %s", q.context.LastError())
+		return fmt.Errorf("error setting query layout: %w", q.context.LastError())
 	}
 	return nil
 }
@@ -290,7 +290,7 @@ func (q *Query) SetLayout(layout Layout) error {
 // SetQueryCondition sets a query condition on a read query.
 func (q *Query) SetQueryCondition(cond *QueryCondition) error {
 	if ret := C.tiledb_query_set_condition(q.context.tiledbContext, q.tiledbQuery, cond.cond); ret != C.TILEDB_OK {
-		return fmt.Errorf("Error getting config from query: %s", q.context.LastError())
+		return fmt.Errorf("error getting config from query: %w", q.context.LastError())
 	}
 	return nil
 }
@@ -301,7 +301,7 @@ func (q *Query) SetQueryCondition(cond *QueryCondition) error {
 func (q *Query) Finalize() error {
 	ret := C.tiledb_query_finalize(q.context.tiledbContext, q.tiledbQuery)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error finalizing query: %s", q.context.LastError())
+		return fmt.Errorf("error finalizing query: %w", q.context.LastError())
 	}
 	q.bufferMutex.Lock()
 	defer q.bufferMutex.Unlock()
@@ -330,7 +330,7 @@ and resubmit the query.
 func (q *Query) Submit() error {
 	ret := C.tiledb_query_submit(q.context.tiledbContext, q.tiledbQuery)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error submitting query: %s", q.context.LastError())
+		return fmt.Errorf("error submitting query: %w", q.context.LastError())
 	}
 
 	return nil
@@ -341,7 +341,7 @@ func (q *Query) Status() (QueryStatus, error) {
 	var status C.tiledb_query_status_t
 	ret := C.tiledb_query_get_status(q.context.tiledbContext, q.tiledbQuery, &status)
 	if ret != C.TILEDB_OK {
-		return -1, fmt.Errorf("Error getting query status: %s", q.context.LastError())
+		return -1, fmt.Errorf("error getting query status: %w", q.context.LastError())
 	}
 	return QueryStatus(status), nil
 }
@@ -351,7 +351,7 @@ func (q *Query) Type() (QueryType, error) {
 	var queryType C.tiledb_query_type_t
 	ret := C.tiledb_query_get_type(q.context.tiledbContext, q.tiledbQuery, &queryType)
 	if ret != C.TILEDB_OK {
-		return -1, fmt.Errorf("Error getting query type: %s", q.context.LastError())
+		return -1, fmt.Errorf("error getting query type: %w", q.context.LastError())
 	}
 	return QueryType(queryType), nil
 }
@@ -362,7 +362,7 @@ func (q *Query) HasResults() (bool, error) {
 	var hasResults C.int32_t
 	ret := C.tiledb_query_has_results(q.context.tiledbContext, q.tiledbQuery, &hasResults)
 	if ret != C.TILEDB_OK {
-		return false, fmt.Errorf("Error checking if query has results: %s", q.context.LastError())
+		return false, fmt.Errorf("error checking if query has results: %w", q.context.LastError())
 	}
 	return int(hasResults) == 1, nil
 }
@@ -380,7 +380,7 @@ func (q *Query) EstResultSize(attributeName string) (*uint64, error) {
 		cAttributeName,
 		(*C.uint64_t)(unsafe.Pointer(&size)))
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error estimating query result size: %s", q.context.LastError())
+		return nil, fmt.Errorf("error estimating query result size: %w", q.context.LastError())
 	}
 
 	return &size, nil
@@ -400,7 +400,7 @@ func (q *Query) EstResultSizeVar(attributeName string) (*uint64, *uint64, error)
 		(*C.uint64_t)(unsafe.Pointer(&sizeOff)),
 		(*C.uint64_t)(unsafe.Pointer(&sizeVal)))
 	if ret != C.TILEDB_OK {
-		return nil, nil, fmt.Errorf("Error estimating query result var size: %s", q.context.LastError())
+		return nil, nil, fmt.Errorf("error estimating query result var size: %w", q.context.LastError())
 	}
 
 	return &sizeOff, &sizeVal, nil
@@ -420,7 +420,7 @@ func (q *Query) EstResultSizeNullable(attributeName string) (*uint64, *uint64, e
 		(*C.uint64_t)(unsafe.Pointer(&size)),
 		(*C.uint64_t)(unsafe.Pointer(&sizeValidity)))
 	if ret != C.TILEDB_OK {
-		return nil, nil, fmt.Errorf("Error estimating query result size: %s", q.context.LastError())
+		return nil, nil, fmt.Errorf("error estimating query result size: %w", q.context.LastError())
 	}
 
 	return &size, &sizeValidity, nil
@@ -441,7 +441,7 @@ func (q *Query) EstResultSizeVarNullable(attributeName string) (*uint64, *uint64
 		(*C.uint64_t)(unsafe.Pointer(&sizeVal)),
 		(*C.uint64_t)(unsafe.Pointer(&sizeValidity)))
 	if ret != C.TILEDB_OK {
-		return nil, nil, nil, fmt.Errorf("Error estimating query result var size: %s", q.context.LastError())
+		return nil, nil, nil, fmt.Errorf("error estimating query result var size: %w", q.context.LastError())
 	}
 
 	return &sizeOff, &sizeVal, &sizeValidity, nil
@@ -463,13 +463,13 @@ func (q *Query) EstimateBufferElements() (map[string][3]uint64, error) {
 	// Get schema
 	schema, err := q.array.Schema()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
+		return nil, fmt.Errorf("error getting EstimateBufferElements for array: %w", err)
 	}
 	defer schema.Free()
 
 	attributes, err := schema.Attributes()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
+		return nil, fmt.Errorf("error getting EstimateBufferElements for array: %w", err)
 	}
 	// Loop through each attribute
 	for _, attribute := range attributes {
@@ -480,13 +480,13 @@ func (q *Query) EstimateBufferElements() (map[string][3]uint64, error) {
 			// Check if attribute is variable attribute or not
 			cellValNum, err := attribute.CellValNum()
 			if err != nil {
-				return fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
+				return fmt.Errorf("error getting EstimateBufferElements for array: %w", err)
 			}
 
 			// Get datatype size to convert byte lengths to needed buffer sizes
 			dataType, err := attribute.Type()
 			if err != nil {
-				return fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
+				return fmt.Errorf("error getting EstimateBufferElements for array: %w", err)
 			}
 
 			dataTypeSize := dataType.Size()
@@ -494,19 +494,19 @@ func (q *Query) EstimateBufferElements() (map[string][3]uint64, error) {
 			// Get attribute name
 			name, err := attribute.Name()
 			if err != nil {
-				return fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
+				return fmt.Errorf("error getting EstimateBufferElements for array: %w", err)
 			}
 
 			nullable, err := attribute.Nullable()
 			if err != nil {
-				return fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
+				return fmt.Errorf("error getting EstimateBufferElements for array: %w", err)
 			}
 
 			if cellValNum == TILEDB_VAR_NUM {
 				if nullable {
 					bufferOffsetSize, bufferValSize, bufferValiditySize, err := q.EstResultSizeVarNullable(name)
 					if err != nil {
-						return fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
+						return fmt.Errorf("error getting EstimateBufferElements for array: %w", err)
 					}
 					// Set sizes for attribute in return map
 					ret[name] = [3]uint64{
@@ -516,7 +516,7 @@ func (q *Query) EstimateBufferElements() (map[string][3]uint64, error) {
 				} else {
 					bufferOffsetSize, bufferValSize, err := q.EstResultSizeVar(name)
 					if err != nil {
-						return fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
+						return fmt.Errorf("error getting EstimateBufferElements for array: %w", err)
 					}
 					// Set sizes for attribute in return map
 					ret[name] = [3]uint64{
@@ -528,14 +528,14 @@ func (q *Query) EstimateBufferElements() (map[string][3]uint64, error) {
 				if nullable {
 					bufferValSize, bufferValiditySize, err := q.EstResultSizeNullable(name)
 					if err != nil {
-						return fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
+						return fmt.Errorf("error getting EstimateBufferElements for array: %w", err)
 					}
 					ret[name] = [3]uint64{0, *bufferValSize / dataTypeSize,
 						*bufferValiditySize / bytesizes.Uint8}
 				} else {
 					bufferValSize, err := q.EstResultSize(name)
 					if err != nil {
-						return fmt.Errorf("Error getting EstimateBufferElements for array: %s", err)
+						return fmt.Errorf("error getting EstimateBufferElements for array: %w", err)
 					}
 					ret[name] = [3]uint64{0, *bufferValSize / dataTypeSize, 0}
 				}
@@ -552,7 +552,7 @@ func (q *Query) EstimateBufferElements() (map[string][3]uint64, error) {
 	// Handle coordinates
 	domain, err := schema.Domain()
 	if err != nil {
-		return nil, fmt.Errorf("Could not get domain for EstimateBufferElements: %s", err)
+		return nil, fmt.Errorf("could not get domain for EstimateBufferElements: %w", err)
 	}
 	defer domain.Free()
 
@@ -578,19 +578,19 @@ func (q *Query) EstimateBufferElements() (map[string][3]uint64, error) {
 
 			cellValNum, err := dim.CellValNum()
 			if err != nil {
-				return fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+				return fmt.Errorf("error getting MaxBufferElements for array: %w", err)
 			}
 
 			// Get dimension name
 			name, err := dim.Name()
 			if err != nil {
-				return fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+				return fmt.Errorf("error getting MaxBufferElements for array: %w", err)
 			}
 
 			if cellValNum == TILEDB_VAR_NUM {
 				bufferOffsetSize, bufferValSize, err := q.EstResultSizeVar(name)
 				if err != nil {
-					return fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+					return fmt.Errorf("error getting MaxBufferElements for array: %w", err)
 				}
 				// Set sizes for dimension in return map
 				ret[name] = [3]uint64{
@@ -599,7 +599,7 @@ func (q *Query) EstimateBufferElements() (map[string][3]uint64, error) {
 			} else {
 				bufferValSize, err := q.EstResultSize(name)
 				if err != nil {
-					return fmt.Errorf("Error getting MaxBufferElements for array: %s", err)
+					return fmt.Errorf("error getting MaxBufferElements for array: %w", err)
 				}
 				ret[name] = [3]uint64{0, *bufferValSize / dataTypeSize, 0}
 			}
@@ -624,7 +624,7 @@ func (q *Query) GetFragmentNum() (*uint32, error) {
 		q.tiledbQuery,
 		(*C.uint32_t)(unsafe.Pointer(&num)))
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting num of fragments: %s", q.context.LastError())
+		return nil, fmt.Errorf("error getting num of fragments: %w", q.context.LastError())
 	}
 
 	return &num, nil
@@ -640,7 +640,7 @@ func (q *Query) GetFragmentURI(num uint64) (*string, error) {
 		(C.uint64_t)(num),
 		&cURI)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error uri for fragment : %d", q.context.LastError())
+		return nil, fmt.Errorf("error uri for fragment : %d", q.context.LastError())
 	}
 
 	uri := C.GoString(cURI)
@@ -660,7 +660,7 @@ func (q *Query) GetFragmentTimestampRange(num uint64) (*uint64, *uint64, error) 
 		(*C.uint64_t)(unsafe.Pointer(&t1)),
 		(*C.uint64_t)(unsafe.Pointer(&t2)))
 	if ret != C.TILEDB_OK {
-		return nil, nil, fmt.Errorf("Error getting fragment timestamp: %s", q.context.LastError())
+		return nil, nil, fmt.Errorf("error getting fragment timestamp: %w", q.context.LastError())
 	}
 
 	return &t1, &t2, nil
@@ -671,7 +671,7 @@ func (q *Query) Array() (*Array, error) {
 	array := Array{context: q.context}
 	ret := C.tiledb_query_get_array(q.context.tiledbContext, q.tiledbQuery, &array.tiledbArray)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting array from query: %s", q.context.LastError())
+		return nil, fmt.Errorf("error getting array from query: %w", q.context.LastError())
 	}
 	freeOnGC(&array)
 	return &array, nil
@@ -683,7 +683,7 @@ func (q *Query) SetConfig(config *Config) error {
 
 	ret := C.tiledb_query_set_config(q.context.tiledbContext, q.tiledbQuery, q.config.tiledbConfig)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting config on query: %s", q.context.LastError())
+		return fmt.Errorf("error setting config on query: %w", q.context.LastError())
 	}
 
 	return nil
@@ -694,7 +694,7 @@ func (q *Query) Config() (*Config, error) {
 	config := Config{}
 	ret := C.tiledb_query_get_config(q.context.tiledbContext, q.tiledbQuery, &config.tiledbConfig)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting config from query: %s", q.context.LastError())
+		return nil, fmt.Errorf("error getting config from query: %w", q.context.LastError())
 	}
 	freeOnGC(&config)
 
@@ -709,12 +709,12 @@ func (q *Query) Config() (*Config, error) {
 func (q *Query) Stats() ([]byte, error) {
 	var stats *C.char
 	if ret := C.tiledb_query_get_stats(q.context.tiledbContext, q.tiledbQuery, &stats); ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting stats from query: %s", q.context.LastError())
+		return nil, fmt.Errorf("error getting stats from query: %w", q.context.LastError())
 	}
 
 	s := C.GoString(stats)
 	if ret := C.tiledb_stats_free_str(&stats); ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error freeing string from dumping stats to string")
+		return nil, errors.New("error freeing string from dumping stats to string")
 	}
 
 	if s == "" {
@@ -753,7 +753,7 @@ func (q *Query) SetDataBufferUnsafe(attribute string, buffer unsafe.Pointer, buf
 		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
 
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error setting query data buffer: %s", q.context.LastError())
+		return nil, fmt.Errorf("error setting query data buffer: %w", q.context.LastError())
 	}
 
 	q.setResultBufferPointer(attribute, 1, &bufferSize)
@@ -766,20 +766,20 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 	bufferReflectType := reflect.TypeOf(buffer)
 	bufferReflectValue := reflect.ValueOf(buffer)
 	if bufferReflectValue.Kind() != reflect.Slice {
-		return nil, fmt.Errorf("Buffer passed must be a slice that is pre-allocated, type passed was: %s",
+		return nil, fmt.Errorf("buffer passed must be a slice that is pre-allocated, type passed was: %s",
 			bufferReflectValue.Kind().String())
 	}
 
 	// Next get the attribute to validate the buffer type is the same as the attribute
 	schema, err := q.array.Schema()
 	if err != nil {
-		return nil, fmt.Errorf("Could not get array schema for SetDataBuffer: %s", err)
+		return nil, fmt.Errorf("could not get array schema for SetDataBuffer: %w", err)
 	}
 	defer schema.Free()
 
 	domain, err := schema.Domain()
 	if err != nil {
-		return nil, fmt.Errorf("Could not get domain for SetDataBuffer: %s", attributeOrDimension)
+		return nil, fmt.Errorf("could not get domain for SetDataBuffer: %s", attributeOrDimension)
 	}
 	defer domain.Free()
 
@@ -790,7 +790,7 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 	if attributeOrDimension == TILEDB_COORDS {
 		attributeOrDimensionType, err = domain.Type()
 		if err != nil {
-			return nil, fmt.Errorf("Could not get domainType for SetDataBuffer: %s", attributeOrDimension)
+			return nil, fmt.Errorf("could not get domainType for SetDataBuffer: %s", attributeOrDimension)
 		}
 	} else {
 		hasDim, err := domain.HasDimension(attributeOrDimension)
@@ -811,44 +811,44 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 		if hasDim {
 			dimension, err := domain.DimensionFromName(attributeOrDimension)
 			if err != nil {
-				return nil, fmt.Errorf("Could not get attribute or dimension for SetDataBuffer: %s",
+				return nil, fmt.Errorf("could not get attribute or dimension for SetDataBuffer: %s",
 					attributeOrDimension)
 			}
 			defer dimension.Free()
 
 			attributeOrDimensionType, err = dimension.Type()
 			if err != nil {
-				return nil, fmt.Errorf("Could not get dimensionType for SetDataBuffer: %s",
+				return nil, fmt.Errorf("could not get dimensionType for SetDataBuffer: %s",
 					attributeOrDimension)
 			}
 		} else if hasAttribute {
 			schemaAttribute, err := schema.AttributeFromName(attributeOrDimension)
 			if err != nil {
-				return nil, fmt.Errorf("Could not get attribute %s for SetDataBuffer",
+				return nil, fmt.Errorf("could not get attribute %s for SetDataBuffer",
 					attributeOrDimension)
 			}
 			defer schemaAttribute.Free()
 
 			attributeOrDimensionType, err = schemaAttribute.Type()
 			if err != nil {
-				return nil, fmt.Errorf("Could not get attributeType for SetDataBuffer: %s",
+				return nil, fmt.Errorf("could not get attributeType for SetDataBuffer: %s",
 					attributeOrDimension)
 			}
 		} else if hasDimLabel {
 			attributeOrDimensionType, err = q.getDimensionLabelDataType(attributeOrDimension)
 			if err != nil {
-				return nil, fmt.Errorf("Could not get dimension label type for SetDataBuffer: %s",
+				return nil, fmt.Errorf("could not get dimension label type for SetDataBuffer: %s",
 					attributeOrDimension)
 			}
 		} else {
-			return nil, fmt.Errorf("Error in SetDataBuffer for %s: "+
-				"Attribute/dimension/label does not exist.", attributeOrDimension)
+			return nil, fmt.Errorf("error in SetDataBuffer for %s: "+
+				"Attribute/dimension/label does not exist", attributeOrDimension)
 		}
 	}
 
 	bufferType := bufferReflectType.Elem().Kind()
 	if attributeOrDimensionType.ReflectKind() != bufferType {
-		return nil, fmt.Errorf("Buffer and Attribute do not have the same data types. Buffer: %s, Attribute: %s",
+		return nil, fmt.Errorf("buffer and attribute do not have the same data types. Buffer: %s, Attribute: %s",
 			bufferType.String(),
 			attributeOrDimensionType.ReflectKind().String())
 	}
@@ -972,7 +972,7 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	default:
 		return nil,
-			fmt.Errorf("Unrecognized buffer type passed: %s",
+			fmt.Errorf("unrecognized buffer type passed: %s",
 				bufferType.String())
 	}
 
@@ -987,7 +987,7 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
 
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error setting query data buffer: %s", q.context.LastError())
+		return nil, fmt.Errorf("error setting query data buffer: %w", q.context.LastError())
 	}
 
 	q.setResultBufferPointer(attributeOrDimension, 1, &bufferSize)
@@ -1025,7 +1025,7 @@ func (q *Query) getDataBufferAndSize(attributeOrDimension string) (interface{}, 
 
 	domain, err := schema.Domain()
 	if err != nil {
-		return nil, 0, fmt.Errorf("Could not get domain from array schema for GetDataBuffer: %s", err)
+		return nil, 0, fmt.Errorf("could not get domain from array schema for GetDataBuffer: %w", err)
 	}
 
 	if attributeOrDimension == TILEDB_COORDS {
@@ -1052,32 +1052,32 @@ func (q *Query) getDataBufferAndSize(attributeOrDimension string) (interface{}, 
 		if hasDim {
 			dimension, err := domain.DimensionFromName(attributeOrDimension)
 			if err != nil {
-				return nil, 0, fmt.Errorf("Could not get attribute or dimension for GetDataBuffer: %s", attributeOrDimension)
+				return nil, 0, fmt.Errorf("could not get attribute or dimension for GetDataBuffer: %s", attributeOrDimension)
 			}
 
 			datatype, err = dimension.Type()
 			if err != nil {
-				return nil, 0, fmt.Errorf("Could not get dimensionType for GetDataBuffer: %s", attributeOrDimension)
+				return nil, 0, fmt.Errorf("could not get dimensionType for GetDataBuffer: %s", attributeOrDimension)
 			}
 		} else if hasAttr {
 			attribute, err := schema.AttributeFromName(attributeOrDimension)
 			if err != nil {
-				return nil, 0, fmt.Errorf("Could not get attribute %s for GetDataBuffer", attributeOrDimension)
+				return nil, 0, fmt.Errorf("could not get attribute %s for GetDataBuffer", attributeOrDimension)
 			}
 
 			datatype, err = attribute.Type()
 			if err != nil {
-				return nil, 0, fmt.Errorf("Could not get attributeType for GetDataBuffer: %s", attributeOrDimension)
+				return nil, 0, fmt.Errorf("could not get attributeType for GetDataBuffer: %s", attributeOrDimension)
 			}
 		} else if hasDimLabel {
 			datatype, err = q.getDimensionLabelDataType(attributeOrDimension)
 			if err != nil {
-				return nil, 0, fmt.Errorf("Could not get dimension label type for getDataBufferAndSize: %s",
+				return nil, 0, fmt.Errorf("could not get dimension label type for getDataBufferAndSize: %s",
 					attributeOrDimension)
 			}
 		} else {
-			return nil, 0, fmt.Errorf("Error in getDataBufferAndSize for %s: "+
-				"Attribute/dimension/label does not exist.", attributeOrDimension)
+			return nil, 0, fmt.Errorf("error in getDataBufferAndSize for %s: "+
+				"Attribute/dimension/label does not exist", attributeOrDimension)
 		}
 	}
 
@@ -1091,7 +1091,7 @@ func (q *Query) getDataBufferAndSize(attributeOrDimension string) (interface{}, 
 
 	ret = C.tiledb_query_get_data_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 	if ret != C.TILEDB_OK {
-		return nil, 0, fmt.Errorf("Error getting tiledb query data buffer for %s: %s", attributeOrDimension, q.context.LastError())
+		return nil, 0, fmt.Errorf("error getting tiledb query data buffer for %s: %w", attributeOrDimension, q.context.LastError())
 	}
 
 	var dataNumElements uint64
@@ -1180,7 +1180,7 @@ func (q *Query) getDataBufferAndSize(attributeOrDimension string) (interface{}, 
 		buffer = (*[1 << 46]bool)(cbuffer)[:length:length]
 
 	default:
-		return nil, 0, fmt.Errorf("Unrecognized attribute type: %d", datatype)
+		return nil, 0, fmt.Errorf("unrecognized attribute type: %d", datatype)
 	}
 
 	return buffer, dataNumElements, nil
@@ -1203,7 +1203,7 @@ func (q *Query) SetValidityBufferUnsafe(attribute string, buffer unsafe.Pointer,
 		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
 
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error setting query validity buffer: %s", q.context.LastError())
+		return nil, fmt.Errorf("error setting query validity buffer: %w", q.context.LastError())
 	}
 
 	q.setResultBufferPointer(attribute, 2, &bufferSize)
@@ -1221,7 +1221,7 @@ func (q *Query) SetValidityBuffer(attributeOrDimension string, buffer []uint8) (
 
 	bufferSize := uint64(len(buffer)) * bytesizes.Uint8
 	if bufferSize == uint64(0) {
-		return nil, errors.New("Validity slice has no length, validity slices are required to be initialized before reading or writing")
+		return nil, errors.New("validity slice has no length, validity slices are required to be initialized before reading or writing")
 	}
 
 	ret := C.tiledb_query_set_validity_buffer(
@@ -1232,7 +1232,7 @@ func (q *Query) SetValidityBuffer(attributeOrDimension string, buffer []uint8) (
 		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
 
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error setting query validity buffer: %s", q.context.LastError())
+		return nil, fmt.Errorf("error setting query validity buffer: %w", q.context.LastError())
 	}
 
 	q.setResultBufferPointer(attributeOrDimension, 2, &bufferSize)
@@ -1268,7 +1268,7 @@ func (q *Query) getValidityBufferAndSize(attributeOrDimension string) ([]uint8, 
 
 	ret := C.tiledb_query_get_validity_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &cvalidityByteMap, &cvalidityByteMapSize)
 	if ret != C.TILEDB_OK {
-		return nil, 0, fmt.Errorf("Error getting tiledb query validity buffer for %s: %s", attributeOrDimension, q.context.LastError())
+		return nil, 0, fmt.Errorf("error getting tiledb query validity buffer for %s: %w", attributeOrDimension, q.context.LastError())
 	}
 
 	var validityNumElements uint64
@@ -1305,7 +1305,7 @@ func (q *Query) SetOffsetsBufferUnsafe(attribute string, offset unsafe.Pointer, 
 		(*C.uint64_t)(unsafe.Pointer(&offsetSize)))
 
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error setting query offsets buffer: %s", q.context.LastError())
+		return nil, fmt.Errorf("error setting query offsets buffer: %w", q.context.LastError())
 	}
 
 	q.setResultBufferPointer(attribute, 0, &offsetSize)
@@ -1323,7 +1323,7 @@ func (q *Query) SetOffsetsBuffer(attributeOrDimension string, offset []uint64) (
 
 	offsetSize := uint64(len(offset)) * bytesizes.Uint64
 	if offsetSize == uint64(0) {
-		return nil, errors.New("Offset slice has no length, offset slices are required to be initialized before reading or writing")
+		return nil, errors.New("offset slice has no length, offset slices are required to be initialized before reading or writing")
 	}
 
 	ret := C.tiledb_query_set_offsets_buffer(
@@ -1334,7 +1334,7 @@ func (q *Query) SetOffsetsBuffer(attributeOrDimension string, offset []uint64) (
 		(*C.uint64_t)(unsafe.Pointer(&offsetSize)))
 
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error setting query offsets buffer: %s", q.context.LastError())
+		return nil, fmt.Errorf("error setting query offsets buffer: %w", q.context.LastError())
 	}
 
 	q.setResultBufferPointer(attributeOrDimension, 0, &offsetSize)
@@ -1370,7 +1370,7 @@ func (q *Query) getOffsetsBufferAndSize(attributeOrDimension string) ([]uint64, 
 
 	ret := C.tiledb_query_get_offsets_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize)
 	if ret != C.TILEDB_OK {
-		return nil, 0, fmt.Errorf("Error getting tiledb query offset buffer for %s: %s", attributeOrDimension, q.context.LastError())
+		return nil, 0, fmt.Errorf("error getting tiledb query offset buffer for %s: %w", attributeOrDimension, q.context.LastError())
 	}
 
 	var offsetNumElements uint64
@@ -1394,7 +1394,7 @@ func (q *Query) getOffsetsBufferAndSize(attributeOrDimension string) ([]uint64, 
 func (q *Query) SetSubarray(sa *Subarray) error {
 	ret := C.tiledb_query_set_subarray_t(q.context.tiledbContext, q.tiledbQuery, sa.subarray)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting tiledb query subarray: %s", q.context.LastError())
+		return fmt.Errorf("error setting tiledb query subarray: %w", q.context.LastError())
 	}
 	return nil
 }
@@ -1405,7 +1405,7 @@ func (q *Query) GetSubarray() (*Subarray, error) {
 
 	ret := C.tiledb_query_get_subarray_t(q.context.tiledbContext, q.tiledbQuery, &sa)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting tiledb query subarray: %s", q.context.LastError())
+		return nil, fmt.Errorf("error getting tiledb query subarray: %w", q.context.LastError())
 	}
 
 	return &Subarray{array: q.array, subarray: sa, context: q.context}, nil

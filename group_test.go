@@ -281,7 +281,7 @@ func TestGetIsRelativeURIByName(t *testing.T) {
 	// check that non-existing members return error
 	_, err = group.GetIsRelativeURIByName("array3")
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "Error getting")
+	require.Contains(t, err.Error(), "error getting")
 
 	require.NoError(t, group.Close())
 }

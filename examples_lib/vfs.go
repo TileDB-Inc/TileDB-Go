@@ -107,7 +107,7 @@ func write(dir string) {
 	fh1, err := vfs.Open(file, tiledb.TILEDB_VFS_WRITE)
 	defer vfs.Close(fh1)
 	if err != nil {
-		fmt.Printf("Error opening file '%s'\n", file)
+		fmt.Printf("error opening file '%s'\n", file)
 	}
 
 	var f1 float32 = 153.0
@@ -121,7 +121,7 @@ func write(dir string) {
 	fh2, err := vfs.Open(file, tiledb.TILEDB_VFS_WRITE)
 	defer vfs.Close(fh2)
 	if err != nil {
-		fmt.Printf("Error opening file '%s' for write.\n", file)
+		fmt.Printf("error opening file '%s' for write.\n", file)
 	}
 
 	var f2 float32 = 153.1
@@ -135,7 +135,7 @@ func write(dir string) {
 	fh3, err := vfs.Open(file, tiledb.TILEDB_VFS_APPEND)
 	defer vfs.Close(fh3)
 	if err != nil {
-		fmt.Printf("Error opening file '%s' for append.\n", file)
+		fmt.Printf("error opening file '%s' for append.\n", file)
 	}
 
 	s3 := "ghijkl"
@@ -165,7 +165,7 @@ func read(dir string) {
 	fh, err := vfs.Open(file, tiledb.TILEDB_VFS_READ)
 	defer vfs.Close(fh)
 	if err != nil {
-		fmt.Printf("Error opening file '%s'\n", file)
+		fmt.Printf("error opening file '%s'\n", file)
 	}
 
 	sizefFile, err := vfs.FileSize(file)

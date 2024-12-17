@@ -8,6 +8,7 @@ import "C"
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"runtime"
 	"time"
@@ -68,7 +69,7 @@ func NewArray(tdbCtx *Context, uri string) (*Array, error) {
 	array := Array{context: tdbCtx, uri: uri}
 	ret := C.tiledb_array_alloc(array.context.tiledbContext, curi, &array.tiledbArray)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error creating tiledb array: %s", array.context.LastError())
+		return nil, fmt.Errorf("error creating tiledb array: %w", array.context.LastError())
 	}
 	freeOnGC(&array)
 
@@ -118,7 +119,7 @@ func WithEndTimestamp(endTimestamp uint64) ArrayOpenOption {
 	return func(tdbArray *Array) error {
 		ret := C.tiledb_array_set_open_timestamp_end(tdbArray.context.tiledbContext, tdbArray.tiledbArray, C.uint64_t(endTimestamp))
 		if ret != C.TILEDB_OK {
-			return fmt.Errorf("Error setting end timestamp option: %s", tdbArray.context.LastError())
+			return fmt.Errorf("error setting end timestamp option: %w", tdbArray.context.LastError())
 		}
 		return nil
 	}
@@ -129,7 +130,7 @@ func WithStartTimestamp(startTimestamp uint64) ArrayOpenOption {
 	return func(tdbArray *Array) error {
 		ret := C.tiledb_array_set_open_timestamp_start(tdbArray.context.tiledbContext, tdbArray.tiledbArray, C.uint64_t(startTimestamp))
 		if ret != C.TILEDB_OK {
-			return fmt.Errorf("Error setting start timestamp option: %s", tdbArray.context.LastError())
+			return fmt.Errorf("error setting start timestamp option: %w", tdbArray.context.LastError())
 		}
 		return nil
 	}
@@ -154,7 +155,7 @@ func (a *Array) OpenWithOptions(queryType QueryType, opts ...ArrayOpenOption) er
 
 	ret := C.tiledb_array_open(a.context.tiledbContext, a.tiledbArray, C.tiledb_query_type_t(queryType))
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error opening tiledb array for querying: %s", a.context.LastError())
+		return fmt.Errorf("error opening tiledb array for querying: %w", a.context.LastError())
 	}
 	return nil
 }
@@ -172,7 +173,7 @@ creation and submission of queries for both these array objects.
 func (a *Array) Open(queryType QueryType) error {
 	ret := C.tiledb_array_open(a.context.tiledbContext, a.tiledbArray, C.tiledb_query_type_t(queryType))
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error opening tiledb array for querying: %s", a.context.LastError())
+		return fmt.Errorf("error opening tiledb array for querying: %w", a.context.LastError())
 	}
 	return nil
 }
@@ -187,7 +188,7 @@ generally faster than the former alternative.
 func (a *Array) Reopen() error {
 	ret := C.tiledb_array_reopen(a.context.tiledbContext, a.tiledbArray)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error reopening tiledb array for querying: %s", a.context.LastError())
+		return fmt.Errorf("error reopening tiledb array for querying: %w", a.context.LastError())
 	}
 	return nil
 }
@@ -196,7 +197,7 @@ func (a *Array) Reopen() error {
 func (a *Array) Close() error {
 	ret := C.tiledb_array_close(a.context.tiledbContext, a.tiledbArray)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error closing tiledb array for querying: %s", a.context.LastError())
+		return fmt.Errorf("error closing tiledb array for querying: %w", a.context.LastError())
 	}
 	return nil
 }
@@ -207,7 +208,7 @@ func (a *Array) Create(arraySchema *ArraySchema) error {
 	defer C.free(unsafe.Pointer(curi))
 	ret := C.tiledb_array_create(a.context.tiledbContext, curi, arraySchema.tiledbArraySchema)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error creating tiledb array: %s", a.context.LastError())
+		return fmt.Errorf("error creating tiledb array: %w", a.context.LastError())
 	}
 	return nil
 }
@@ -217,14 +218,14 @@ func (a *Array) Create(arraySchema *ArraySchema) error {
 // begin (as consolidation temporarily acquires an exclusive lock on the array).
 func (a *Array) Consolidate(config *Config) error {
 	if config == nil {
-		return fmt.Errorf("Config must not be nil for Consolidate")
+		return errors.New("Config must not be nil for Consolidate")
 	}
 
 	curi := C.CString(a.uri)
 	defer C.free(unsafe.Pointer(curi))
 	ret := C.tiledb_array_consolidate(a.context.tiledbContext, curi, config.tiledbConfig)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error consolidating tiledb array: %s", a.context.LastError())
+		return fmt.Errorf("error consolidating tiledb array: %w", a.context.LastError())
 	}
 
 	runtime.KeepAlive(config)
@@ -234,14 +235,14 @@ func (a *Array) Consolidate(config *Config) error {
 // Vacuum cleans up the array, such as consolidated fragments and array metadata.
 func (a *Array) Vacuum(config *Config) error {
 	if config == nil {
-		return fmt.Errorf("Config must not be nil for Vacuum")
+		return errors.New("Config must not be nil for Vacuum")
 	}
 
 	curi := C.CString(a.uri)
 	defer C.free(unsafe.Pointer(curi))
 	ret := C.tiledb_array_vacuum(a.context.tiledbContext, curi, config.tiledbConfig)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error vacuumimg tiledb array: %s", a.context.LastError())
+		return fmt.Errorf("error vacuumimg tiledb array: %w", a.context.LastError())
 	}
 
 	runtime.KeepAlive(config)
@@ -253,7 +254,7 @@ func (a *Array) Schema() (*ArraySchema, error) {
 	arraySchema := ArraySchema{context: a.context}
 	ret := C.tiledb_array_get_schema(a.context.tiledbContext, a.tiledbArray, &arraySchema.tiledbArraySchema)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting schema for tiledb array: %s", a.context.LastError())
+		return nil, fmt.Errorf("error getting schema for tiledb array: %w", a.context.LastError())
 	}
 	freeOnGC(&arraySchema)
 	return &arraySchema, nil
@@ -264,7 +265,7 @@ func (a *Array) QueryType() (QueryType, error) {
 	var queryType C.tiledb_query_type_t
 	ret := C.tiledb_array_get_query_type(a.context.tiledbContext, a.tiledbArray, &queryType)
 	if ret != C.TILEDB_OK {
-		return -1, fmt.Errorf("Error getting QueryType for tiledb array: %s", a.context.LastError())
+		return -1, fmt.Errorf("error getting QueryType for tiledb array: %w", a.context.LastError())
 	}
 	return QueryType(queryType), nil
 }
@@ -299,7 +300,7 @@ func (a *Array) OpenStartTimestamp() (uint64, error) {
 	var start C.uint64_t
 	ret := C.tiledb_array_get_open_timestamp_start(a.context.tiledbContext, a.tiledbArray, &start)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting start timestamp for tiledb array: %s", a.context.LastError())
+		return 0, fmt.Errorf("error getting start timestamp for tiledb array: %w", a.context.LastError())
 	}
 	return uint64(start), nil
 }
@@ -309,7 +310,7 @@ func (a *Array) OpenEndTimestamp() (uint64, error) {
 	var end C.uint64_t
 	ret := C.tiledb_array_get_open_timestamp_end(a.context.tiledbContext, a.tiledbArray, &end)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting end timestamp for tiledb array: %s", a.context.LastError())
+		return 0, fmt.Errorf("error getting end timestamp for tiledb array: %w", a.context.LastError())
 	}
 	return uint64(end), nil
 }
@@ -416,7 +417,7 @@ func (a *Array) NonEmptyDomain() ([]NonEmptyDomain, bool, error) {
 				(C.uint32_t)(dimIdx),
 				tmpDimensionPtr, &isEmpty)
 			if ret != C.TILEDB_OK {
-				return fmt.Errorf("Error in getting non empty domain for dimension: %s", a.context.LastError())
+				return fmt.Errorf("error in getting non empty domain for dimension: %w", a.context.LastError())
 			}
 
 			if isEmpty == 1 {
@@ -513,7 +514,7 @@ func (a *Array) NonEmptyDomainMap() (map[string]interface{}, error) {
 				(C.uint32_t)(dimIdx),
 				tmpDimensionPtr, &isEmpty)
 			if ret != C.TILEDB_OK {
-				return nil, fmt.Errorf("error in getting non empty domain for dimension: %s", a.context.LastError())
+				return nil, fmt.Errorf("error in getting non empty domain for dimension: %w", a.context.LastError())
 			}
 
 			if isEmpty == 1 {
@@ -592,7 +593,7 @@ func (a *Array) NonEmptyDomainVarFromName(dimName string) (*NonEmptyDomain, bool
 		&cendSize,
 		&isEmpty)
 	if ret != C.TILEDB_OK {
-		return nil, false, fmt.Errorf("error in getting non empty domain size for dimension %s for array: %s", dimName, a.context.LastError())
+		return nil, false, fmt.Errorf("error in getting non empty domain size for dimension %s for array: %w", dimName, a.context.LastError())
 	}
 
 	if isEmpty == 1 {
@@ -621,7 +622,7 @@ func (a *Array) NonEmptyDomainVarFromName(dimName string) (*NonEmptyDomain, bool
 		cend,
 		&isEmpty)
 	if ret != C.TILEDB_OK {
-		return nil, false, fmt.Errorf("error in getting non empty domain for dimension %s for array: %s", dimName, a.context.LastError())
+		return nil, false, fmt.Errorf("error in getting non empty domain for dimension %s for array: %w", dimName, a.context.LastError())
 	}
 
 	if isEmpty == 1 {
@@ -655,7 +656,7 @@ func (a *Array) NonEmptyDomainVarFromIndex(dimIdx uint) (*NonEmptyDomain, bool, 
 
 	dimension, err := domain.DimensionFromIndex(dimIdx)
 	if err != nil {
-		return nil, false, fmt.Errorf("Could not get dimension having index: %d", dimIdx)
+		return nil, false, fmt.Errorf("could not get dimension having index: %d", dimIdx)
 	}
 	defer dimension.Free()
 
@@ -682,7 +683,7 @@ func (a *Array) NonEmptyDomainVarFromIndex(dimIdx uint) (*NonEmptyDomain, bool, 
 		&cendSize,
 		&isEmpty)
 	if ret != C.TILEDB_OK {
-		return nil, false, fmt.Errorf("Error in getting non empty domain size for dimension %d for array: %s", dimIdx, a.context.LastError())
+		return nil, false, fmt.Errorf("error in getting non empty domain size for dimension %d for array: %w", dimIdx, a.context.LastError())
 	}
 
 	if isEmpty == 1 {
@@ -711,7 +712,7 @@ func (a *Array) NonEmptyDomainVarFromIndex(dimIdx uint) (*NonEmptyDomain, bool, 
 		cend,
 		&isEmpty)
 	if ret != C.TILEDB_OK {
-		return nil, false, fmt.Errorf("Error in getting non empty domain for dimension index %d for array: %s", dimIdx, a.context.LastError())
+		return nil, false, fmt.Errorf("error in getting non empty domain for dimension index %d for array: %w", dimIdx, a.context.LastError())
 	}
 
 	if isEmpty == 1 {
@@ -739,7 +740,7 @@ func (a Array) GetNonEmptyDomainSliceFromIndex(dimIdx uint) (*Dimension, interfa
 
 	dimension, err := domain.DimensionFromIndex(dimIdx)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("Could not get dimension: %d", dimIdx)
+		return nil, nil, nil, fmt.Errorf("could not get dimension: %d", dimIdx)
 	}
 
 	dimensionType, err := dimension.Type()
@@ -772,12 +773,12 @@ func (a Array) GetNonEmptyDomainSliceFromName(dimName string) (*Dimension, inter
 	}
 
 	if !hasDim {
-		return nil, nil, nil, fmt.Errorf("Dimension: %s was not found in domain", dimName)
+		return nil, nil, nil, fmt.Errorf("dimension: %s was not found in domain", dimName)
 	}
 
 	dimension, err := domain.DimensionFromName(dimName)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("Could not get dimension: %s", dimName)
+		return nil, nil, nil, fmt.Errorf("could not get dimension: %s", dimName)
 	}
 
 	dimensionType, err := dimension.Type()
@@ -809,7 +810,7 @@ func (a *Array) NonEmptyDomainFromIndex(dimIdx uint) (*NonEmptyDomain, bool, err
 		(C.uint32_t)(dimIdx),
 		tmpDimensionPtr, &isEmpty)
 	if ret != C.TILEDB_OK {
-		return nil, false, fmt.Errorf("Error in getting non empty domain for dimension: %s", a.context.LastError())
+		return nil, false, fmt.Errorf("error in getting non empty domain for dimension: %w", a.context.LastError())
 	}
 
 	if isEmpty == 1 {
@@ -843,7 +844,7 @@ func (a *Array) NonEmptyDomainFromName(dimName string) (*NonEmptyDomain, bool, e
 		cDimName,
 		tmpDimensionPtr, &isEmpty)
 	if ret != C.TILEDB_OK {
-		return nil, false, fmt.Errorf("Error in getting non empty domain for dimension: %s", a.context.LastError())
+		return nil, false, fmt.Errorf("error in getting non empty domain for dimension: %w", a.context.LastError())
 	}
 
 	if isEmpty == 1 {
@@ -864,7 +865,7 @@ func (a *Array) URI() (string, error) {
 	C.tiledb_array_get_uri(a.context.tiledbContext, a.tiledbArray, &curi)
 	uri := C.GoString(curi)
 	if uri == "" {
-		return uri, fmt.Errorf("Error getting URI for array: uri is empty")
+		return uri, errors.New("error getting URI for array: uri is empty")
 	}
 	return uri, nil
 }
@@ -881,7 +882,7 @@ func (a *Array) PutCharMetadata(key string, charData string) error {
 		ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&[]byte(charData)[0]))
 
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error adding char metadata to array: %s", a.context.LastError())
+		return fmt.Errorf("error adding char metadata to array: %w", a.context.LastError())
 	}
 
 	return nil
@@ -987,7 +988,7 @@ func (a *Array) DeleteMetadata(key string) error {
 
 	ret := C.tiledb_array_delete_metadata(a.context.tiledbContext, a.tiledbArray, ckey)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error deleting metadata from array: %s", a.context.LastError())
+		return fmt.Errorf("error deleting metadata from array: %w", a.context.LastError())
 	}
 	return nil
 }
@@ -1004,18 +1005,18 @@ func (a *Array) GetMetadata(key string) (Datatype, uint, interface{}, error) {
 
 	ret := C.tiledb_array_get_metadata(a.context.tiledbContext, a.tiledbArray, ckey, &cType, &cValueNum, &cvalue)
 	if ret != C.TILEDB_OK {
-		return 0, 0, nil, fmt.Errorf("Error getting metadata from array: %s, key: %s", a.context.LastError(), key)
+		return 0, 0, nil, fmt.Errorf("error getting metadata from array: %w, key: %s", a.context.LastError(), key)
 	}
 
 	valueNum := uint(cValueNum)
 	if valueNum == 0 {
-		return 0, 0, nil, fmt.Errorf("Error getting metadata from array, key: %s does not exist", key)
+		return 0, 0, nil, fmt.Errorf("error getting metadata from array, key: %s does not exist", key)
 	}
 
 	datatype := Datatype(cType)
 	value, err := datatype.GetValue(valueNum, cvalue)
 	if err != nil {
-		return 0, 0, nil, fmt.Errorf("%s, key: %s", err.Error(), key)
+		return 0, 0, nil, fmt.Errorf("%w, key: %s", err, key)
 	}
 
 	return datatype, valueNum, value, nil
@@ -1028,7 +1029,7 @@ func (a *Array) GetMetadataNum() (uint64, error) {
 
 	ret := C.tiledb_array_get_metadata_num(a.context.tiledbContext, a.tiledbArray, &cNum)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting number of metadata from array: %s", a.context.LastError())
+		return 0, fmt.Errorf("error getting number of metadata from array: %w", a.context.LastError())
 	}
 
 	return uint64(cNum), nil
@@ -1059,12 +1060,12 @@ func (a *Array) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 	ret := C.tiledb_array_get_metadata_from_index(a.context.tiledbContext,
 		a.tiledbArray, cIndex, &cKey, &cKeyLen, &cType, &cValueNum, &cvalue)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting metadata from array: %s, Index: %d", a.context.LastError(), index)
+		return nil, fmt.Errorf("error getting metadata from array: %s, Index: %d", a.context.LastError(), index)
 	}
 
 	valueNum := uint(cValueNum)
 	if valueNum == 0 {
-		return nil, fmt.Errorf("Error getting metadata from array, Index: %d does not exist", index)
+		return nil, fmt.Errorf("error getting metadata from array, Index: %d does not exist", index)
 	}
 
 	datatype := Datatype(cType)
@@ -1126,7 +1127,7 @@ func (a *Array) SetConfig(config *Config) error {
 
 	ret := C.tiledb_array_set_config(a.context.tiledbContext, a.tiledbArray, a.config.tiledbConfig)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting config on array: %s", a.context.LastError())
+		return fmt.Errorf("error setting config on array: %w", a.context.LastError())
 	}
 
 	return nil
@@ -1137,7 +1138,7 @@ func (a *Array) Config() (*Config, error) {
 	config := Config{}
 	ret := C.tiledb_array_get_config(a.context.tiledbContext, a.tiledbArray, &config.tiledbConfig)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting config from array: %s", a.context.LastError())
+		return nil, fmt.Errorf("error getting config from array: %w", a.context.LastError())
 	}
 
 	freeOnGC(&config)
@@ -1157,7 +1158,7 @@ func DeleteFragments(tdbCtx *Context, uri string, startTimestamp, endTimestamp u
 	ret := C.tiledb_array_delete_fragments_v2(tdbCtx.tiledbContext, curi,
 		C.uint64_t(startTimestamp), C.uint64_t(endTimestamp))
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error deleting fragments from array: %s", tdbCtx.LastError())
+		return fmt.Errorf("error deleting fragments from array: %w", tdbCtx.LastError())
 	}
 
 	return nil
@@ -1173,7 +1174,7 @@ func DeleteFragmentsList(tdbCtx *Context, uri string, fragmentURIs []string) err
 
 	ret := C.tiledb_array_delete_fragments_list(tdbCtx.tiledbContext, curi, (**C.char)(slicePtr(list)), C.size_t(len(list)))
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error deleting fragments list from array: %s", tdbCtx.LastError())
+		return fmt.Errorf("error deleting fragments list from array: %w", tdbCtx.LastError())
 	}
 
 	runtime.KeepAlive(list)

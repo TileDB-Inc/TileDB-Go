@@ -22,7 +22,7 @@ func NewBufferList(context *Context) (*BufferList, error) {
 
 	ret := C.tiledb_buffer_list_alloc(bufferList.context.tiledbContext, &bufferList.tiledbBufferList)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error creating tiledb buffer list: %s", bufferList.context.LastError())
+		return nil, fmt.Errorf("error creating tiledb buffer list: %w", bufferList.context.LastError())
 	}
 	freeOnGC(&bufferList)
 
@@ -81,7 +81,7 @@ func (b *BufferList) NumBuffers() (uint64, error) {
 	ret := C.tiledb_buffer_list_get_num_buffers(b.context.tiledbContext, b.tiledbBufferList, &numBuffers)
 
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting tiledb bufferList num buffers: %s", b.context.LastError())
+		return 0, fmt.Errorf("error getting tiledb bufferList num buffers: %w", b.context.LastError())
 	}
 
 	return uint64(numBuffers), nil
@@ -94,7 +94,7 @@ func (b *BufferList) GetBuffer(bufferIndex uint) (*Buffer, error) {
 
 	ret := C.tiledb_buffer_list_get_buffer(b.context.tiledbContext, b.tiledbBufferList, C.uint64_t(bufferIndex), &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting tiledb buffer index %d from buffer list: %s", bufferIndex, b.context.LastError())
+		return nil, fmt.Errorf("error getting tiledb buffer index %d from buffer list: %w", bufferIndex, b.context.LastError())
 	}
 
 	return &buffer, nil
@@ -106,7 +106,7 @@ func (b *BufferList) TotalSize() (uint64, error) {
 	ret := C.tiledb_buffer_list_get_total_size(b.context.tiledbContext, b.tiledbBufferList, &totalSize)
 
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting tiledb bufferList num buffers: %s", b.context.LastError())
+		return 0, fmt.Errorf("error getting tiledb bufferList num buffers: %w", b.context.LastError())
 	}
 
 	return uint64(totalSize), nil
@@ -122,7 +122,7 @@ func (b *BufferList) Flatten() (*Buffer, error) {
 	ret := C.tiledb_buffer_list_flatten(b.context.tiledbContext, b.tiledbBufferList, &buffer.tiledbBuffer)
 
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting tiledb bufferList num buffers: %s", b.context.LastError())
+		return nil, fmt.Errorf("error getting tiledb bufferList num buffers: %w", b.context.LastError())
 	}
 
 	return &buffer, nil

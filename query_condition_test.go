@@ -28,7 +28,7 @@ var testAttributeValues = struct {
 }
 
 func TestQueryCondition(t *testing.T) {
-	array, err := createBasicTestArray(t, "test_query_condition")
+	array, err := createBasicTestArray(t)
 	if err != nil {
 		t.Errorf("failed to create basic test array: %s", err)
 	}
@@ -273,7 +273,7 @@ func testQueryConditionBytes(t *testing.T, array *Array) {
 	}
 }
 
-func createBasicTestArray(t testing.TB, identifier string) (*Array, error) {
+func createBasicTestArray(t testing.TB) (*Array, error) {
 	// Create configuration
 	config, err := NewConfig()
 	if err != nil {

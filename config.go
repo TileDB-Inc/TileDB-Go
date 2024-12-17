@@ -7,6 +7,7 @@ package tiledb
 import "C"
 
 import (
+	"errors"
 	"fmt"
 	"unsafe"
 )
@@ -109,7 +110,7 @@ func (c *Config) SaveToFile(file string) error {
 func LoadConfig(uri string) (*Config, error) {
 
 	if uri == "" {
-		return nil, fmt.Errorf("error loading tiledb config: passed uri is empty")
+		return nil, errors.New("error loading tiledb config: passed uri is empty")
 	}
 
 	var config Config

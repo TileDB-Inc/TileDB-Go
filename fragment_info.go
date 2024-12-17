@@ -34,7 +34,7 @@ func NewFragmentInfo(tdbCtx *Context, uri string) (*FragmentInfo, error) {
 	ret := C.tiledb_fragment_info_alloc(fI.context.tiledbContext,
 		curi, &fI.tiledbFragmentInfo)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error creating tiledb fragment info: %s", fI.context.LastError())
+		return nil, fmt.Errorf("error creating tiledb fragment info: %w", fI.context.LastError())
 	}
 	freeOnGC(&fI)
 
@@ -61,7 +61,7 @@ func (fI *FragmentInfo) Context() *Context {
 func (fI *FragmentInfo) Load() error {
 	ret := C.tiledb_fragment_info_load(fI.context.tiledbContext, fI.tiledbFragmentInfo)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error loading tiledb fragment info: %s", fI.context.LastError())
+		return fmt.Errorf("error loading tiledb fragment info: %w", fI.context.LastError())
 	}
 	return nil
 }
@@ -72,7 +72,7 @@ func (fI *FragmentInfo) GetFragmentNum() (uint32, error) {
 
 	ret := C.tiledb_fragment_info_get_fragment_num(fI.context.tiledbContext, fI.tiledbFragmentInfo, &cNum)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting number of fragments from fragment info: %s", fI.context.LastError())
+		return 0, fmt.Errorf("error getting number of fragments from fragment info: %w", fI.context.LastError())
 	}
 
 	return uint32(cNum), nil
@@ -86,7 +86,7 @@ func (fI *FragmentInfo) GetFragmentURI(fid uint32) (string, error) {
 		fI.tiledbFragmentInfo, C.uint32_t(fid), &curi)
 	uri := C.GoString(curi)
 	if uri == "" {
-		return uri, fmt.Errorf("Error getting URI for fragment %d: uri is empty", fid)
+		return uri, fmt.Errorf("error getting URI for fragment %d: uri is empty", fid)
 	}
 	return uri, nil
 }
@@ -98,7 +98,7 @@ func (fI *FragmentInfo) GetFragmentSize(fid uint32) (uint64, error) {
 	ret := C.tiledb_fragment_info_get_fragment_size(fI.context.tiledbContext,
 		fI.tiledbFragmentInfo, C.uint32_t(fid), &cSize)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting fragment size for fragment %d: %s", fid, fI.context.LastError())
+		return 0, fmt.Errorf("error getting fragment size for fragment %d: %w", fid, fI.context.LastError())
 	}
 
 	return uint64(cSize), nil
@@ -111,7 +111,7 @@ func (fI *FragmentInfo) GetDense(fid uint32) (bool, error) {
 	ret := C.tiledb_fragment_info_get_dense(fI.context.tiledbContext,
 		fI.tiledbFragmentInfo, C.uint32_t(fid), &cDense)
 	if ret != C.TILEDB_OK {
-		return false, fmt.Errorf("Error finding if fragment %d is dense: %s", fid, fI.context.LastError())
+		return false, fmt.Errorf("error finding if fragment %d is dense: %w", fid, fI.context.LastError())
 	}
 
 	return cDense == 1, nil
@@ -124,7 +124,7 @@ func (fI *FragmentInfo) GetSparse(fid uint32) (bool, error) {
 	ret := C.tiledb_fragment_info_get_sparse(fI.context.tiledbContext,
 		fI.tiledbFragmentInfo, C.uint32_t(fid), &cSparse)
 	if ret != C.TILEDB_OK {
-		return false, fmt.Errorf("Error finding if fragment %d is dense: %s", fid, fI.context.LastError())
+		return false, fmt.Errorf("error finding if fragment %d is dense: %w", fid, fI.context.LastError())
 	}
 
 	return cSparse == 1, nil
@@ -138,7 +138,7 @@ func (fI *FragmentInfo) GetTimestampRange(fid uint32) (uint64, uint64, error) {
 	ret := C.tiledb_fragment_info_get_timestamp_range(fI.context.tiledbContext,
 		fI.tiledbFragmentInfo, C.uint32_t(fid), &cStart, &cEnd)
 	if ret != C.TILEDB_OK {
-		return 0, 0, fmt.Errorf("Error getting the timestamp range for fragment %d: %s", fid, fI.context.LastError())
+		return 0, 0, fmt.Errorf("error getting the timestamp range for fragment %d: %w", fid, fI.context.LastError())
 	}
 
 	return uint64(cStart), uint64(cEnd), nil
@@ -227,7 +227,7 @@ func (fI *FragmentInfo) GetNonEmptyDomainFromIndex(fid uint32, did uint32) (*Non
 		(C.uint32_t)(did),
 		tmpDimensionPtr)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error in getting non empty domain from fragment %d for a given dimension index %d: %s", fid, did, fI.context.LastError())
+		return nil, fmt.Errorf("error in getting non empty domain from fragment %d for a given dimension index %d: %w", fid, did, fI.context.LastError())
 	}
 
 	if isEmpty == 1 {
@@ -261,7 +261,7 @@ func (fI *FragmentInfo) GetNonEmptyDomainFromName(fid uint32, did string) (*NonE
 		cDid,
 		tmpDimensionPtr)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error in getting non empty domain from fragment %d for a given dimension name %s: %s", fid, did, fI.context.LastError())
+		return nil, fmt.Errorf("error in getting non empty domain from fragment %d for a given dimension name %s: %w", fid, did, fI.context.LastError())
 	}
 
 	// If at least one domain for a dimension is empty the union of domains is non-empty
@@ -284,7 +284,7 @@ func (fI *FragmentInfo) GetNonEmptyDomainVarSizeFromIndex(fid uint32, did uint32
 	ret := C.tiledb_fragment_info_get_non_empty_domain_var_size_from_index(fI.context.tiledbContext,
 		fI.tiledbFragmentInfo, C.uint32_t(fid), C.uint32_t(did), &cStart, &cEnd)
 	if ret != C.TILEDB_OK {
-		return 0, 0, fmt.Errorf("Error retrieving the non-empty domain range sizes from fragment %d for a given dimension index %d: %s", fid, did, fI.context.LastError())
+		return 0, 0, fmt.Errorf("error retrieving the non-empty domain range sizes from fragment %d for a given dimension index %d: %w", fid, did, fI.context.LastError())
 	}
 
 	return uint64(cStart), uint64(cEnd), nil
@@ -302,7 +302,7 @@ func (fI *FragmentInfo) GetNonEmptyDomainVarSizeFromName(fid uint32, did string)
 	ret := C.tiledb_fragment_info_get_non_empty_domain_var_size_from_name(fI.context.tiledbContext,
 		fI.tiledbFragmentInfo, C.uint32_t(fid), cDid, &cStart, &cEnd)
 	if ret != C.TILEDB_OK {
-		return 0, 0, fmt.Errorf("Error retrieving the non-empty domain range sizes from fragment %d for a given dimension name %s: %s", fid, did, fI.context.LastError())
+		return 0, 0, fmt.Errorf("error retrieving the non-empty domain range sizes from fragment %d for a given dimension name %s: %w", fid, did, fI.context.LastError())
 	}
 
 	return uint64(cStart), uint64(cEnd), nil
@@ -317,7 +317,7 @@ func (fI *FragmentInfo) GetNonEmptyDomainVarFromIndex(fid uint32, did uint32) (*
 	ret := C.tiledb_fragment_info_get_non_empty_domain_var_size_from_index(fI.context.tiledbContext,
 		fI.tiledbFragmentInfo, C.uint32_t(fid), C.uint32_t(did), &cStartSize, &cEndSize)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error retrieving the non-empty domain range sizes from fragment %d for a given dimension index %d: %s", fid, did, fI.context.LastError())
+		return nil, fmt.Errorf("error retrieving the non-empty domain range sizes from fragment %d for a given dimension index %d: %w", fid, did, fI.context.LastError())
 	}
 
 	err := fI.useArrayFromCache()
@@ -342,7 +342,7 @@ func (fI *FragmentInfo) GetNonEmptyDomainVarFromIndex(fid uint32, did uint32) (*
 
 	dimension, err := domain.DimensionFromIndex(uint(did))
 	if err != nil {
-		return nil, fmt.Errorf("Could not get dimension having index: %d", did)
+		return nil, fmt.Errorf("could not get dimension having index: %d", did)
 	}
 
 	dimType, err := dimension.Type()
@@ -373,7 +373,7 @@ func (fI *FragmentInfo) GetNonEmptyDomainVarFromIndex(fid uint32, did uint32) (*
 		cend)
 
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error in getting non empty domain for dimension index %d for fragment info %d: %s",
+		return nil, fmt.Errorf("error in getting non empty domain for dimension index %d for fragment info %d: %w",
 			did, fid, fI.context.LastError())
 	}
 
@@ -402,7 +402,7 @@ func (fI *FragmentInfo) GetNonEmptyDomainVarFromName(fid uint32, did string) (*N
 	ret := C.tiledb_fragment_info_get_non_empty_domain_var_size_from_name(fI.context.tiledbContext,
 		fI.tiledbFragmentInfo, C.uint32_t(fid), cDid, &cStartSize, &cEndSize)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error retrieving the non-empty domain range sizes from fragment %d for a given dimension name %s: %s", fid, did, fI.context.LastError())
+		return nil, fmt.Errorf("error retrieving the non-empty domain range sizes from fragment %d for a given dimension name %s: %w", fid, did, fI.context.LastError())
 	}
 
 	err := fI.useArrayFromCache()
@@ -427,7 +427,7 @@ func (fI *FragmentInfo) GetNonEmptyDomainVarFromName(fid uint32, did string) (*N
 
 	dimension, err := domain.DimensionFromName(did)
 	if err != nil {
-		return nil, fmt.Errorf("Could not get dimension having name: %s", did)
+		return nil, fmt.Errorf("could not get dimension having name: %s", did)
 	}
 
 	dimType, err := dimension.Type()
@@ -458,7 +458,7 @@ func (fI *FragmentInfo) GetNonEmptyDomainVarFromName(fid uint32, did string) (*N
 		cend)
 
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error in getting non empty domain for dimension name %s for fragment info %d: %s",
+		return nil, fmt.Errorf("error in getting non empty domain for dimension name %s for fragment info %d: %w",
 			did, fid, fI.context.LastError())
 	}
 
@@ -489,7 +489,7 @@ func (fI *FragmentInfo) GetCellNum(fid uint32) (uint64, error) {
 	ret := C.tiledb_fragment_info_get_cell_num(fI.context.tiledbContext,
 		fI.tiledbFragmentInfo, C.uint32_t(fid), &cCellNum)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error retrieving number of cells written to the fragment %d by the user: %s", fid, fI.context.LastError())
+		return 0, fmt.Errorf("error retrieving number of cells written to the fragment %d by the user: %w", fid, fI.context.LastError())
 	}
 
 	return uint64(cCellNum), nil
@@ -502,7 +502,7 @@ func (fI *FragmentInfo) GetVersion(fid uint32) (uint32, error) {
 	ret := C.tiledb_fragment_info_get_version(fI.context.tiledbContext,
 		fI.tiledbFragmentInfo, C.uint32_t(fid), &cVersion)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error finding version of fragment %d: %s", fid, fI.context.LastError())
+		return 0, fmt.Errorf("error finding version of fragment %d: %w", fid, fI.context.LastError())
 	}
 
 	return uint32(cVersion), nil
@@ -515,7 +515,7 @@ func (fI *FragmentInfo) HasConsolidatedMetadata(fid uint32) (bool, error) {
 	ret := C.tiledb_fragment_info_has_consolidated_metadata(fI.context.tiledbContext,
 		fI.tiledbFragmentInfo, C.uint32_t(fid), &cHas)
 	if ret != C.TILEDB_OK {
-		return false, fmt.Errorf("Error finding if fragment %d has consolidated metadata: %s", fid, fI.context.LastError())
+		return false, fmt.Errorf("error finding if fragment %d has consolidated metadata: %w", fid, fI.context.LastError())
 	}
 
 	return cHas == 1, nil
@@ -528,7 +528,7 @@ func (fI *FragmentInfo) GetUnconsolidatedMetadataNum() (uint32, error) {
 
 	ret := C.tiledb_fragment_info_get_unconsolidated_metadata_num(fI.context.tiledbContext, fI.tiledbFragmentInfo, &cNum)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting number of fragments with unconsolidated metadata: %s", fI.context.LastError())
+		return 0, fmt.Errorf("error getting number of fragments with unconsolidated metadata: %w", fI.context.LastError())
 	}
 
 	return uint32(cNum), nil
@@ -540,7 +540,7 @@ func (fI *FragmentInfo) GetToVacuumNum() (uint32, error) {
 
 	ret := C.tiledb_fragment_info_get_to_vacuum_num(fI.context.tiledbContext, fI.tiledbFragmentInfo, &cNum)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting number of fragments to vacuum: %s", fI.context.LastError())
+		return 0, fmt.Errorf("error getting number of fragments to vacuum: %w", fI.context.LastError())
 	}
 
 	return uint32(cNum), nil
@@ -552,11 +552,11 @@ func (fI *FragmentInfo) GetToVacuumURI(fid uint32) (string, error) {
 	var curi *C.char
 	ret := C.tiledb_fragment_info_get_to_vacuum_uri(fI.context.tiledbContext, fI.tiledbFragmentInfo, C.uint32_t(fid), &curi)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error getting URI uri for fragment to vacuum: %s", fI.context.LastError())
+		return "", fmt.Errorf("error getting URI uri for fragment to vacuum: %w", fI.context.LastError())
 	}
 	uri := C.GoString(curi)
 	if uri == "" {
-		return "", fmt.Errorf("Error getting URI for fragment %d to vacuum: uri is empty", fid)
+		return "", fmt.Errorf("error getting URI for fragment %d to vacuum: uri is empty", fid)
 	}
 	return uri, nil
 }
@@ -565,7 +565,7 @@ func (fI *FragmentInfo) GetToVacuumURI(fid uint32) (string, error) {
 func (fI *FragmentInfo) DumpSTDOUT() error {
 	ret := C.tiledb_fragment_info_dump(fI.context.tiledbContext, fI.tiledbFragmentInfo, C.stdout)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error dumping fragment info to stdout: %s", fI.context.LastError())
+		return fmt.Errorf("error dumping fragment info to stdout: %w", fI.context.LastError())
 	}
 	return nil
 }
@@ -591,7 +591,7 @@ func (fI *FragmentInfo) String() (string, error) {
 func (fI *FragmentInfo) SetConfig(config *Config) error {
 	ret := C.tiledb_fragment_info_set_config(fI.context.tiledbContext, fI.tiledbFragmentInfo, config.tiledbConfig)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting config on group: %s", fI.context.LastError())
+		return fmt.Errorf("error setting config on group: %w", fI.context.LastError())
 	}
 	fI.config = config
 	return nil
@@ -602,7 +602,7 @@ func (fI *FragmentInfo) Config() (*Config, error) {
 	var config Config
 	ret := C.tiledb_fragment_info_get_config(fI.context.tiledbContext, fI.tiledbFragmentInfo, &config.tiledbConfig)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting config from fragment info: %s", fI.context.LastError())
+		return nil, fmt.Errorf("error getting config from fragment info: %w", fI.context.LastError())
 	}
 	freeOnGC(&config)
 

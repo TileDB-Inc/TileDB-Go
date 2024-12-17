@@ -45,12 +45,12 @@ func NewBuffer(context *Context) (*Buffer, error) {
 	buffer := Buffer{context: context}
 
 	if buffer.context == nil {
-		return nil, fmt.Errorf("Error creating tiledb buffer, context is nil")
+		return nil, errors.New("error creating tiledb buffer, context is nil")
 	}
 
 	ret := C.tiledb_buffer_alloc(buffer.context.tiledbContext, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error creating tiledb buffer: %s", buffer.context.LastError())
+		return nil, fmt.Errorf("error creating tiledb buffer: %w", buffer.context.LastError())
 	}
 	freeOnGC(&buffer)
 
@@ -78,7 +78,7 @@ func (b *Buffer) Context() *Context {
 func (b *Buffer) SetType(datatype Datatype) error {
 	ret := C.tiledb_buffer_set_type(b.context.tiledbContext, b.tiledbBuffer, C.tiledb_datatype_t(datatype))
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting datatype for tiledb buffer: %s", b.context.LastError())
+		return fmt.Errorf("error setting datatype for tiledb buffer: %w", b.context.LastError())
 	}
 	return nil
 }
@@ -89,7 +89,7 @@ func (b *Buffer) Type() (Datatype, error) {
 	ret := C.tiledb_buffer_get_type(b.context.tiledbContext, b.tiledbBuffer, &bufferType)
 
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting tiledb buffer type: %s", b.context.LastError())
+		return 0, fmt.Errorf("error getting tiledb buffer type: %w", b.context.LastError())
 	}
 
 	return Datatype(bufferType), nil
@@ -202,7 +202,7 @@ func (b *Buffer) SetBuffer(buffer []byte) error {
 
 	ret := C.tiledb_buffer_set_data(b.context.tiledbContext, b.tiledbBuffer, b.data.start(), C.uint64_t(b.data.lenBytes()))
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting tiledb buffer: %s", b.context.LastError())
+		return fmt.Errorf("error setting tiledb buffer: %w", b.context.LastError())
 	}
 
 	return nil
@@ -215,7 +215,7 @@ func (b *Buffer) dataCopy() ([]byte, error) {
 
 	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer, &cbuffer, &csize)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting tiledb buffer data: %s", b.context.LastError())
+		return nil, fmt.Errorf("error getting tiledb buffer data: %w", b.context.LastError())
 	}
 
 	if cbuffer == nil {
@@ -253,7 +253,7 @@ func (b *Buffer) Len() (uint64, error) {
 
 	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer, &cbuffer, &csize)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting tiledb buffer data: %s", b.context.LastError())
+		return 0, fmt.Errorf("error getting tiledb buffer data: %w", b.context.LastError())
 	}
 
 	return uint64(csize), nil

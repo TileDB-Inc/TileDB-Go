@@ -19,7 +19,7 @@ type QueryStatusDetails struct {
 func (q *Query) RelevantFragmentNum() (uint64, error) {
 	var num C.uint64_t
 	if ret := C.tiledb_query_get_relevant_fragment_num(q.context.tiledbContext, q.tiledbQuery, &num); ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting relevant fragment num from query: %s", q.context.LastError())
+		return 0, fmt.Errorf("error getting relevant fragment num from query: %w", q.context.LastError())
 	}
 
 	return uint64(num), nil
@@ -30,7 +30,7 @@ func (q *Query) StatusDetails() (QueryStatusDetails, error) {
 	var details QueryStatusDetails
 	var cDetails C.tiledb_query_status_details_t
 	if ret := C.tiledb_query_get_status_details(q.context.tiledbContext, q.tiledbQuery, &cDetails); ret != C.TILEDB_OK {
-		return details, fmt.Errorf("Error getting query status details: %s", q.context.LastError())
+		return details, fmt.Errorf("error getting query status details: %w", q.context.LastError())
 	}
 	details.IncompleteReason = QueryStatusDetailsReason(cDetails.incomplete_reason)
 	return details, nil
@@ -63,7 +63,7 @@ func (q *Query) GetPlan() (string, error) {
 
 	ret := C.tiledb_query_get_plan(q.context.tiledbContext, q.tiledbQuery, &plan)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error getting query plan: %s", q.context.LastError())
+		return "", fmt.Errorf("error getting query plan: %w", q.context.LastError())
 	}
 	defer C.tiledb_string_free(&plan)
 
@@ -71,7 +71,7 @@ func (q *Query) GetPlan() (string, error) {
 	var sPlanSize C.size_t
 	ret = C.tiledb_string_view(plan, &sPlan, &sPlanSize)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error extracting query query: %s", q.context.LastError())
+		return "", fmt.Errorf("error extracting query query: %w", q.context.LastError())
 	}
 
 	return C.GoStringN(sPlan, C.int(sPlanSize)), nil

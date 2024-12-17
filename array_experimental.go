@@ -7,6 +7,7 @@ package tiledb
 */
 import "C"
 import (
+	"errors"
 	"fmt"
 	"runtime"
 	"unsafe"
@@ -27,7 +28,7 @@ func GetConsolidationPlan(arr *Array, fragmentSize uint64) (*ConsolidationPlan, 
 
 	ret := C.tiledb_consolidation_plan_create_with_mbr(cp.context.tiledbContext, arr.tiledbArray, C.uint64_t(fragmentSize), &cp.tiledbConsolidationPlan)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting consolidation plan for array: %s", cp.context.LastError())
+		return nil, fmt.Errorf("error getting consolidation plan for array: %w", cp.context.LastError())
 	}
 	freeOnGC(cp)
 
@@ -51,7 +52,7 @@ func (cp *ConsolidationPlan) NumNodes() (uint64, error) {
 
 	ret := C.tiledb_consolidation_plan_get_num_nodes(cp.context.tiledbContext, cp.tiledbConsolidationPlan, &numNodes)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting consolidation plan num nodes: %s", cp.context.LastError())
+		return 0, fmt.Errorf("error getting consolidation plan num nodes: %w", cp.context.LastError())
 	}
 
 	return uint64(numNodes), nil
@@ -63,7 +64,7 @@ func (cp *ConsolidationPlan) NumFragments(nodeIndex uint64) (uint64, error) {
 
 	ret := C.tiledb_consolidation_plan_get_num_fragments(cp.context.tiledbContext, cp.tiledbConsolidationPlan, C.uint64_t(nodeIndex), &numFragments)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting consolidation plan num fragments: %s", cp.context.LastError())
+		return 0, fmt.Errorf("error getting consolidation plan num fragments: %w", cp.context.LastError())
 	}
 
 	return uint64(numFragments), nil
@@ -75,7 +76,7 @@ func (cp *ConsolidationPlan) FragmentURI(nodeIndex, fragmentIndex uint64) (strin
 
 	ret := C.tiledb_consolidation_plan_get_fragment_uri(cp.context.tiledbContext, cp.tiledbConsolidationPlan, C.uint64_t(nodeIndex), C.uint64_t(fragmentIndex), &curi)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error getting consolidation plan fragment uri for node %d and fragment %d: %s", nodeIndex, fragmentIndex, cp.context.LastError())
+		return "", fmt.Errorf("error getting consolidation plan fragment uri for node %d and fragment %d: %w", nodeIndex, fragmentIndex, cp.context.LastError())
 	}
 
 	return C.GoString(curi), nil
@@ -86,14 +87,14 @@ func (cp *ConsolidationPlan) DumpJSON() (string, error) {
 	var cjson *C.char
 	ret := C.tiledb_consolidation_plan_dump_json_str(cp.context.tiledbContext, cp.tiledbConsolidationPlan, &cjson)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error getting consolidation plan json dump: %s", cp.context.LastError())
+		return "", fmt.Errorf("error getting consolidation plan json dump: %w", cp.context.LastError())
 	}
 
 	json := C.GoString(cjson)
 
 	ret = C.tiledb_consolidation_plan_free_json_str(&cjson)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error getting consolidation plan json dump: %s", cp.context.LastError())
+		return "", fmt.Errorf("error getting consolidation plan json dump: %w", cp.context.LastError())
 	}
 
 	return json, nil
@@ -104,7 +105,7 @@ func (cp *ConsolidationPlan) DumpJSON() (string, error) {
 // begin (as consolidation temporarily acquires an exclusive lock on the array).
 func (a *Array) ConsolidateFragments(config *Config, fragmentList []string) error {
 	if config == nil {
-		return fmt.Errorf("Config must not be nil for Consolidate")
+		return errors.New("config must not be nil for Consolidate")
 	}
 
 	curi := C.CString(a.uri)
@@ -115,7 +116,7 @@ func (a *Array) ConsolidateFragments(config *Config, fragmentList []string) erro
 
 	ret := C.tiledb_array_consolidate_fragments(a.context.tiledbContext, curi, (**C.char)(slicePtr(list)), C.uint64_t(len(list)), config.tiledbConfig)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error consolidating tiledb array fragment list: %s", a.context.LastError())
+		return fmt.Errorf("error consolidating tiledb array fragment list: %w", a.context.LastError())
 	}
 
 	runtime.KeepAlive(config)
