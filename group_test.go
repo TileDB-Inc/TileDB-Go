@@ -28,13 +28,33 @@ func TestGroupCreate(t *testing.T) {
 	assert.Error(t, group.Create())
 
 	// Test Group.IsOpen
-	assert.False(t, group.IsOpen())
+	isOpen, err := group.IsOpen()
+	require.NoError(t, err)
+	assert.False(t, isOpen)
+
+	err = group.Open(TILEDB_WRITE)
+	require.NoError(t, err)
+	isOpen, err = group.IsOpen()
+	require.NoError(t, err)
+	assert.True(t, isOpen)
+
+	queryType, err := group.QueryType()
+	require.NoError(t, err)
+	assert.Equal(t, TILEDB_WRITE, queryType)
+
+	err = group.Close()
+	require.NoError(t, err)
 
 	// Dump the created group
 	err = group.Open(TILEDB_READ)
 	require.NoError(t, err)
+	isOpen, err = group.IsOpen()
+	require.NoError(t, err)
+	assert.True(t, isOpen)
 
-	assert.True(t, group.IsOpen())
+	queryType, err = group.QueryType()
+	require.NoError(t, err)
+	assert.Equal(t, TILEDB_READ, queryType)
 
 	dump, err := group.Dump(false)
 	require.NoError(t, err)

@@ -2,6 +2,7 @@ package tiledb
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"unsafe"
 )
@@ -390,8 +391,11 @@ func (g *Group) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 
 // Dump the Group to a string value
 func (g *Group) Dump(recurse bool) (string, error) {
-	if !g.IsOpen() {
-		return "", fmt.Errorf("error dumping group to string: group must be opened in TILEDB_READ mode")
+	queryType, err := g.QueryType()
+	if err != nil {
+		return "", fmt.Errorf("error dumping group to string: %w", err)
+	} else if queryType != TILEDB_READ {
+		return "", errors.New("error dumping group to string: group must be opened in TILEDB_READ mode")
 	}
 
 	var tdbString *C.tiledb_string_t
@@ -469,13 +473,25 @@ func (g *Group) AddMemberWithType(uri, name string, isRelativeURI bool, objectTy
 }
 
 // IsOpen returns true if the Group is open or false if the group is closed.
-func (g *Group) IsOpen() bool {
+func (g *Group) IsOpen() (bool, error) {
 	var isOpen C.int32_t
 
 	ret := C.tiledb_group_is_open(g.context.tiledbContext, g.group, &isOpen)
 	if ret != C.TILEDB_OK {
-		panic(fmt.Errorf("Error checking if group is open: %s", g.context.LastError()))
+		return false, fmt.Errorf("error checking if group is open: %w", g.context.LastError())
 	}
 
-	return isOpen > 0
+	return isOpen > 0, nil
+}
+
+// QueryType returns the QueryType for the currently opened group.
+func (g *Group) QueryType() (QueryType, error) {
+	var queryType C.tiledb_query_type_t
+
+	ret := C.tiledb_group_get_query_type(g.context.tiledbContext, g.group, &queryType)
+	if ret != C.TILEDB_OK {
+		return -1, fmt.Errorf("error retrieving group QueryType: %w", g.context.LastError())
+	}
+
+	return QueryType(queryType), nil
 }
