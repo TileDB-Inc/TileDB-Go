@@ -116,16 +116,8 @@ func (c *Context) LastError() error {
 	}
 
 	if err != nil {
-		var msg *C.char
 		defer C.tiledb_error_free(&err)
-		ret := C.tiledb_error_message(err, &msg)
-		if ret == C.TILEDB_OOM {
-			return errors.New("out of Memory error in tiledb_error_message")
-		} else if ret != C.TILEDB_OK {
-			return errors.New("unknown error in tiledb_error_message")
-		}
-
-		return errors.New(C.GoString(msg))
+		return cError(err)
 	}
 	return nil
 }

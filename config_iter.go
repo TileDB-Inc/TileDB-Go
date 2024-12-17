@@ -26,10 +26,8 @@ func NewConfigIter(config *Config, prefix string) (*ConfigIter, error) {
 	defer C.free(unsafe.Pointer(cprefix))
 	C.tiledb_config_iter_alloc(config.tiledbConfig, cprefix, &ci.tiledbConfigIter, &err)
 	if err != nil {
-		var msg *C.char
-		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return nil, fmt.Errorf("error creating tiledb config iter: %s", C.GoString(msg))
+		return nil, fmt.Errorf("error creating tiledb config iter: %w", cError(err))
 	}
 	freeOnGC(&ci)
 
@@ -54,10 +52,8 @@ func (ci *ConfigIter) Here() (*string, *string, error) {
 	var cparam, cvalue *C.char
 	C.tiledb_config_iter_here(ci.tiledbConfigIter, &cparam, &cvalue, &err)
 	if err != nil {
-		var msg *C.char
-		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return nil, nil, fmt.Errorf("error getting param, vakue from config iter: %s", C.GoString(msg))
+		return nil, nil, fmt.Errorf("error getting param, vakue from config iter: %w", cError(err))
 	}
 	param := C.GoString(cparam)
 	value := C.GoString(cvalue)
@@ -69,10 +65,8 @@ func (ci *ConfigIter) Next() error {
 	var err *C.tiledb_error_t
 	C.tiledb_config_iter_next(ci.tiledbConfigIter, &err)
 	if err != nil {
-		var msg *C.char
-		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return fmt.Errorf("error moving to next ConfigItem from iter: %s", C.GoString(msg))
+		return fmt.Errorf("error moving to next ConfigItem from iter: %w", cError(err))
 	}
 	return nil
 }
@@ -83,10 +77,8 @@ func (ci *ConfigIter) Done() (bool, error) {
 	var cDone C.int32_t
 	C.tiledb_config_iter_done(ci.tiledbConfigIter, &cDone, &err)
 	if err != nil {
-		var msg *C.char
-		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return false, fmt.Errorf("error moving to next ConfigItem from iter: %s", C.GoString(msg))
+		return false, fmt.Errorf("error moving to next ConfigItem from iter: %w", cError(err))
 	}
 	return int(cDone) == 1, nil
 }
@@ -97,9 +89,7 @@ func (ci *ConfigIter) IsDone() bool {
 	var cDone C.int32_t
 	C.tiledb_config_iter_done(ci.tiledbConfigIter, &cDone, &err)
 	if err != nil {
-		var msg *C.char
-		C.tiledb_error_message(err, &msg)
-		defer C.tiledb_error_free(&err)
+		C.tiledb_error_free(&err)
 		return false
 	}
 	return int(cDone) == 1
@@ -112,10 +102,8 @@ func (ci *ConfigIter) Reset(prefix string) error {
 	defer C.free(unsafe.Pointer(cprefix))
 	C.tiledb_config_iter_reset(ci.config.tiledbConfig, ci.tiledbConfigIter, cprefix, &err)
 	if err != nil {
-		var msg *C.char
-		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return fmt.Errorf("error creating tiledb config iter: %s", C.GoString(msg))
+		return fmt.Errorf("error creating tiledb config iter: %w", cError(err))
 	}
 	return nil
 }

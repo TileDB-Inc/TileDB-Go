@@ -1,10 +1,12 @@
 package tiledb
 
 /*
+#include <tiledb/tiledb.h>
 #include <stdlib.h>
 */
 import "C"
 import (
+	"errors"
 	"unsafe"
 )
 
@@ -36,4 +38,20 @@ func cStringArray(stringList []string) ([]*C.char, func()) {
 			C.free(unsafe.Pointer(str))
 		}
 	}
+}
+
+// cError creates an error value from a TileDB error.
+func cError(err *C.tiledb_error_t) error {
+	var str *C.char
+	var msg string
+
+	switch C.tiledb_error_message(err, &str) {
+	case C.TILEDB_OK:
+		msg = C.GoString(str)
+	case C.TILEDB_OOM:
+		msg = "out of memory error while retrieving message"
+	default:
+		msg = "could not retrieve error"
+	}
+	return errors.New(msg)
 }

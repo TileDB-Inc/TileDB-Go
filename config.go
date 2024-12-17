@@ -23,10 +23,8 @@ func NewConfig() (*Config, error) {
 	var err *C.tiledb_error_t
 	C.tiledb_config_alloc(&config.tiledbConfig, &err)
 	if err != nil {
-		var msg *C.char
-		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return nil, fmt.Errorf("error creating tiledb config: %s", C.GoString(msg))
+		return nil, fmt.Errorf("error creating tiledb config: %w", cError(err))
 	}
 	freeOnGC(&config)
 
@@ -43,10 +41,8 @@ func (c *Config) Set(param string, value string) error {
 	C.tiledb_config_set(c.tiledbConfig, cparam, cvalue, &err)
 
 	if err != nil {
-		var msg *C.char
-		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return fmt.Errorf("error setting %s:%s in config: %s", param, value, C.GoString(msg))
+		return fmt.Errorf("error setting %s:%s in config: %w", param, value, cError(err))
 	}
 
 	return nil
@@ -61,10 +57,8 @@ func (c *Config) Get(param string) (string, error) {
 	C.tiledb_config_get(c.tiledbConfig, cparam, &val, &err)
 
 	if err != nil {
-		var msg *C.char
-		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return "", fmt.Errorf("error getting %s in config: %s", param, C.GoString(msg))
+		return "", fmt.Errorf("error getting %s in config: %w", param, cError(err))
 	}
 
 	value := C.GoString(val)
@@ -80,10 +74,8 @@ func (c *Config) Unset(param string) error {
 	C.tiledb_config_unset(c.tiledbConfig, cparam, &err)
 
 	if err != nil {
-		var msg *C.char
-		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return fmt.Errorf("error unsetting %s in config: %s", param, C.GoString(msg))
+		return fmt.Errorf("error unsetting %s in config: %w", param, cError(err))
 	}
 
 	return nil
@@ -97,10 +89,8 @@ func (c *Config) SaveToFile(file string) error {
 	C.tiledb_config_save_to_file(c.tiledbConfig, cfile, &err)
 
 	if err != nil {
-		var msg *C.char
-		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return fmt.Errorf("error saving config from file %s: %s", file, C.GoString(msg))
+		return fmt.Errorf("error saving config from file %s: %w", file, cError(err))
 	}
 
 	return nil
@@ -117,20 +107,16 @@ func LoadConfig(uri string) (*Config, error) {
 	var err *C.tiledb_error_t
 	C.tiledb_config_alloc(&config.tiledbConfig, &err)
 	if err != nil {
-		var msg *C.char
-		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return nil, fmt.Errorf("error loading tiledb config: %s", C.GoString(msg))
+		return nil, fmt.Errorf("error loading tiledb config: %w", cError(err))
 	}
 
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
 	C.tiledb_config_load_from_file(config.tiledbConfig, curi, &err)
 	if err != nil {
-		var msg *C.char
-		C.tiledb_error_message(err, &msg)
 		defer C.tiledb_error_free(&err)
-		return nil, fmt.Errorf("error loading config from file %s: %s", uri, C.GoString(msg))
+		return nil, fmt.Errorf("error loading config from file %s: %w", uri, cError(err))
 	}
 	freeOnGC(&config)
 
