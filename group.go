@@ -2,6 +2,7 @@ package tiledb
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"unsafe"
 )
@@ -388,21 +389,34 @@ func (g *Group) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 	return &groupMetadata, nil
 }
 
+// Dump the Group to a string value
 func (g *Group) Dump(recurse bool) (string, error) {
-	var cOutput *C.char
-	defer C.free(unsafe.Pointer(cOutput))
+	queryType, err := g.QueryType()
+	if err != nil {
+		return "", fmt.Errorf("error dumping group to string: %w", err)
+	} else if queryType != TILEDB_READ {
+		return "", errors.New("error dumping group to string: group must be opened in TILEDB_READ mode")
+	}
+
+	var tdbString *C.tiledb_string_t
 
 	var cRecurse C.uint8_t
 	if recurse {
 		cRecurse = 1
 	}
 
-	ret := C.tiledb_group_dump_str(g.context.tiledbContext, g.group, &cOutput, cRecurse)
+	ret := C.tiledb_group_dump_str_v2(g.context.tiledbContext, g.group, &tdbString, cRecurse)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error dumping group contents: %s", g.context.LastError())
+		return "", fmt.Errorf("error dumping group contents: %w", g.context.LastError())
+	}
+	defer C.tiledb_string_free(&tdbString)
+
+	dumpStr, err := stringHandleToString(tdbString)
+	if err != nil {
+		return "", fmt.Errorf("error dumping group contents: %w", g.context.LastError())
 	}
 
-	return C.GoString(cOutput), nil
+	return dumpStr, nil
 }
 
 // GetIsRelativeURIByName returns whether a named member of the group has a uri relative to the group
@@ -435,4 +449,49 @@ func (g *Group) Delete(recursive bool) error {
 		return fmt.Errorf("Error deleting group: %s", g.context.LastError())
 	}
 	return nil
+}
+
+// AddMemberWithType adds a member to the Group providing its type.
+// This method is recommended for performance when operating on remote groups.
+func (g *Group) AddMemberWithType(uri, name string, isRelativeURI bool, objectType ObjectTypeEnum) error {
+	curi := C.CString(uri)
+	defer C.free(unsafe.Pointer(curi))
+
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+
+	var cRelative C.uint8_t
+	if isRelativeURI {
+		cRelative = 1
+	}
+
+	ret := C.tiledb_group_add_member_with_type(g.context.tiledbContext, g.group, curi, cRelative, cname, C.tiledb_object_t(objectType))
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error adding member with type to group: %w", g.context.LastError())
+	}
+	return nil
+}
+
+// IsOpen returns true if the Group is open or false if the group is closed.
+func (g *Group) IsOpen() (bool, error) {
+	var isOpen C.int32_t
+
+	ret := C.tiledb_group_is_open(g.context.tiledbContext, g.group, &isOpen)
+	if ret != C.TILEDB_OK {
+		return false, fmt.Errorf("error checking if group is open: %w", g.context.LastError())
+	}
+
+	return isOpen > 0, nil
+}
+
+// QueryType returns the QueryType for the currently opened group.
+func (g *Group) QueryType() (QueryType, error) {
+	var queryType C.tiledb_query_type_t
+
+	ret := C.tiledb_group_get_query_type(g.context.tiledbContext, g.group, &queryType)
+	if ret != C.TILEDB_OK {
+		return -1, fmt.Errorf("error retrieving group QueryType: %w", g.context.LastError())
+	}
+
+	return QueryType(queryType), nil
 }

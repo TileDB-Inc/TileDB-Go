@@ -140,6 +140,26 @@ func TestEnumerationAndSchema(t *testing.T) {
 		require.Equal(t, "romanNumerals", romanName)
 	})
 
+	t.Run("FromArraySchema", func(t *testing.T) {
+		schema, err := array.Schema()
+		require.NoError(t, err)
+		romanEnum, err := schema.EnumerationFromName("romanNumerals")
+		require.NoError(t, err)
+		romanName, err := romanEnum.Name()
+		require.NoError(t, err)
+		require.Equal(t, "romanNumerals", romanName)
+	})
+
+	t.Run("FromAttributeName", func(t *testing.T) {
+		schema, err := array.Schema()
+		require.NoError(t, err)
+		romanEnum, err := schema.EnumerationFromAttributeName("roman")
+		require.NoError(t, err)
+		romanName, err := romanEnum.Name()
+		require.NoError(t, err)
+		require.Equal(t, "romanNumerals", romanName)
+	})
+
 	t.Run("FromAttribute", func(t *testing.T) {
 		romanAttr, err := schema.AttributeFromName("roman")
 		require.NoError(t, err)

@@ -136,6 +136,10 @@ func testFragmentInfo(t testing.TB, context *Context) uint64 {
 	_, err = fI.GetToVacuumURI(0)
 	assert.Error(t, err)
 
+	fragmentInfoStr, err := fI.String()
+	require.NoError(t, err)
+	assert.Contains(t, fragmentInfoStr, fI.uri)
+
 	fI.Free()
 
 	return fragmentSize

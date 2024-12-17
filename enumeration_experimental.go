@@ -155,6 +155,7 @@ func (e *Enumeration) Name() (string, error) {
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("Error getting name: %s", e.context.LastError())
 	}
+	defer C.tiledb_string_free(&str)
 
 	var cName *C.char
 	var cNameSize C.size_t
@@ -385,12 +386,48 @@ func (a *ArraySchema) AddEnumeration(e *Enumeration) error {
 	return nil
 }
 
+// EnumerationFromName gets an Enumeration from the ArraySchema by name
+func (a *ArraySchema) EnumerationFromName(name string) (*Enumeration, error) {
+	enum := &Enumeration{context: a.context}
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
+	ret := C.tiledb_array_schema_get_enumeration_from_name(a.context.tiledbContext, a.tiledbArraySchema, cName, &enum.tiledbEnum)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error getting enumeration from name: %w", a.context.LastError())
+	}
+	freeOnGC(enum)
+	return enum, nil
+}
+
+// EnumerationFromName gets an Enumeration from the ArraySchema by its Attribute name.
+func (a *ArraySchema) EnumerationFromAttributeName(name string) (*Enumeration, error) {
+	enum := &Enumeration{context: a.context}
+	cName := C.CString(name)
+	defer C.free(unsafe.Pointer(cName))
+	ret := C.tiledb_array_schema_get_enumeration_from_attribute_name(a.context.tiledbContext, a.tiledbArraySchema, cName, &enum.tiledbEnum)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error getting enumeration from attribute name: %w", a.context.LastError())
+	}
+	freeOnGC(enum)
+	return enum, nil
+}
+
 // LoadAllEnumeration is for use with TileDB cloud arrays. It fetches the enumeration values from the server.
 // The method is called ondemand if the client tries to fetch enumeration values for a tiledb:// array.
 func (a *Array) LoadAllEnumerations() error {
 	ret := C.tiledb_array_load_all_enumerations(a.context.tiledbContext, a.tiledbArray)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("Error loading all enumerations: %s", a.context.LastError())
+	}
+
+	return nil
+}
+
+// LoadEnumerationsAllSchemas is for use with TileDB cloud arrays. It fetches the enumeration values from the server for all array schemas, past and present.
+func (a *Array) LoadEnumerationsAllSchemas() error {
+	ret := C.tiledb_array_load_enumerations_all_schemas(a.context.tiledbContext, a.tiledbArray)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error loading enumerations for all schemas: %w", a.context.LastError())
 	}
 
 	return nil
@@ -432,6 +469,7 @@ func (a *Attribute) GetEnumerationName() (string, error) {
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("Error getting enumeration name: %s", a.context.LastError())
 	}
+	defer C.tiledb_string_free(&str)
 
 	var cName *C.char
 	var cNameSize C.size_t

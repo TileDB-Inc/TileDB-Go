@@ -570,6 +570,23 @@ func (fI *FragmentInfo) DumpSTDOUT() error {
 	return nil
 }
 
+// String retrieves the string representation of the FragmentInfo
+func (fI *FragmentInfo) String() (string, error) {
+	var tdbString *C.tiledb_string_t
+
+	ret := C.tiledb_fragment_info_dump_str(fI.context.tiledbContext, fI.tiledbFragmentInfo, &tdbString)
+	if ret != C.TILEDB_OK {
+		return "", fmt.Errorf("error dumping fragment info to string: %w", fI.context.LastError())
+	}
+	defer C.tiledb_string_free(&tdbString)
+
+	dumpStr, err := stringHandleToString(tdbString)
+	if err != nil {
+		return "", fmt.Errorf("error getting fragment info string: %w", fI.context.LastError())
+	}
+	return dumpStr, nil
+}
+
 // SetConfig sets the fragment config.
 func (fI *FragmentInfo) SetConfig(config *Config) error {
 	ret := C.tiledb_fragment_info_set_config(fI.context.tiledbContext, fI.tiledbFragmentInfo, config.tiledbConfig)
