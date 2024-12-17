@@ -78,13 +78,9 @@ type VFS struct {
 // garbage collection
 func NewVFS(context *Context, config *Config) (*VFS, error) {
 	vfs := VFS{context: context}
-	var err *C.tiledb_error_t
-	C.tiledb_vfs_alloc(context.tiledbContext, config.tiledbConfig, &vfs.tiledbVFS)
-	if err != nil {
-		var msg *C.char
-		C.tiledb_error_message(err, &msg)
-		defer C.tiledb_error_free(&err)
-		return nil, fmt.Errorf("error creating tiledb context: %s", C.GoString(msg))
+	ret := C.tiledb_vfs_alloc(context.tiledbContext, config.tiledbConfig, &vfs.tiledbVFS)
+	if ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error creating tiledb VFS %w", context.LastError())
 	}
 	freeOnGC(&vfs)
 
