@@ -407,7 +407,7 @@ func (g *Group) Dump(recurse bool) (string, error) {
 
 	ret := C.tiledb_group_dump_str_v2(g.context.tiledbContext, g.group, &tdbString, cRecurse)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error dumping group contents: %s", g.context.LastError())
+		return "", fmt.Errorf("error dumping group contents: %w", g.context.LastError())
 	}
 	defer C.tiledb_string_free(&tdbString)
 
@@ -451,7 +451,7 @@ func (g *Group) Delete(recursive bool) error {
 	return nil
 }
 
-// AddMemberWithType adds a member to the Group providing its type
+// AddMemberWithType adds a member to the Group providing its type.
 // This method is recommended for performance when operating on remote groups.
 func (g *Group) AddMemberWithType(uri, name string, isRelativeURI bool, objectType ObjectTypeEnum) error {
 	curi := C.CString(uri)

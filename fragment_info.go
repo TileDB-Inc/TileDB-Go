@@ -571,20 +571,20 @@ func (fI *FragmentInfo) DumpSTDOUT() error {
 }
 
 // String retrieves the string representation of the FragmentInfo
-func (fI *FragmentInfo) String() string {
+func (fI *FragmentInfo) String() (string, error) {
 	var tdbString *C.tiledb_string_t
 
 	ret := C.tiledb_fragment_info_dump_str(fI.context.tiledbContext, fI.tiledbFragmentInfo, &tdbString)
 	if ret != C.TILEDB_OK {
-		return fmt.Sprintf("Error dumping fragment info to string: %s", fI.context.LastError())
+		return "", fmt.Errorf("error dumping fragment info to string: %w", fI.context.LastError())
 	}
 	defer C.tiledb_string_free(&tdbString)
 
 	dumpStr, err := stringHandleToString(tdbString)
 	if err != nil {
-		return fmt.Sprintf("Error getting fragment info string: %s", fI.context.LastError())
+		return "", fmt.Errorf("error getting fragment info string: %w", fI.context.LastError())
 	}
-	return dumpStr
+	return dumpStr, nil
 }
 
 // SetConfig sets the fragment config.
