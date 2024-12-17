@@ -391,7 +391,7 @@ func (g *Group) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 // Dump the Group to a string value
 func (g *Group) Dump(recurse bool) (string, error) {
 	if !g.IsOpen() {
-		return "", fmt.Errorf("Error dumping group to string: Group must be opened in TILEDB_READ mode")
+		return "", fmt.Errorf("error dumping group to string: group must be opened in TILEDB_READ mode")
 	}
 
 	var tdbString *C.tiledb_string_t
@@ -409,7 +409,7 @@ func (g *Group) Dump(recurse bool) (string, error) {
 
 	dumpStr, err := stringHandleToString(tdbString)
 	if err != nil {
-		return "", fmt.Errorf("Error dumping group contents: %s", g.context.LastError())
+		return "", fmt.Errorf("error dumping group contents: %w", g.context.LastError())
 	}
 
 	return dumpStr, nil
@@ -448,7 +448,7 @@ func (g *Group) Delete(recursive bool) error {
 }
 
 // AddMemberWithType adds a member to the Group providing its type
-// This method is recommended for performance when operating on remote groups
+// This method is recommended for performance when operating on remote groups.
 func (g *Group) AddMemberWithType(uri, name string, isRelativeURI bool, objectType ObjectTypeEnum) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
@@ -463,12 +463,12 @@ func (g *Group) AddMemberWithType(uri, name string, isRelativeURI bool, objectTy
 
 	ret := C.tiledb_group_add_member_with_type(g.context.tiledbContext, g.group, curi, cRelative, cname, C.tiledb_object_t(objectType))
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error adding member with type to group: %s", g.context.LastError())
+		return fmt.Errorf("error adding member with type to group: %w", g.context.LastError())
 	}
 	return nil
 }
 
-// IsOpen returns true if the Group is open or false if the group is closed
+// IsOpen returns true if the Group is open or false if the group is closed.
 func (g *Group) IsOpen() bool {
 	var isOpen C.int32_t
 

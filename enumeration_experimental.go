@@ -393,20 +393,20 @@ func (a *ArraySchema) EnumerationFromName(name string) (*Enumeration, error) {
 	defer C.free(unsafe.Pointer(cName))
 	ret := C.tiledb_array_schema_get_enumeration_from_name(a.context.tiledbContext, a.tiledbArraySchema, cName, &enum.tiledbEnum)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting enumeration from name: %s", a.context.LastError())
+		return nil, fmt.Errorf("error getting enumeration from name: %w", a.context.LastError())
 	}
 	freeOnGC(enum)
 	return enum, nil
 }
 
-// EnumerationFromName gets an Enumeration from the ArraySchema by it's Attribute name
+// EnumerationFromName gets an Enumeration from the ArraySchema by its Attribute name.
 func (a *ArraySchema) EnumerationFromAttributeName(name string) (*Enumeration, error) {
 	enum := &Enumeration{context: a.context}
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
 	ret := C.tiledb_array_schema_get_enumeration_from_attribute_name(a.context.tiledbContext, a.tiledbArraySchema, cName, &enum.tiledbEnum)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting enumeration from attribute name: %s", a.context.LastError())
+		return nil, fmt.Errorf("error getting enumeration from attribute name: %w", a.context.LastError())
 	}
 	freeOnGC(enum)
 	return enum, nil
@@ -427,7 +427,7 @@ func (a *Array) LoadAllEnumerations() error {
 func (a *Array) LoadEnumerationsAllSchemas() error {
 	ret := C.tiledb_array_load_enumerations_all_schemas(a.context.tiledbContext, a.tiledbArray)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error loading enumerations for all schemas: %s", a.context.LastError())
+		return fmt.Errorf("error loading enumerations for all schemas: %w", a.context.LastError())
 	}
 
 	return nil
