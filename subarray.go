@@ -25,7 +25,7 @@ func (a *Array) NewSubarray() (*Subarray, error) {
 
 	ret := C.tiledb_subarray_alloc(a.context.tiledbContext, a.tiledbArray, &sa)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error creating Subarray: %s", a.context.LastError())
+		return nil, fmt.Errorf("error creating Subarray: %w", a.context.LastError())
 	}
 
 	subarray := &Subarray{array: a, subarray: sa, context: a.context}
@@ -38,7 +38,7 @@ func (a *Array) NewSubarray() (*Subarray, error) {
 func (sa *Subarray) SetConfig(cfg *Config) error {
 	ret := C.tiledb_subarray_set_config(sa.context.tiledbContext, sa.subarray, cfg.tiledbConfig)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting Config: %s", sa.context.LastError())
+		return fmt.Errorf("error setting Config: %w", sa.context.LastError())
 	}
 	return nil
 }
@@ -58,30 +58,30 @@ func (sa *Subarray) Free() {
 func (sa *Subarray) SetSubArray(subArray interface{}) error {
 
 	if reflect.TypeOf(subArray).Kind() != reflect.Slice {
-		return fmt.Errorf("Subarray passed must be a slice, type passed was: %s", reflect.TypeOf(subArray).Kind().String())
+		return fmt.Errorf("subarray passed must be a slice, type passed was: %s", reflect.TypeOf(subArray).Kind().String())
 	}
 
 	subArrayType := reflect.TypeOf(subArray).Elem().Kind()
 
 	schema, err := sa.array.Schema()
 	if err != nil {
-		return fmt.Errorf("Could not get array schema from array: %s", err)
+		return fmt.Errorf("could not get array schema from array: %w", err)
 	}
 	defer schema.Free()
 
 	domain, err := schema.Domain()
 	if err != nil {
-		return fmt.Errorf("Could not get domain from array schema: %s", err)
+		return fmt.Errorf("could not get domain from array schema: %w", err)
 	}
 	defer domain.Free()
 
 	domainType, err := domain.Type()
 	if err != nil {
-		return fmt.Errorf("Could not get domain type: %s", err)
+		return fmt.Errorf("could not get domain type: %w", err)
 	}
 
 	if subArrayType != domainType.ReflectKind() {
-		return fmt.Errorf("Domain and subarray do not have the same data types. Domain: %s, Extent: %s", domainType.ReflectKind().String(), subArrayType.String())
+		return fmt.Errorf("domain and subarray do not have the same data types. Domain: %s, Extent: %s", domainType.ReflectKind().String(), subArrayType.String())
 	}
 
 	var csubArray unsafe.Pointer
@@ -139,12 +139,12 @@ func (sa *Subarray) SetSubArray(subArray interface{}) error {
 		tmpSubArray := subArray.([]bool)
 		csubArray = slicePtr(tmpSubArray)
 	default:
-		return fmt.Errorf("Unrecognized subArray type passed: %s", subArrayType.String())
+		return fmt.Errorf("unrecognized subArray type passed: %s", subArrayType.String())
 	}
 
 	ret := C.tiledb_subarray_set_subarray(sa.context.tiledbContext, sa.subarray, csubArray)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting subarray: %s", sa.context.LastError())
+		return fmt.Errorf("error setting subarray: %w", sa.context.LastError())
 	}
 	return nil
 }
@@ -159,7 +159,7 @@ func (sa *Subarray) SetCoalesceRanges(b bool) error {
 
 	ret := C.tiledb_subarray_set_coalesce_ranges(sa.context.tiledbContext, sa.subarray, coalesce)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting coalesce ranges on subarray: %s", sa.context.LastError())
+		return fmt.Errorf("error setting coalesce ranges on subarray: %w", sa.context.LastError())
 	}
 
 	return nil
@@ -193,7 +193,7 @@ func (sa *Subarray) AddRange(dimIdx uint32, r Range) error {
 		runtime.KeepAlive(endValue)
 	}
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error adding subarray range: %s", sa.context.LastError())
+		return fmt.Errorf("error adding subarray range: %w", sa.context.LastError())
 	}
 
 	return nil
@@ -230,7 +230,7 @@ func (sa *Subarray) AddRangeByName(dimName string, r Range) error {
 		runtime.KeepAlive(endValue)
 	}
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error adding subarray range: %s", sa.context.LastError())
+		return fmt.Errorf("error adding subarray range: %w", sa.context.LastError())
 	}
 
 	return nil
@@ -242,7 +242,7 @@ func (sa *Subarray) GetRangeNum(dimIdx uint32) (uint64, error) {
 
 	ret := C.tiledb_subarray_get_range_num(sa.context.tiledbContext, sa.subarray, C.uint32_t(dimIdx), (*C.uint64_t)(unsafe.Pointer(&rangeNum)))
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error retrieving subarray range num: %s", sa.context.LastError())
+		return 0, fmt.Errorf("error retrieving subarray range num: %w", sa.context.LastError())
 	}
 
 	return rangeNum, nil
@@ -257,7 +257,7 @@ func (sa *Subarray) GetRangeNumFromName(dimName string) (uint64, error) {
 
 	ret := C.tiledb_subarray_get_range_num_from_name(sa.context.tiledbContext, sa.subarray, cDimName, (*C.uint64_t)(unsafe.Pointer(&rangeNum)))
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error retrieving subarray range num: %s", sa.context.LastError())
+		return 0, fmt.Errorf("error retrieving subarray range num: %w", sa.context.LastError())
 	}
 
 	return rangeNum, nil
@@ -377,7 +377,7 @@ func (sa *Subarray) GetRange(dimIdx uint32, rangeNum uint64) (Range, error) {
 		}
 	}
 	if ret != C.TILEDB_OK {
-		return Range{}, fmt.Errorf("Error retrieving subarray range for dimension %d and range num %d: %s", dimIdx, rangeNum, sa.context.LastError())
+		return Range{}, fmt.Errorf("error retrieving subarray range for dimension %d and range num %d: %w", dimIdx, rangeNum, sa.context.LastError())
 	}
 
 	return r, err
@@ -426,7 +426,7 @@ func (sa *Subarray) GetRangeFromName(dimName string, rangeNum uint64) (Range, er
 		}
 	}
 	if ret != C.TILEDB_OK {
-		return Range{}, fmt.Errorf("Error retrieving subarray range for dimension %s and range num %d: %s", dimName, rangeNum, sa.context.LastError())
+		return Range{}, fmt.Errorf("error retrieving subarray range for dimension %s and range num %d: %w", dimName, rangeNum, sa.context.LastError())
 	}
 
 	return r, err

@@ -30,12 +30,12 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 	defer C.free(unsafe.Pointer(cname))
 
 	if reflect.TypeOf(domain).Kind() != reflect.Slice {
-		return nil, fmt.Errorf("Domain passed must be a slice of two integers or two floats, type passed was: %s", reflect.TypeOf(domain).Kind().String())
+		return nil, fmt.Errorf("domain passed must be a slice of two integers or two floats, type passed was: %s", reflect.TypeOf(domain).Kind().String())
 	}
 	domainInterfaceVal := reflect.ValueOf(domain)
 
 	if domainInterfaceVal.Len() != 2 {
-		return nil, fmt.Errorf("Domain passed must be a slice of two integers or two floats, size of slice is: %d", domainInterfaceVal.Len())
+		return nil, fmt.Errorf("domain passed must be a slice of two integers or two floats, size of slice is: %d", domainInterfaceVal.Len())
 	}
 
 	domainType := reflect.TypeOf(domain).Elem().Kind()
@@ -225,7 +225,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 		extentPtr = &tmpExtent
 		cextent = unsafe.Pointer(&tmpExtent)
 	default:
-		return nil, fmt.Errorf("Unrecognized datatype passed: %s", datatype.String())
+		return nil, fmt.Errorf("unrecognized datatype passed: %s", datatype.String())
 	}
 
 	if !domainTypeMatchDatatype {
@@ -235,7 +235,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 	ret = C.tiledb_dimension_alloc(context.tiledbContext, cname, C.tiledb_datatype_t(datatype), cdomain, cextent, &dimension.tiledbDimension)
 
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error creating tiledb dimension: %s", context.LastError())
+		return nil, fmt.Errorf("error creating tiledb dimension: %w", context.LastError())
 	}
 	freeOnGC(&dimension)
 
@@ -255,7 +255,7 @@ func NewStringDimension(context *Context, name string) (*Dimension, error) {
 	ret = C.tiledb_dimension_alloc(context.tiledbContext, cname, C.tiledb_datatype_t(datatype), nil, nil, &dimension.tiledbDimension)
 
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error creating tiledb dimension: %s", context.LastError())
+		return nil, fmt.Errorf("error creating tiledb dimension: %w", context.LastError())
 	}
 	freeOnGC(&dimension)
 
@@ -282,7 +282,7 @@ func (d *Dimension) Context() *Context {
 func (d *Dimension) SetFilterList(filterlist *FilterList) error {
 	ret := C.tiledb_dimension_set_filter_list(d.context.tiledbContext, d.tiledbDimension, filterlist.tiledbFilterList)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting tiledb dimension filter list: %s", d.context.LastError())
+		return fmt.Errorf("error setting tiledb dimension filter list: %w", d.context.LastError())
 	}
 	return nil
 }
@@ -292,7 +292,7 @@ func (d *Dimension) FilterList() (*FilterList, error) {
 	filterList := FilterList{context: d.context}
 	ret := C.tiledb_dimension_get_filter_list(d.context.tiledbContext, d.tiledbDimension, &filterList.tiledbFilterList)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting tiledb dimension filter list: %s", d.context.LastError())
+		return nil, fmt.Errorf("error getting tiledb dimension filter list: %w", d.context.LastError())
 	}
 	freeOnGC(&filterList)
 
@@ -307,7 +307,7 @@ func (d *Dimension) SetCellValNum(val uint32) error {
 	ret := C.tiledb_dimension_set_cell_val_num(d.context.tiledbContext,
 		d.tiledbDimension, C.uint32_t(val))
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting tiledb dimension cell val num: %s", d.context.LastError())
+		return fmt.Errorf("error setting tiledb dimension cell val num: %w", d.context.LastError())
 	}
 	return nil
 }
@@ -318,7 +318,7 @@ func (d *Dimension) CellValNum() (uint32, error) {
 	var cellValNum C.uint32_t
 	ret := C.tiledb_dimension_get_cell_val_num(d.context.tiledbContext, d.tiledbDimension, &cellValNum)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting tiledb dimension cell val num: %s", d.context.LastError())
+		return 0, fmt.Errorf("error getting tiledb dimension cell val num: %w", d.context.LastError())
 	}
 
 	return uint32(cellValNum), nil
@@ -329,7 +329,7 @@ func (d *Dimension) Name() (string, error) {
 	var cName *C.char
 	ret := C.tiledb_dimension_get_name(d.context.tiledbContext, d.tiledbDimension, &cName)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error getting tiledb dimension name: %s", d.context.LastError())
+		return "", fmt.Errorf("error getting tiledb dimension name: %w", d.context.LastError())
 	}
 
 	return C.GoString(cName), nil
@@ -340,7 +340,7 @@ func (d *Dimension) Type() (Datatype, error) {
 	var cType C.tiledb_datatype_t
 	ret := C.tiledb_dimension_get_type(d.context.tiledbContext, d.tiledbDimension, &cType)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting tiledb dimension type: %s", d.context.LastError())
+		return 0, fmt.Errorf("error getting tiledb dimension type: %w", d.context.LastError())
 	}
 
 	return Datatype(cType), nil
@@ -396,7 +396,7 @@ func domainInternal[T any](d *Dimension) ([]T, error) {
 	var cDomain unsafe.Pointer
 	ret := C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cDomain)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("could not get tiledb dimension's domain: %w", d.context.LastError())
+		return nil, fmt.Errorf("error getting tiledb dimension's domain: %w", d.context.LastError())
 	}
 	asArray := (*[2]T)(cDomain)
 	return []T{asArray[0], asArray[1]}, nil
@@ -456,7 +456,7 @@ func extentInternal[T any](d *Dimension) (T, error) {
 func (d *Dimension) DumpSTDOUT() error {
 	ret := C.tiledb_dimension_dump(d.context.tiledbContext, d.tiledbDimension, C.stdout)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error dumping dimension to stdout: %s", d.context.LastError())
+		return fmt.Errorf("error dumping dimension to stdout: %w", d.context.LastError())
 	}
 	return nil
 }
@@ -465,7 +465,7 @@ func (d *Dimension) DumpSTDOUT() error {
 func (d *Dimension) Dump(path string) error {
 
 	if _, err := os.Stat(path); err == nil {
-		return fmt.Errorf("Error path already %s exists", path)
+		return fmt.Errorf("error path already %s exists", path)
 	}
 
 	// Convert to char *
@@ -483,7 +483,7 @@ func (d *Dimension) Dump(path string) error {
 	// Dump dimension to file
 	ret := C.tiledb_dimension_dump(d.context.tiledbContext, d.tiledbDimension, cFile)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error dumping dimension to file %s: %s", path, d.context.LastError())
+		return fmt.Errorf("error dumping dimension to file %s: %w", path, d.context.LastError())
 	}
 	return nil
 }

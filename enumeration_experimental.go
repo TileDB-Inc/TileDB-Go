@@ -9,6 +9,7 @@ package tiledb
 import "C"
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -125,7 +126,7 @@ func newEnumeration[T EnumerationType](tdbCtx *Context, name string, ordered boo
 	ret := C.tiledb_enumeration_alloc(tdbCtx.tiledbContext, cName, C.tiledb_datatype_t(tiledbType), cCellNum, cOrdered,
 		cData, cDataLen, cOffsets, cOffsetsLen, &tiledbEnum)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error creating enumeration: %s", tdbCtx.LastError())
+		return nil, fmt.Errorf("error creating enumeration: %w", tdbCtx.LastError())
 	}
 
 	e := &Enumeration{context: tdbCtx, tiledbEnum: tiledbEnum}
@@ -153,7 +154,7 @@ func (e *Enumeration) Name() (string, error) {
 
 	ret := C.tiledb_enumeration_get_name(e.context.tiledbContext, e.tiledbEnum, &str)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error getting name: %s", e.context.LastError())
+		return "", fmt.Errorf("error getting name: %w", e.context.LastError())
 	}
 	defer C.tiledb_string_free(&str)
 
@@ -161,7 +162,7 @@ func (e *Enumeration) Name() (string, error) {
 	var cNameSize C.size_t
 	ret = C.tiledb_string_view(str, &cName, &cNameSize)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error getting name: %s", e.context.LastError())
+		return "", fmt.Errorf("error getting name: %w", e.context.LastError())
 	}
 
 	return C.GoStringN(cName, C.int(cNameSize)), nil
@@ -173,7 +174,7 @@ func (e *Enumeration) Type() (Datatype, error) {
 
 	ret := C.tiledb_enumeration_get_type(e.context.tiledbContext, e.tiledbEnum, &attrType)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting tiledb enumeration type: %s", e.context.LastError())
+		return 0, fmt.Errorf("error getting tiledb enumeration type: %w", e.context.LastError())
 	}
 
 	return Datatype(attrType), nil
@@ -185,7 +186,7 @@ func (e *Enumeration) CellValNum() (uint32, error) {
 
 	ret := C.tiledb_enumeration_get_cell_val_num(e.context.tiledbContext, e.tiledbEnum, &cellValNum)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting enumeration cell val num: %s", e.context.LastError())
+		return 0, fmt.Errorf("error getting enumeration cell val num: %w", e.context.LastError())
 	}
 
 	return uint32(cellValNum), nil
@@ -198,7 +199,7 @@ func (e *Enumeration) IsOrdered() (bool, error) {
 
 	ret := C.tiledb_enumeration_get_ordered(e.context.tiledbContext, e.tiledbEnum, &ordered)
 	if ret != C.TILEDB_OK {
-		return false, fmt.Errorf("Error getting ordered: %s", e.context.LastError())
+		return false, fmt.Errorf("error getting ordered: %w", e.context.LastError())
 	}
 
 	return ordered > 0, nil
@@ -208,7 +209,7 @@ func (e *Enumeration) IsOrdered() (bool, error) {
 func (e *Enumeration) DumpSTDOUT() error {
 	ret := C.tiledb_enumeration_dump(e.context.tiledbContext, e.tiledbEnum, C.stdout)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error dumping enumeration to stdout: %s", e.context.LastError())
+		return fmt.Errorf("error dumping enumeration to stdout: %w", e.context.LastError())
 	}
 
 	return nil
@@ -217,7 +218,7 @@ func (e *Enumeration) DumpSTDOUT() error {
 // Dump creates the file at path (must not exist) and writes a human-readable description of the enumeration.
 func (e *Enumeration) Dump(path string) error {
 	if _, err := os.Stat(path); err == nil {
-		return fmt.Errorf("Error path already %s exists", path)
+		return fmt.Errorf("error path already %s exists", path)
 	}
 
 	cPath := C.CString(path)
@@ -231,7 +232,7 @@ func (e *Enumeration) Dump(path string) error {
 
 	ret := C.tiledb_enumeration_dump(e.context.tiledbContext, e.tiledbEnum, cFile)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error dumping enumeration to file %s: %s", path, e.context.LastError())
+		return fmt.Errorf("error dumping enumeration to file %s: %w", path, e.context.LastError())
 	}
 
 	return nil
@@ -248,7 +249,7 @@ func (e *Enumeration) Values() (interface{}, error) {
 	var cDataSize C.uint64_t
 	ret := C.tiledb_enumeration_get_data(e.context.tiledbContext, e.tiledbEnum, &cData, &cDataSize)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting data: %s", e.context.LastError())
+		return nil, fmt.Errorf("error getting data: %w", e.context.LastError())
 	}
 
 	if typ != TILEDB_STRING_ASCII {
@@ -284,11 +285,11 @@ func (e *Enumeration) Values() (interface{}, error) {
 	var cOffsetsSize C.uint64_t
 	ret = C.tiledb_enumeration_get_offsets(e.context.tiledbContext, e.tiledbEnum, &cOffsets, &cOffsetsSize)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting data offsets: %s", e.context.LastError())
+		return nil, fmt.Errorf("error getting data offsets: %w", e.context.LastError())
 	}
 
 	if int(cOffsetsSize)%8 > 0 {
-		return nil, fmt.Errorf("Error getting data offsets: returned size does not contains an integer size of items")
+		return nil, errors.New("error getting data offsets: returned size does not contain an integer size of items")
 	}
 
 	var strs []string
@@ -313,22 +314,22 @@ func (e *Enumeration) Values() (interface{}, error) {
 // used with ArraySchemaEvolution.ApplyExtendedEnumeration to make changes persistent.
 func ExtendEnumeration[T EnumerationType](tdbCtx *Context, e *Enumeration, values []T) (*Enumeration, error) {
 	if len(values) == 0 {
-		return nil, fmt.Errorf("Error extending enumeration: empty values")
+		return nil, errors.New("error extending enumeration: empty values")
 	}
 
 	eName, err := e.Name()
 	if err != nil {
-		return nil, fmt.Errorf("Error extending enumeration: failed to get name of enumeration: %s", tdbCtx.LastError())
+		return nil, fmt.Errorf("error extending enumeration: failed to get name of enumeration: %w", tdbCtx.LastError())
 	}
 
 	eType, err := e.Type()
 	if err != nil {
-		return nil, fmt.Errorf("Error extending enumeration: failed to get type of enumeration %s: %s", eName, tdbCtx.LastError())
+		return nil, fmt.Errorf("error extending enumeration: failed to get type of enumeration %s: %w", eName, tdbCtx.LastError())
 	}
 
 	tiledbType := enumerationTypeToTileDB[T]()
 	if eType != tiledbType {
-		return nil, fmt.Errorf("Error extending enumeration: type mismatch: enumeration type %v, values type %v", eType, tiledbType)
+		return nil, fmt.Errorf("error extending enumeration: type mismatch: enumeration type %v, values type %v", eType, tiledbType)
 	}
 
 	var cData unsafe.Pointer
@@ -365,7 +366,7 @@ func ExtendEnumeration[T EnumerationType](tdbCtx *Context, e *Enumeration, value
 
 	ret := C.tiledb_enumeration_extend(tdbCtx.tiledbContext, e.tiledbEnum, cData, cDataLen, cOffsets, cOffsetsLen, &extEnum)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error extending enumeration: %s", tdbCtx.LastError())
+		return nil, fmt.Errorf("error extending enumeration: %w", tdbCtx.LastError())
 	}
 
 	ext := &Enumeration{context: tdbCtx, tiledbEnum: extEnum}
@@ -380,7 +381,7 @@ func ExtendEnumeration[T EnumerationType](tdbCtx *Context, e *Enumeration, value
 func (a *ArraySchema) AddEnumeration(e *Enumeration) error {
 	ret := C.tiledb_array_schema_add_enumeration(a.context.tiledbContext, a.tiledbArraySchema, e.tiledbEnum)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error adding enumeration: %s", a.context.LastError())
+		return fmt.Errorf("error adding enumeration: %w", a.context.LastError())
 	}
 
 	return nil
@@ -417,7 +418,7 @@ func (a *ArraySchema) EnumerationFromAttributeName(name string) (*Enumeration, e
 func (a *Array) LoadAllEnumerations() error {
 	ret := C.tiledb_array_load_all_enumerations(a.context.tiledbContext, a.tiledbArray)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error loading all enumerations: %s", a.context.LastError())
+		return fmt.Errorf("error loading all enumerations: %w", a.context.LastError())
 	}
 
 	return nil
@@ -441,7 +442,7 @@ func (a *Array) GetEnumeration(name string) (*Enumeration, error) {
 	var tiledbEnum *C.tiledb_enumeration_t
 	ret := C.tiledb_array_get_enumeration(a.context.tiledbContext, a.tiledbArray, cName, &tiledbEnum)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting enumeration %s: %s", name, a.context.LastError())
+		return nil, fmt.Errorf("error getting enumeration %s: %w", name, a.context.LastError())
 	}
 
 	return &Enumeration{context: a.context, tiledbEnum: tiledbEnum}, nil
@@ -455,7 +456,7 @@ func (a *Attribute) SetEnumerationName(name string) error {
 
 	ret := C.tiledb_attribute_set_enumeration_name(a.context.tiledbContext, a.tiledbAttribute, cName)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error setting enumeration name: %s", a.context.LastError())
+		return fmt.Errorf("error setting enumeration name: %w", a.context.LastError())
 	}
 
 	return nil
@@ -467,7 +468,7 @@ func (a *Attribute) GetEnumerationName() (string, error) {
 
 	ret := C.tiledb_attribute_get_enumeration_name(a.context.tiledbContext, a.tiledbAttribute, &str)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error getting enumeration name: %s", a.context.LastError())
+		return "", fmt.Errorf("error getting enumeration name: %w", a.context.LastError())
 	}
 	defer C.tiledb_string_free(&str)
 
@@ -475,7 +476,7 @@ func (a *Attribute) GetEnumerationName() (string, error) {
 	var cNameSize C.size_t
 	ret = C.tiledb_string_view(str, &cName, &cNameSize)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error getting name: %s", a.context.LastError())
+		return "", fmt.Errorf("error getting name: %w", a.context.LastError())
 	}
 
 	return C.GoStringN(cName, C.int(cNameSize)), nil
@@ -490,7 +491,7 @@ func (qc *QueryCondition) UseEnumeration(useEnum bool) error {
 
 	ret := C.tiledb_query_condition_set_use_enumeration(qc.context.tiledbContext, qc.cond, cUseEnum)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error toggling enumerations use: %s", qc.context.LastError())
+		return fmt.Errorf("error toggling enumerations use: %w", qc.context.LastError())
 	}
 
 	return nil
@@ -500,12 +501,12 @@ func (qc *QueryCondition) UseEnumeration(useEnum bool) error {
 func (ase *ArraySchemaEvolution) AddEnumeration(e *Enumeration) error {
 	name, err := e.Name()
 	if err != nil {
-		return fmt.Errorf("Error getting enumeration name: %s", e.context.LastError())
+		return fmt.Errorf("error getting enumeration name: %w", e.context.LastError())
 	}
 
 	ret := C.tiledb_array_schema_evolution_add_enumeration(ase.context.tiledbContext, ase.tiledbArraySchemaEvolution, e.tiledbEnum)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error adding enumeration %s to tiledb arraySchemaEvolution: %s", name, ase.context.LastError())
+		return fmt.Errorf("error adding enumeration %s to tiledb arraySchemaEvolution: %w", name, ase.context.LastError())
 	}
 
 	return nil
@@ -518,7 +519,7 @@ func (ase *ArraySchemaEvolution) DropEnumeration(name string) error {
 
 	ret := C.tiledb_array_schema_evolution_drop_enumeration(ase.context.tiledbContext, ase.tiledbArraySchemaEvolution, cName)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error dropping enumeration %s from tiledb arraySchemaEvolution: %s", name, ase.context.LastError())
+		return fmt.Errorf("error dropping enumeration %s from tiledb arraySchemaEvolution: %w", name, ase.context.LastError())
 	}
 
 	return nil
@@ -528,7 +529,7 @@ func (ase *ArraySchemaEvolution) DropEnumeration(name string) error {
 func (ase *ArraySchemaEvolution) ApplyExtendedEnumeration(e *Enumeration) error {
 	ret := C.tiledb_array_schema_evolution_extend_enumeration(ase.context.tiledbContext, ase.tiledbArraySchemaEvolution, e.tiledbEnum)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error applying extended enumeration to arraySchemaEvolution: %s", ase.context.LastError())
+		return fmt.Errorf("error applying extended enumeration to arraySchemaEvolution: %w", ase.context.LastError())
 	}
 
 	return nil
@@ -542,7 +543,7 @@ func copyUnsafeSliceOfEnumerationValues[T any](data unsafe.Pointer, dataSize int
 	var zero T
 	factor := int(unsafe.Sizeof(zero))
 	if dataSize%factor > 0 {
-		return nil, fmt.Errorf("Error getting data values: returned size does not contains an integer size of items")
+		return nil, errors.New("error getting data values: returned size does not contains an integer size of items")
 	}
 
 	retLen := dataSize / factor

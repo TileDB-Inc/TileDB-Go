@@ -8,6 +8,7 @@ package tiledb
 import "C"
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"unsafe"
@@ -17,7 +18,7 @@ import (
 func StatsEnable() error {
 	ret := C.tiledb_stats_enable()
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error enabling stats")
+		return errors.New("error enabling stats")
 	}
 	return nil
 }
@@ -26,7 +27,7 @@ func StatsEnable() error {
 func StatsDisable() error {
 	ret := C.tiledb_stats_disable()
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error disabling stats")
+		return errors.New("error disabling stats")
 	}
 	return nil
 }
@@ -35,7 +36,7 @@ func StatsDisable() error {
 func StatsReset() error {
 	ret := C.tiledb_stats_reset()
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error resetting stats")
+		return errors.New("error resetting stats")
 	}
 	return nil
 }
@@ -44,7 +45,7 @@ func StatsReset() error {
 func StatsDumpSTDOUT() error {
 	ret := C.tiledb_stats_dump(C.stdout)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error dumping stats to stdout")
+		return errors.New("error dumping stats to stdout")
 	}
 	return nil
 }
@@ -53,7 +54,7 @@ func StatsDumpSTDOUT() error {
 func StatsDump(path string) error {
 
 	if _, err := os.Stat(path); err == nil {
-		return fmt.Errorf("Error path already %s exists", path)
+		return fmt.Errorf("error path already %s exists", path)
 	}
 
 	// Convert to char *
@@ -71,7 +72,7 @@ func StatsDump(path string) error {
 	// Dump stats to file
 	ret := C.tiledb_stats_dump(cFile)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error dumping stats to file %s", path)
+		return fmt.Errorf("error dumping stats to file %s", path)
 	}
 	return nil
 }
@@ -83,13 +84,13 @@ func Stats() (string, error) {
 	// Dump stats to string
 	ret := C.tiledb_stats_dump_str(&msg)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error dumping stats to string")
+		return "", errors.New("error dumping stats to string")
 	}
 	s := C.GoString(msg)
 
 	ret = C.tiledb_stats_free_str(&msg)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error freeing string from dumping stats to string")
+		return "", errors.New("error freeing string from dumping stats to string")
 	}
 
 	return s, nil
@@ -99,7 +100,7 @@ func Stats() (string, error) {
 func StatsRawDumpSTDOUT() error {
 	ret := C.tiledb_stats_raw_dump(C.stdout)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error dumping stats to stdout")
+		return errors.New("error dumping stats to stdout")
 	}
 	return nil
 }
@@ -108,7 +109,7 @@ func StatsRawDumpSTDOUT() error {
 func StatsRawDump(path string) error {
 
 	if _, err := os.Stat(path); err == nil {
-		return fmt.Errorf("Error path already %s exists", path)
+		return fmt.Errorf("error path already %s exists", path)
 	}
 
 	// Convert to char *
@@ -126,7 +127,7 @@ func StatsRawDump(path string) error {
 	// Dump stats to file
 	ret := C.tiledb_stats_raw_dump(cFile)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error dumping stats to file %s", path)
+		return fmt.Errorf("error dumping stats to file %s", path)
 	}
 	return nil
 }
@@ -138,13 +139,13 @@ func StatsRaw() (string, error) {
 	// Dump stats to string
 	ret := C.tiledb_stats_raw_dump_str(&msg)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error dumping raw stats to string")
+		return "", errors.New("error dumping raw stats to string")
 	}
 	s := C.GoString(msg)
 
 	ret = C.tiledb_stats_free_str(&msg)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error freeing string from dumping raw stats to string")
+		return "", errors.New("error freeing string from dumping raw stats to string")
 	}
 
 	return s, nil

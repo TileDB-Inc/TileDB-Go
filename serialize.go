@@ -29,7 +29,7 @@ func SerializeArraySchemaToBuffer(schema *ArraySchema, serializationType Seriali
 
 	ret := C.tiledb_serialize_array_schema(schema.context.tiledbContext, schema.tiledbArraySchema, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error serializing array schema: %s", schema.context.LastError())
+		return nil, fmt.Errorf("error serializing array schema: %w", schema.context.LastError())
 	}
 
 	return &buffer, nil
@@ -60,7 +60,7 @@ func DeserializeArraySchema(buffer *Buffer, serializationType SerializationType,
 
 	ret := C.tiledb_deserialize_array_schema(schema.context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, &schema.tiledbArraySchema)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error deserializing array schema: %s", schema.context.LastError())
+		return nil, fmt.Errorf("error deserializing array schema: %w", schema.context.LastError())
 	}
 
 	// This needs to happen *after* the tiledb_deserialize_array_schema call
@@ -89,7 +89,7 @@ func SerializeArraySchemaEvolutionToBuffer(arraySchemaEvolution *ArraySchemaEvol
 		C.tiledb_serialization_type_t(serializationType),
 		cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error serializing array schem evolution: %s",
+		return nil, fmt.Errorf("error serializing array schem evolution: %w",
 			arraySchemaEvolution.context.LastError())
 	}
 
@@ -124,7 +124,7 @@ func DeserializeArraySchemaEvolution(buffer *Buffer, serializationType Serializa
 		C.tiledb_serialization_type_t(serializationType),
 		cClientSide, &arraySchemaEvolution.tiledbArraySchemaEvolution)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error deserializing array schema evolution: %s", arraySchemaEvolution.context.LastError())
+		return nil, fmt.Errorf("error deserializing array schema evolution: %w", arraySchemaEvolution.context.LastError())
 	}
 
 	// This needs to happen *after* the tiledb_deserialize_array_schema_evolution
@@ -159,7 +159,7 @@ func SerializeArrayNonEmptyDomainToBuffer(a *Array, serializationType Serializat
 	tmpDomain := make([]uint8, subarraySize)
 	ret := C.tiledb_array_get_non_empty_domain(a.context.tiledbContext, a.tiledbArray, slicePtr(tmpDomain), &isEmpty)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error serializing array nonempty domain: %s", a.context.LastError())
+		return nil, fmt.Errorf("error serializing array nonempty domain: %w", a.context.LastError())
 	}
 
 	buffer := Buffer{context: schema.context}
@@ -168,7 +168,7 @@ func SerializeArrayNonEmptyDomainToBuffer(a *Array, serializationType Serializat
 	var cClientSide = C.int32_t(0) // Currently this parameter is unused in libtiledb
 	ret = C.tiledb_serialize_array_nonempty_domain(a.context.tiledbContext, a.tiledbArray, slicePtr(tmpDomain), isEmpty, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error serializing array nonempty domain: %s", a.context.LastError())
+		return nil, fmt.Errorf("error serializing array nonempty domain: %w", a.context.LastError())
 	}
 
 	return &buffer, nil
@@ -214,7 +214,7 @@ func DeserializeArrayNonEmptyDomain(a *Array, buffer *Buffer, serializationType 
 	var isEmpty C.int32_t
 	ret := C.tiledb_deserialize_array_nonempty_domain(a.context.tiledbContext, a.tiledbArray, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, tmpDomainPtr, &isEmpty)
 	if ret != C.TILEDB_OK {
-		return nil, false, fmt.Errorf("error serializing array nonempty domain: %s", a.context.LastError())
+		return nil, false, fmt.Errorf("error serializing array nonempty domain: %w", a.context.LastError())
 	}
 
 	if isEmpty == 1 {
@@ -277,7 +277,7 @@ func SerializeArrayNonEmptyDomainAllDimensionsToBuffer(a *Array, serializationTy
 	var cClientSide = C.int32_t(0) // Currently this parameter is unused in libtiledb
 	ret := C.tiledb_serialize_array_non_empty_domain_all_dimensions(a.context.tiledbContext, a.tiledbArray, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error serializing array nonempty domain: %s", a.context.LastError())
+		return nil, fmt.Errorf("error serializing array nonempty domain: %w", a.context.LastError())
 	}
 
 	return &buffer, nil
@@ -301,7 +301,7 @@ func DeserializeArrayNonEmptyDomainAllDimensions(a *Array, buffer *Buffer, seria
 	var cClientSide = C.int32_t(0) // Currently this parameter is unused in libtiledb
 	ret := C.tiledb_deserialize_array_non_empty_domain_all_dimensions(a.context.tiledbContext, a.tiledbArray, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error deserializing array nonempty domain: %s", a.context.LastError())
+		return fmt.Errorf("error deserializing array nonempty domain: %w", a.context.LastError())
 	}
 
 	return nil
@@ -321,7 +321,7 @@ func SerializeQuery(query *Query, serializationType SerializationType, clientSid
 
 	ret := C.tiledb_serialize_query(query.context.tiledbContext, query.tiledbQuery, C.tiledb_serialization_type_t(serializationType), cClientSide, &bufferList.tiledbBufferList)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error serializing query: %s", query.context.LastError())
+		return nil, fmt.Errorf("error serializing query: %w", query.context.LastError())
 	}
 
 	return &bufferList, nil
@@ -338,7 +338,7 @@ func DeserializeQuery(query *Query, buffer *Buffer, serializationType Serializat
 
 	ret := C.tiledb_deserialize_query(query.context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, query.tiledbQuery)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error deserializing query: %s", query.context.LastError())
+		return fmt.Errorf("error deserializing query: %w", query.context.LastError())
 	}
 
 	return nil
@@ -351,7 +351,7 @@ func SerializeArrayMetadataToBuffer(a *Array, serializationType SerializationTyp
 
 	ret := C.tiledb_serialize_array_metadata(a.context.tiledbContext, a.tiledbArray, C.tiledb_serialization_type_t(serializationType), &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error serializing array metadata: %s", a.context.LastError())
+		return nil, fmt.Errorf("error serializing array metadata: %w", a.context.LastError())
 	}
 
 	return &buffer, nil
@@ -373,7 +373,7 @@ func SerializeArrayMetadata(a *Array, serializationType SerializationType) ([]by
 func DeserializeArrayMetadata(a *Array, buffer *Buffer, serializationType SerializationType) error {
 	ret := C.tiledb_deserialize_array_metadata(a.context.tiledbContext, a.tiledbArray, C.tiledb_serialization_type_t(serializationType), buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error deserializing array metadata: %s", a.context.LastError())
+		return fmt.Errorf("error deserializing array metadata: %w", a.context.LastError())
 	}
 	return nil
 }
@@ -392,7 +392,7 @@ func SerializeQueryEstResultSizesToBuffer(q *Query, serializationType Serializat
 
 	ret := C.tiledb_serialize_query_est_result_sizes(q.context.tiledbContext, q.tiledbQuery, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error serializing query est buffer sizes: %s", q.context.LastError())
+		return nil, fmt.Errorf("error serializing query est buffer sizes: %w", q.context.LastError())
 	}
 
 	return &buffer, nil
@@ -421,7 +421,7 @@ func DeserializeQueryEstResultSizes(q *Query, buffer *Buffer, serializationType 
 
 	ret := C.tiledb_deserialize_query_est_result_sizes(q.context.tiledbContext, q.tiledbQuery, C.tiledb_serialization_type_t(serializationType), cClientSide, buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error deserializing query est buffer sizes: %s", q.context.LastError())
+		return fmt.Errorf("error deserializing query est buffer sizes: %w", q.context.LastError())
 	}
 	return nil
 }
@@ -441,7 +441,7 @@ func SerializeArrayToBuffer(array *Array, serializationType SerializationType, c
 
 	ret := C.tiledb_serialize_array(array.context.tiledbContext, array.tiledbArray, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error serializing array: %s", array.context.LastError())
+		return nil, fmt.Errorf("error serializing array: %w", array.context.LastError())
 	}
 
 	return &buffer, nil
@@ -475,7 +475,7 @@ func DeserializeArray(buffer *Buffer, serializationType SerializationType, clien
 
 	ret := C.tiledb_deserialize_array(array.context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, cArrayURI, &array.tiledbArray)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error deserializing array: %s", array.context.LastError())
+		return nil, fmt.Errorf("error deserializing array: %w", array.context.LastError())
 	}
 
 	// Set finalizer for free C pointer on gc
@@ -502,7 +502,7 @@ func SerializeFragmentInfoToBuffer(fragmentInfo *FragmentInfo, serializationType
 
 	ret := C.tiledb_serialize_fragment_info(fragmentInfo.context.tiledbContext, fragmentInfo.tiledbFragmentInfo, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error serializing array: %s", fragmentInfo.context.LastError())
+		return nil, fmt.Errorf("error serializing array: %w", fragmentInfo.context.LastError())
 	}
 
 	return &buffer, nil
@@ -534,7 +534,7 @@ func DeserializeFragmentInfo(fragmentInfo FragmentInfo, buffer *Buffer, arrayURI
 
 	ret := C.tiledb_deserialize_fragment_info(fragmentInfo.context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cArrayURI, cClientSide, fragmentInfo.tiledbFragmentInfo)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error deserializing array: %s", fragmentInfo.context.LastError())
+		return fmt.Errorf("error deserializing array: %w", fragmentInfo.context.LastError())
 	}
 
 	return nil
@@ -555,7 +555,7 @@ func SerializeFragmentInfoRequestToBuffer(fragmentInfo *FragmentInfo, serializat
 
 	ret := C.tiledb_serialize_fragment_info_request(fragmentInfo.context.tiledbContext, fragmentInfo.tiledbFragmentInfo, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error serializing array: %s", fragmentInfo.context.LastError())
+		return nil, fmt.Errorf("error serializing array: %w", fragmentInfo.context.LastError())
 	}
 
 	return &buffer, nil
@@ -584,7 +584,7 @@ func DeserializeFragmentInfoRequest(fragmentInfo FragmentInfo, buffer *Buffer, s
 
 	ret := C.tiledb_deserialize_fragment_info_request(fragmentInfo.context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, fragmentInfo.tiledbFragmentInfo)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error deserializing array: %s", fragmentInfo.context.LastError())
+		return fmt.Errorf("error deserializing array: %w", fragmentInfo.context.LastError())
 	}
 
 	return nil
@@ -612,7 +612,7 @@ func DeserializeQueryAndArray(context *Context, buffer *Buffer, serializationTyp
 
 	ret := C.tiledb_deserialize_query_and_array(context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, cArrayURI, &query.tiledbQuery, &array.tiledbArray)
 	if ret != C.TILEDB_OK {
-		return nil, nil, fmt.Errorf("error deserializing query: %s", context.LastError())
+		return nil, nil, fmt.Errorf("error deserializing query: %w", context.LastError())
 	}
 
 	freeOnGC(array)
@@ -632,7 +632,7 @@ func SerializeGroupMetadataToBuffer(g *Group, serializationType SerializationTyp
 
 	ret := C.tiledb_serialize_group_metadata(g.context.tiledbContext, g.group, C.tiledb_serialization_type_t(serializationType), &buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error serializing group metadata: %s", g.context.LastError())
+		return nil, fmt.Errorf("error serializing group metadata: %w", g.context.LastError())
 	}
 
 	return &buffer, nil
@@ -663,7 +663,7 @@ func DeserializeGroupMetadata(g *Group, buffer *Buffer, serializationType Serial
 
 	ret := C.tiledb_deserialize_group_metadata(g.context.tiledbContext, g.group, C.tiledb_serialization_type_t(serializationType), buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error deserializing group metadata: %s", g.context.LastError())
+		return fmt.Errorf("error deserializing group metadata: %w", g.context.LastError())
 	}
 
 	return nil
@@ -690,7 +690,7 @@ func (g *Group) Deserialize(buffer *Buffer, serializationType SerializationType,
 
 	ret := C.tiledb_deserialize_group(g.context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, g.group)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error deserializing group: %s", g.context.LastError())
+		return fmt.Errorf("error deserializing group: %w", g.context.LastError())
 	}
 
 	return nil
@@ -702,12 +702,12 @@ func (g *Group) Deserialize(buffer *Buffer, serializationType SerializationType,
 func HandleLoadArraySchemaRequest(array *Array, request *Buffer, serializationType SerializationType) (*Buffer, error) {
 	response, err := NewBuffer(array.context)
 	if err != nil {
-		return nil, fmt.Errorf("error creating LoadArraySchemaResponse buffer: %s", array.context.LastError())
+		return nil, fmt.Errorf("error creating LoadArraySchemaResponse buffer: %w", array.context.LastError())
 	}
 
 	ret := C.tiledb_handle_load_array_schema_request(array.context.tiledbContext, array.tiledbArray, C.tiledb_serialization_type_t(serializationType), request.tiledbBuffer, response.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error handling LoadArraySchemaRequset: %s", array.context.LastError())
+		return nil, fmt.Errorf("error handling LoadArraySchemaRequset: %w", array.context.LastError())
 	}
 
 	runtime.KeepAlive(request)
@@ -719,7 +719,7 @@ func HandleArrayDeleteFragmentsTimestampsRequest(context *Context, array *Array,
 	ret := C.tiledb_handle_array_delete_fragments_timestamps_request(context.tiledbContext, array.tiledbArray,
 		C.tiledb_serialization_type_t(serializationType), buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error deserializing delete fragments timestamps: %s", context.LastError())
+		return fmt.Errorf("error deserializing delete fragments timestamps: %w", context.LastError())
 	}
 
 	runtime.KeepAlive(buffer)
@@ -731,7 +731,7 @@ func HandleArrayDeleteFragmentsListRequest(context *Context, array *Array, buffe
 	ret := C.tiledb_handle_array_delete_fragments_list_request(context.tiledbContext, array.tiledbArray,
 		C.tiledb_serialization_type_t(serializationType), buffer.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error deserializing delete fragments list: %s", context.LastError())
+		return fmt.Errorf("error deserializing delete fragments list: %w", context.LastError())
 	}
 
 	runtime.KeepAlive(buffer)
@@ -745,13 +745,13 @@ func HandleQueryPlanRequest(array *Array, serializationType SerializationType, r
 
 	response, err := NewBuffer(opContext)
 	if err != nil {
-		return nil, fmt.Errorf("error allocating tiledb buffer: %s", opContext.LastError())
+		return nil, fmt.Errorf("error allocating tiledb buffer: %w", opContext.LastError())
 	}
 
 	ret := C.tiledb_handle_query_plan_request(opContext.tiledbContext, array.tiledbArray, C.tiledb_serialization_type_t(serializationType),
 		request.tiledbBuffer, response.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error handling query plan request: %s", opContext.LastError())
+		return nil, fmt.Errorf("error handling query plan request: %w", opContext.LastError())
 	}
 
 	runtime.KeepAlive(request)
@@ -767,13 +767,13 @@ func HandleConsolidationPlanRequest(array *Array, serializationType Serializatio
 
 	response, err := NewBuffer(opContext)
 	if err != nil {
-		return nil, fmt.Errorf("error allocating tiledb buffer: %s", opContext.LastError())
+		return nil, fmt.Errorf("error allocating tiledb buffer: %w", opContext.LastError())
 	}
 
 	ret := C.tiledb_handle_consolidation_plan_request(opContext.tiledbContext, array.tiledbArray, C.tiledb_serialization_type_t(serializationType),
 		request.tiledbBuffer, response.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error handling consolidation plan request: %s", opContext.LastError())
+		return nil, fmt.Errorf("error handling consolidation plan request: %w", opContext.LastError())
 	}
 
 	runtime.KeepAlive(request)
@@ -786,13 +786,13 @@ func HandleConsolidationPlanRequest(array *Array, serializationType Serializatio
 func DeserializeLoadEnumerationsRequest(array *Array, serializationType SerializationType, request *Buffer) (*Buffer, error) {
 	response, err := NewBuffer(array.context)
 	if err != nil {
-		return nil, fmt.Errorf("error deserializing load enumerations request: %s", array.context.LastError())
+		return nil, fmt.Errorf("error deserializing load enumerations request: %w", array.context.LastError())
 	}
 
 	ret := C.tiledb_handle_load_enumerations_request(array.context.tiledbContext, array.tiledbArray, C.tiledb_serialization_type_t(serializationType),
 		request.tiledbBuffer, response.tiledbBuffer)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error deserializing load enumerations request: %s", array.context.LastError())
+		return nil, fmt.Errorf("error deserializing load enumerations request: %w", array.context.LastError())
 	}
 
 	runtime.KeepAlive(request)

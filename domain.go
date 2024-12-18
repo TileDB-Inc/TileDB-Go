@@ -26,7 +26,7 @@ func NewDomain(tdbCtx *Context) (*Domain, error) {
 	domain := Domain{context: tdbCtx}
 	ret := C.tiledb_domain_alloc(domain.context.tiledbContext, &domain.tiledbDomain)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error creating tiledb domain: %s", domain.context.LastError())
+		return nil, fmt.Errorf("error creating tiledb domain: %w", domain.context.LastError())
 	}
 	freeOnGC(&domain)
 
@@ -54,7 +54,7 @@ func (d *Domain) Type() (Datatype, error) {
 	var datatype C.tiledb_datatype_t
 	ret := C.tiledb_domain_get_type(d.context.tiledbContext, d.tiledbDomain, &datatype)
 	if ret != C.TILEDB_OK {
-		return -1, fmt.Errorf("Error getting tiledb domain type: %s", d.context.LastError())
+		return -1, fmt.Errorf("error getting tiledb domain type: %w", d.context.LastError())
 	}
 	return Datatype(datatype), nil
 }
@@ -64,7 +64,7 @@ func (d *Domain) NDim() (uint, error) {
 	var ndim C.uint32_t
 	ret := C.tiledb_domain_get_ndim(d.context.tiledbContext, d.tiledbDomain, &ndim)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting tiledb domain number of dimensions: %s", d.context.LastError())
+		return 0, fmt.Errorf("error getting tiledb domain number of dimensions: %w", d.context.LastError())
 	}
 	return uint(ndim), nil
 }
@@ -75,7 +75,7 @@ func (d *Domain) DimensionFromIndex(index uint) (*Dimension, error) {
 	ret := C.tiledb_domain_get_dimension_from_index(d.context.tiledbContext,
 		d.tiledbDomain, C.uint32_t(index), &dim)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting tiledb dimension by index for domain: %s", d.context.LastError())
+		return nil, fmt.Errorf("error getting tiledb dimension by index for domain: %w", d.context.LastError())
 	}
 
 	dimension := Dimension{tiledbDimension: dim, context: d.context}
@@ -91,7 +91,7 @@ func (d *Domain) DimensionFromName(name string) (*Dimension, error) {
 	var dim *C.tiledb_dimension_t
 	ret := C.tiledb_domain_get_dimension_from_name(d.context.tiledbContext, d.tiledbDomain, cname, &dim)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting tiledb dimension by name for domain: %s", d.context.LastError())
+		return nil, fmt.Errorf("error getting tiledb dimension by name for domain: %w", d.context.LastError())
 	}
 	dimension := Dimension{tiledbDimension: dim, context: d.context}
 	freeOnGC(&dimension)
@@ -103,7 +103,7 @@ func (d *Domain) AddDimensions(dimensions ...*Dimension) error {
 	for _, dimension := range dimensions {
 		ret := C.tiledb_domain_add_dimension(d.context.tiledbContext, d.tiledbDomain, dimension.tiledbDimension)
 		if ret != C.TILEDB_OK {
-			return fmt.Errorf("Error adding dimension to domain: %s", d.context.LastError())
+			return fmt.Errorf("error adding dimension to domain: %w", d.context.LastError())
 		}
 	}
 	return nil
@@ -116,7 +116,7 @@ func (d *Domain) HasDimension(dimName string) (bool, error) {
 	defer C.free(unsafe.Pointer(cDimName))
 	ret := C.tiledb_domain_has_dimension(d.context.tiledbContext, d.tiledbDomain, cDimName, &hasDim)
 	if ret != C.TILEDB_OK {
-		return false, fmt.Errorf("Error finding dimension %s in domain: %s", dimName, d.context.LastError())
+		return false, fmt.Errorf("error finding dimension %s in domain: %w", dimName, d.context.LastError())
 	}
 
 	if hasDim == 0 {
@@ -130,7 +130,7 @@ func (d *Domain) HasDimension(dimName string) (bool, error) {
 func (d *Domain) DumpSTDOUT() error {
 	ret := C.tiledb_domain_dump(d.context.tiledbContext, d.tiledbDomain, C.stdout)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error dumping domain to stdout: %s", d.context.LastError())
+		return fmt.Errorf("error dumping domain to stdout: %w", d.context.LastError())
 	}
 	return nil
 }
@@ -139,7 +139,7 @@ func (d *Domain) DumpSTDOUT() error {
 func (d *Domain) Dump(path string) error {
 
 	if _, err := os.Stat(path); err == nil {
-		return fmt.Errorf("Error path already %s exists", path)
+		return fmt.Errorf("error path already %s exists", path)
 	}
 
 	// Convert to char *
@@ -157,7 +157,7 @@ func (d *Domain) Dump(path string) error {
 	// Dump domain to file
 	ret := C.tiledb_domain_dump(d.context.tiledbContext, d.tiledbDomain, cFile)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error dumping domain to file %s: %s", path, d.context.LastError())
+		return fmt.Errorf("error dumping domain to file %s: %w", path, d.context.LastError())
 	}
 	return nil
 }

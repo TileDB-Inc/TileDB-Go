@@ -21,7 +21,7 @@ func FileSize(tdbCtx *Context, arrayURI string) (int64, error) {
 	var size C.size_t
 	ret := C.tiledb_filestore_size(tdbCtx.tiledbContext, cArrayURI, &size)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error getting file size: %s", tdbCtx.LastError())
+		return 0, fmt.Errorf("error getting file size: %w", tdbCtx.LastError())
 	}
 
 	return int64(size), nil
@@ -37,7 +37,7 @@ func ExportFile(tdbCtx *Context, filePath, arrayURI string) error {
 
 	ret := C.tiledb_filestore_uri_export(tdbCtx.tiledbContext, cFileURI, cArrayURI)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error exporting file: %s", tdbCtx.LastError())
+		return fmt.Errorf("error exporting file: %w", tdbCtx.LastError())
 	}
 
 	return nil
@@ -52,7 +52,7 @@ func ImportFile(tdbCtx *Context, arrayURI, filePath string, mimeType FileStoreMi
 
 	ret := C.tiledb_filestore_uri_import(tdbCtx.tiledbContext, cArrayURI, cFileURI, C.tiledb_mime_type_t(mimeType))
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error importing file: %s", tdbCtx.LastError())
+		return fmt.Errorf("error importing file: %w", tdbCtx.LastError())
 	}
 
 	return nil
@@ -163,7 +163,7 @@ func NewArraySchemaForFile(tdbCtx *Context, filePath string) (*ArraySchema, erro
 	arraySchema := ArraySchema{context: tdbCtx}
 	ret := C.tiledb_filestore_schema_create(tdbCtx.tiledbContext, fileURI, &arraySchema.tiledbArraySchema)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error creating schema: %s", tdbCtx.LastError())
+		return nil, fmt.Errorf("error creating schema: %w", tdbCtx.LastError())
 	}
 	freeOnGC(&arraySchema)
 
@@ -180,7 +180,7 @@ func bufferExport(tdbCtx *Context, uri *C.char, off int64, p []byte) error {
 
 	ret := C.tiledb_filestore_buffer_export(tdbCtx.tiledbContext, uri, C.size_t(off), slicePtr(p), C.size_t(len(p)))
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error exporting buffer data: %s", tdbCtx.LastError())
+		return fmt.Errorf("error exporting buffer data: %w", tdbCtx.LastError())
 	}
 
 	return nil
@@ -190,12 +190,12 @@ func bufferExport(tdbCtx *Context, uri *C.char, off int64, p []byte) error {
 // Uri is the uri of an existing array with the filestore schema (see ArraySchemaForFile)
 func bufferImport(tdbCtx *Context, uri *C.char, data []byte, mimeType FileStoreMimeType) error {
 	if len(data) == 0 {
-		return errors.New("Error importing buffer data: empty data")
+		return errors.New("error importing buffer data: empty data")
 	}
 
 	ret := C.tiledb_filestore_buffer_import(tdbCtx.tiledbContext, uri, slicePtr(data), C.size_t(len(data)), C.tiledb_mime_type_t(mimeType))
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error importing buffer data: %s", tdbCtx.LastError())
+		return fmt.Errorf("error importing buffer data: %w", tdbCtx.LastError())
 	}
 
 	return nil

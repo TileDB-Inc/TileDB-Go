@@ -356,7 +356,7 @@ func (d Datatype) GetValue(valueNum uint, cvalue unsafe.Pointer) (interface{}, e
 		}
 		return bools, nil
 	default:
-		return nil, fmt.Errorf("Unrecognized value type: %d", d)
+		return nil, fmt.Errorf("unrecognized value type: %d", d)
 	}
 }
 
@@ -690,7 +690,7 @@ func (d DataOrder) String() (string, error) {
 	var dataOrderStr *C.char
 	ret := C.tiledb_data_order_to_str(C.tiledb_data_order_t(d), &dataOrderStr)
 	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("Error converting DataOrder to string: %d", d)
+		return "", fmt.Errorf("error converting DataOrder to string: %d", d)
 	}
 
 	return C.GoString(dataOrderStr), nil
@@ -704,7 +704,7 @@ func DataOrderFromString(name string) (DataOrder, error) {
 	var cDataOrder C.tiledb_data_order_t
 	ret := C.tiledb_data_order_from_str(cName, &cDataOrder)
 	if ret != C.TILEDB_OK {
-		return 0, fmt.Errorf("Error converting '%s' to tiledb_data_order_t", name)
+		return 0, fmt.Errorf("error converting '%s' to tiledb_data_order_t", name)
 	}
 	return DataOrder(cDataOrder), nil
 }

@@ -96,9 +96,9 @@ func (c *Context) Config() (*Config, error) {
 	ret := C.tiledb_ctx_get_config(c.tiledbContext, &config.tiledbConfig)
 
 	if ret == C.TILEDB_OOM {
-		return nil, fmt.Errorf("Out of Memory error in GetConfig")
+		return nil, errors.New("out of Memory error in GetConfig")
 	} else if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Unknown error in GetConfig")
+		return nil, errors.New("unknown error in GetConfig")
 	}
 	freeOnGC(&config)
 
@@ -110,22 +110,14 @@ func (c *Context) LastError() error {
 	var err *C.tiledb_error_t
 	ret := C.tiledb_ctx_get_last_error(c.tiledbContext, &err)
 	if ret == C.TILEDB_OOM {
-		return fmt.Errorf("Out of Memory error in tiledb_ctx_get_last_error")
+		return errors.New("out of Memory error in tiledb_ctx_get_last_error")
 	} else if ret != C.TILEDB_OK {
-		return fmt.Errorf("Unknown error in tiledb_ctx_get_last_error")
+		return errors.New("unknown error in tiledb_ctx_get_last_error")
 	}
 
 	if err != nil {
-		var msg *C.char
 		defer C.tiledb_error_free(&err)
-		ret := C.tiledb_error_message(err, &msg)
-		if ret == C.TILEDB_OOM {
-			return fmt.Errorf("Out of Memory error in tiledb_error_message")
-		} else if ret != C.TILEDB_OK {
-			return fmt.Errorf("Unknown error in tiledb_error_message")
-		}
-
-		return fmt.Errorf("%s", C.GoString(msg))
+		return cError(err)
 	}
 	return nil
 }
@@ -136,7 +128,7 @@ func (c *Context) IsSupportedFS(fs FS) (bool, error) {
 	ret := C.tiledb_ctx_is_supported_fs(c.tiledbContext, C.tiledb_filesystem_t(fs), &isSupported)
 
 	if ret != C.TILEDB_OK {
-		return false, fmt.Errorf("Error in checking FS support")
+		return false, errors.New("error in checking FS support")
 	}
 
 	if isSupported == 0 {
@@ -156,7 +148,7 @@ func (c *Context) SetTag(key string, value string) error {
 	ret := C.tiledb_ctx_set_tag(c.tiledbContext, ckey, cvalue)
 
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("Error in setting tag")
+		return fmt.Errorf("error in setting tag: %w", c.LastError())
 	}
 
 	return nil
@@ -185,12 +177,12 @@ func (c *Context) setDefaultTags() error {
 func (c *Context) Stats() ([]byte, error) {
 	var stats *C.char
 	if ret := C.tiledb_ctx_get_stats(c.tiledbContext, &stats); ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error getting stats from context: %w", c.LastError())
+		return nil, fmt.Errorf("error getting stats from context: %w", c.LastError())
 	}
 
 	s := C.GoString(stats)
 	if ret := C.tiledb_stats_free_str(&stats); ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("Error freeing string from dumping stats to string")
+		return nil, errors.New("error freeing string from dumping stats to string")
 	}
 
 	if s == "" {

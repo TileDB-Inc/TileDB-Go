@@ -24,7 +24,7 @@ func NewArraySchemaEvolution(tdbCtx *Context) (*ArraySchemaEvolution, error) {
 		arraySchemaEvolution.context.tiledbContext,
 		&arraySchemaEvolution.tiledbArraySchemaEvolution)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error creating tiledb arraySchemaEvolution: %s",
+		return nil, fmt.Errorf("error creating tiledb arraySchemaEvolution: %w",
 			arraySchemaEvolution.context.LastError())
 	}
 	freeOnGC(&arraySchemaEvolution)
@@ -60,7 +60,7 @@ func (ase *ArraySchemaEvolution) AddAttribute(attribute *Attribute) error {
 		attribute.tiledbAttribute)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf(
-			"error adding attribute %s to tiledb arraySchemaEvolution: %s",
+			"error adding attribute %s to tiledb arraySchemaEvolution: %w",
 			name, ase.context.LastError())
 	}
 
@@ -75,7 +75,7 @@ func (ase *ArraySchemaEvolution) DropAttribute(name string) error {
 	ret := C.tiledb_array_schema_evolution_drop_attribute(
 		ase.context.tiledbContext, ase.tiledbArraySchemaEvolution, cname)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error dropping tiledb attribute: %s",
+		return fmt.Errorf("error dropping tiledb attribute: %w",
 			ase.context.LastError())
 	}
 
@@ -90,7 +90,7 @@ func (ase *ArraySchemaEvolution) Evolve(uri string) error {
 	ret := C.tiledb_array_evolve(ase.context.tiledbContext, curi,
 		ase.tiledbArraySchemaEvolution)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error evolving schema for array %s: %s", uri,
+		return fmt.Errorf("error evolving schema for array %s: %w", uri,
 			ase.context.LastError())
 	}
 

@@ -188,7 +188,7 @@ const templateQueryPlan = `{
 }`
 
 // requirePlanAsExpected checks if a query plan conforms to the query plan template
-func requirePlanAsExpected(t *testing.T, arrayPath, actualPlan string, diffs map[string]interface{}) {
+func requirePlanAsExpected(t *testing.T, actualPlan string, diffs map[string]interface{}) {
 	var expectedPlan bytes.Buffer
 	require.NoError(t, template.Must(template.New("plan").Parse(templateQueryPlan)).Execute(&expectedPlan, diffs))
 
@@ -320,7 +320,7 @@ func TestQueryPlan(t *testing.T) {
 	actualPlan, err := query.GetPlan()
 	require.NoError(t, err)
 
-	requirePlanAsExpected(t, tmpArrayPath, actualPlan, map[string]interface{}{
+	requirePlanAsExpected(t, actualPlan, map[string]interface{}{
 		"uri":      "file://" + tmpArrayPath,
 		"layout":   "row-major",
 		"strategy": "DenseReader",
