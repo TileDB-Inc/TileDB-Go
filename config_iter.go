@@ -53,7 +53,7 @@ func (ci *ConfigIter) Here() (*string, *string, error) {
 	C.tiledb_config_iter_here(ci.tiledbConfigIter, &cparam, &cvalue, &err)
 	if err != nil {
 		defer C.tiledb_error_free(&err)
-		return nil, nil, fmt.Errorf("error getting param, vakue from config iter: %w", cError(err))
+		return nil, nil, fmt.Errorf("error getting param, value from config iter: %w", cError(err))
 	}
 	param := C.GoString(cparam)
 	value := C.GoString(cvalue)

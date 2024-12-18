@@ -242,7 +242,7 @@ func (a *Array) Vacuum(config *Config) error {
 	defer C.free(unsafe.Pointer(curi))
 	ret := C.tiledb_array_vacuum(a.context.tiledbContext, curi, config.tiledbConfig)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error vacuumimg tiledb array: %w", a.context.LastError())
+		return fmt.Errorf("error vacuuming tiledb array: %w", a.context.LastError())
 	}
 
 	runtime.KeepAlive(config)
@@ -1016,7 +1016,7 @@ func (a *Array) GetMetadata(key string) (Datatype, uint, interface{}, error) {
 	datatype := Datatype(cType)
 	value, err := datatype.GetValue(valueNum, cvalue)
 	if err != nil {
-		return 0, 0, nil, fmt.Errorf("%w, key: %s", err, key)
+		return 0, 0, nil, fmt.Errorf("error getting metadata from array: %w, key: %s", err, key)
 	}
 
 	return datatype, valueNum, value, nil

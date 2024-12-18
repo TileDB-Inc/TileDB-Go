@@ -80,7 +80,7 @@ func NewVFS(context *Context, config *Config) (*VFS, error) {
 	vfs := VFS{context: context}
 	ret := C.tiledb_vfs_alloc(context.tiledbContext, config.tiledbConfig, &vfs.tiledbVFS)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error creating tiledb VFS %w", context.LastError())
+		return nil, fmt.Errorf("error creating tiledb VFS: %w", context.LastError())
 	}
 	freeOnGC(&vfs)
 

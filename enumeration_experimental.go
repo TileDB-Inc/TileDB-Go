@@ -289,7 +289,7 @@ func (e *Enumeration) Values() (interface{}, error) {
 	}
 
 	if int(cOffsetsSize)%8 > 0 {
-		return nil, errors.New("error getting data offsets: returned size does not contains an integer size of items")
+		return nil, errors.New("error getting data offsets: returned size does not contain an integer size of items")
 	}
 
 	var strs []string

@@ -49,7 +49,7 @@ func cError(err *C.tiledb_error_t) error {
 	case C.TILEDB_OK:
 		msg = C.GoString(str)
 	case C.TILEDB_OOM:
-		msg = "out of memory error while retrieving message"
+		msg = "out of memory error while retrieving TileDB error message"
 	default:
 		msg = "could not retrieve error"
 	}
