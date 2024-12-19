@@ -464,7 +464,7 @@ func (v *VFS) NumOfFragmentsInPath(path string) (int, error) {
 		Vfs:          v,
 	}
 	data := pointer.Save(&numOfFragmentsData)
-	defer C.free(data)
+	defer pointer.Unref(data)
 
 	ret := C._num_of_folders_in_path(v.context.tiledbContext, v.tiledbVFS, cpath, data)
 
@@ -635,6 +635,7 @@ func (v *VFS) List(path string) ([]string, []string, error) {
 		Vfs:     v,
 	}
 	data := pointer.Save(&folderData)
+	defer pointer.Unref(data)
 
 	ret := C._vfs_ls(v.context.tiledbContext, v.tiledbVFS, cpath, data)
 	if ret != C.TILEDB_OK {
