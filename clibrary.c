@@ -21,6 +21,15 @@ TILEDB_EXPORT int32_t _vfs_ls(
     return ret_val;
 }
 
+TILEDB_EXPORT int32_t _vfs_ls_recursive(
+  tiledb_ctx_t* ctx,
+  tiledb_vfs_t* vfs,
+  const char* path,
+  void* data) {
+    int32_t ret_val = tiledb_vfs_ls_recursive(ctx, vfs, path, vfsLsRecursive, data);
+    return ret_val;
+}
+
 TILEDB_EXPORT int32_t _tiledb_object_walk(
   tiledb_ctx_t* ctx,
   const char* path,
