@@ -645,11 +645,14 @@ func (v *VFS) List(path string) ([]string, []string, error) {
 	return folderData.Folders, folderData.Files, nil
 }
 
-type visitRecursiveCallback = func(path string, size uint64) (doContinue bool, err error)
+// VisitRecursiveCallback gets called by VFS.VisitRecursive. It returns whether visiting should
+// continue, and maybe an error to propagate to the caller. If err is not nil, visiting always
+// stops.
+type VisitRecursiveCallback = func(path string, size uint64) (doContinue bool, err error)
 
 // visitRecursiveState contains the state of a call to VisitRecursive.
 type visitRecursiveState struct {
-	callback  visitRecursiveCallback
+	callback  VisitRecursiveCallback
 	lastError error
 }
 
@@ -675,7 +678,7 @@ func vfsLsRecursive(path *C.cchar_t, path_len C.size_t, size C.uint64_t, data un
 
 // VisitRecursive calls a function for every file in a path recursively.
 // This function returns if the listing ends, or if the callback returns false or an error.
-func (v *VFS) VisitRecursive(path string, callback visitRecursiveCallback) error {
+func (v *VFS) VisitRecursive(path string, callback VisitRecursiveCallback) error {
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
 
