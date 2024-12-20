@@ -1,10 +1,12 @@
 package tiledb
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -252,6 +254,78 @@ func TestVFSList(t *testing.T) {
 		"file://" + tmpPath3}, folderList)
 	assert.EqualValues(t, []string{"file://" + tmpFilePath, "file://" +
 		tmpFilePath2, "file://" + tmpFilePath3}, fileList)
+}
+
+// TestVFSList validates vfs VisitRecursive operation is successful
+func TestVFSVisitRecursive(t *testing.T) {
+	config, err := NewConfig()
+	require.NoError(t, err)
+
+	context, err := NewContext(config)
+	require.NoError(t, err)
+
+	vfs, err := NewVFS(context, config)
+	require.NoError(t, err)
+
+	tmpPath := filepath.Join(t.TempDir(), "somedir")
+	tmpPath2 := filepath.Join(tmpPath, "subdir")
+	tmpPath3 := filepath.Join(tmpPath, "subdir2")
+
+	tmpFilePath := filepath.Join(tmpPath, "somefile")
+	tmpFilePath2 := filepath.Join(tmpPath, "somefile2")
+	tmpFilePath3 := filepath.Join(tmpPath, "somefile3")
+
+	// Create directories
+	require.NoError(t, vfs.CreateDir(tmpPath))
+	require.NoError(t, vfs.CreateDir(tmpPath2))
+	require.NoError(t, vfs.CreateDir(tmpPath3))
+
+	// Create Files
+	createFile(t, vfs, tmpFilePath)
+	createFile(t, vfs, tmpFilePath2)
+	createFile(t, vfs, tmpFilePath3)
+
+	var fileList []string
+	err = vfs.VisitRecursive(tmpPath, func(path string, size uint64) (bool, error) {
+		// Do not use require inside the callback because panicing might have unforeseen consequences.
+		fileExists, err := vfs.IsFile(path)
+		if err != nil {
+			return false, err
+		}
+		if !fileExists {
+			dirExists, err := vfs.IsDir(path)
+			if err != nil {
+				return false, err
+			}
+			if !dirExists {
+				return false, fmt.Errorf("%s does not exist neither as a file nor as a directory", path)
+			}
+		} else {
+			if size != 3 {
+				return false, fmt.Errorf("file %s has unexpected size (%d)", path, size)
+			}
+			fileList = append(fileList, path)
+		}
+		return true, nil
+	})
+	require.NoError(t, err)
+	slices.Sort(fileList)
+	assert.EqualValues(t, []string{"file://" + tmpFilePath, "file://" +
+		tmpFilePath2, "file://" + tmpFilePath3}, fileList)
+
+	expectedErr := errors.New("dummy")
+	err = vfs.VisitRecursive(tmpPath, func(path string, size uint64) (bool, error) {
+		return false, expectedErr
+	})
+	assert.Equal(t, expectedErr, err)
+
+	count := 0
+	err = vfs.VisitRecursive(tmpPath, func(path string, size uint64) (bool, error) {
+		count++
+		return count < 2, nil
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 2, count)
 }
 
 func createFile(t testing.TB, vfs *VFS, path string) {
