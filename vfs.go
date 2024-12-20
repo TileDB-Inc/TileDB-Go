@@ -464,7 +464,7 @@ func (v *VFS) NumOfFragmentsInPath(path string) (int, error) {
 		Vfs:          v,
 	}
 	data := pointer.Save(&numOfFragmentsData)
-	defer C.free(data)
+	defer pointer.Unref(data)
 
 	ret := C._num_of_folders_in_path(v.context.tiledbContext, v.tiledbVFS, cpath, data)
 
@@ -635,6 +635,7 @@ func (v *VFS) List(path string) ([]string, []string, error) {
 		Vfs:     v,
 	}
 	data := pointer.Save(&folderData)
+	defer pointer.Unref(data)
 
 	ret := C._vfs_ls(v.context.tiledbContext, v.tiledbVFS, cpath, data)
 	if ret != C.TILEDB_OK {
@@ -642,4 +643,56 @@ func (v *VFS) List(path string) ([]string, []string, error) {
 	}
 
 	return folderData.Folders, folderData.Files, nil
+}
+
+// VisitRecursiveCallback gets called by VFS.VisitRecursive. It returns whether visiting should
+// continue, and maybe an error to propagate to the caller. If err is not nil, visiting always
+// stops.
+type VisitRecursiveCallback = func(path string, size uint64) (doContinue bool, err error)
+
+// visitRecursiveState contains the state of a call to VisitRecursive.
+type visitRecursiveState struct {
+	callback  VisitRecursiveCallback
+	lastError error
+}
+
+//export vfsLsRecursive
+func vfsLsRecursive(path *C.cchar_t, path_len C.size_t, size C.uint64_t, data unsafe.Pointer) int32 {
+	state := pointer.Restore(data).(*visitRecursiveState)
+
+	if path_len > math.MaxInt {
+		state.lastError = errors.New("path is too long")
+		return 0
+	}
+
+	doContinue, err := state.callback(C.GoStringN(path, C.int(path_len)), uint64(size))
+
+	if err != nil || !doContinue {
+		// Save error to return to the user.
+		state.lastError = err
+		return 0
+	}
+
+	return 1
+}
+
+// VisitRecursive calls a function for every file in a path recursively.
+// This function returns if the listing ends, or if the callback returns false or an error.
+func (v *VFS) VisitRecursive(path string, callback VisitRecursiveCallback) error {
+	cpath := C.CString(path)
+	defer C.free(unsafe.Pointer(cpath))
+
+	state := &visitRecursiveState{
+		callback:  callback,
+		lastError: nil,
+	}
+	data := pointer.Save(state)
+	defer pointer.Unref(data)
+
+	ret := C._vfs_ls_recursive(v.context.tiledbContext, v.tiledbVFS, cpath, data)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error in recursively listing path %s: %w", path, v.context.LastError())
+	}
+
+	return state.lastError
 }
