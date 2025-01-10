@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-TILEDB_EXPORT int32_t _num_of_folders_in_path(
+int32_t _num_of_folders_in_path(
   tiledb_ctx_t* ctx,
   tiledb_vfs_t* vfs,
   const char* path,
@@ -12,7 +12,7 @@ TILEDB_EXPORT int32_t _num_of_folders_in_path(
     return ret_val;
 }
 
-TILEDB_EXPORT int32_t _vfs_ls(
+int32_t _vfs_ls(
   tiledb_ctx_t* ctx,
   tiledb_vfs_t* vfs,
   const char* path,
@@ -21,7 +21,7 @@ TILEDB_EXPORT int32_t _vfs_ls(
     return ret_val;
 }
 
-TILEDB_EXPORT int32_t _vfs_ls_recursive(
+int32_t _vfs_ls_recursive(
   tiledb_ctx_t* ctx,
   tiledb_vfs_t* vfs,
   const char* path,
@@ -30,7 +30,7 @@ TILEDB_EXPORT int32_t _vfs_ls_recursive(
     return ret_val;
 }
 
-TILEDB_EXPORT int32_t _tiledb_object_walk(
+int32_t _tiledb_object_walk(
   tiledb_ctx_t* ctx,
   const char* path,
   tiledb_walk_order_t order,
@@ -39,7 +39,7 @@ TILEDB_EXPORT int32_t _tiledb_object_walk(
     return ret_val;
 }
 
-TILEDB_EXPORT int32_t _tiledb_object_ls(
+int32_t _tiledb_object_ls(
   tiledb_ctx_t* ctx,
   const char* path,
   void* data) {

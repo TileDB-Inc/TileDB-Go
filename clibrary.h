@@ -10,31 +10,31 @@ int32_t vfsLs(cchar_t* path, void *data);
 int32_t vfsLsRecursive(cchar_t* path, size_t path_len, uint64_t size, void *data);
 int32_t objectsInPath(cchar_t* path, tiledb_object_t objectType, void *data);
 
-TILEDB_EXPORT int32_t _num_of_folders_in_path(
+int32_t _num_of_folders_in_path(
     tiledb_ctx_t* ctx,
     tiledb_vfs_t* vfs,
     const char* path,
     void* data);
 
-TILEDB_EXPORT int32_t _vfs_ls(
+int32_t _vfs_ls(
     tiledb_ctx_t* ctx,
     tiledb_vfs_t* vfs,
     const char* path,
     void* data);
 
-TILEDB_EXPORT int32_t _vfs_ls_recursive(
+int32_t _vfs_ls_recursive(
     tiledb_ctx_t* ctx,
     tiledb_vfs_t* vfs,
     const char* path,
     void* data);
 
-TILEDB_EXPORT int32_t _tiledb_object_walk(
+int32_t _tiledb_object_walk(
     tiledb_ctx_t* ctx,
     const char* path,
     tiledb_walk_order_t order,
     void* data);
 
-TILEDB_EXPORT int32_t _tiledb_object_ls(
+int32_t _tiledb_object_ls(
     tiledb_ctx_t* ctx,
     const char* path,
     void* data);

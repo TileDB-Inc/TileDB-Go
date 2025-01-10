@@ -135,12 +135,7 @@ func (b *Buffer) ReadAt(p []byte, off int64) (int, error) {
 	}
 
 	availableBytes := uint64(csize) - uint64(off)
-	var sizeToRead int
-	if availableBytes > math.MaxInt {
-		sizeToRead = math.MaxInt
-	} else {
-		sizeToRead = int(availableBytes)
-	}
+	sizeToRead := min(math.MaxInt, int(availableBytes))
 
 	readSize := copy(p, unsafe.Slice((*byte)(unsafe.Pointer(uintptr(cbuffer)+uintptr(off))), sizeToRead))
 
@@ -171,13 +166,7 @@ func (b *Buffer) WriteTo(w io.Writer) (int64, error) {
 	// Because io.Writer supports writing up to 2GB of data at a time, we have to use a loop
 	// for the bigger buffers.
 	for remaining > 0 {
-		// TODO: Use min on Go 1.21+
-		var writeSize int
-		if remaining > math.MaxInt {
-			writeSize = math.MaxInt
-		} else {
-			writeSize = int(remaining)
-		}
+		writeSize := min(math.MaxInt, int(remaining))
 
 		// Construct a slice from the buffer's data without copying it.
 		n, err := w.Write(unsafe.Slice((*byte)(unsafe.Pointer(uintptr(cbuffer)+uintptr(csize)-uintptr(remaining))), writeSize))
