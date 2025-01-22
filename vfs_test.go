@@ -155,6 +155,28 @@ func TestVFSFH(t *testing.T) {
 	assert.Equal(t, 3, n)
 	require.NoError(t, err)
 	assert.ElementsMatch(t, b, bRead)
+	// Check value of offset.
+	noffset, err = r.Seek(0, io.SeekCurrent)
+	require.NoError(t, err)
+	assert.EqualValues(t, 3, noffset)
+
+	n, err = r.ReadAt(bRead, 0)
+	require.Equal(t, io.EOF, err)
+	assert.EqualValues(t, 3, n)
+	assert.ElementsMatch(t, b, bRead)
+	// Check that offset was not changed.
+	noffset, err = r.Seek(0, io.SeekCurrent)
+	require.NoError(t, err)
+	assert.EqualValues(t, 3, noffset)
+
+	n, err = r.ReadAt(bRead[:1], 0)
+	require.NoError(t, err)
+	assert.EqualValues(t, 1, n)
+	assert.Equal(t, b[0], bRead[0])
+	// Check that offset was not changed.
+	noffset, err = r.Seek(0, io.SeekCurrent)
+	require.NoError(t, err)
+	assert.EqualValues(t, 3, noffset)
 
 	n, err = r.Read(bRead)
 	assert.Error(t, err)
