@@ -522,6 +522,47 @@ func (v *VFSfh) Read(p []byte) (int, error) {
 	return int(nbytes), nil
 }
 
+// ReadAt reads part of a file at a given offset, without updating the object's internal offset.
+func (v *VFSfh) ReadAt(p []byte, off int64) (int, error) {
+	if off < 0 {
+		return 0, errors.New("offset cannot be negative")
+	}
+
+	nbytes := uint64(len(p))
+
+	// If the size is empty, fetch it
+	if v.size == nil {
+		err := v.fetchAndSetSize()
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	// If the requested read size is beyond the limit, truncate the read size.
+	// In this case we need to return io.EOF.
+	var err error = nil
+	if uint64(off)+nbytes >= *v.size {
+		if uint64(off) > *v.size {
+			return 0, io.EOF
+		}
+		nbytes = *v.size - uint64(off)
+		err = io.EOF
+	}
+
+	if nbytes == 0 {
+		return 0, err
+	}
+
+	cbuffer := slicePtr(p)
+	ret := C.tiledb_vfs_read(v.context.tiledbContext, v.tiledbVFSfh, C.uint64_t(off), cbuffer, C.uint64_t(nbytes))
+
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("unknown error in VFS.Read: %w", v.context.LastError())
+	}
+
+	return int(nbytes), err
+}
+
 // Write writes the contents of a buffer into a file. Note that this function only
 // appends data at the end of the file. If the file does not exist,
 // it will be created.
