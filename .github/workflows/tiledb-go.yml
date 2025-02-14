@@ -65,6 +65,8 @@ jobs:
 
     # Tests TileDB-Go
     - name: Test TileDB-Go
+      env:
+        GOEXPERIMENT: cgocheck2
       run: go test -gcflags=all=-d=checkptr=2 -v ./...
 
   Macos_Test:
