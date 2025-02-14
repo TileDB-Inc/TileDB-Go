@@ -24,7 +24,7 @@ type Query struct {
 	array                *Array
 	context              *Context
 	config               *Config
-	buffers              []interface{}
+	pinner               runtime.Pinner
 	bufferMutex          sync.Mutex
 	resultBufferElements map[string][3]*uint64
 }
@@ -87,11 +87,11 @@ func NewQuery(tdbCtx *Context, array *Array) (*Query, error) {
 func (q *Query) Free() {
 	q.bufferMutex.Lock()
 	defer q.bufferMutex.Unlock()
-	q.buffers = nil
 	q.resultBufferElements = nil
 	if q.tiledbQuery != nil {
 		C.tiledb_query_free(&q.tiledbQuery)
 	}
+	q.pinner.Unpin()
 }
 
 // Context exposes the internal TileDB context used to initialize the query.
@@ -308,9 +308,6 @@ func (q *Query) Finalize() error {
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error finalizing query: %w", q.context.LastError())
 	}
-	q.bufferMutex.Lock()
-	defer q.bufferMutex.Unlock()
-	q.buffers = nil
 	return nil
 }
 
@@ -875,9 +872,11 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 			attributeOrDimensionType.ReflectKind().String())
 	}
 
-	var cbuffer unsafe.Pointer
+	cbuffer := bufferReflectValue.UnsafePointer()
+	q.pinner.Pin(cbuffer)
 	// Get length of slice, this will be multiplied by size of datatype below
 	bufferSize := uint64(bufferReflectValue.Len())
+	q.pinner.Pin(&bufferSize)
 
 	if bufferSize == uint64(0) {
 		return nil, errors.New("Buffer has no length, vbuffers are required to be initialized before reading or writting")
@@ -891,107 +890,42 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 	case reflect.Int:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Int
-		// Create buffer void*
-		tmpBuffer := buffer.([]int)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int8:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Int8
-		// Create buffer void*
-		tmpBuffer := buffer.([]int8)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int16:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Int16
-		// Create buffer void*
-		tmpBuffer := buffer.([]int16)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int32:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Int32
-		// Create buffer void*
-		tmpBuffer := buffer.([]int32)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int64:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Int64
-		// Create buffer void*
-		tmpBuffer := buffer.([]int64)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Uint
-		// Create buffer void*
-		tmpBuffer := buffer.([]uint)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint8:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Uint8
-		// Create buffer void*
-		tmpBuffer := buffer.([]uint8)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint16:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Uint16
-		// Create buffer void*
-		tmpBuffer := buffer.([]uint16)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint32:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Uint32
-		// Create buffer void*
-		tmpBuffer := buffer.([]uint32)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint64:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Uint64
-		// Create buffer void*
-		tmpBuffer := buffer.([]uint64)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Float32:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Float32
-		// Create buffer void*
-		tmpBuffer := buffer.([]float32)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Float64:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Float64
-		// Create buffer void*
-		tmpBuffer := buffer.([]float64)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Bool:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Bool
-		// Create buffer void*
-		tmpBuffer := buffer.([]bool)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	default:
 		return nil,
 			fmt.Errorf("unrecognized buffer type passed: %s",
@@ -1246,18 +1180,20 @@ func (q *Query) SetValidityBuffer(attributeOrDimension string, buffer []uint8) (
 	cAttributeOrDimension := C.CString(attributeOrDimension)
 	defer C.free(unsafe.Pointer(cAttributeOrDimension))
 
-	q.buffers = append(q.buffers, buffer)
+	cbuffer := unsafe.Pointer(&buffer[0])
+	q.pinner.Pin(cbuffer)
 
 	bufferSize := uint64(len(buffer)) * bytesizes.Uint8
 	if bufferSize == uint64(0) {
 		return nil, errors.New("validity slice has no length, validity slices are required to be initialized before reading or writing")
 	}
+	q.pinner.Pin(&bufferSize)
 
 	ret := C.tiledb_query_set_validity_buffer(
 		q.context.tiledbContext,
 		q.tiledbQuery,
 		cAttributeOrDimension,
-		(*C.uint8_t)(unsafe.Pointer(&(buffer)[0])),
+		(*C.uint8_t)(cbuffer),
 		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
 	runtime.KeepAlive(q)
 
@@ -1354,18 +1290,20 @@ func (q *Query) SetOffsetsBuffer(attributeOrDimension string, offset []uint64) (
 	cAttributeOrDimension := C.CString(attributeOrDimension)
 	defer C.free(unsafe.Pointer(cAttributeOrDimension))
 
-	q.buffers = append(q.buffers, offset)
+	cbuffer := unsafe.Pointer(&offset[0])
+	q.pinner.Pin(cbuffer)
 
 	offsetSize := uint64(len(offset)) * bytesizes.Uint64
 	if offsetSize == uint64(0) {
 		return nil, errors.New("offset slice has no length, offset slices are required to be initialized before reading or writing")
 	}
+	q.pinner.Pin(&offsetSize)
 
 	ret := C.tiledb_query_set_offsets_buffer(
 		q.context.tiledbContext,
 		q.tiledbQuery,
 		cAttributeOrDimension,
-		(*C.uint64_t)(unsafe.Pointer(&(offset)[0])),
+		(*C.uint64_t)(unsafe.Pointer(&offset[0])),
 		(*C.uint64_t)(unsafe.Pointer(&offsetSize)))
 	runtime.KeepAlive(q)
 
