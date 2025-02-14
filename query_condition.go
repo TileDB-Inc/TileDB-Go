@@ -8,6 +8,7 @@ import "C"
 
 import (
 	"fmt"
+	"runtime"
 	"unsafe"
 )
 
@@ -23,6 +24,7 @@ func NewQueryCondition(tdbCtx *Context, attributeName string, op QueryConditionO
 	if ret := C.tiledb_query_condition_alloc(qc.context.tiledbContext, &qc.cond); ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error allocating tiledb query condition: %w", qc.context.LastError())
 	}
+	runtime.KeepAlive(tdbCtx)
 	freeOnGC(&qc)
 
 	if err := qc.init(attributeName, value, op); err != nil {
@@ -39,6 +41,9 @@ func NewQueryConditionCombination(tdbCtx *Context, left *QueryCondition, op Quer
 	if ret := C.tiledb_query_condition_combine(qc.context.tiledbContext, left.cond, right.cond, C.tiledb_query_condition_combination_op_t(op), &qc.cond); ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error allocating tiledb query condition: %w", qc.context.LastError())
 	}
+	runtime.KeepAlive(tdbCtx)
+	runtime.KeepAlive(left)
+	runtime.KeepAlive(right)
 	freeOnGC(&qc)
 
 	return &qc, nil
@@ -52,6 +57,8 @@ func NewQueryConditionNegated(tdbCtx *Context, qc *QueryCondition) (*QueryCondit
 		return nil, fmt.Errorf("error allocating tiledb query condition: %w", qc.context.LastError())
 	}
 	freeOnGC(&nqc)
+	runtime.KeepAlive(tdbCtx)
+	runtime.KeepAlive(qc)
 
 	return &nqc, nil
 }
@@ -155,6 +162,7 @@ func qcInitInternal(qc *QueryCondition, attributeName string, valuePtr unsafe.Po
 		C.uint64_t(valueSize),
 		C.tiledb_query_condition_op_t(op),
 	)
+	runtime.KeepAlive(qc)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("could not init %q query condition: %w", attributeName, qc.context.LastError())
 	}

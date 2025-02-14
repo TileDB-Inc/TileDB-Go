@@ -9,6 +9,7 @@ import "C"
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"unsafe"
 )
 
@@ -33,6 +34,7 @@ func NewAttribute(context *Context, name string, datatype Datatype) (*Attribute,
 	defer C.free(unsafe.Pointer(cname))
 
 	ret := C.tiledb_attribute_alloc(context.tiledbContext, cname, C.tiledb_datatype_t(datatype), &attribute.tiledbAttribute)
+	runtime.KeepAlive(context)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb attribute: %w", context.LastError())
 	}
@@ -60,6 +62,8 @@ func (a *Attribute) Context() *Context {
 // SetFilterList sets the attribute filterList.
 func (a *Attribute) SetFilterList(filterlist *FilterList) error {
 	ret := C.tiledb_attribute_set_filter_list(a.context.tiledbContext, a.tiledbAttribute, filterlist.tiledbFilterList)
+	runtime.KeepAlive(a)
+	runtime.KeepAlive(filterlist)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting tiledb attribute filter list: %w", a.context.LastError())
 	}
@@ -70,6 +74,7 @@ func (a *Attribute) SetFilterList(filterlist *FilterList) error {
 func (a *Attribute) FilterList() (*FilterList, error) {
 	filterList := FilterList{context: a.context}
 	ret := C.tiledb_attribute_get_filter_list(a.context.tiledbContext, a.tiledbAttribute, &filterList.tiledbFilterList)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb attribute filter list: %w", a.context.LastError())
 	}
@@ -84,6 +89,7 @@ func (a *Attribute) FilterList() (*FilterList, error) {
 func (a *Attribute) SetCellValNum(val uint32) error {
 	ret := C.tiledb_attribute_set_cell_val_num(a.context.tiledbContext,
 		a.tiledbAttribute, C.uint32_t(val))
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting tiledb attribute cell val num: %w", a.context.LastError())
 	}
@@ -95,6 +101,7 @@ func (a *Attribute) SetCellValNum(val uint32) error {
 func (a *Attribute) CellValNum() (uint32, error) {
 	var cellValNum C.uint32_t
 	ret := C.tiledb_attribute_get_cell_val_num(a.context.tiledbContext, a.tiledbAttribute, &cellValNum)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting tiledb attribute cell val num: %w", a.context.LastError())
 	}
@@ -106,6 +113,7 @@ func (a *Attribute) CellValNum() (uint32, error) {
 func (a *Attribute) CellSize() (uint64, error) {
 	var cellSize C.uint64_t
 	ret := C.tiledb_attribute_get_cell_size(a.context.tiledbContext, a.tiledbAttribute, &cellSize)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting tiledb attribute cell size: %w", a.context.LastError())
 	}
@@ -187,6 +195,7 @@ func attributeSetFillValueInternal(a *Attribute, value unsafe.Pointer, valueSize
 		value,
 		C.uint64_t(valueSize),
 	)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("could not set attribute fill value: %w", a.context.LastError())
 	}
@@ -272,6 +281,7 @@ func attributeSetFillValueNullableInternal(a *Attribute, value unsafe.Pointer, v
 		C.uint64_t(valueSize),
 		cValid,
 	)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("could not set attribute fill value: %w", a.context.LastError())
 	}
@@ -286,7 +296,7 @@ func attributeSetFillValueNullableInternal(a *Attribute, value unsafe.Pointer, v
 // Applicable to both fixed-sized and var-sized attributes.
 func (a *Attribute) GetFillValue() (interface{}, uint64, error) {
 	var fillValueSize C.uint64_t
-	var cvalue unsafe.Pointer
+	var cvalue unsafe.Pointer // a must be kept alive while cvalue is being accessed.
 
 	ret := C.tiledb_attribute_get_fill_value(a.context.tiledbContext, a.tiledbAttribute, &cvalue, &fillValueSize)
 	if ret != C.TILEDB_OK {
@@ -299,6 +309,7 @@ func (a *Attribute) GetFillValue() (interface{}, uint64, error) {
 	}
 
 	value, err := attrDataType.GetValue(1, cvalue)
+	runtime.KeepAlive(a)
 	if err != nil {
 		return nil, 0, fmt.Errorf("error getting tiledb attribute fill value: %w", a.context.LastError())
 	}
@@ -314,7 +325,7 @@ func (a *Attribute) GetFillValue() (interface{}, uint64, error) {
 // Applicable to both fixed-sized and var-sized attributes.
 func (a *Attribute) GetFillValueNullable() (interface{}, uint64, bool, error) {
 	var fillValueSize C.uint64_t
-	var cvalue unsafe.Pointer
+	var cvalue unsafe.Pointer // a must be kept alive while cvalue is being accessed.
 	var cvalid C.uint8_t
 
 	ret := C.tiledb_attribute_get_fill_value_nullable(a.context.tiledbContext, a.tiledbAttribute, &cvalue, &fillValueSize, &cvalid)
@@ -328,6 +339,7 @@ func (a *Attribute) GetFillValueNullable() (interface{}, uint64, bool, error) {
 	}
 
 	value, err := attrDataType.GetValue(1, cvalue)
+	runtime.KeepAlive(a)
 	if err != nil {
 		return nil, 0, false, fmt.Errorf("error getting tiledb attribute fill value: %w", a.context.LastError())
 	}
@@ -337,19 +349,23 @@ func (a *Attribute) GetFillValueNullable() (interface{}, uint64, bool, error) {
 
 // Name returns the name of the attribute.
 func (a *Attribute) Name() (string, error) {
-	var cName *C.char
+	var cName *C.char // a must be kept alive while cName is being accessed.
 	ret := C.tiledb_attribute_get_name(a.context.tiledbContext, a.tiledbAttribute, &cName)
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("error getting tiledb attribute name: %w", a.context.LastError())
 	}
 
-	return C.GoString(cName), nil
+	name := C.GoString(cName)
+	runtime.KeepAlive(a)
+
+	return name, nil
 }
 
 // Type returns the attribute datatype.
 func (a *Attribute) Type() (Datatype, error) {
 	var attrType C.tiledb_datatype_t
 	ret := C.tiledb_attribute_get_type(a.context.tiledbContext, a.tiledbAttribute, &attrType)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting tiledb attribute type: %w", a.context.LastError())
 	}
@@ -359,6 +375,7 @@ func (a *Attribute) Type() (Datatype, error) {
 // DumpSTDOUT dumps the attribute in ASCII format to stdout.
 func (a *Attribute) DumpSTDOUT() error {
 	ret := C.tiledb_attribute_dump(a.context.tiledbContext, a.tiledbAttribute, C.stdout)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error dumping attribute to stdout: %w", a.context.LastError())
 	}
@@ -386,6 +403,7 @@ func (a *Attribute) Dump(path string) error {
 
 	// Dump attribute to file
 	ret := C.tiledb_attribute_dump(a.context.tiledbContext, a.tiledbAttribute, cFile)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error dumping attribute to file %s: %w", path, a.context.LastError())
 	}
@@ -400,6 +418,7 @@ func (a *Attribute) SetNullable(nullable bool) error {
 	}
 	ret := C.tiledb_attribute_set_nullable(a.context.tiledbContext,
 		a.tiledbAttribute, cNullable)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting tiledb attribute nullable: %w", a.context.LastError())
 	}
@@ -410,6 +429,7 @@ func (a *Attribute) SetNullable(nullable bool) error {
 func (a *Attribute) Nullable() (bool, error) {
 	var nullable C.uint8_t
 	ret := C.tiledb_attribute_get_nullable(a.context.tiledbContext, a.tiledbAttribute, &nullable)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("error getting tiledb attribute nullable: %w", a.context.LastError())
 	}

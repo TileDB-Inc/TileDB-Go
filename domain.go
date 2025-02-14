@@ -9,6 +9,7 @@ import "C"
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"unsafe"
 )
 
@@ -25,6 +26,7 @@ type Domain struct {
 func NewDomain(tdbCtx *Context) (*Domain, error) {
 	domain := Domain{context: tdbCtx}
 	ret := C.tiledb_domain_alloc(domain.context.tiledbContext, &domain.tiledbDomain)
+	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb domain: %w", domain.context.LastError())
 	}
@@ -53,6 +55,7 @@ func (d *Domain) Context() *Context {
 func (d *Domain) Type() (Datatype, error) {
 	var datatype C.tiledb_datatype_t
 	ret := C.tiledb_domain_get_type(d.context.tiledbContext, d.tiledbDomain, &datatype)
+	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return -1, fmt.Errorf("error getting tiledb domain type: %w", d.context.LastError())
 	}
@@ -63,6 +66,7 @@ func (d *Domain) Type() (Datatype, error) {
 func (d *Domain) NDim() (uint, error) {
 	var ndim C.uint32_t
 	ret := C.tiledb_domain_get_ndim(d.context.tiledbContext, d.tiledbDomain, &ndim)
+	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting tiledb domain number of dimensions: %w", d.context.LastError())
 	}
@@ -74,6 +78,7 @@ func (d *Domain) DimensionFromIndex(index uint) (*Dimension, error) {
 	var dim *C.tiledb_dimension_t
 	ret := C.tiledb_domain_get_dimension_from_index(d.context.tiledbContext,
 		d.tiledbDomain, C.uint32_t(index), &dim)
+	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb dimension by index for domain: %w", d.context.LastError())
 	}
@@ -90,6 +95,7 @@ func (d *Domain) DimensionFromName(name string) (*Dimension, error) {
 	defer C.free(unsafe.Pointer(cname))
 	var dim *C.tiledb_dimension_t
 	ret := C.tiledb_domain_get_dimension_from_name(d.context.tiledbContext, d.tiledbDomain, cname, &dim)
+	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb dimension by name for domain: %w", d.context.LastError())
 	}
@@ -102,6 +108,7 @@ func (d *Domain) DimensionFromName(name string) (*Dimension, error) {
 func (d *Domain) AddDimensions(dimensions ...*Dimension) error {
 	for _, dimension := range dimensions {
 		ret := C.tiledb_domain_add_dimension(d.context.tiledbContext, d.tiledbDomain, dimension.tiledbDimension)
+		runtime.KeepAlive(dimension)
 		if ret != C.TILEDB_OK {
 			return fmt.Errorf("error adding dimension to domain: %w", d.context.LastError())
 		}
@@ -115,6 +122,7 @@ func (d *Domain) HasDimension(dimName string) (bool, error) {
 	cDimName := C.CString(dimName)
 	defer C.free(unsafe.Pointer(cDimName))
 	ret := C.tiledb_domain_has_dimension(d.context.tiledbContext, d.tiledbDomain, cDimName, &hasDim)
+	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("error finding dimension %s in domain: %w", dimName, d.context.LastError())
 	}
@@ -129,6 +137,7 @@ func (d *Domain) HasDimension(dimName string) (bool, error) {
 // DumpSTDOUT dumps the domain in ASCII format to stdout.
 func (d *Domain) DumpSTDOUT() error {
 	ret := C.tiledb_domain_dump(d.context.tiledbContext, d.tiledbDomain, C.stdout)
+	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error dumping domain to stdout: %w", d.context.LastError())
 	}
@@ -156,6 +165,7 @@ func (d *Domain) Dump(path string) error {
 
 	// Dump domain to file
 	ret := C.tiledb_domain_dump(d.context.tiledbContext, d.tiledbDomain, cFile)
+	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error dumping domain to file %s: %w", path, d.context.LastError())
 	}

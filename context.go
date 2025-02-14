@@ -31,6 +31,7 @@ func NewContext(config *Config) (*Context, error) {
 	} else {
 		ret = C.tiledb_ctx_alloc(nil, &context.tiledbContext)
 	}
+	runtime.KeepAlive(config)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb context: %w", context.LastError())
 	}
@@ -41,9 +42,6 @@ func NewContext(config *Config) (*Context, error) {
 		return nil, fmt.Errorf("error creating tiledb context: %w", err)
 	}
 
-	if config != nil {
-		runtime.KeepAlive(config)
-	}
 	return &context, nil
 }
 
@@ -94,6 +92,7 @@ func (c *Context) CancelAllTasks() error {
 func (c *Context) Config() (*Config, error) {
 	config := Config{}
 	ret := C.tiledb_ctx_get_config(c.tiledbContext, &config.tiledbConfig)
+	runtime.KeepAlive(c)
 
 	if ret == C.TILEDB_OOM {
 		return nil, errors.New("out of Memory error in GetConfig")
@@ -109,6 +108,7 @@ func (c *Context) Config() (*Config, error) {
 func (c *Context) LastError() error {
 	var err *C.tiledb_error_t
 	ret := C.tiledb_ctx_get_last_error(c.tiledbContext, &err)
+	runtime.KeepAlive(c)
 	if ret == C.TILEDB_OOM {
 		return errors.New("out of Memory error in tiledb_ctx_get_last_error")
 	} else if ret != C.TILEDB_OK {
@@ -126,16 +126,13 @@ func (c *Context) LastError() error {
 func (c *Context) IsSupportedFS(fs FS) (bool, error) {
 	var isSupported C.int32_t
 	ret := C.tiledb_ctx_is_supported_fs(c.tiledbContext, C.tiledb_filesystem_t(fs), &isSupported)
+	runtime.KeepAlive(c)
 
 	if ret != C.TILEDB_OK {
 		return false, errors.New("error in checking FS support")
 	}
 
-	if isSupported == 0 {
-		return false, nil
-	}
-
-	return true, nil
+	return isSupported != 0, nil
 }
 
 // SetTag sets the context tag.
@@ -146,6 +143,7 @@ func (c *Context) SetTag(key string, value string) error {
 	defer C.free(unsafe.Pointer(cvalue))
 
 	ret := C.tiledb_ctx_set_tag(c.tiledbContext, ckey, cvalue)
+	runtime.KeepAlive(c)
 
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error in setting tag: %w", c.LastError())
@@ -179,6 +177,7 @@ func (c *Context) Stats() ([]byte, error) {
 	if ret := C.tiledb_ctx_get_stats(c.tiledbContext, &stats); ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting stats from context: %w", c.LastError())
 	}
+	runtime.KeepAlive(c)
 
 	s := C.GoString(stats)
 	if ret := C.tiledb_stats_free_str(&stats); ret != C.TILEDB_OK {

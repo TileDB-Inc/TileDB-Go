@@ -233,6 +233,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 	}
 
 	ret = C.tiledb_dimension_alloc(context.tiledbContext, cname, C.tiledb_datatype_t(datatype), cdomain, cextent, &dimension.tiledbDimension)
+	runtime.KeepAlive(context)
 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb dimension: %w", context.LastError())
@@ -253,6 +254,7 @@ func NewStringDimension(context *Context, name string) (*Dimension, error) {
 
 	datatype = TILEDB_STRING_ASCII
 	ret = C.tiledb_dimension_alloc(context.tiledbContext, cname, C.tiledb_datatype_t(datatype), nil, nil, &dimension.tiledbDimension)
+	runtime.KeepAlive(context)
 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb dimension: %w", context.LastError())
@@ -281,6 +283,8 @@ func (d *Dimension) Context() *Context {
 // SetFilterList sets the dimension filterList.
 func (d *Dimension) SetFilterList(filterlist *FilterList) error {
 	ret := C.tiledb_dimension_set_filter_list(d.context.tiledbContext, d.tiledbDimension, filterlist.tiledbFilterList)
+	runtime.KeepAlive(d)
+	runtime.KeepAlive(filterlist)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting tiledb dimension filter list: %w", d.context.LastError())
 	}
@@ -291,6 +295,7 @@ func (d *Dimension) SetFilterList(filterlist *FilterList) error {
 func (d *Dimension) FilterList() (*FilterList, error) {
 	filterList := FilterList{context: d.context}
 	ret := C.tiledb_dimension_get_filter_list(d.context.tiledbContext, d.tiledbDimension, &filterList.tiledbFilterList)
+	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb dimension filter list: %w", d.context.LastError())
 	}
@@ -306,6 +311,7 @@ func (d *Dimension) FilterList() (*FilterList, error) {
 func (d *Dimension) SetCellValNum(val uint32) error {
 	ret := C.tiledb_dimension_set_cell_val_num(d.context.tiledbContext,
 		d.tiledbDimension, C.uint32_t(val))
+	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting tiledb dimension cell val num: %w", d.context.LastError())
 	}
@@ -317,6 +323,7 @@ func (d *Dimension) SetCellValNum(val uint32) error {
 func (d *Dimension) CellValNum() (uint32, error) {
 	var cellValNum C.uint32_t
 	ret := C.tiledb_dimension_get_cell_val_num(d.context.tiledbContext, d.tiledbDimension, &cellValNum)
+	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting tiledb dimension cell val num: %w", d.context.LastError())
 	}
@@ -326,19 +333,22 @@ func (d *Dimension) CellValNum() (uint32, error) {
 
 // Name returns the name of the dimension.
 func (d *Dimension) Name() (string, error) {
-	var cName *C.char
+	var cName *C.char // d must be kept alive while cName is being accessed.
 	ret := C.tiledb_dimension_get_name(d.context.tiledbContext, d.tiledbDimension, &cName)
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("error getting tiledb dimension name: %w", d.context.LastError())
 	}
 
-	return C.GoString(cName), nil
+	name := C.GoString(cName)
+	runtime.KeepAlive(d)
+	return name, nil
 }
 
 // Type returns the type of the dimension.
 func (d *Dimension) Type() (Datatype, error) {
 	var cType C.tiledb_datatype_t
 	ret := C.tiledb_dimension_get_type(d.context.tiledbContext, d.tiledbDimension, &cType)
+	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting tiledb dimension type: %w", d.context.LastError())
 	}
@@ -389,17 +399,15 @@ func (d *Dimension) Domain() (interface{}, error) {
 }
 
 func domainInternal[T any](d *Dimension) ([]T, error) {
-	// tiledb_dimension_get_domain writes *a pointer to the memory it owns*
-	// into cDomain, so we need to ensure that the dimension stays alive for
-	// the entire duration of this call.
-	defer runtime.KeepAlive(d)
-	var cDomain unsafe.Pointer
+	var cDomain unsafe.Pointer // d must be kept alive while cDomain is being accessed.
 	ret := C.tiledb_dimension_get_domain(d.context.tiledbContext, d.tiledbDimension, &cDomain)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb dimension's domain: %w", d.context.LastError())
 	}
 	asArray := (*[2]T)(cDomain)
-	return []T{asArray[0], asArray[1]}, nil
+	result := []T{asArray[0], asArray[1]}
+	runtime.KeepAlive(d)
+	return result, nil
 }
 
 // Extent returns the dimension's extent.
@@ -439,22 +447,21 @@ func (d *Dimension) Extent() (interface{}, error) {
 }
 
 func extentInternal[T any](d *Dimension) (T, error) {
-	// As in domainInternal, tiledb_dimension_get_tile_extent writes a pointer
-	// to memory it owns into cExtent. Ensure this Dimension stays alive.
-	defer runtime.KeepAlive(d)
-	var cExtent unsafe.Pointer
+	var cExtent unsafe.Pointer // d must be kept alive while cExtent is being accessed.
 	var output T
 	cRet := C.tiledb_dimension_get_tile_extent(d.context.tiledbContext, d.tiledbDimension, &cExtent)
 	if cRet != C.TILEDB_OK {
 		return output, fmt.Errorf("could not get TileDB dimension's extent: %w", d.context.LastError())
 	}
 	output = *(*T)(cExtent)
+	runtime.KeepAlive(d)
 	return output, nil
 }
 
 // DumpSTDOUT dumps the dimension in ASCII format to stdout.
 func (d *Dimension) DumpSTDOUT() error {
 	ret := C.tiledb_dimension_dump(d.context.tiledbContext, d.tiledbDimension, C.stdout)
+	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error dumping dimension to stdout: %w", d.context.LastError())
 	}
@@ -482,6 +489,7 @@ func (d *Dimension) Dump(path string) error {
 
 	// Dump dimension to file
 	ret := C.tiledb_dimension_dump(d.context.tiledbContext, d.tiledbDimension, cFile)
+	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error dumping dimension to file %s: %w", path, d.context.LastError())
 	}

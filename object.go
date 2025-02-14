@@ -9,6 +9,7 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"runtime"
 	"unsafe"
 
 	pointer "github.com/mattn/go-pointer"
@@ -25,6 +26,7 @@ func ObjectType(tdbCtx *Context, path string) (ObjectTypeEnum, error) {
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
 	ret := C.tiledb_object_type(tdbCtx.tiledbContext, cpath, &objectTypeEnum)
+	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return TILEDB_INVALID, fmt.Errorf("cannot get object type from path %s: %w",
 			path, tdbCtx.LastError())
@@ -75,9 +77,11 @@ func ObjectWalk(tdbCtx *Context, path string, walkOrder WalkOrder) (*ObjectList,
 		objectList: []groupDefinition{},
 	}
 	data := pointer.Save(&objectList)
+	defer pointer.Unref(data)
 
 	ret := C._tiledb_object_walk(tdbCtx.tiledbContext, cpath,
 		C.tiledb_walk_order_t(walkOrder), unsafe.Pointer(data))
+	runtime.KeepAlive(tdbCtx)
 
 	fmt.Println(objectList)
 
@@ -102,9 +106,11 @@ func ObjectLs(tdbCtx *Context, path string) (*ObjectList, error) {
 		objectList: []groupDefinition{},
 	}
 	data := pointer.Save(&objectList)
+	defer pointer.Unref(data)
 
 	ret := C._tiledb_object_ls(tdbCtx.tiledbContext, cpath,
 		unsafe.Pointer(data))
+	runtime.KeepAlive(tdbCtx)
 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("cannot walk in path %s: %w", path,
@@ -125,6 +131,7 @@ func ObjectMove(tdbCtx *Context, path string, newPath string) error {
 	cnewPath := C.CString(newPath)
 	defer C.free(unsafe.Pointer(cnewPath))
 	ret := C.tiledb_object_move(tdbCtx.tiledbContext, cpath, cnewPath)
+	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("cannot move object from %s to %s: %w", path,
 			newPath, tdbCtx.LastError())
@@ -142,6 +149,7 @@ func ObjectRemove(tdbCtx *Context, path string) error {
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
 	ret := C.tiledb_object_remove(tdbCtx.tiledbContext, cpath)
+	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("cannot delete object %s: %w", path, tdbCtx.LastError())
 	}
