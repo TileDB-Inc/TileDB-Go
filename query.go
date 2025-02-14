@@ -763,6 +763,9 @@ func (q *Query) SetDataBufferUnsafe(attribute string, buffer unsafe.Pointer, buf
 	cAttribute := C.CString(attribute)
 	defer C.free(unsafe.Pointer(cAttribute))
 
+	q.pinner.Pin(buffer)
+	q.pinner.Pin(&bufferSize)
+
 	ret := C.tiledb_query_set_data_buffer(
 		q.context.tiledbContext,
 		q.tiledbQuery,
@@ -1155,6 +1158,9 @@ func (q *Query) SetValidityBufferUnsafe(attribute string, buffer unsafe.Pointer,
 	cAttribute := C.CString(attribute)
 	defer C.free(unsafe.Pointer(cAttribute))
 
+	q.pinner.Pin(buffer)
+	q.pinner.Pin(&bufferSize)
+
 	ret := C.tiledb_query_set_validity_buffer(
 		q.context.tiledbContext,
 		q.tiledbQuery,
@@ -1264,6 +1270,9 @@ func (q *Query) SetOffsetsBufferUnsafe(attribute string, offset unsafe.Pointer, 
 
 	cAttribute := C.CString(attribute)
 	defer C.free(unsafe.Pointer(cAttribute))
+
+	q.pinner.Pin(offset)
+	q.pinner.Pin(&offsetSize)
 
 	ret := C.tiledb_query_set_offsets_buffer(
 		q.context.tiledbContext,
