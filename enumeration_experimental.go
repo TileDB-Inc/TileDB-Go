@@ -358,9 +358,9 @@ func ExtendEnumeration[T EnumerationType](tdbCtx *Context, e *Enumeration, value
 			offsets = append(offsets, currOffset)
 			currOffset += uint64(reflect.ValueOf(v).Len())
 		}
-		cData = unsafe.Pointer(&data[0])
+		cData = unsafe.Pointer(unsafe.SliceData(data))
 		cDataLen = C.uint64_t(dataSize)
-		cOffsets = unsafe.Pointer(&offsets[0])
+		cOffsets = unsafe.Pointer(unsafe.SliceData(offsets))
 		cOffsetsLen = C.uint64_t(uintptr(len(values)) * unsafe.Sizeof(uint64(0)))
 	} else {
 		var zz T

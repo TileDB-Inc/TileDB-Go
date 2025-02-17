@@ -174,7 +174,7 @@ var _ io.ReaderAt = (*Buffer)(nil)
 // SetBuffer sets the buffer to point at the given Go slice. The memory is now
 // Go-managed.
 func (b *Buffer) SetBuffer(buffer []byte) error {
-	cbuffer := unsafe.Pointer(&buffer[0])
+	cbuffer := unsafe.Pointer(unsafe.SliceData(buffer))
 	b.pinner.Pin(cbuffer)
 
 	ret := C.tiledb_buffer_set_data(b.context.tiledbContext, b.tiledbBuffer, cbuffer, C.uint64_t(len(buffer)))
