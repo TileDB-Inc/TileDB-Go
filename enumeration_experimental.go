@@ -102,8 +102,6 @@ func newEnumeration[T EnumerationType](tdbCtx *Context, name string, ordered boo
 		}
 		data := make([]byte, 0, dataSize)
 		offsets := make([]uint64, 0, len(values))
-		defer runtime.KeepAlive(data)
-		defer runtime.KeepAlive(offsets)
 		var currOffset uint64
 		for _, v := range values {
 			data = append(data, reflect.ValueOf(v).String()...)
@@ -111,20 +109,21 @@ func newEnumeration[T EnumerationType](tdbCtx *Context, name string, ordered boo
 			currOffset += uint64(reflect.ValueOf(v).Len())
 		}
 		cCellNum = C.uint32_t(TILEDB_VAR_NUM)
-		cData = reflect.ValueOf(data).UnsafePointer()
+		cData = unsafe.Pointer(unsafe.SliceData(data))
 		cDataLen = C.uint64_t(dataSize)
-		cOffsets = reflect.ValueOf(offsets).UnsafePointer()
-		cOffsetsLen = C.uint64_t(len(values) * int(reflect.TypeOf(uint64(0)).Size()))
+		cOffsets = unsafe.Pointer(unsafe.SliceData(offsets))
+		cOffsetsLen = C.uint64_t(len(values) * int(unsafe.Sizeof(uint64(0))))
 	} else {
 		var zz T
 		cCellNum = C.uint32_t(1)
-		cData = reflect.ValueOf(values).UnsafePointer()
-		cDataLen = C.uint64_t(len(values) * int(reflect.TypeOf(zz).Size()))
+		cData = unsafe.Pointer(unsafe.SliceData(values))
+		cDataLen = C.uint64_t(len(values) * int(unsafe.Sizeof(zz)))
 	}
 
 	var tiledbEnum *C.tiledb_enumeration_t
 	ret := C.tiledb_enumeration_alloc(tdbCtx.tiledbContext, cName, C.tiledb_datatype_t(tiledbType), cCellNum, cOrdered,
 		cData, cDataLen, cOffsets, cOffsetsLen, &tiledbEnum)
+	// cData and cOffsets are kept alive by passing them to cgo call.
 	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating enumeration: %w", tdbCtx.LastError())
@@ -132,8 +131,6 @@ func newEnumeration[T EnumerationType](tdbCtx *Context, name string, ordered boo
 
 	e := &Enumeration{context: tdbCtx, tiledbEnum: tiledbEnum}
 	freeOnGC(e)
-
-	runtime.KeepAlive(values)
 
 	return e, nil
 }
@@ -364,7 +361,7 @@ func ExtendEnumeration[T EnumerationType](tdbCtx *Context, e *Enumeration, value
 		cOffsetsLen = C.uint64_t(uintptr(len(values)) * unsafe.Sizeof(uint64(0)))
 	} else {
 		var zz T
-		cData = reflect.ValueOf(values).UnsafePointer()
+		cData = unsafe.Pointer(unsafe.SliceData(values))
 		cDataLen = C.uint64_t(uintptr(len(values)) * unsafe.Sizeof(zz))
 	}
 
@@ -380,8 +377,6 @@ func ExtendEnumeration[T EnumerationType](tdbCtx *Context, e *Enumeration, value
 
 	ext := &Enumeration{context: tdbCtx, tiledbEnum: extEnum}
 	freeOnGC(ext)
-
-	runtime.KeepAlive(values)
 
 	return ext, nil
 }
