@@ -9,6 +9,7 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"runtime"
 	"unsafe"
 )
 
@@ -39,6 +40,7 @@ func (c *Config) Set(param string, value string) error {
 	cvalue := C.CString(value)
 	defer C.free(unsafe.Pointer(cvalue))
 	C.tiledb_config_set(c.tiledbConfig, cparam, cvalue, &err)
+	runtime.KeepAlive(c)
 
 	if err != nil {
 		defer C.tiledb_error_free(&err)
@@ -51,17 +53,18 @@ func (c *Config) Set(param string, value string) error {
 // Get gets a parameter from the configuration by key.
 func (c *Config) Get(param string) (string, error) {
 	var err *C.tiledb_error_t
-	var val *C.char
+	var cvalue *C.char // c must be kept alive while cvalue is being accessed.
 	cparam := C.CString(param)
 	defer C.free(unsafe.Pointer(cparam))
-	C.tiledb_config_get(c.tiledbConfig, cparam, &val, &err)
+	C.tiledb_config_get(c.tiledbConfig, cparam, &cvalue, &err)
 
 	if err != nil {
 		defer C.tiledb_error_free(&err)
 		return "", fmt.Errorf("error getting %s in config: %w", param, cError(err))
 	}
 
-	value := C.GoString(val)
+	value := C.GoString(cvalue)
+	runtime.KeepAlive(c)
 
 	return value, nil
 }
@@ -72,6 +75,7 @@ func (c *Config) Unset(param string) error {
 	cparam := C.CString(param)
 	defer C.free(unsafe.Pointer(cparam))
 	C.tiledb_config_unset(c.tiledbConfig, cparam, &err)
+	runtime.KeepAlive(c)
 
 	if err != nil {
 		defer C.tiledb_error_free(&err)
@@ -87,6 +91,7 @@ func (c *Config) SaveToFile(file string) error {
 	cfile := C.CString(file)
 	defer C.free(unsafe.Pointer(cfile))
 	C.tiledb_config_save_to_file(c.tiledbConfig, cfile, &err)
+	runtime.KeepAlive(c)
 
 	if err != nil {
 		defer C.tiledb_error_free(&err)
@@ -147,6 +152,8 @@ func (c *Config) Iterate(prefix string) (*ConfigIter, error) {
 func (c *Config) Cmp(other *Config) bool {
 	var equal C.uint8_t
 	C.tiledb_config_compare(c.tiledbConfig, other.tiledbConfig, &equal)
+	runtime.KeepAlive(c)
+	runtime.KeepAlive(other)
 
 	return equal == 1
 }

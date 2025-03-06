@@ -9,6 +9,7 @@ import "C"
 
 import (
 	"fmt"
+	"runtime"
 )
 
 // QueryStatusDetails contains detailed information about the query status
@@ -21,6 +22,7 @@ func (q *Query) RelevantFragmentNum() (uint64, error) {
 	if ret := C.tiledb_query_get_relevant_fragment_num(q.context.tiledbContext, q.tiledbQuery, &num); ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting relevant fragment num from query: %w", q.context.LastError())
 	}
+	runtime.KeepAlive(q)
 
 	return uint64(num), nil
 }
@@ -32,6 +34,7 @@ func (q *Query) StatusDetails() (QueryStatusDetails, error) {
 	if ret := C.tiledb_query_get_status_details(q.context.tiledbContext, q.tiledbQuery, &cDetails); ret != C.TILEDB_OK {
 		return details, fmt.Errorf("error getting query status details: %w", q.context.LastError())
 	}
+	runtime.KeepAlive(q)
 	details.IncompleteReason = QueryStatusDetailsReason(cDetails.incomplete_reason)
 	return details, nil
 }
@@ -65,6 +68,7 @@ func (q *Query) GetPlan() (string, error) {
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("error getting query plan: %w", q.context.LastError())
 	}
+	runtime.KeepAlive(q)
 	defer C.tiledb_string_free(&plan)
 
 	var sPlan *C.char

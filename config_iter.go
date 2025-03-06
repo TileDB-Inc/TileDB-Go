@@ -8,6 +8,7 @@ import "C"
 
 import (
 	"fmt"
+	"runtime"
 	"unsafe"
 )
 
@@ -25,6 +26,7 @@ func NewConfigIter(config *Config, prefix string) (*ConfigIter, error) {
 	cprefix := C.CString(prefix)
 	defer C.free(unsafe.Pointer(cprefix))
 	C.tiledb_config_iter_alloc(config.tiledbConfig, cprefix, &ci.tiledbConfigIter, &err)
+	runtime.KeepAlive(config)
 	if err != nil {
 		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("error creating tiledb config iter: %w", cError(err))
@@ -49,7 +51,7 @@ func (ci *ConfigIter) Free() {
 // iterator.
 func (ci *ConfigIter) Here() (*string, *string, error) {
 	var err *C.tiledb_error_t
-	var cparam, cvalue *C.char
+	var cparam, cvalue *C.char // ci must be kept alive while these are being accessed.
 	C.tiledb_config_iter_here(ci.tiledbConfigIter, &cparam, &cvalue, &err)
 	if err != nil {
 		defer C.tiledb_error_free(&err)
@@ -57,6 +59,7 @@ func (ci *ConfigIter) Here() (*string, *string, error) {
 	}
 	param := C.GoString(cparam)
 	value := C.GoString(cvalue)
+	runtime.KeepAlive(ci)
 	return &param, &value, nil
 }
 
@@ -64,6 +67,7 @@ func (ci *ConfigIter) Here() (*string, *string, error) {
 func (ci *ConfigIter) Next() error {
 	var err *C.tiledb_error_t
 	C.tiledb_config_iter_next(ci.tiledbConfigIter, &err)
+	runtime.KeepAlive(ci)
 	if err != nil {
 		defer C.tiledb_error_free(&err)
 		return fmt.Errorf("error moving to next ConfigItem from iter: %w", cError(err))
@@ -76,6 +80,7 @@ func (ci *ConfigIter) Done() (bool, error) {
 	var err *C.tiledb_error_t
 	var cDone C.int32_t
 	C.tiledb_config_iter_done(ci.tiledbConfigIter, &cDone, &err)
+	runtime.KeepAlive(ci)
 	if err != nil {
 		defer C.tiledb_error_free(&err)
 		return false, fmt.Errorf("error moving to next ConfigItem from iter: %w", cError(err))
@@ -88,6 +93,7 @@ func (ci *ConfigIter) IsDone() bool {
 	var err *C.tiledb_error_t
 	var cDone C.int32_t
 	C.tiledb_config_iter_done(ci.tiledbConfigIter, &cDone, &err)
+	runtime.KeepAlive(ci)
 	if err != nil {
 		C.tiledb_error_free(&err)
 		return false
@@ -101,6 +107,7 @@ func (ci *ConfigIter) Reset(prefix string) error {
 	cprefix := C.CString(prefix)
 	defer C.free(unsafe.Pointer(cprefix))
 	C.tiledb_config_iter_reset(ci.config.tiledbConfig, ci.tiledbConfigIter, cprefix, &err)
+	runtime.KeepAlive(ci)
 	if err != nil {
 		defer C.tiledb_error_free(&err)
 		return fmt.Errorf("error creating tiledb config iter: %w", cError(err))

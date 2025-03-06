@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"runtime"
 	"unsafe"
 )
 
@@ -20,6 +21,7 @@ func FileSize(tdbCtx *Context, arrayURI string) (int64, error) {
 
 	var size C.size_t
 	ret := C.tiledb_filestore_size(tdbCtx.tiledbContext, cArrayURI, &size)
+	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting file size: %w", tdbCtx.LastError())
 	}
@@ -36,6 +38,7 @@ func ExportFile(tdbCtx *Context, filePath, arrayURI string) error {
 	defer C.free(unsafe.Pointer(cFileURI))
 
 	ret := C.tiledb_filestore_uri_export(tdbCtx.tiledbContext, cFileURI, cArrayURI)
+	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error exporting file: %w", tdbCtx.LastError())
 	}
@@ -51,6 +54,7 @@ func ImportFile(tdbCtx *Context, arrayURI, filePath string, mimeType FileStoreMi
 	defer C.free(unsafe.Pointer(cFileURI))
 
 	ret := C.tiledb_filestore_uri_import(tdbCtx.tiledbContext, cArrayURI, cFileURI, C.tiledb_mime_type_t(mimeType))
+	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error importing file: %w", tdbCtx.LastError())
 	}
@@ -162,6 +166,7 @@ func NewArraySchemaForFile(tdbCtx *Context, filePath string) (*ArraySchema, erro
 
 	arraySchema := ArraySchema{context: tdbCtx}
 	ret := C.tiledb_filestore_schema_create(tdbCtx.tiledbContext, fileURI, &arraySchema.tiledbArraySchema)
+	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating schema: %w", tdbCtx.LastError())
 	}
@@ -179,6 +184,7 @@ func bufferExport(tdbCtx *Context, uri *C.char, off int64, p []byte) error {
 	}
 
 	ret := C.tiledb_filestore_buffer_export(tdbCtx.tiledbContext, uri, C.size_t(off), slicePtr(p), C.size_t(len(p)))
+	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error exporting buffer data: %w", tdbCtx.LastError())
 	}
@@ -194,6 +200,7 @@ func bufferImport(tdbCtx *Context, uri *C.char, data []byte, mimeType FileStoreM
 	}
 
 	ret := C.tiledb_filestore_buffer_import(tdbCtx.tiledbContext, uri, slicePtr(data), C.size_t(len(data)), C.tiledb_mime_type_t(mimeType))
+	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error importing buffer data: %w", tdbCtx.LastError())
 	}

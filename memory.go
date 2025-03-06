@@ -38,24 +38,6 @@ func freeOnGC(obj Freeable) {
 // anything in a closure.
 func freeFreeable(obj Freeable) { obj.Free() }
 
-//
-// Memory buffers and related stuff
-//
-
-// byteBuffer provides methods useful for treating byte slices as memory.
-type byteBuffer []byte
-
-func (bb byteBuffer) start() unsafe.Pointer {
-	return slicePtr(bb)
-}
-
-func (bb byteBuffer) lenBytes() uintptr { return uintptr(len(bb)) }
-
-func (bb byteBuffer) subSlice(sliceStart unsafe.Pointer, sliceBytes uintptr) []byte {
-	startIdx := uintptr(sliceStart) - uintptr(bb.start())
-	return bb[startIdx:sliceBytes]
-}
-
 // unsafeSlice creates a slice pointing at the given memory.
 func unsafeSlice[T any](ptr unsafe.Pointer, length uint) []T {
 	if ptr == nil {

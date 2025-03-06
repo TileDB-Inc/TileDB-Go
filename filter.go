@@ -9,6 +9,7 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"runtime"
 	"unsafe"
 )
 
@@ -23,6 +24,7 @@ func NewFilter(context *Context, filterType FilterType) (*Filter, error) {
 	filter := Filter{context: context}
 
 	ret := C.tiledb_filter_alloc(filter.context.tiledbContext, C.tiledb_filter_type_t(filterType), &filter.tiledbFilter)
+	runtime.KeepAlive(context)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb filter: %w", filter.context.LastError())
 	}
@@ -51,6 +53,7 @@ func (f *Filter) Context() *Context {
 func (f *Filter) Type() (FilterType, error) {
 	var filterType C.tiledb_filter_type_t
 	ret := C.tiledb_filter_get_type(f.context.tiledbContext, f.tiledbFilter, &filterType)
+	runtime.KeepAlive(f)
 
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting tiledb filter type: %w", f.context.LastError())
@@ -97,6 +100,7 @@ func (f *Filter) SetOption(filterOption FilterOption, valueInterface interface{}
 			return fmt.Errorf("error setting tiledb filter option: %w", f.context.LastError())
 		}
 	}
+	runtime.KeepAlive(f)
 
 	return nil
 }
@@ -136,5 +140,6 @@ func (f *Filter) Option(filterOption FilterOption) (interface{}, error) {
 		}
 		return val, nil
 	}
+	runtime.KeepAlive(f)
 	return nil, nil
 }

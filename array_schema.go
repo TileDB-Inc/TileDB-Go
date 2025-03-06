@@ -10,6 +10,7 @@ import "C"
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"unsafe"
 )
 
@@ -69,6 +70,7 @@ func (a *ArraySchema) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return fmt.Errorf("error unmarshaling json for array schema: %w", a.context.LastError())
 	}
+	defer buffer.Free()
 	err = buffer.SetBuffer(bytesWithNullTerminator)
 	if err != nil {
 		return fmt.Errorf("error unmarshaling json for array schema: %w", a.context.LastError())
@@ -78,6 +80,7 @@ func (a *ArraySchema) UnmarshalJSON(b []byte) error {
 	var newCSchema *C.tiledb_array_schema_t
 	var cClientSide = C.int32_t(0) // Currently this parameter is unused in libtiledb
 	ret := C.tiledb_deserialize_array_schema(a.context.tiledbContext, buffer.tiledbBuffer, C.TILEDB_JSON, cClientSide, &newCSchema)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error deserializing array schema: %w", a.context.LastError())
 	}
@@ -95,6 +98,7 @@ func (a *ArraySchema) UnmarshalJSON(b []byte) error {
 func NewArraySchema(tdbCtx *Context, arrayType ArrayType) (*ArraySchema, error) {
 	arraySchema := ArraySchema{context: tdbCtx}
 	ret := C.tiledb_array_schema_alloc(arraySchema.context.tiledbContext, C.tiledb_array_type_t(arrayType), &arraySchema.tiledbArraySchema)
+	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb arraySchema: %w", arraySchema.context.LastError())
 	}
@@ -117,6 +121,8 @@ func (a *ArraySchema) Free() {
 func (a *ArraySchema) AddAttributes(attributes ...*Attribute) error {
 	for _, attribute := range attributes {
 		ret := C.tiledb_array_schema_add_attribute(a.context.tiledbContext, a.tiledbArraySchema, attribute.tiledbAttribute)
+		runtime.KeepAlive(a)
+		runtime.KeepAlive(attribute)
 		if ret != C.TILEDB_OK {
 			return fmt.Errorf("error adding attributes to tiledb arraySchema: %w", a.context.LastError())
 		}
@@ -128,6 +134,7 @@ func (a *ArraySchema) AddAttributes(attributes ...*Attribute) error {
 func (a *ArraySchema) AttributeNum() (uint, error) {
 	var attrNum C.uint32_t
 	ret := C.tiledb_array_schema_get_attribute_num(a.context.tiledbContext, a.tiledbArraySchema, &attrNum)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting attribute number for tiledb arraySchema: %w", a.context.LastError())
 	}
@@ -142,6 +149,7 @@ func (a *ArraySchema) AttributeFromIndex(index uint) (*Attribute, error) {
 		a.tiledbArraySchema,
 		C.uint32_t(index),
 		&attr.tiledbAttribute)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting attribute %d for tiledb arraySchema: %w", index, a.context.LastError())
 	}
@@ -157,6 +165,7 @@ func (a *ArraySchema) AttributeFromName(attrName string) (*Attribute, error) {
 	defer C.free(unsafe.Pointer(cAttrName))
 	attr := Attribute{context: a.context}
 	ret := C.tiledb_array_schema_get_attribute_from_name(a.context.tiledbContext, a.tiledbArraySchema, cAttrName, &attr.tiledbAttribute)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting attribute %s for tiledb arraySchema: %w", attrName, a.context.LastError())
 	}
@@ -170,6 +179,7 @@ func (a *ArraySchema) HasAttribute(attrName string) (bool, error) {
 	cAttrName := C.CString(attrName)
 	defer C.free(unsafe.Pointer(cAttrName))
 	ret := C.tiledb_array_schema_has_attribute(a.context.tiledbContext, a.tiledbArraySchema, cAttrName, &hasAttr)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("error finding attribute %s in schema: %w", attrName, a.context.LastError())
 	}
@@ -191,6 +201,7 @@ func (a *ArraySchema) SetAllowsDups(allowsDups bool) error {
 	}
 
 	ret := C.tiledb_array_schema_set_allows_dups(a.context.tiledbContext, a.tiledbArraySchema, C.int32_t(allowsDupsInt))
+	runtime.KeepAlive(a)
 
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting allows dups for schema: %w", a.context.LastError())
@@ -204,6 +215,7 @@ func (a *ArraySchema) SetAllowsDups(allowsDups bool) error {
 func (a *ArraySchema) AllowsDups() (bool, error) {
 	var allowsDups C.int32_t
 	ret := C.tiledb_array_schema_get_allows_dups(a.context.tiledbContext, a.tiledbArraySchema, &allowsDups)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("error getting allows dups for schema: %w", a.context.LastError())
 	}
@@ -237,6 +249,8 @@ func (a *ArraySchema) Attributes() ([]*Attribute, error) {
 // SetDomain sets the array domain.
 func (a *ArraySchema) SetDomain(domain *Domain) error {
 	ret := C.tiledb_array_schema_set_domain(a.context.tiledbContext, a.tiledbArraySchema, domain.tiledbDomain)
+	runtime.KeepAlive(a)
+	runtime.KeepAlive(domain)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting domain for tiledb arraySchema: %w", a.context.LastError())
 	}
@@ -247,6 +261,7 @@ func (a *ArraySchema) SetDomain(domain *Domain) error {
 func (a *ArraySchema) Domain() (*Domain, error) {
 	domain := Domain{context: a.context}
 	ret := C.tiledb_array_schema_get_domain(a.context.tiledbContext, a.tiledbArraySchema, &domain.tiledbDomain)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error setting domain for tiledb arraySchema: %w", a.context.LastError())
 	}
@@ -257,6 +272,7 @@ func (a *ArraySchema) Domain() (*Domain, error) {
 // SetCapacity sets the tile capacity.
 func (a *ArraySchema) SetCapacity(capacity uint64) error {
 	ret := C.tiledb_array_schema_set_capacity(a.context.tiledbContext, a.tiledbArraySchema, C.uint64_t(capacity))
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting capacity for tiledb arraySchema: %w", a.context.LastError())
 	}
@@ -267,6 +283,7 @@ func (a *ArraySchema) SetCapacity(capacity uint64) error {
 func (a *ArraySchema) Capacity() (uint64, error) {
 	var capacity C.uint64_t
 	ret := C.tiledb_array_schema_get_capacity(a.context.tiledbContext, a.tiledbArraySchema, &capacity)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting capacity for tiledb arraySchema: %w", a.context.LastError())
 	}
@@ -276,6 +293,7 @@ func (a *ArraySchema) Capacity() (uint64, error) {
 // SetCellOrder sets the cell order.
 func (a *ArraySchema) SetCellOrder(cellOrder Layout) error {
 	ret := C.tiledb_array_schema_set_cell_order(a.context.tiledbContext, a.tiledbArraySchema, C.tiledb_layout_t(cellOrder))
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting cell order for tiledb arraySchema: %w", a.context.LastError())
 	}
@@ -286,6 +304,7 @@ func (a *ArraySchema) SetCellOrder(cellOrder Layout) error {
 func (a *ArraySchema) CellOrder() (Layout, error) {
 	var cellOrder C.tiledb_layout_t
 	ret := C.tiledb_array_schema_get_cell_order(a.context.tiledbContext, a.tiledbArraySchema, &cellOrder)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return -1, fmt.Errorf("error getting cell order for tiledb arraySchema: %w", a.context.LastError())
 	}
@@ -295,6 +314,7 @@ func (a *ArraySchema) CellOrder() (Layout, error) {
 // SetTileOrder sets the tile order.
 func (a *ArraySchema) SetTileOrder(tileOrder Layout) error {
 	ret := C.tiledb_array_schema_set_tile_order(a.context.tiledbContext, a.tiledbArraySchema, C.tiledb_layout_t(tileOrder))
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting cell order for tiledb arraySchema: %w", a.context.LastError())
 	}
@@ -305,6 +325,7 @@ func (a *ArraySchema) SetTileOrder(tileOrder Layout) error {
 func (a *ArraySchema) TileOrder() (Layout, error) {
 	var cellOrder C.tiledb_layout_t
 	ret := C.tiledb_array_schema_get_tile_order(a.context.tiledbContext, a.tiledbArraySchema, &cellOrder)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return -1, fmt.Errorf("error getting cell order for tiledb arraySchema: %w", a.context.LastError())
 	}
@@ -314,6 +335,8 @@ func (a *ArraySchema) TileOrder() (Layout, error) {
 // SetCoordsFilterList sets the filter list used for coordinates.
 func (a *ArraySchema) SetCoordsFilterList(filterList *FilterList) error {
 	ret := C.tiledb_array_schema_set_coords_filter_list(a.context.tiledbContext, a.tiledbArraySchema, filterList.tiledbFilterList)
+	runtime.KeepAlive(a)
+	runtime.KeepAlive(filterList)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting coordinates filter list for tiledb arraySchema: %w", a.context.LastError())
 	}
@@ -324,6 +347,7 @@ func (a *ArraySchema) SetCoordsFilterList(filterList *FilterList) error {
 func (a *ArraySchema) CoordsFilterList() (*FilterList, error) {
 	filterList := FilterList{context: a.context}
 	ret := C.tiledb_array_schema_get_coords_filter_list(a.context.tiledbContext, a.tiledbArraySchema, &filterList.tiledbFilterList)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting coordinates filter list for tiledb arraySchema: %w", a.context.LastError())
 	}
@@ -334,6 +358,8 @@ func (a *ArraySchema) CoordsFilterList() (*FilterList, error) {
 // SetOffsetsFilterList sets the filter list for the offsets of
 // variable-length attributes.
 func (a *ArraySchema) SetOffsetsFilterList(filterList *FilterList) error {
+	runtime.KeepAlive(a)
+	runtime.KeepAlive(filterList)
 	ret := C.tiledb_array_schema_set_offsets_filter_list(a.context.tiledbContext, a.tiledbArraySchema, filterList.tiledbFilterList)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting offsets filter list for tiledb arraySchema: %w", a.context.LastError())
@@ -346,6 +372,7 @@ func (a *ArraySchema) SetOffsetsFilterList(filterList *FilterList) error {
 func (a *ArraySchema) OffsetsFilterList() (*FilterList, error) {
 	filterList := FilterList{context: a.context}
 	ret := C.tiledb_array_schema_get_offsets_filter_list(a.context.tiledbContext, a.tiledbArraySchema, &filterList.tiledbFilterList)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting offsets filter list for tiledb arraySchema: %w", a.context.LastError())
 	}
@@ -356,6 +383,7 @@ func (a *ArraySchema) OffsetsFilterList() (*FilterList, error) {
 // Check validates the schema.
 func (a *ArraySchema) Check() error {
 	ret := C.tiledb_array_schema_check(a.context.tiledbContext, a.tiledbArraySchema)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error in checking arraySchema: %w", a.context.LastError())
 	}
@@ -368,6 +396,7 @@ func LoadArraySchema(context *Context, path string) (*ArraySchema, error) {
 	defer C.free(unsafe.Pointer(cpath))
 	a := ArraySchema{context: context}
 	ret := C.tiledb_array_schema_load(a.context.tiledbContext, cpath, &a.tiledbArraySchema)
+	runtime.KeepAlive(context)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error in loading arraySchema from %s: %w", path, a.context.LastError())
 	}
@@ -378,6 +407,7 @@ func LoadArraySchema(context *Context, path string) (*ArraySchema, error) {
 // DumpSTDOUT dumps the array schema in ASCII format to stdout.
 func (a *ArraySchema) DumpSTDOUT() error {
 	ret := C.tiledb_array_schema_dump(a.context.tiledbContext, a.tiledbArraySchema, C.stdout)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error dumping array schema to stdout: %w", a.context.LastError())
 	}
@@ -405,6 +435,7 @@ func (a *ArraySchema) Dump(path string) error {
 
 	// Dump array schema to file
 	ret := C.tiledb_array_schema_dump(a.context.tiledbContext, a.tiledbArraySchema, cFile)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error dumping array schema to file %s: %w", path, a.context.LastError())
 	}
@@ -415,6 +446,7 @@ func (a *ArraySchema) Dump(path string) error {
 func (a *ArraySchema) Type() (ArrayType, error) {
 	var arrayType C.tiledb_array_type_t
 	ret := C.tiledb_array_schema_get_array_type(a.context.tiledbContext, a.tiledbArraySchema, &arrayType)
+	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return TILEDB_DENSE, fmt.Errorf("error fetching array schema type: %w", a.context.LastError())
 	}

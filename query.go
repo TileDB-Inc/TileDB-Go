@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"runtime"
 	"sync"
 	"unsafe"
 
@@ -23,7 +24,7 @@ type Query struct {
 	array                *Array
 	context              *Context
 	config               *Config
-	buffers              []interface{}
+	pinner               runtime.Pinner
 	bufferMutex          sync.Mutex
 	resultBufferElements map[string][3]*uint64
 }
@@ -67,6 +68,7 @@ func NewQuery(tdbCtx *Context, array *Array) (*Query, error) {
 
 	query := Query{context: tdbCtx, array: array}
 	ret := C.tiledb_query_alloc(query.context.tiledbContext, array.tiledbArray, C.tiledb_query_type_t(queryType), &query.tiledbQuery)
+	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb query: %w", query.context.LastError())
 	}
@@ -85,11 +87,11 @@ func NewQuery(tdbCtx *Context, array *Array) (*Query, error) {
 func (q *Query) Free() {
 	q.bufferMutex.Lock()
 	defer q.bufferMutex.Unlock()
-	q.buffers = nil
 	q.resultBufferElements = nil
 	if q.tiledbQuery != nil {
 		C.tiledb_query_free(&q.tiledbQuery)
 	}
+	q.pinner.Unpin()
 }
 
 // Context exposes the internal TileDB context used to initialize the query.
@@ -284,6 +286,7 @@ func (q *Query) SetLayout(layout Layout) error {
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting query layout: %w", q.context.LastError())
 	}
+	runtime.KeepAlive(q)
 	return nil
 }
 
@@ -292,6 +295,7 @@ func (q *Query) SetQueryCondition(cond *QueryCondition) error {
 	if ret := C.tiledb_query_set_condition(q.context.tiledbContext, q.tiledbQuery, cond.cond); ret != C.TILEDB_OK {
 		return fmt.Errorf("error getting config from query: %w", q.context.LastError())
 	}
+	runtime.KeepAlive(q)
 	return nil
 }
 
@@ -300,12 +304,10 @@ func (q *Query) SetQueryCondition(cond *QueryCondition) error {
 // for any other query type.
 func (q *Query) Finalize() error {
 	ret := C.tiledb_query_finalize(q.context.tiledbContext, q.tiledbQuery)
+	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error finalizing query: %w", q.context.LastError())
 	}
-	q.bufferMutex.Lock()
-	defer q.bufferMutex.Unlock()
-	q.buffers = nil
 	return nil
 }
 
@@ -329,6 +331,7 @@ and resubmit the query.
 */
 func (q *Query) Submit() error {
 	ret := C.tiledb_query_submit(q.context.tiledbContext, q.tiledbQuery)
+	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error submitting query: %w", q.context.LastError())
 	}
@@ -340,6 +343,7 @@ func (q *Query) Submit() error {
 func (q *Query) Status() (QueryStatus, error) {
 	var status C.tiledb_query_status_t
 	ret := C.tiledb_query_get_status(q.context.tiledbContext, q.tiledbQuery, &status)
+	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return -1, fmt.Errorf("error getting query status: %w", q.context.LastError())
 	}
@@ -350,6 +354,7 @@ func (q *Query) Status() (QueryStatus, error) {
 func (q *Query) Type() (QueryType, error) {
 	var queryType C.tiledb_query_type_t
 	ret := C.tiledb_query_get_type(q.context.tiledbContext, q.tiledbQuery, &queryType)
+	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return -1, fmt.Errorf("error getting query type: %w", q.context.LastError())
 	}
@@ -361,6 +366,7 @@ func (q *Query) Type() (QueryType, error) {
 func (q *Query) HasResults() (bool, error) {
 	var hasResults C.int32_t
 	ret := C.tiledb_query_has_results(q.context.tiledbContext, q.tiledbQuery, &hasResults)
+	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("error checking if query has results: %w", q.context.LastError())
 	}
@@ -379,6 +385,7 @@ func (q *Query) EstResultSize(attributeName string) (*uint64, error) {
 		q.tiledbQuery,
 		cAttributeName,
 		(*C.uint64_t)(unsafe.Pointer(&size)))
+	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error estimating query result size: %w", q.context.LastError())
 	}
@@ -399,6 +406,7 @@ func (q *Query) EstResultSizeVar(attributeName string) (*uint64, *uint64, error)
 		cAttributeName,
 		(*C.uint64_t)(unsafe.Pointer(&sizeOff)),
 		(*C.uint64_t)(unsafe.Pointer(&sizeVal)))
+	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return nil, nil, fmt.Errorf("error estimating query result var size: %w", q.context.LastError())
 	}
@@ -419,6 +427,7 @@ func (q *Query) EstResultSizeNullable(attributeName string) (*uint64, *uint64, e
 		cAttributeName,
 		(*C.uint64_t)(unsafe.Pointer(&size)),
 		(*C.uint64_t)(unsafe.Pointer(&sizeValidity)))
+	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return nil, nil, fmt.Errorf("error estimating query result size: %w", q.context.LastError())
 	}
@@ -440,6 +449,7 @@ func (q *Query) EstResultSizeVarNullable(attributeName string) (*uint64, *uint64
 		(*C.uint64_t)(unsafe.Pointer(&sizeOff)),
 		(*C.uint64_t)(unsafe.Pointer(&sizeVal)),
 		(*C.uint64_t)(unsafe.Pointer(&sizeValidity)))
+	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return nil, nil, nil, fmt.Errorf("error estimating query result var size: %w", q.context.LastError())
 	}
@@ -623,6 +633,7 @@ func (q *Query) GetFragmentNum() (*uint32, error) {
 		q.context.tiledbContext,
 		q.tiledbQuery,
 		(*C.uint32_t)(unsafe.Pointer(&num)))
+	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting num of fragments: %w", q.context.LastError())
 	}
@@ -632,7 +643,7 @@ func (q *Query) GetFragmentNum() (*uint32, error) {
 
 // GetFragmentURI returns the uri for a fragment.
 func (q *Query) GetFragmentURI(num uint64) (*string, error) {
-	var cURI *C.char
+	var cURI *C.char // q must be kept alive while cURI is being accessed.
 
 	ret := C.tiledb_query_get_fragment_uri(
 		q.context.tiledbContext,
@@ -644,6 +655,7 @@ func (q *Query) GetFragmentURI(num uint64) (*string, error) {
 	}
 
 	uri := C.GoString(cURI)
+	runtime.KeepAlive(q)
 
 	return &uri, nil
 
@@ -659,6 +671,7 @@ func (q *Query) GetFragmentTimestampRange(num uint64) (*uint64, *uint64, error) 
 		(C.uint64_t)(num),
 		(*C.uint64_t)(unsafe.Pointer(&t1)),
 		(*C.uint64_t)(unsafe.Pointer(&t2)))
+	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return nil, nil, fmt.Errorf("error getting fragment timestamp: %w", q.context.LastError())
 	}
@@ -670,6 +683,7 @@ func (q *Query) GetFragmentTimestampRange(num uint64) (*uint64, *uint64, error) 
 func (q *Query) Array() (*Array, error) {
 	array := Array{context: q.context}
 	ret := C.tiledb_query_get_array(q.context.tiledbContext, q.tiledbQuery, &array.tiledbArray)
+	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting array from query: %w", q.context.LastError())
 	}
@@ -682,6 +696,8 @@ func (q *Query) SetConfig(config *Config) error {
 	q.config = config
 
 	ret := C.tiledb_query_set_config(q.context.tiledbContext, q.tiledbQuery, q.config.tiledbConfig)
+	runtime.KeepAlive(q)
+	runtime.KeepAlive(config)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting config on query: %w", q.context.LastError())
 	}
@@ -693,6 +709,7 @@ func (q *Query) SetConfig(config *Config) error {
 func (q *Query) Config() (*Config, error) {
 	config := Config{}
 	ret := C.tiledb_query_get_config(q.context.tiledbContext, q.tiledbQuery, &config.tiledbConfig)
+	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting config from query: %w", q.context.LastError())
 	}
@@ -711,6 +728,7 @@ func (q *Query) Stats() ([]byte, error) {
 	if ret := C.tiledb_query_get_stats(q.context.tiledbContext, q.tiledbQuery, &stats); ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting stats from query: %w", q.context.LastError())
 	}
+	runtime.KeepAlive(q)
 
 	s := C.GoString(stats)
 	if ret := C.tiledb_stats_free_str(&stats); ret != C.TILEDB_OK {
@@ -745,12 +763,16 @@ func (q *Query) SetDataBufferUnsafe(attribute string, buffer unsafe.Pointer, buf
 	cAttribute := C.CString(attribute)
 	defer C.free(unsafe.Pointer(cAttribute))
 
+	q.pinner.Pin(buffer)
+	q.pinner.Pin(&bufferSize)
+
 	ret := C.tiledb_query_set_data_buffer(
 		q.context.tiledbContext,
 		q.tiledbQuery,
 		cAttribute,
 		buffer,
 		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
+	runtime.KeepAlive(q)
 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error setting query data buffer: %w", q.context.LastError())
@@ -853,9 +875,11 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 			attributeOrDimensionType.ReflectKind().String())
 	}
 
-	var cbuffer unsafe.Pointer
+	cbuffer := bufferReflectValue.UnsafePointer()
+	q.pinner.Pin(cbuffer)
 	// Get length of slice, this will be multiplied by size of datatype below
 	bufferSize := uint64(bufferReflectValue.Len())
+	q.pinner.Pin(&bufferSize)
 
 	if bufferSize == uint64(0) {
 		return nil, errors.New("Buffer has no length, vbuffers are required to be initialized before reading or writting")
@@ -869,107 +893,42 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 	case reflect.Int:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Int
-		// Create buffer void*
-		tmpBuffer := buffer.([]int)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int8:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Int8
-		// Create buffer void*
-		tmpBuffer := buffer.([]int8)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int16:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Int16
-		// Create buffer void*
-		tmpBuffer := buffer.([]int16)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int32:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Int32
-		// Create buffer void*
-		tmpBuffer := buffer.([]int32)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Int64:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Int64
-		// Create buffer void*
-		tmpBuffer := buffer.([]int64)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Uint
-		// Create buffer void*
-		tmpBuffer := buffer.([]uint)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint8:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Uint8
-		// Create buffer void*
-		tmpBuffer := buffer.([]uint8)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint16:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Uint16
-		// Create buffer void*
-		tmpBuffer := buffer.([]uint16)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint32:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Uint32
-		// Create buffer void*
-		tmpBuffer := buffer.([]uint32)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Uint64:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Uint64
-		// Create buffer void*
-		tmpBuffer := buffer.([]uint64)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Float32:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Float32
-		// Create buffer void*
-		tmpBuffer := buffer.([]float32)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Float64:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Float64
-		// Create buffer void*
-		tmpBuffer := buffer.([]float64)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	case reflect.Bool:
 		// Set buffersize
 		bufferSize = bufferSize * bytesizes.Bool
-		// Create buffer void*
-		tmpBuffer := buffer.([]bool)
-		// Store slice so underlying array is not gc'ed
-		q.buffers = append(q.buffers, tmpBuffer)
-		cbuffer = unsafe.Pointer(&(tmpBuffer)[0])
 	default:
 		return nil,
 			fmt.Errorf("unrecognized buffer type passed: %s",
@@ -985,6 +944,8 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 		cAttributeOrDimension,
 		cbuffer,
 		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
+	runtime.KeepAlive(q)
+	// cbuffer is being kept alive by passing it to cgo call.
 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error setting query data buffer: %w", q.context.LastError())
@@ -1090,6 +1051,8 @@ func (q *Query) getDataBufferAndSize(attributeOrDimension string) (interface{}, 
 	var buffer interface{}
 
 	ret = C.tiledb_query_get_data_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
+	runtime.KeepAlive(q)
+	// cbuffer and cbufferSize are in Go-owned memory and don't need a KeepAlive.
 	if ret != C.TILEDB_OK {
 		return nil, 0, fmt.Errorf("error getting tiledb query data buffer for %s: %w", attributeOrDimension, q.context.LastError())
 	}
@@ -1195,12 +1158,16 @@ func (q *Query) SetValidityBufferUnsafe(attribute string, buffer unsafe.Pointer,
 	cAttribute := C.CString(attribute)
 	defer C.free(unsafe.Pointer(cAttribute))
 
+	q.pinner.Pin(buffer)
+	q.pinner.Pin(&bufferSize)
+
 	ret := C.tiledb_query_set_validity_buffer(
 		q.context.tiledbContext,
 		q.tiledbQuery,
 		cAttribute,
 		(*C.uint8_t)(buffer),
 		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
+	runtime.KeepAlive(q)
 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error setting query validity buffer: %w", q.context.LastError())
@@ -1219,17 +1186,22 @@ func (q *Query) SetValidityBuffer(attributeOrDimension string, buffer []uint8) (
 	cAttributeOrDimension := C.CString(attributeOrDimension)
 	defer C.free(unsafe.Pointer(cAttributeOrDimension))
 
+	cbuffer := unsafe.Pointer(&buffer[0])
+	q.pinner.Pin(cbuffer)
+
 	bufferSize := uint64(len(buffer)) * bytesizes.Uint8
 	if bufferSize == uint64(0) {
 		return nil, errors.New("validity slice has no length, validity slices are required to be initialized before reading or writing")
 	}
+	q.pinner.Pin(&bufferSize)
 
 	ret := C.tiledb_query_set_validity_buffer(
 		q.context.tiledbContext,
 		q.tiledbQuery,
 		cAttributeOrDimension,
-		(*C.uint8_t)(unsafe.Pointer(&(buffer)[0])),
+		(*C.uint8_t)(cbuffer),
 		(*C.uint64_t)(unsafe.Pointer(&bufferSize)))
+	runtime.KeepAlive(q)
 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error setting query validity buffer: %w", q.context.LastError())
@@ -1267,6 +1239,8 @@ func (q *Query) getValidityBufferAndSize(attributeOrDimension string) ([]uint8, 
 	var cvalidityByteMap *C.uint8_t
 
 	ret := C.tiledb_query_get_validity_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &cvalidityByteMap, &cvalidityByteMapSize)
+	runtime.KeepAlive(q)
+	// cvalidityByteMapSize and cvalidityByteMap are in Go-owned memory and do not need a KeepAlive.
 	if ret != C.TILEDB_OK {
 		return nil, 0, fmt.Errorf("error getting tiledb query validity buffer for %s: %w", attributeOrDimension, q.context.LastError())
 	}
@@ -1297,12 +1271,16 @@ func (q *Query) SetOffsetsBufferUnsafe(attribute string, offset unsafe.Pointer, 
 	cAttribute := C.CString(attribute)
 	defer C.free(unsafe.Pointer(cAttribute))
 
+	q.pinner.Pin(offset)
+	q.pinner.Pin(&offsetSize)
+
 	ret := C.tiledb_query_set_offsets_buffer(
 		q.context.tiledbContext,
 		q.tiledbQuery,
 		cAttribute,
 		(*C.uint64_t)(offset),
 		(*C.uint64_t)(unsafe.Pointer(&offsetSize)))
+	runtime.KeepAlive(q)
 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error setting query offsets buffer: %w", q.context.LastError())
@@ -1321,17 +1299,22 @@ func (q *Query) SetOffsetsBuffer(attributeOrDimension string, offset []uint64) (
 	cAttributeOrDimension := C.CString(attributeOrDimension)
 	defer C.free(unsafe.Pointer(cAttributeOrDimension))
 
+	cbuffer := unsafe.Pointer(&offset[0])
+	q.pinner.Pin(cbuffer)
+
 	offsetSize := uint64(len(offset)) * bytesizes.Uint64
 	if offsetSize == uint64(0) {
 		return nil, errors.New("offset slice has no length, offset slices are required to be initialized before reading or writing")
 	}
+	q.pinner.Pin(&offsetSize)
 
 	ret := C.tiledb_query_set_offsets_buffer(
 		q.context.tiledbContext,
 		q.tiledbQuery,
 		cAttributeOrDimension,
-		(*C.uint64_t)(unsafe.Pointer(&(offset)[0])),
+		(*C.uint64_t)(unsafe.Pointer(&offset[0])),
 		(*C.uint64_t)(unsafe.Pointer(&offsetSize)))
+	runtime.KeepAlive(q)
 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error setting query offsets buffer: %w", q.context.LastError())
@@ -1369,6 +1352,8 @@ func (q *Query) getOffsetsBufferAndSize(attributeOrDimension string) ([]uint64, 
 	var coffsets *C.uint64_t
 
 	ret := C.tiledb_query_get_offsets_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize)
+	runtime.KeepAlive(q)
+	// coffsetsSize and coffsets point to Go-owned memory and do not need a KeepAlive
 	if ret != C.TILEDB_OK {
 		return nil, 0, fmt.Errorf("error getting tiledb query offset buffer for %s: %w", attributeOrDimension, q.context.LastError())
 	}
@@ -1393,6 +1378,8 @@ func (q *Query) getOffsetsBufferAndSize(attributeOrDimension string) ([]uint64, 
 // SetSubarray sets the subarray for the query.
 func (q *Query) SetSubarray(sa *Subarray) error {
 	ret := C.tiledb_query_set_subarray_t(q.context.tiledbContext, q.tiledbQuery, sa.subarray)
+	runtime.KeepAlive(q)
+	runtime.KeepAlive(sa)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting tiledb query subarray: %w", q.context.LastError())
 	}
@@ -1404,6 +1391,7 @@ func (q *Query) GetSubarray() (*Subarray, error) {
 	var sa *C.tiledb_subarray_t
 
 	ret := C.tiledb_query_get_subarray_t(q.context.tiledbContext, q.tiledbQuery, &sa)
+	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb query subarray: %w", q.context.LastError())
 	}

@@ -8,6 +8,7 @@ import "C"
 import (
 	"fmt"
 	"io"
+	"runtime"
 )
 
 // BufferList A list of TileDB BufferList objects
@@ -21,6 +22,7 @@ func NewBufferList(context *Context) (*BufferList, error) {
 	bufferList := BufferList{context: context}
 
 	ret := C.tiledb_buffer_list_alloc(bufferList.context.tiledbContext, &bufferList.tiledbBufferList)
+	runtime.KeepAlive(context)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb buffer list: %w", bufferList.context.LastError())
 	}
@@ -79,6 +81,7 @@ var _ io.WriterTo = (*BufferList)(nil)
 func (b *BufferList) NumBuffers() (uint64, error) {
 	var numBuffers C.uint64_t
 	ret := C.tiledb_buffer_list_get_num_buffers(b.context.tiledbContext, b.tiledbBufferList, &numBuffers)
+	runtime.KeepAlive(b)
 
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting tiledb bufferList num buffers: %w", b.context.LastError())
@@ -90,12 +93,13 @@ func (b *BufferList) NumBuffers() (uint64, error) {
 // GetBuffer returns a Buffer at the given index in the list.
 func (b *BufferList) GetBuffer(bufferIndex uint) (*Buffer, error) {
 	buffer := Buffer{context: b.context}
-	freeOnGC(&buffer)
 
 	ret := C.tiledb_buffer_list_get_buffer(b.context.tiledbContext, b.tiledbBufferList, C.uint64_t(bufferIndex), &buffer.tiledbBuffer)
+	runtime.KeepAlive(b)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb buffer index %d from buffer list: %w", bufferIndex, b.context.LastError())
 	}
+	freeOnGC(&buffer)
 
 	return &buffer, nil
 }
@@ -104,6 +108,7 @@ func (b *BufferList) GetBuffer(bufferIndex uint) (*Buffer, error) {
 func (b *BufferList) TotalSize() (uint64, error) {
 	var totalSize C.uint64_t
 	ret := C.tiledb_buffer_list_get_total_size(b.context.tiledbContext, b.tiledbBufferList, &totalSize)
+	runtime.KeepAlive(b)
 
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting tiledb bufferList num buffers: %w", b.context.LastError())
@@ -117,13 +122,14 @@ func (b *BufferList) TotalSize() (uint64, error) {
 // Deprecated: Use WriteTo instead for increased performance.
 func (b *BufferList) Flatten() (*Buffer, error) {
 	buffer := Buffer{context: b.context}
-	freeOnGC(&buffer)
 
 	ret := C.tiledb_buffer_list_flatten(b.context.tiledbContext, b.tiledbBufferList, &buffer.tiledbBuffer)
+	runtime.KeepAlive(b)
 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb bufferList num buffers: %w", b.context.LastError())
 	}
+	freeOnGC(&buffer)
 
 	return &buffer, nil
 }

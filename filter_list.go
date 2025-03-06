@@ -8,6 +8,7 @@ import "C"
 
 import (
 	"fmt"
+	"runtime"
 )
 
 // FilterList represents
@@ -21,6 +22,7 @@ func NewFilterList(context *Context) (*FilterList, error) {
 	filterList := FilterList{context: context}
 
 	ret := C.tiledb_filter_list_alloc(filterList.context.tiledbContext, &filterList.tiledbFilterList)
+	runtime.KeepAlive(context)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb FilterList: %w", filterList.context.LastError())
 	}
@@ -49,6 +51,8 @@ func (f *FilterList) Context() *Context {
 // each filter in the order the filters were added.
 func (f *FilterList) AddFilter(filter *Filter) error {
 	ret := C.tiledb_filter_list_add_filter(f.context.tiledbContext, f.tiledbFilterList, filter.tiledbFilter)
+	runtime.KeepAlive(f)
+	runtime.KeepAlive(filter)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error adding filter to tiledb FilterList: %w", f.context.LastError())
 	}
@@ -58,6 +62,7 @@ func (f *FilterList) AddFilter(filter *Filter) error {
 // SetMaxChunkSize sets the maximum tile chunk size for a filter list.
 func (f *FilterList) SetMaxChunkSize(maxChunkSize uint32) error {
 	ret := C.tiledb_filter_list_set_max_chunk_size(f.context.tiledbContext, f.tiledbFilterList, C.uint32_t(maxChunkSize))
+	runtime.KeepAlive(f)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting max chunk size on tiledb FilterList: %w", f.context.LastError())
 	}
@@ -68,6 +73,7 @@ func (f *FilterList) SetMaxChunkSize(maxChunkSize uint32) error {
 func (f *FilterList) MaxChunkSize() (uint32, error) {
 	var cMaxChunkSize C.uint32_t
 	ret := C.tiledb_filter_list_get_max_chunk_size(f.context.tiledbContext, f.tiledbFilterList, &cMaxChunkSize)
+	runtime.KeepAlive(f)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error fetching max chunk size from tiledb FilterList: %w", f.context.LastError())
 	}
@@ -78,6 +84,7 @@ func (f *FilterList) MaxChunkSize() (uint32, error) {
 func (f *FilterList) NFilters() (uint32, error) {
 	var cNFilters C.uint32_t
 	ret := C.tiledb_filter_list_get_nfilters(f.context.tiledbContext, f.tiledbFilterList, &cNFilters)
+	runtime.KeepAlive(f)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting number of filter for tiledb FilterList: %w", f.context.LastError())
 	}
@@ -88,6 +95,7 @@ func (f *FilterList) NFilters() (uint32, error) {
 func (f *FilterList) FilterFromIndex(index uint32) (*Filter, error) {
 	filter := Filter{context: f.context}
 	ret := C.tiledb_filter_list_get_filter_from_index(f.context.tiledbContext, f.tiledbFilterList, C.uint32_t(index), &filter.tiledbFilter)
+	runtime.KeepAlive(f)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error fetching filter for index %d from tiledb FilterList: %w", index, f.context.LastError())
 	}
