@@ -40,7 +40,7 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-func ExampleVariableLengthArray() {
+func ExampleRunVariableLengthArray() {
 	examples_lib.RunVariableLengthArray()
 
 	// Output:

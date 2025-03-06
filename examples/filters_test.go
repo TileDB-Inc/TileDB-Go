@@ -41,9 +41,9 @@ import (
 	"github.com/TileDB-Inc/TileDB-Go/examples_lib"
 )
 
-// ExampleSparseArray shows and example creation, writing and reading of a
-// sparse array
-func ExampleFiltersArray() {
+// ExampleRunFiltersArray shows an example of creation, writing, and reading
+// of an array using Filters
+func ExampleRunFiltersArray() {
 	examples_lib.RunFiltersArray()
 
 	// Output: Cell (2, 3) has data 3

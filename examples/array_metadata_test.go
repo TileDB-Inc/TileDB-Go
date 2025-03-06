@@ -42,9 +42,9 @@ import (
 	"github.com/TileDB-Inc/TileDB-Go/examples_lib"
 )
 
-// ExampleArrayMetadataArray shows and example creation, writing and reading of a
-// sparse array
-func ExampleArrayMetadataArray() {
+// ExampleRunArrayMetadataArray shows an example of creation, writing, and
+// reading of a sparse array
+func ExampleRunArrayMetadataArray() {
 	examples_lib.RunArrayMetadataArray()
 
 	// Output: Datatype: 0

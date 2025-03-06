@@ -40,9 +40,9 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-// ExampleReadRangeArray shows and example creation, writing and range reading
-// of a dense array
-func ExampleReadRangeArray() {
+// ExampleRunReadRangeArray shows an example of creation, writing, and range
+// reading of a dense array
+func ExampleRunReadRangeArray() {
 	examples_lib.RunReadRangeArray()
 
 	// Output: Num of Ranges: 2
