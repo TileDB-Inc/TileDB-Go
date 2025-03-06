@@ -15,4 +15,4 @@ require (
 // Local triggered panic when referencing enums
 retract v0.30.1
 
-go 1.22
+go 1.24
