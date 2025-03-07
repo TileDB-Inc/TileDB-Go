@@ -18,16 +18,14 @@ func TestGroupCreate(t *testing.T) {
 	tmpGroup := t.TempDir()
 
 	// Create initial group
-	group, err := NewGroup(context, tmpGroup)
-	require.NoError(t, err)
-	require.NoError(t, group.Create())
+	require.NoError(t, CreateGroup(context, tmpGroup))
 
 	// Creating the same group twice should error
-	group, err = NewGroup(context, tmpGroup)
-	require.NoError(t, err)
-	assert.Error(t, group.Create())
+	assert.Error(t, CreateGroup(context, tmpGroup))
 
 	// Test Group.IsOpen
+	group, err := NewGroup(context, tmpGroup)
+	require.NoError(t, err)
 	isOpen, err := group.IsOpen()
 	require.NoError(t, err)
 	assert.False(t, isOpen)
@@ -210,7 +208,11 @@ func TestDeserializeGroup(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	g, err := NewGroup(tdbCtx, t.TempDir())
+	groupDir := t.TempDir()
+
+	require.NoError(t, CreateGroup(tdbCtx, groupDir))
+
+	g, err := NewGroup(tdbCtx, groupDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -218,8 +220,6 @@ func TestDeserializeGroup(t *testing.T) {
 	if err := setConfigForWrite(g, 0); err != nil {
 		t.Fatal(err)
 	}
-
-	require.NoError(t, g.Create())
 
 	require.NoError(t, g.Open(TILEDB_WRITE))
 	if err := buffer.SetBuffer([]byte(`{
@@ -399,15 +399,16 @@ func memberCount(group *Group) (uint64, error) {
 }
 
 func createTestGroup(tdbCtx *Context, uri string) (*Group, error) {
+	if err := CreateGroup(tdbCtx, uri); err != nil {
+		return nil, err
+	}
+
 	// Create initial group
 	group, err := NewGroup(tdbCtx, uri)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := group.Create(); err != nil {
-		return nil, err
-	}
 	return group, nil
 }
 
