@@ -69,12 +69,7 @@ func CreateAndImportFile(tdbCtx *Context, arrayURI string, filePath string, mime
 		return err
 	}
 
-	array, err := NewArray(tdbCtx, arrayURI)
-	if err != nil {
-		return err
-	}
-
-	err = array.Create(schema)
+	err = CreateArray(tdbCtx, arrayURI, schema)
 	if err != nil {
 		return err
 	}
@@ -90,12 +85,7 @@ func CreateFile(tdbCtx *Context, arrayURI string, data []byte, mimeType FileStor
 		return err
 	}
 
-	array, err := NewArray(tdbCtx, arrayURI)
-	if err != nil {
-		return err
-	}
-
-	err = array.Create(schema)
+	err = CreateArray(tdbCtx, arrayURI, schema)
 	if err != nil {
 		return err
 	}

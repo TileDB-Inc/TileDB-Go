@@ -58,12 +58,12 @@ func create1DTestArray(t *testing.T) *Array {
 
 	// Create array on disk
 	tmpArrayPath := t.TempDir()
+	err = CreateArray(context, tmpArrayPath, arraySchema)
+	require.NoError(t, err)
+
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
 	assert.NotNil(t, array)
-	err = array.Create(arraySchema)
-	require.NoError(t, err)
-
 	return array
 }
 

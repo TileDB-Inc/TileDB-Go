@@ -70,13 +70,7 @@ func ExampleNewArray() {
 		return
 	}
 
-	array, err := NewArray(context, "my_array")
-	if err != nil {
-		// Handle error
-		return
-	}
-
-	err = array.Create(arraySchema)
+	err = CreateArray(context, "my_array", arraySchema)
 	if err != nil {
 		// Handle error
 		return
@@ -134,15 +128,15 @@ func TestArray(t *testing.T) {
 
 	// create temp group name
 	tmpArrayPath := t.TempDir()
+	arraySchema := buildArraySchema(context, t)
+
+	// Create array on disk
+	require.NoError(t, CreateArray(context, tmpArrayPath, arraySchema))
+
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
 	assert.NotNil(t, array)
-
-	arraySchema := buildArraySchema(context, t)
-
-	// Create array on disk
-	require.NoError(t, array.Create(arraySchema))
 
 	// Get array URI
 	uri, err := array.URI()
@@ -224,16 +218,16 @@ func TestArrayEncryption(t *testing.T) {
 
 	// create temp group name
 	tmpArrayPath := t.TempDir()
+	arraySchema := buildArraySchema(context, t)
+
+	// Create array on disk
+	require.NoError(t, CreateArray(context, tmpArrayPath, arraySchema))
+	assert.Nil(t, err)
+
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
 	assert.NotNil(t, array)
-
-	arraySchema := buildArraySchema(context, t)
-
-	// Create array on disk
-	require.NoError(t, array.Create(arraySchema))
-	assert.Nil(t, err)
 
 	//err = array.Consolidate()
 	//require.NoError(t, err)
@@ -573,14 +567,14 @@ func newTestArray(t *testing.T) (*Array, error) {
 	// create temp group name
 	tmpArrayPath := t.TempDir()
 
-	array, err := NewArray(context, tmpArrayPath)
+	arraySchema := buildArraySchema(context, t)
+	// Create array on disk
+	err = CreateArray(context, tmpArrayPath, arraySchema)
 	if err != nil {
 		return nil, err
 	}
 
-	arraySchema := buildArraySchema(context, t)
-	// Create array on disk
-	err = array.Create(arraySchema)
+	array, err := NewArray(context, tmpArrayPath)
 	if err != nil {
 		return nil, err
 	}

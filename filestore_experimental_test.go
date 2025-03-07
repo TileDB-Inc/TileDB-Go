@@ -220,9 +220,7 @@ func createEmptyFilestoreArray(t *testing.T, arrayURI string) {
 	require.NoError(t, err)
 	schema, err := NewArraySchemaForFile(tdbCtx, "")
 	require.NoError(t, err)
-	array, err := NewArray(tdbCtx, arrayURI)
-	require.NoError(t, err)
-	err = array.Create(schema)
+	err = CreateArray(tdbCtx, arrayURI, schema)
 	require.NoError(t, err)
 }
 

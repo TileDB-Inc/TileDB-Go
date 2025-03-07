@@ -302,18 +302,19 @@ func createBasicTestArray(t testing.TB) (*Array, error) {
 
 	// create temp group name
 	tmpArrayPath := t.TempDir()
-	// Create new array struct
-	array, err := NewArray(context, tmpArrayPath)
-	if err != nil {
-		return nil, err
-	}
 
 	// Prepare some data for the array
 	buffD1 := []int32{1, 2, 2}
 	buffD2 := []int32{1, 1, 2}
 
 	// Create array on disk
-	if err = array.Create(arraySchema); err != nil {
+	if err = CreateArray(context, tmpArrayPath, arraySchema); err != nil {
+		return nil, err
+	}
+
+	// Create new array struct
+	array, err := NewArray(context, tmpArrayPath)
+	if err != nil {
 		return nil, err
 	}
 

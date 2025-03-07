@@ -126,9 +126,9 @@ func TestEnumerationAndSchema(t *testing.T) {
 	require.NoError(t, err)
 
 	arrayPath := t.TempDir()
+	require.NoError(t, CreateArray(tdbCtx, arrayPath, schema))
 	array, err := NewArray(tdbCtx, arrayPath)
 	require.NoError(t, err)
-	require.NoError(t, array.Create(schema))
 	require.NoError(t, array.Open(TILEDB_READ))
 	t.Cleanup(func() { array.Close() })
 
@@ -178,9 +178,7 @@ func TestEnumerationQueryCondition(t *testing.T) {
 	require.NoError(t, err)
 
 	arrayPath := t.TempDir()
-	array, err := NewArray(tdbCtx, arrayPath)
-	require.NoError(t, err)
-	require.NoError(t, array.Create(schema))
+	require.NoError(t, CreateArray(tdbCtx, arrayPath, schema))
 
 	//=====
 	// write to the array. Each cell gets the row order rank.
@@ -190,7 +188,7 @@ func TestEnumerationQueryCondition(t *testing.T) {
 	//  8  9 10 11
 	// 12 13 14 15
 
-	array, err = NewArray(tdbCtx, arrayPath)
+	array, err := NewArray(tdbCtx, arrayPath)
 	require.NoError(t, err)
 	require.NoError(t, array.Open(TILEDB_WRITE))
 	wQuery, err := NewQuery(tdbCtx, array)
@@ -316,9 +314,7 @@ func TestEnumerationEmpty(t *testing.T) {
 	require.NoError(t, err)
 
 	arrayPath := t.TempDir()
-	array, err := NewArray(tdbCtx, arrayPath)
-	require.NoError(t, err)
-	require.NoError(t, array.Create(schema))
+	require.NoError(t, CreateArray(tdbCtx, arrayPath, schema))
 }
 
 func TestEnumerationEvolution(t *testing.T) {
@@ -330,9 +326,7 @@ func TestEnumerationEvolution(t *testing.T) {
 	require.NoError(t, err)
 
 	arrayPath := t.TempDir()
-	array, err := NewArray(tdbCtx, arrayPath)
-	require.NoError(t, err)
-	require.NoError(t, array.Create(schema))
+	require.NoError(t, CreateArray(tdbCtx, arrayPath, schema))
 
 	//=====
 	// write to the array. Each cell gets the row order rank + 10
@@ -342,7 +336,7 @@ func TestEnumerationEvolution(t *testing.T) {
 	// 18 19 20 21
 	// 22 23 24 25
 
-	array, err = NewArray(tdbCtx, arrayPath)
+	array, err := NewArray(tdbCtx, arrayPath)
 	require.NoError(t, err)
 	require.NoError(t, array.Open(TILEDB_WRITE))
 	wQuery, err := NewQuery(tdbCtx, array)

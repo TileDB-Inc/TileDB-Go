@@ -125,15 +125,16 @@ func ExampleNewQuery() {
 		return
 	}
 	defer os.RemoveAll(tmpArrayPath)
-	// Create new array struct
-	array, err := NewArray(context, tmpArrayPath)
+
+	// Create array on disk
+	err = CreateArray(context, tmpArrayPath, arraySchema)
 	if err != nil {
 		// Handle error
 		return
 	}
 
-	// Create array on disk
-	err = array.Create(arraySchema)
+	// Create new array struct
+	array, err := NewArray(context, tmpArrayPath)
 	if err != nil {
 		// Handle error
 		return
@@ -457,15 +458,16 @@ func ExampleNewQueryCondition() {
 
 	// create temp group name
 	tmpArrayPath := os.TempDir()
-	// Create new array struct
-	array, err := NewArray(context, tmpArrayPath)
+
+	// Create array on disk
+	err = CreateArray(context, tmpArrayPath, arraySchema)
 	if err != nil {
 		// Handle error
 		return
 	}
 
-	// Create array on disk
-	err = array.Create(arraySchema)
+	// Create new array struct
+	array, err := NewArray(context, tmpArrayPath)
 	if err != nil {
 		// Handle error
 		return
@@ -703,10 +705,6 @@ func TestQueryEffectiveBufferSize(t *testing.T) {
 
 	// create temp group name
 	tmpArrayPath := t.TempDir()
-	// Create new array struct
-	array, err := NewArray(context, tmpArrayPath)
-	require.NoError(t, err)
-	assert.NotNil(t, array)
 
 	// Prepare some data for the array
 	buffD1 := []int32{1, 2, 2}
@@ -715,7 +713,12 @@ func TestQueryEffectiveBufferSize(t *testing.T) {
 	a1OffWrite := []uint64{0, 1, 3}
 
 	// Create array on disk
-	require.NoError(t, array.Create(arraySchema))
+	require.NoError(t, CreateArray(context, tmpArrayPath, arraySchema))
+
+	// Create new array struct
+	array, err := NewArray(context, tmpArrayPath)
+	require.NoError(t, err)
+	assert.NotNil(t, array)
 
 	require.NoError(t, array.Open(TILEDB_WRITE))
 	query, err := NewQuery(context, array)
@@ -878,10 +881,6 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 
 	// create temp group name
 	tmpArrayPath := t.TempDir()
-	// Create new array struct
-	array, err := NewArray(context, tmpArrayPath)
-	require.NoError(t, err)
-	assert.NotNil(t, array)
 
 	// Prepare some data for the array
 	rowsWrite := []int32{1, 2, 2}
@@ -895,7 +894,12 @@ func TestQueryEffectiveBufferSizeHeterogeneous(t *testing.T) {
 	a3Validity := []uint8{1, 1, 0}
 
 	// Create array on disk
-	require.NoError(t, array.Create(arraySchema))
+	require.NoError(t, CreateArray(context, tmpArrayPath, arraySchema))
+
+	// Create new array struct
+	array, err := NewArray(context, tmpArrayPath)
+	require.NoError(t, err)
+	assert.NotNil(t, array)
 
 	require.NoError(t, array.Open(TILEDB_WRITE))
 	query, err := NewQuery(context, array)
@@ -1149,10 +1153,6 @@ func TestQueryEffectiveBufferSizeStrings(t *testing.T) {
 
 	// create temp group name
 	tmpArrayPath := t.TempDir()
-	// Create new array struct
-	array, err := NewArray(context, tmpArrayPath)
-	require.NoError(t, err)
-	assert.NotNil(t, array)
 
 	// Prepare some data for the array
 	rowsWrite := []byte("abbc")
@@ -1161,7 +1161,12 @@ func TestQueryEffectiveBufferSizeStrings(t *testing.T) {
 	a1OffWrite := []uint64{0, 1, 3}
 
 	// Create array on disk
-	require.NoError(t, array.Create(arraySchema))
+	require.NoError(t, CreateArray(context, tmpArrayPath, arraySchema))
+
+	// Create new array struct
+	array, err := NewArray(context, tmpArrayPath)
+	require.NoError(t, err)
+	assert.NotNil(t, array)
 
 	require.NoError(t, array.Open(TILEDB_WRITE))
 	query, err := NewQuery(context, array)
@@ -1372,10 +1377,6 @@ func TestQueryEffectiveBufferSizeStringsHeterogeneous(t *testing.T) {
 
 	// create temp group name
 	tmpArrayPath := t.TempDir()
-	// Create new array struct
-	array, err := NewArray(context, tmpArrayPath)
-	require.NoError(t, err)
-	assert.NotNil(t, array)
 
 	// Prepare some data for the array
 	rowsWrite := []byte("abbc")
@@ -1385,7 +1386,12 @@ func TestQueryEffectiveBufferSizeStringsHeterogeneous(t *testing.T) {
 	a1OffWrite := []uint64{0, 1, 3}
 
 	// Create array on disk
-	require.NoError(t, array.Create(arraySchema))
+	require.NoError(t, CreateArray(context, tmpArrayPath, arraySchema))
+
+	// Create new array struct
+	array, err := NewArray(context, tmpArrayPath)
+	require.NoError(t, err)
+	assert.NotNil(t, array)
 
 	require.NoError(t, array.Open(TILEDB_WRITE))
 	query, err := NewQuery(context, array)
@@ -1550,13 +1556,14 @@ func TestQueryReadEmpty(t *testing.T) {
 
 	// create temp group name
 	tmpArrayPath := t.TempDir()
+
+	// Create array on disk
+	require.NoError(t, CreateArray(context, tmpArrayPath, arraySchema))
+
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
 	assert.NotNil(t, array)
-
-	// Create array on disk
-	require.NoError(t, array.Create(arraySchema))
 
 	// Open array for reading
 	require.NoError(t, array.Open(TILEDB_READ))
@@ -1715,13 +1722,14 @@ func TestDenseQueryWrite(t *testing.T) {
 
 	// create temp group name
 	tmpArrayPath := t.TempDir()
+
+	// Create array on disk
+	require.NoError(t, CreateArray(context, tmpArrayPath, arraySchema))
+
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
 	assert.NotNil(t, array)
-
-	// Create array on disk
-	require.NoError(t, array.Create(arraySchema))
 
 	// Open array for writting
 	require.NoError(t, array.Open(TILEDB_WRITE))
@@ -2038,13 +2046,14 @@ func TestSparseQueryDelete(t *testing.T) {
 
 	// create temp group name
 	tmpArrayPath := t.TempDir()
+
+	// Create array on disk
+	require.NoError(t, CreateArray(context, tmpArrayPath, arraySchema))
+
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
 	assert.NotNil(t, array)
-
-	// Create array on disk
-	require.NoError(t, array.Create(arraySchema))
 
 	// Open array for writting
 	require.NoError(t, array.Open(TILEDB_WRITE))
@@ -2195,13 +2204,14 @@ func TestSparseQueryWrite(t *testing.T) {
 
 	// create temp group name
 	tmpArrayPath := t.TempDir()
+
+	// Create array on disk
+	require.NoError(t, CreateArray(context, tmpArrayPath, arraySchema))
+
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
 	assert.NotNil(t, array)
-
-	// Create array on disk
-	require.NoError(t, array.Create(arraySchema))
 
 	// Open array for writting
 	require.NoError(t, array.Open(TILEDB_WRITE))
@@ -2344,13 +2354,14 @@ func TestSparseQueryWriteNullable(t *testing.T) {
 
 	// create temp group name
 	tmpArrayPath := t.TempDir()
+
+	// Create array on disk
+	require.NoError(t, CreateArray(context, tmpArrayPath, arraySchema))
+
 	// Create new array struct
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
 	assert.NotNil(t, array)
-
-	// Create array on disk
-	require.NoError(t, array.Create(arraySchema))
 
 	// Open array for writting
 	require.NoError(t, array.Open(TILEDB_WRITE))
@@ -2479,10 +2490,10 @@ func TestSparseQueryWriteHilbertLayout(t *testing.T) {
 	require.NoError(t, arraySchema.SetCellOrder(TILEDB_HILBERT))
 	require.NoError(t, arraySchema.Check())
 	tmpArrayPath := t.TempDir()
+	require.NoError(t, CreateArray(context, tmpArrayPath, arraySchema))
 	array, err := NewArray(context, tmpArrayPath)
 	require.NoError(t, err)
 	assert.NotNil(t, array)
-	require.NoError(t, array.Create(arraySchema))
 
 	// Write query
 	require.NoError(t, array.Open(TILEDB_WRITE))
@@ -2585,10 +2596,8 @@ func TestQueryConfig(t *testing.T) {
 
 	// create temp group name
 	tmpArrayPath := t.TempDir()
-	// Create new array struct
-	array, err := NewArray(context, tmpArrayPath)
-	require.NoError(t, err)
-	assert.NotNil(t, array)
+	// Create array on disk
+	require.NoError(t, CreateArray(context, tmpArrayPath, arraySchema))
 
 	// Prepare some data for the array
 	buffD1 := []int32{1, 2, 2}
@@ -2596,8 +2605,10 @@ func TestQueryConfig(t *testing.T) {
 	a1DataWrite := []int32{1, 2, 3}
 	a1OffWrite := []uint64{0, 4, 8}
 
-	// Create array on disk
-	require.NoError(t, array.Create(arraySchema))
+	// Create new array struct
+	array, err := NewArray(context, tmpArrayPath)
+	require.NoError(t, err)
+	assert.NotNil(t, array)
 
 	require.NoError(t, array.Open(TILEDB_WRITE))
 	query, err := NewQuery(context, array)
@@ -2752,11 +2763,6 @@ func TestQueryStats(t *testing.T) {
 
 	// create temp group name
 	tmpArrayPath := t.TempDir()
-	// Create new array struct
-	array, err := NewArray(context, tmpArrayPath)
-	require.NoError(t, err)
-	assert.NotNil(t, array)
-
 	// Prepare some data for the array
 	buffD1 := []int32{1, 2, 2}
 	buffD2 := []int32{1, 1, 2}
@@ -2764,7 +2770,12 @@ func TestQueryStats(t *testing.T) {
 	a1OffWrite := []uint64{0, 1, 3}
 
 	// Create array on disk
-	require.NoError(t, array.Create(arraySchema))
+	require.NoError(t, CreateArray(context, tmpArrayPath, arraySchema))
+
+	// Create new array struct
+	array, err := NewArray(context, tmpArrayPath)
+	require.NoError(t, err)
+	assert.NotNil(t, array)
 
 	require.NoError(t, array.Open(TILEDB_WRITE))
 	query, err := NewQuery(context, array)
@@ -2883,12 +2894,11 @@ func TestSetDataBufferUnsafe(t *testing.T) {
 	require.NoError(t, arraySchema.AddAttributes(attribute))
 	require.NoError(t, arraySchema.SetDomain(domain))
 	uri := t.TempDir()
-	array, err := NewArray(tdbCtx, uri)
-	require.NoError(t, err)
-	require.NoError(t, array.Create(arraySchema))
-	require.NoError(t, array.Close())
+	require.NoError(t, CreateArray(tdbCtx, uri, arraySchema))
 
 	// open the array and write a slice
+	array, err := NewArray(tdbCtx, uri)
+	require.NoError(t, err)
 	require.NoError(t, array.Open(TILEDB_WRITE))
 	tdbCtx, err = NewContext(config)
 	require.NoError(t, err)
@@ -2961,12 +2971,11 @@ func TestGetDataBuffer(t *testing.T) {
 	require.NoError(t, arraySchema.AddAttributes(attribute))
 	require.NoError(t, arraySchema.SetDomain(domain))
 	uri := t.TempDir()
-	array, err := NewArray(tdbCtx, uri)
-	require.NoError(t, err)
-	require.NoError(t, array.Create(arraySchema))
-	require.NoError(t, array.Close())
+	require.NoError(t, CreateArray(tdbCtx, uri, arraySchema))
 
 	// create a write query, set the data buffer and read it back
+	array, err := NewArray(tdbCtx, uri)
+	require.NoError(t, err)
 	require.NoError(t, array.Open(TILEDB_WRITE))
 	tdbCtx, err = NewContext(config)
 	require.NoError(t, err)
@@ -3005,12 +3014,11 @@ func TestSetDataBuffer(t *testing.T) {
 	require.NoError(t, arraySchema.AddAttributes(attribute))
 	require.NoError(t, arraySchema.SetDomain(domain))
 	uri := t.TempDir()
-	array, err := NewArray(tdbCtx, uri)
-	require.NoError(t, err)
-	require.NoError(t, array.Create(arraySchema))
-	require.NoError(t, array.Close())
+	require.NoError(t, CreateArray(tdbCtx, uri, arraySchema))
 
 	// open the array and write a slice
+	array, err := NewArray(tdbCtx, uri)
+	require.NoError(t, err)
 	require.NoError(t, array.Open(TILEDB_WRITE))
 	tdbCtx, err = NewContext(config)
 	require.NoError(t, err)
@@ -3075,10 +3083,10 @@ func TestGetExpectedDataBufferLength(t *testing.T) {
 	require.NoError(t, arraySchema.AddAttributes(attribute))
 	require.NoError(t, arraySchema.SetDomain(domain))
 	uri := t.TempDir()
+	require.NoError(t, CreateArray(tdbCtx, uri, arraySchema))
+
 	array, err := NewArray(tdbCtx, uri)
 	require.NoError(t, err)
-	require.NoError(t, array.Create(arraySchema))
-
 	require.NoError(t, array.Open(TILEDB_READ))
 	q, err := NewQuery(tdbCtx, array)
 	require.NoError(t, err)
@@ -3161,11 +3169,10 @@ func TestSetValidityBufferUnsafe(t *testing.T) {
 	require.NoError(t, arraySchema.AddAttributes(attribute))
 	require.NoError(t, arraySchema.SetDomain(domain))
 	uri := t.TempDir()
+	require.NoError(t, CreateArray(tdbCtx, uri, arraySchema))
+
 	array, err := NewArray(tdbCtx, uri)
 	require.NoError(t, err)
-	require.NoError(t, array.Create(arraySchema))
-	require.NoError(t, array.Close())
-
 	// open the array and write a slice
 	require.NoError(t, array.Open(TILEDB_WRITE))
 	tdbCtx, err = NewContext(config)
@@ -3244,11 +3251,10 @@ func TestGetValidityBuffer(t *testing.T) {
 	require.NoError(t, arraySchema.AddAttributes(attribute))
 	require.NoError(t, arraySchema.SetDomain(domain))
 	uri := t.TempDir()
+	require.NoError(t, CreateArray(tdbCtx, uri, arraySchema))
+
 	array, err := NewArray(tdbCtx, uri)
 	require.NoError(t, err)
-	require.NoError(t, array.Create(arraySchema))
-	require.NoError(t, array.Close())
-
 	// create a write query, set the validity buffer and read it back
 	require.NoError(t, array.Open(TILEDB_WRITE))
 	tdbCtx, err = NewContext(config)
@@ -3287,11 +3293,10 @@ func TestSetValidityBuffer(t *testing.T) {
 	require.NoError(t, arraySchema.AddAttributes(attribute))
 	require.NoError(t, arraySchema.SetDomain(domain))
 	uri := t.TempDir()
+	require.NoError(t, CreateArray(tdbCtx, uri, arraySchema))
+
 	array, err := NewArray(tdbCtx, uri)
 	require.NoError(t, err)
-	require.NoError(t, array.Create(arraySchema))
-	require.NoError(t, array.Close())
-
 	// open the array and write a slice
 	require.NoError(t, array.Open(TILEDB_WRITE))
 	tdbCtx, err = NewContext(config)
@@ -3365,11 +3370,10 @@ func TestGetExpectedValidityBufferLength(t *testing.T) {
 	require.NoError(t, arraySchema.AddAttributes(attribute))
 	require.NoError(t, arraySchema.SetDomain(domain))
 	uri := t.TempDir()
+	require.NoError(t, CreateArray(tdbCtx, uri, arraySchema))
+
 	array, err := NewArray(tdbCtx, uri)
 	require.NoError(t, err)
-	require.NoError(t, array.Create(arraySchema))
-	require.NoError(t, array.Close())
-
 	require.NoError(t, array.Open(TILEDB_READ))
 	q, err := NewQuery(tdbCtx, array)
 	require.NoError(t, err)
@@ -3457,11 +3461,10 @@ func TestSetOffsetsBufferUnsafe(t *testing.T) {
 	require.NoError(t, arraySchema.AddAttributes(attribute))
 	require.NoError(t, arraySchema.SetDomain(domain))
 	uri := t.TempDir()
+	require.NoError(t, CreateArray(tdbCtx, uri, arraySchema))
+
 	array, err := NewArray(tdbCtx, uri)
 	require.NoError(t, err)
-	require.NoError(t, array.Create(arraySchema))
-	require.NoError(t, array.Close())
-
 	// open the array and write a slice
 	require.NoError(t, array.Open(TILEDB_WRITE))
 	tdbCtx, err = NewContext(config)
@@ -3541,11 +3544,10 @@ func TestGetOffsetsBuffer(t *testing.T) {
 	require.NoError(t, arraySchema.AddAttributes(attribute))
 	require.NoError(t, arraySchema.SetDomain(domain))
 	uri := t.TempDir()
+	require.NoError(t, CreateArray(tdbCtx, uri, arraySchema))
+
 	array, err := NewArray(tdbCtx, uri)
 	require.NoError(t, err)
-	require.NoError(t, array.Create(arraySchema))
-	require.NoError(t, array.Close())
-
 	// create a write query, set the validity buffer and read it back
 	require.NoError(t, array.Open(TILEDB_WRITE))
 	tdbCtx, err = NewContext(config)
@@ -3584,11 +3586,10 @@ func TestSetOffsetsBuffer(t *testing.T) {
 	require.NoError(t, arraySchema.AddAttributes(attribute))
 	require.NoError(t, arraySchema.SetDomain(domain))
 	uri := t.TempDir()
+	require.NoError(t, CreateArray(tdbCtx, uri, arraySchema))
+
 	array, err := NewArray(tdbCtx, uri)
 	require.NoError(t, err)
-	require.NoError(t, array.Create(arraySchema))
-	require.NoError(t, array.Close())
-
 	// open the array and write a slice
 	require.NoError(t, array.Open(TILEDB_WRITE))
 	tdbCtx, err = NewContext(config)
@@ -3662,11 +3663,10 @@ func TestGetExpectedOffsetsBufferLength(t *testing.T) {
 	require.NoError(t, arraySchema.AddAttributes(attribute))
 	require.NoError(t, arraySchema.SetDomain(domain))
 	uri := t.TempDir()
+	require.NoError(t, CreateArray(tdbCtx, uri, arraySchema))
+
 	array, err := NewArray(tdbCtx, uri)
 	require.NoError(t, err)
-	require.NoError(t, array.Create(arraySchema))
-	require.NoError(t, array.Close())
-
 	require.NoError(t, array.Open(TILEDB_READ))
 	q, err := NewQuery(tdbCtx, array)
 	require.NoError(t, err)

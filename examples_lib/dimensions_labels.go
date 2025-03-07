@@ -33,7 +33,7 @@ func createArrayWithDimensionLabels(uri string) {
 	checkError(schema.AddAttributes(checkedValue(tiledb.NewAttribute(tdbCtx, "v", tiledb.TILEDB_UINT32))))
 
 	// create the array
-	checkError(checkedValue(tiledb.NewArray(tdbCtx, uri)).Create(schema))
+	checkError(tiledb.CreateArray(tdbCtx, uri, schema))
 
 	// set the dimension labels
 	array := checkedValue(tiledb.NewArray(tdbCtx, uri))

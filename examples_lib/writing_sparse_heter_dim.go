@@ -46,11 +46,7 @@ func createSparseHeterDimArray(dir string) {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, dir)
-	checkError(err)
-	defer array.Free()
-
-	err = array.Create(schema)
+	err = tiledb.CreateArray(ctx, dir, schema)
 	checkError(err)
 }
 
