@@ -43,15 +43,16 @@ func TestFragmentInfoEncryption(t *testing.T) {
 func testFragmentInfo(t testing.TB, context *Context) uint64 {
 	// create temp group name
 	tmpArrayPath := t.TempDir()
-	// Create new array struct
-	array, err := NewArray(context, tmpArrayPath)
-	require.NoError(t, err)
-	assert.NotNil(t, array)
 
 	arraySchema := buildArraySchema(context, t)
 
 	// Create array on disk
-	require.NoError(t, array.Create(arraySchema))
+	require.NoError(t, CreateArray(context, tmpArrayPath, arraySchema))
+
+	// Create new array struct
+	array, err := NewArray(context, tmpArrayPath)
+	require.NoError(t, err)
+	assert.NotNil(t, array)
 
 	// Get array URI
 	uri, err := array.URI()

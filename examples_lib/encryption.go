@@ -60,11 +60,7 @@ func createEncryptedArray(dir string) {
 	checkError(err)
 
 	// Create the (empty) encrypted array with AES-256-GCM.
-	array, err := tiledb.NewArray(ctx, dir)
-	checkError(err)
-	defer array.Free()
-
-	err = array.Create(schema)
+	err = tiledb.CreateArray(ctx, dir, schema)
 	checkError(err)
 }
 

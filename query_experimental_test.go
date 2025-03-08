@@ -59,15 +59,15 @@ func TestQueryStatusDetails(t *testing.T) {
 
 	// Create array on disk
 	tmpArrayPath := t.TempDir()
-	array, err := NewArray(context, tmpArrayPath)
-	require.NoError(t, err)
-	assert.NotNil(t, array)
-	err = array.Create(arraySchema)
+	err = CreateArray(context, tmpArrayPath, arraySchema)
 	require.NoError(t, err)
 
 	// Write to array
 
 	// Open array for writing
+	array, err := NewArray(context, tmpArrayPath)
+	require.NoError(t, err)
+	assert.NotNil(t, array)
 	err = array.Open(TILEDB_WRITE)
 	require.NoError(t, err)
 
@@ -248,15 +248,15 @@ func TestQueryPlan(t *testing.T) {
 
 	// Create array on disk
 	tmpArrayPath := t.TempDir()
-	array, err := NewArray(context, tmpArrayPath)
-	require.NoError(t, err)
-	assert.NotNil(t, array)
-	err = array.Create(arraySchema)
+	err = CreateArray(context, tmpArrayPath, arraySchema)
 	require.NoError(t, err)
 
 	// Write to array
 
 	// Open array for writing
+	array, err := NewArray(context, tmpArrayPath)
+	require.NoError(t, err)
+	assert.NotNil(t, array)
 	err = array.Open(TILEDB_WRITE)
 	require.NoError(t, err)
 

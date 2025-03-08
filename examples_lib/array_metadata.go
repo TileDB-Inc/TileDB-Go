@@ -45,14 +45,8 @@ func createArrayMetadataArray(dir string) {
 	err = schema.AddAttributes(a)
 	checkError(err)
 
-	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, dir)
+	err = tiledb.CreateArray(ctx, dir, schema)
 	checkError(err)
-
-	err = array.Create(schema)
-	checkError(err)
-
-	array.Free()
 }
 
 func writeArrayMetadata(dir string) {
