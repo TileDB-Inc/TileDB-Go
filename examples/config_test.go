@@ -39,6 +39,6 @@ import (
 	"github.com/TileDB-Inc/TileDB-Go/examples_lib"
 )
 
-func ExampleConfig() {
+func ExampleRunConfig() {
 	examples_lib.RunConfig()
 }

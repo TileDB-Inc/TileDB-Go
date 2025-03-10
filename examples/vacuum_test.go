@@ -29,7 +29,7 @@
  *
  * When run, this program will create a simple 2D sparse array, write some data
  * to it, write again and read num of fragments. Then read from array,
- * consolidate and again read num of fragmens. Then vacuum and read number of
+ * consolidate and again read num of fragments. Then vacuum and read number of
  * fragments.Finally will read from array to verify data read are the same as
  * in first read
  *
@@ -39,8 +39,8 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-// ExampleVacuumSparseArray shows ysage of array vacuum function
-func ExampleVacuumSparseArray() {
+// ExampleRunVacuumSparseArray shows usage of array vacuum function
+func ExampleRunVacuumSparseArray() {
 	examples_lib.RunVacuumSparseArray()
 
 	// Output: Estimated query size in bytes for attribute 'a': 12

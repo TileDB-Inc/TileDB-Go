@@ -40,7 +40,7 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-func ExampleReadingDenseLayouts() {
+func ExampleRunReadingDenseLayouts() {
 	examples_lib.RunReadingDenseLayouts()
 
 	// Output: Non-empty domain: [1,4], [1,4]

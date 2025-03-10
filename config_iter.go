@@ -31,7 +31,7 @@ func NewConfigIter(config *Config, prefix string) (*ConfigIter, error) {
 		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("error creating tiledb config iter: %w", cError(err))
 	}
-	freeOnGC(&ci)
+	runtime.AddCleanup(&ci, freeFreeable, Freeable(&ci))
 
 	return &ci, nil
 }

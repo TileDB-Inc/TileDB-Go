@@ -130,7 +130,7 @@ func (a *ArraySchema) AddDimensionLabel(dimIndex uint32, name string, order Data
 	return nil
 }
 
-// DimensionLabelFromName retrieves a dimension label from an array schema with the requested index.
+// DimensionLabelFromIndex retrieves a dimension label from an array schema with the requested index.
 func (a *ArraySchema) DimensionLabelFromIndex(labelIdx uint64) (*DimensionLabel, error) {
 	dimLabel := DimensionLabel{context: a.context}
 	ret := C.tiledb_array_schema_get_dimension_label_from_index(a.context.tiledbContext, a.tiledbArraySchema,
@@ -140,7 +140,7 @@ func (a *ArraySchema) DimensionLabelFromIndex(labelIdx uint64) (*DimensionLabel,
 		return nil, fmt.Errorf("error getting dimension label '%d' for ArraySchema: %w", labelIdx, a.context.LastError())
 	}
 
-	freeOnGC(&dimLabel)
+	runtime.AddCleanup(&dimLabel, freeFreeable, Freeable(&dimLabel))
 	return &dimLabel, nil
 }
 
@@ -156,7 +156,7 @@ func (a *ArraySchema) DimensionLabelFromName(name string) (*DimensionLabel, erro
 		return nil, fmt.Errorf("error getting dimension label '%s' for ArraySchema: %w", name, a.context.LastError())
 	}
 
-	freeOnGC(&dimLabel)
+	runtime.AddCleanup(&dimLabel, freeFreeable, Freeable(&dimLabel))
 	return &dimLabel, nil
 }
 

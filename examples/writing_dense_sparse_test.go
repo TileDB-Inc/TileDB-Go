@@ -39,7 +39,7 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-func ExampleWritingDenseSparse() {
+func ExampleRunWritingDenseSparse() {
 	examples_lib.RunWritingDenseSparse()
 
 	// Output: Cell (1, 2) has data 1

@@ -29,7 +29,7 @@ func (a *Array) NewSubarray() (*Subarray, error) {
 	}
 
 	subarray := &Subarray{array: a, subarray: sa, context: a.context}
-	freeOnGC(subarray)
+	runtime.AddCleanup(subarray, freeFreeable, Freeable(subarray))
 
 	return subarray, nil
 }

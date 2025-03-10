@@ -42,9 +42,9 @@ import (
 	"github.com/TileDB-Inc/TileDB-Go/examples_lib"
 )
 
-// ExampleDenseArray shows and example creation, writing and reading of a dense
-// array
-func ExampleDenseArray() {
+// ExampleRunDenseArray shows an example of creation, writing, and reading of
+// a dense array
+func ExampleRunDenseArray() {
 	examples_lib.RunDenseArray()
 
 	// Output: [2 3 4 6 7 8]

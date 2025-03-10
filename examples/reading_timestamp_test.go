@@ -41,8 +41,8 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-// ExampleTimestampArray shows timestamp correlation of written data and metadata
-func ExampleTimestampArray() {
+// ExampleRunTimestampArray shows timestamp correlation of written data and metadata
+func ExampleRunTimestampArray() {
 	examples_lib.RunTimestampArray()
 
 	// Output: Writing meta_key: Write1

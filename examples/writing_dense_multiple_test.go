@@ -38,7 +38,7 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-func ExampleWritingDenseMultiple() {
+func ExampleRunWritingDenseMultiple() {
 	examples_lib.RunWritingDenseMultiple()
 
 	// Output: [1 2 -2147483648 -2147483648 5 6 7 8 9 10 11 12 -2147483648 -2147483648 -2147483648 -2147483648]

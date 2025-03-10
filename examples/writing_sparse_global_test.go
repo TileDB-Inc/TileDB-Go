@@ -39,7 +39,7 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-func ExampleWritingSparseGlobal() {
+func ExampleRunWritingSparseGlobal() {
 	examples_lib.RunWritingSparseGlobal()
 
 	// Output: Cell (1, 1) has data 1

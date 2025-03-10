@@ -40,7 +40,7 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-func ExampleWritingDenseGlobalExpansion() {
+func ExampleRunWritingDenseGlobalExpansion() {
 	examples_lib.RunWritingDenseGlobalExpansion()
 
 	// Output: [1 2 9 3 4 10 5 6 11 7 8 12]

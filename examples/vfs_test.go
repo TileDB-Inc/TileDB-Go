@@ -2,7 +2,7 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-func ExampleVfs() {
+func ExampleRunVfs() {
 	examples_lib.RunVfs()
 
 	// Output: Created 'dir_A'

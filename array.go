@@ -71,7 +71,7 @@ func NewArray(tdbCtx *Context, uri string) (*Array, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb array: %w", array.context.LastError())
 	}
-	freeOnGC(&array)
+	runtime.AddCleanup(&array, freeFreeable, Freeable(&array))
 
 	return &array, nil
 }
@@ -269,7 +269,7 @@ func (a *Array) Schema() (*ArraySchema, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting schema for tiledb array: %w", a.context.LastError())
 	}
-	freeOnGC(&arraySchema)
+	runtime.AddCleanup(&arraySchema, freeFreeable, Freeable(&arraySchema))
 	return &arraySchema, nil
 }
 
@@ -1175,7 +1175,7 @@ func (a *Array) Config() (*Config, error) {
 		return nil, fmt.Errorf("error getting config from array: %w", a.context.LastError())
 	}
 
-	freeOnGC(&config)
+	runtime.AddCleanup(&config, freeFreeable, Freeable(&config))
 
 	if a.config == nil {
 		a.config = &config

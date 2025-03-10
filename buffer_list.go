@@ -26,7 +26,7 @@ func NewBufferList(context *Context) (*BufferList, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb buffer list: %w", bufferList.context.LastError())
 	}
-	freeOnGC(&bufferList)
+	runtime.AddCleanup(&bufferList, freeFreeable, Freeable(&bufferList))
 
 	return &bufferList, nil
 }
@@ -99,7 +99,7 @@ func (b *BufferList) GetBuffer(bufferIndex uint) (*Buffer, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb buffer index %d from buffer list: %w", bufferIndex, b.context.LastError())
 	}
-	freeOnGC(&buffer)
+	runtime.AddCleanup(&buffer, freeFreeable, Freeable(&buffer))
 
 	return &buffer, nil
 }
@@ -129,7 +129,7 @@ func (b *BufferList) Flatten() (*Buffer, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb bufferList num buffers: %w", b.context.LastError())
 	}
-	freeOnGC(&buffer)
+	runtime.AddCleanup(&buffer, freeFreeable, Freeable(&buffer))
 
 	return &buffer, nil
 }

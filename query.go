@@ -72,7 +72,7 @@ func NewQuery(tdbCtx *Context, array *Array) (*Query, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb query: %w", query.context.LastError())
 	}
-	freeOnGC(&query)
+	runtime.AddCleanup(&query, freeFreeable, Freeable(&query))
 
 	query.resultBufferElements = make(map[string][3]*uint64)
 
@@ -687,7 +687,7 @@ func (q *Query) Array() (*Array, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting array from query: %w", q.context.LastError())
 	}
-	freeOnGC(&array)
+	runtime.AddCleanup(&array, freeFreeable, Freeable(&array))
 	return &array, nil
 }
 
@@ -713,7 +713,7 @@ func (q *Query) Config() (*Config, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting config from query: %w", q.context.LastError())
 	}
-	freeOnGC(&config)
+	runtime.AddCleanup(&config, freeFreeable, Freeable(&config))
 
 	if q.config == nil {
 		q.config = &config

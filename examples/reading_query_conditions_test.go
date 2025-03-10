@@ -41,8 +41,8 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-// ExampleQueryConditionsArray shows how query conditions work
-func ExampleQueryConditionsArray() {
+// ExampleRunQueryConditionsArray shows how query conditions work
+func ExampleRunQueryConditionsArray() {
 	examples_lib.RunQueryConditionsArray()
 	// Output: Non-empty domain: [1,2], [1,4]
 	// Cell (1, 2) has data 2

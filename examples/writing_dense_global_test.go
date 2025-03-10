@@ -38,7 +38,7 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-func ExampleWritingDenseGlobal() {
+func ExampleRunWritingDenseGlobal() {
 	examples_lib.RunWritingDenseGlobal()
 
 	// Output: [1 2 -2147483648 -2147483648 3 4 -2147483648 -2147483648 5 6 -2147483648 -2147483648 7 8 -2147483648 -2147483648]

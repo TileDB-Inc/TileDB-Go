@@ -25,7 +25,7 @@ func SerializeArraySchemaToBuffer(schema *ArraySchema, serializationType Seriali
 	}
 
 	buffer := Buffer{context: schema.context}
-	freeOnGC(&buffer)
+	runtime.AddCleanup(&buffer, freeFreeable, Freeable(&buffer))
 
 	ret := C.tiledb_serialize_array_schema(schema.context.tiledbContext, schema.tiledbArraySchema, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	runtime.KeepAlive(schema)
@@ -68,7 +68,7 @@ func DeserializeArraySchema(buffer *Buffer, serializationType SerializationType,
 	// This needs to happen *after* the tiledb_deserialize_array_schema call
 	// because that may leave the arraySchema with a non-nil pointer
 	// to already-freed memory.
-	freeOnGC(&schema)
+	runtime.AddCleanup(&schema, freeFreeable, Freeable(&schema))
 
 	return &schema, nil
 }
@@ -83,7 +83,7 @@ func SerializeArraySchemaEvolutionToBuffer(arraySchemaEvolution *ArraySchemaEvol
 	}
 
 	buffer := Buffer{context: arraySchemaEvolution.context}
-	freeOnGC(&buffer)
+	runtime.AddCleanup(&buffer, freeFreeable, Freeable(&buffer))
 
 	ret := C.tiledb_serialize_array_schema_evolution(
 		arraySchemaEvolution.context.tiledbContext,
@@ -134,7 +134,7 @@ func DeserializeArraySchemaEvolution(buffer *Buffer, serializationType Serializa
 	// This needs to happen *after* the tiledb_deserialize_array_schema_evolution
 	// call because that may leave the schemaEvolution with a non-nil pointer
 	// to already-freed memory.
-	freeOnGC(&arraySchemaEvolution)
+	runtime.AddCleanup(&arraySchemaEvolution, freeFreeable, Freeable(&arraySchemaEvolution))
 
 	return &arraySchemaEvolution, nil
 }
@@ -167,7 +167,7 @@ func SerializeArrayNonEmptyDomainToBuffer(a *Array, serializationType Serializat
 	}
 
 	buffer := Buffer{context: schema.context}
-	freeOnGC(&buffer)
+	runtime.AddCleanup(&buffer, freeFreeable, Freeable(&buffer))
 
 	var cClientSide = C.int32_t(0) // Currently this parameter is unused in libtiledb
 	ret = C.tiledb_serialize_array_nonempty_domain(a.context.tiledbContext, a.tiledbArray, slicePtr(tmpDomain), isEmpty, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
@@ -279,7 +279,7 @@ func DeserializeArrayNonEmptyDomain(a *Array, buffer *Buffer, serializationType 
 func SerializeArrayNonEmptyDomainAllDimensionsToBuffer(a *Array, serializationType SerializationType) (*Buffer, error) {
 
 	buffer := Buffer{context: a.context}
-	freeOnGC(&buffer)
+	runtime.AddCleanup(&buffer, freeFreeable, Freeable(&buffer))
 
 	var cClientSide = C.int32_t(0) // Currently this parameter is unused in libtiledb
 	ret := C.tiledb_serialize_array_non_empty_domain_all_dimensions(a.context.tiledbContext, a.tiledbArray, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
@@ -319,7 +319,7 @@ func DeserializeArrayNonEmptyDomainAllDimensions(a *Array, buffer *Buffer, seria
 // SerializeQuery serializes a query.
 func SerializeQuery(query *Query, serializationType SerializationType, clientSide bool) (*BufferList, error) {
 	bufferList := BufferList{context: query.context}
-	freeOnGC(&bufferList)
+	runtime.AddCleanup(&bufferList, freeFreeable, Freeable(&bufferList))
 
 	var cClientSide C.int32_t
 	if clientSide {
@@ -359,7 +359,7 @@ func DeserializeQuery(query *Query, buffer *Buffer, serializationType Serializat
 // SerializeArrayMetadataToBuffer gets and serializes the array metadata and returns a Buffer object containing the payload.
 func SerializeArrayMetadataToBuffer(a *Array, serializationType SerializationType) (*Buffer, error) {
 	buffer := Buffer{context: a.context}
-	freeOnGC(&buffer)
+	runtime.AddCleanup(&buffer, freeFreeable, Freeable(&buffer))
 
 	ret := C.tiledb_serialize_array_metadata(a.context.tiledbContext, a.tiledbArray, C.tiledb_serialization_type_t(serializationType), &buffer.tiledbBuffer)
 	runtime.KeepAlive(a)
@@ -403,7 +403,7 @@ func SerializeQueryEstResultSizesToBuffer(q *Query, serializationType Serializat
 	}
 
 	buffer := Buffer{context: q.context}
-	freeOnGC(&buffer)
+	runtime.AddCleanup(&buffer, freeFreeable, Freeable(&buffer))
 
 	ret := C.tiledb_serialize_query_est_result_sizes(q.context.tiledbContext, q.tiledbQuery, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	runtime.KeepAlive(q)
@@ -455,7 +455,7 @@ func SerializeArrayToBuffer(array *Array, serializationType SerializationType, c
 
 	buffer := Buffer{context: array.context}
 	// Set finalizer for free C pointer on gc
-	freeOnGC(&buffer)
+	runtime.AddCleanup(&buffer, freeFreeable, Freeable(&buffer))
 
 	ret := C.tiledb_serialize_array(array.context.tiledbContext, array.tiledbArray, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	runtime.KeepAlive(array)
@@ -503,7 +503,7 @@ func DeserializeArray(buffer *Buffer, serializationType SerializationType, clien
 	// This needs to happen *after* the tiledb_deserialize_array call
 	// because that may leave the array with a non-nil pointer
 	// to already-freed memory.
-	freeOnGC(&array)
+	runtime.AddCleanup(&array, freeFreeable, Freeable(&array))
 
 	return &array, nil
 }
@@ -519,7 +519,7 @@ func SerializeFragmentInfoToBuffer(fragmentInfo *FragmentInfo, serializationType
 
 	buffer := Buffer{context: fragmentInfo.context}
 	// Set finalizer for free C pointer on gc
-	freeOnGC(&buffer)
+	runtime.AddCleanup(&buffer, freeFreeable, Freeable(&buffer))
 
 	ret := C.tiledb_serialize_fragment_info(fragmentInfo.context.tiledbContext, fragmentInfo.tiledbFragmentInfo, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	runtime.KeepAlive(fragmentInfo)
@@ -575,7 +575,7 @@ func SerializeFragmentInfoRequestToBuffer(fragmentInfo *FragmentInfo, serializat
 
 	buffer := Buffer{context: fragmentInfo.context}
 	// Set finalizer for free C pointer on gc
-	freeOnGC(&buffer)
+	runtime.AddCleanup(&buffer, freeFreeable, Freeable(&buffer))
 
 	ret := C.tiledb_serialize_fragment_info_request(fragmentInfo.context.tiledbContext, fragmentInfo.tiledbFragmentInfo, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	runtime.KeepAlive(fragmentInfo)
@@ -642,8 +642,8 @@ func DeserializeQueryAndArray(context *Context, buffer *Buffer, serializationTyp
 		return nil, nil, fmt.Errorf("error deserializing query: %w", context.LastError())
 	}
 
-	freeOnGC(array)
-	freeOnGC(query)
+	runtime.AddCleanup(array, freeFreeable, Freeable(array))
+	runtime.AddCleanup(query, freeFreeable, Freeable(query))
 
 	query.resultBufferElements = make(map[string][3]*uint64)
 
@@ -655,7 +655,7 @@ func DeserializeQueryAndArray(context *Context, buffer *Buffer, serializationTyp
 // SerializeGroupMetadata gets and serializes the group metadata and returns a Buffer object containing the payload
 func SerializeGroupMetadataToBuffer(g *Group, serializationType SerializationType) (*Buffer, error) {
 	buffer := Buffer{context: g.context}
-	freeOnGC(&buffer)
+	runtime.AddCleanup(&buffer, freeFreeable, Freeable(&buffer))
 
 	ret := C.tiledb_serialize_group_metadata(g.context.tiledbContext, g.group, C.tiledb_serialization_type_t(serializationType), &buffer.tiledbBuffer)
 	runtime.KeepAlive(g)

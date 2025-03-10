@@ -38,7 +38,7 @@ func NewFragmentInfo(tdbCtx *Context, uri string) (*FragmentInfo, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb fragment info: %w", fI.context.LastError())
 	}
-	freeOnGC(&fI)
+	runtime.AddCleanup(&fI, freeFreeable, Freeable(&fI))
 
 	return &fI, nil
 }
@@ -629,7 +629,7 @@ func (fI *FragmentInfo) Config() (*Config, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting config from fragment info: %w", fI.context.LastError())
 	}
-	freeOnGC(&config)
+	runtime.AddCleanup(&config, freeFreeable, Freeable(&config))
 
 	if fI.config == nil {
 		fI.config = &config

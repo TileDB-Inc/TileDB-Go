@@ -85,7 +85,7 @@ func NewVFS(context *Context, config *Config) (*VFS, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb VFS: %w", context.LastError())
 	}
-	freeOnGC(&vfs)
+	runtime.AddCleanup(&vfs, freeFreeable, Freeable(&vfs))
 
 	return &vfs, nil
 }
@@ -117,7 +117,7 @@ func (v *VFS) Config() (*Config, error) {
 	} else if ret != C.TILEDB_OK {
 		return nil, errors.New("unknown error in GetConfig")
 	}
-	freeOnGC(&config)
+	runtime.AddCleanup(&config, freeFreeable, Freeable(&config))
 
 	return &config, nil
 }
@@ -353,7 +353,7 @@ func (v *VFS) Open(uri string, mode VFSMode) (*VFSfh, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
 	fh := &VFSfh{context: v.context, uri: uri, vfs: v}
-	freeOnGC(fh)
+	runtime.AddCleanup(fh, freeFreeable, Freeable(fh))
 
 	ret := C.tiledb_vfs_open(v.context.tiledbContext, v.tiledbVFS, curi, C.tiledb_vfs_mode_t(mode), &fh.tiledbVFSfh)
 	runtime.KeepAlive(v)

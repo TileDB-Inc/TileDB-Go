@@ -35,7 +35,7 @@ func NewBuffer(context *Context) (*Buffer, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb buffer: %w", buffer.context.LastError())
 	}
-	freeOnGC(&buffer)
+	runtime.AddCleanup(&buffer, freeFreeable, Freeable(&buffer))
 
 	return &buffer, nil
 }

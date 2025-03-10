@@ -28,7 +28,7 @@ func NewFilter(context *Context, filterType FilterType) (*Filter, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb filter: %w", filter.context.LastError())
 	}
-	freeOnGC(&filter)
+	runtime.AddCleanup(&filter, freeFreeable, Freeable(&filter))
 
 	return &filter, nil
 }

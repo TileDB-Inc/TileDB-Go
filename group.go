@@ -31,7 +31,7 @@ func NewGroup(tdbCtx *Context, uri string) (*Group, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb group: %w", group.context.LastError())
 	}
-	freeOnGC(&group)
+	runtime.AddCleanup(&group, freeFreeable, Freeable(&group))
 
 	return &group, nil
 }
@@ -92,7 +92,7 @@ func (g *Group) Config() (*Config, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting config from query: %w", g.context.LastError())
 	}
-	freeOnGC(&config)
+	runtime.AddCleanup(&config, freeFreeable, Freeable(&config))
 
 	if g.config == nil {
 		g.config = &config

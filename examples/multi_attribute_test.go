@@ -40,7 +40,7 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-func ExampleMultiAttributeArray() {
+func ExampleRunMultiAttributeArray() {
 	examples_lib.RunMultiAttributeArray()
 
 	// Output: Reading both attributes a1 and a2:

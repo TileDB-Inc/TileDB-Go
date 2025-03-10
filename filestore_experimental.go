@@ -14,7 +14,7 @@ import (
 	"unsafe"
 )
 
-// Size returns the uncompressed size of the array at arrayURI, which should have a filestore schema.
+// FileSize returns the uncompressed size of the array at arrayURI, which should have a filestore schema.
 func FileSize(tdbCtx *Context, arrayURI string) (int64, error) {
 	cArrayURI := C.CString(arrayURI)
 	defer C.free(unsafe.Pointer(cArrayURI))
@@ -170,7 +170,7 @@ func NewArraySchemaForFile(tdbCtx *Context, filePath string) (*ArraySchema, erro
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating schema: %w", tdbCtx.LastError())
 	}
-	freeOnGC(&arraySchema)
+	runtime.AddCleanup(&arraySchema, freeFreeable, Freeable(&arraySchema))
 
 	return &arraySchema, nil
 }

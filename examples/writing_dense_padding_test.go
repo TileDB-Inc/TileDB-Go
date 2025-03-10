@@ -38,7 +38,7 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-func ExampleWritingDensePadding() {
+func ExampleRunWritingDensePadding() {
 	examples_lib.RunWritingDensePadding()
 
 	// Output: [-2147483648 -2147483648 -2147483648 -2147483648 1 2 -2147483648 -2147483648 3 4 -2147483648 -2147483648 -2147483648 -2147483648 -2147483648 -2147483648]

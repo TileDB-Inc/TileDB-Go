@@ -238,7 +238,7 @@ func NewDimension(context *Context, name string, datatype Datatype, domain inter
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb dimension: %w", context.LastError())
 	}
-	freeOnGC(&dimension)
+	runtime.AddCleanup(&dimension, freeFreeable, Freeable(&dimension))
 
 	return &dimension, nil
 }
@@ -259,7 +259,7 @@ func NewStringDimension(context *Context, name string) (*Dimension, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb dimension: %w", context.LastError())
 	}
-	freeOnGC(&dimension)
+	runtime.AddCleanup(&dimension, freeFreeable, Freeable(&dimension))
 
 	return &dimension, nil
 }
@@ -299,7 +299,7 @@ func (d *Dimension) FilterList() (*FilterList, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb dimension filter list: %w", d.context.LastError())
 	}
-	freeOnGC(&filterList)
+	runtime.AddCleanup(&filterList, freeFreeable, Freeable(&filterList))
 
 	return &filterList, nil
 }

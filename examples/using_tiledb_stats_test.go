@@ -39,6 +39,6 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-func ExampleUsingTileDBStats() {
+func ExampleRunUsingTileDBStats() {
 	examples_lib.RunUsingTileDBStats()
 }
