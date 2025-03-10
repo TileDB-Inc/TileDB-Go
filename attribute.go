@@ -38,7 +38,7 @@ func NewAttribute(context *Context, name string, datatype Datatype) (*Attribute,
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb attribute: %w", context.LastError())
 	}
-	freeOnGC(&attribute)
+	runtime.AddCleanup(&attribute, freeFreeable, Freeable(&attribute))
 
 	return &attribute, nil
 }
@@ -78,7 +78,7 @@ func (a *Attribute) FilterList() (*FilterList, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb attribute filter list: %w", a.context.LastError())
 	}
-	freeOnGC(&filterList)
+	runtime.AddCleanup(&filterList, freeFreeable, Freeable(&filterList))
 
 	return &filterList, nil
 }

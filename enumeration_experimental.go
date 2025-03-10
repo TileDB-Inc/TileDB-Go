@@ -66,7 +66,7 @@ func NewOrderedEnumeration[T EnumerationType](tdbCtx *Context, name string, valu
 	return newEnumeration(tdbCtx, name, true, values)
 }
 
-// NewOrderedEnumeration creates an unordered enumeration with name and values.
+// NewUnorderedEnumeration creates an unordered enumeration with name and values.
 func NewUnorderedEnumeration[T EnumerationType](tdbCtx *Context, name string, values []T) (*Enumeration, error) {
 	return newEnumeration(tdbCtx, name, false, values)
 }
@@ -130,7 +130,7 @@ func newEnumeration[T EnumerationType](tdbCtx *Context, name string, ordered boo
 	}
 
 	e := &Enumeration{context: tdbCtx, tiledbEnum: tiledbEnum}
-	freeOnGC(e)
+	runtime.AddCleanup(e, freeFreeable, Freeable(e))
 
 	return e, nil
 }
@@ -180,7 +180,7 @@ func (e *Enumeration) Type() (Datatype, error) {
 	return Datatype(attrType), nil
 }
 
-// Type returns the number of cells for each enumeration value. It is 1 except for strings which is TILEDB_VAR_NUM.
+// CellValNum returns the number of cells for each enumeration value. It is 1 except for strings which is TILEDB_VAR_NUM.
 func (e *Enumeration) CellValNum() (uint32, error) {
 	var cellValNum C.uint32_t
 
@@ -376,7 +376,7 @@ func ExtendEnumeration[T EnumerationType](tdbCtx *Context, e *Enumeration, value
 	}
 
 	ext := &Enumeration{context: tdbCtx, tiledbEnum: extEnum}
-	freeOnGC(ext)
+	runtime.AddCleanup(ext, freeFreeable, Freeable(ext))
 
 	return ext, nil
 }
@@ -403,11 +403,11 @@ func (a *ArraySchema) EnumerationFromName(name string) (*Enumeration, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting enumeration from name: %w", a.context.LastError())
 	}
-	freeOnGC(enum)
+	runtime.AddCleanup(enum, freeFreeable, Freeable(enum))
 	return enum, nil
 }
 
-// EnumerationFromName gets an Enumeration from the ArraySchema by its Attribute name.
+// EnumerationFromAttributeName gets an Enumeration from the ArraySchema by its Attribute name.
 func (a *ArraySchema) EnumerationFromAttributeName(name string) (*Enumeration, error) {
 	enum := &Enumeration{context: a.context}
 	cName := C.CString(name)
@@ -417,11 +417,11 @@ func (a *ArraySchema) EnumerationFromAttributeName(name string) (*Enumeration, e
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting enumeration from attribute name: %w", a.context.LastError())
 	}
-	freeOnGC(enum)
+	runtime.AddCleanup(enum, freeFreeable, Freeable(enum))
 	return enum, nil
 }
 
-// LoadAllEnumeration is for use with TileDB cloud arrays. It fetches the enumeration values from the server.
+// LoadAllEnumerations is for use with TileDB cloud arrays. It fetches the enumeration values from the server.
 // The method is called ondemand if the client tries to fetch enumeration values for a tiledb:// array.
 func (a *Array) LoadAllEnumerations() error {
 	ret := C.tiledb_array_load_all_enumerations(a.context.tiledbContext, a.tiledbArray)
@@ -495,7 +495,7 @@ func (a *Attribute) GetEnumerationName() (string, error) {
 	return C.GoStringN(cName, C.int(cNameSize)), nil
 }
 
-// UseEnumerations set true to allow query conditions with enumeration literals.
+// UseEnumeration set true to allow query conditions with enumeration literals.
 func (qc *QueryCondition) UseEnumeration(useEnum bool) error {
 	var cUseEnum C.int
 	if useEnum {

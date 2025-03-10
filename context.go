@@ -48,7 +48,7 @@ func NewContext(config *Config) (*Context, error) {
 		}
 		return nil, fmt.Errorf("error creating tiledb context: unknown error")
 	}
-	freeOnGC(&context)
+	runtime.AddCleanup(&context, freeFreeable, Freeable(&context))
 
 	err := context.setDefaultTags()
 	if err != nil {
@@ -112,7 +112,7 @@ func (c *Context) Config() (*Config, error) {
 	} else if ret != C.TILEDB_OK {
 		return nil, errors.New("unknown error in GetConfig")
 	}
-	freeOnGC(&config)
+	runtime.AddCleanup(&config, freeFreeable, Freeable(&config))
 
 	return &config, nil
 }

@@ -29,7 +29,7 @@ func NewArraySchemaEvolution(tdbCtx *Context) (*ArraySchemaEvolution, error) {
 		return nil, fmt.Errorf("error creating tiledb arraySchemaEvolution: %w",
 			arraySchemaEvolution.context.LastError())
 	}
-	freeOnGC(&arraySchemaEvolution)
+	runtime.AddCleanup(&arraySchemaEvolution, freeFreeable, Freeable(&arraySchemaEvolution))
 
 	return &arraySchemaEvolution, nil
 }

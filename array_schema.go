@@ -102,7 +102,7 @@ func NewArraySchema(tdbCtx *Context, arrayType ArrayType) (*ArraySchema, error) 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb arraySchema: %w", arraySchema.context.LastError())
 	}
-	freeOnGC(&arraySchema)
+	runtime.AddCleanup(&arraySchema, freeFreeable, Freeable(&arraySchema))
 	return &arraySchema, nil
 }
 
@@ -153,7 +153,7 @@ func (a *ArraySchema) AttributeFromIndex(index uint) (*Attribute, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting attribute %d for tiledb arraySchema: %w", index, a.context.LastError())
 	}
-	freeOnGC(&attr)
+	runtime.AddCleanup(&attr, freeFreeable, Freeable(&attr))
 	return &attr, nil
 }
 
@@ -169,7 +169,7 @@ func (a *ArraySchema) AttributeFromName(attrName string) (*Attribute, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting attribute %s for tiledb arraySchema: %w", attrName, a.context.LastError())
 	}
-	freeOnGC(&attr)
+	runtime.AddCleanup(&attr, freeFreeable, Freeable(&attr))
 	return &attr, nil
 }
 
@@ -265,7 +265,7 @@ func (a *ArraySchema) Domain() (*Domain, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error setting domain for tiledb arraySchema: %w", a.context.LastError())
 	}
-	freeOnGC(&domain)
+	runtime.AddCleanup(&domain, freeFreeable, Freeable(&domain))
 	return &domain, nil
 }
 
@@ -351,7 +351,7 @@ func (a *ArraySchema) CoordsFilterList() (*FilterList, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting coordinates filter list for tiledb arraySchema: %w", a.context.LastError())
 	}
-	freeOnGC(&filterList)
+	runtime.AddCleanup(&filterList, freeFreeable, Freeable(&filterList))
 	return &filterList, nil
 }
 
@@ -376,7 +376,7 @@ func (a *ArraySchema) OffsetsFilterList() (*FilterList, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting offsets filter list for tiledb arraySchema: %w", a.context.LastError())
 	}
-	freeOnGC(&filterList)
+	runtime.AddCleanup(&filterList, freeFreeable, Freeable(&filterList))
 	return &filterList, nil
 }
 
@@ -400,7 +400,7 @@ func LoadArraySchema(context *Context, path string) (*ArraySchema, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error in loading arraySchema from %s: %w", path, a.context.LastError())
 	}
-	freeOnGC(&a)
+	runtime.AddCleanup(&a, freeFreeable, Freeable(&a))
 	return &a, nil
 }
 

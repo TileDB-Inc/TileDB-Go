@@ -30,7 +30,7 @@ func NewDomain(tdbCtx *Context) (*Domain, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb domain: %w", domain.context.LastError())
 	}
-	freeOnGC(&domain)
+	runtime.AddCleanup(&domain, freeFreeable, Freeable(&domain))
 
 	return &domain, nil
 }
@@ -84,7 +84,7 @@ func (d *Domain) DimensionFromIndex(index uint) (*Dimension, error) {
 	}
 
 	dimension := Dimension{tiledbDimension: dim, context: d.context}
-	freeOnGC(&dimension)
+	runtime.AddCleanup(&dimension, freeFreeable, Freeable(&dimension))
 
 	return &dimension, nil
 }
@@ -100,7 +100,7 @@ func (d *Domain) DimensionFromName(name string) (*Dimension, error) {
 		return nil, fmt.Errorf("error getting tiledb dimension by name for domain: %w", d.context.LastError())
 	}
 	dimension := Dimension{tiledbDimension: dim, context: d.context}
-	freeOnGC(&dimension)
+	runtime.AddCleanup(&dimension, freeFreeable, Freeable(&dimension))
 	return &dimension, nil
 }
 

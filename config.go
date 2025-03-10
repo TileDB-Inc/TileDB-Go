@@ -27,7 +27,7 @@ func NewConfig() (*Config, error) {
 		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("error creating tiledb config: %w", cError(err))
 	}
-	freeOnGC(&config)
+	runtime.AddCleanup(&config, freeFreeable, Freeable(&config))
 
 	return &config, nil
 }
@@ -123,7 +123,7 @@ func LoadConfig(uri string) (*Config, error) {
 		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("error loading config from file %s: %w", uri, cError(err))
 	}
-	freeOnGC(&config)
+	runtime.AddCleanup(&config, freeFreeable, Freeable(&config))
 
 	return &config, nil
 }

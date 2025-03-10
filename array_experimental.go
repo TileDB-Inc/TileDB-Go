@@ -31,7 +31,7 @@ func GetConsolidationPlan(arr *Array, fragmentSize uint64) (*ConsolidationPlan, 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting consolidation plan for array: %w", cp.context.LastError())
 	}
-	freeOnGC(cp)
+	runtime.AddCleanup(cp, freeFreeable, Freeable(cp))
 
 	return cp, nil
 }

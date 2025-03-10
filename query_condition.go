@@ -25,7 +25,7 @@ func NewQueryCondition(tdbCtx *Context, attributeName string, op QueryConditionO
 		return nil, fmt.Errorf("error allocating tiledb query condition: %w", qc.context.LastError())
 	}
 	runtime.KeepAlive(tdbCtx)
-	freeOnGC(&qc)
+	runtime.AddCleanup(&qc, freeFreeable, Freeable(&qc))
 
 	if err := qc.init(attributeName, value, op); err != nil {
 		return nil, err
@@ -44,7 +44,7 @@ func NewQueryConditionCombination(tdbCtx *Context, left *QueryCondition, op Quer
 	runtime.KeepAlive(tdbCtx)
 	runtime.KeepAlive(left)
 	runtime.KeepAlive(right)
-	freeOnGC(&qc)
+	runtime.AddCleanup(&qc, freeFreeable, Freeable(&qc))
 
 	return &qc, nil
 }
@@ -56,9 +56,9 @@ func NewQueryConditionNegated(tdbCtx *Context, qc *QueryCondition) (*QueryCondit
 	if ret := C.tiledb_query_condition_negate(qc.context.tiledbContext, qc.cond, &nqc.cond); ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error allocating tiledb query condition: %w", qc.context.LastError())
 	}
-	freeOnGC(&nqc)
 	runtime.KeepAlive(tdbCtx)
 	runtime.KeepAlive(qc)
+	runtime.AddCleanup(&nqc, freeFreeable, Freeable(&nqc))
 
 	return &nqc, nil
 }

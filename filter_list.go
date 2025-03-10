@@ -26,7 +26,7 @@ func NewFilterList(context *Context) (*FilterList, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb FilterList: %w", filterList.context.LastError())
 	}
-	freeOnGC(&filterList)
+	runtime.AddCleanup(&filterList, freeFreeable, Freeable(&filterList))
 
 	return &filterList, nil
 }
@@ -99,7 +99,7 @@ func (f *FilterList) FilterFromIndex(index uint32) (*Filter, error) {
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error fetching filter for index %d from tiledb FilterList: %w", index, f.context.LastError())
 	}
-	freeOnGC(&filter)
+	runtime.AddCleanup(&filter, freeFreeable, Freeable(&filter))
 	return &filter, nil
 }
 
