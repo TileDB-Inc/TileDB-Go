@@ -18,16 +18,14 @@ func TestGroupCreate(t *testing.T) {
 	tmpGroup := t.TempDir()
 
 	// Create initial group
-	group, err := NewGroup(context, tmpGroup)
-	require.NoError(t, err)
-	require.NoError(t, group.Create())
+	require.NoError(t, CreateGroup(context, tmpGroup))
 
 	// Creating the same group twice should error
-	group, err = NewGroup(context, tmpGroup)
-	require.NoError(t, err)
-	assert.Error(t, group.Create())
+	assert.Error(t, CreateGroup(context, tmpGroup))
 
 	// Test Group.IsOpen
+	group, err := NewGroup(context, tmpGroup)
+	require.NoError(t, err)
 	isOpen, err := group.IsOpen()
 	require.NoError(t, err)
 	assert.False(t, isOpen)
@@ -210,7 +208,11 @@ func TestDeserializeGroup(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	g, err := NewGroup(tdbCtx, t.TempDir())
+	groupDir := t.TempDir()
+
+	require.NoError(t, CreateGroup(tdbCtx, groupDir))
+
+	g, err := NewGroup(tdbCtx, groupDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -218,8 +220,6 @@ func TestDeserializeGroup(t *testing.T) {
 	if err := setConfigForWrite(g, 0); err != nil {
 		t.Fatal(err)
 	}
-
-	require.NoError(t, g.Create())
 
 	require.NoError(t, g.Open(TILEDB_WRITE))
 	if err := buffer.SetBuffer([]byte(`{
@@ -255,17 +255,13 @@ func TestGetIsRelativeURIByName(t *testing.T) {
 	require.NoError(t, err)
 
 	arraySchema := buildArraySchema(tdbCtx, t)
-	array1, err := NewArray(tdbCtx, arrayURI1)
+	err = CreateArray(tdbCtx, arrayURI1, arraySchema)
 	require.NoError(t, err)
-	err = array1.Create(arraySchema)
-	require.NoError(t, err)
-	array2, err := NewArray(tdbCtx, arrayURI2)
-	require.NoError(t, err)
-	err = array2.Create(arraySchema)
+	err = CreateArray(tdbCtx, arrayURI2, arraySchema)
 	require.NoError(t, err)
 
 	require.NoError(t, group.Open(TILEDB_WRITE))
-	require.NoError(t, group.AddMember(array1.uri, "array1", false))
+	require.NoError(t, group.AddMember(arrayURI1, "array1", false))
 	require.NoError(t, group.AddMember("array2", "array2", true))
 	require.NoError(t, group.Close())
 
@@ -307,20 +303,16 @@ func TestGroupDelete(t *testing.T) {
 		require.NoError(t, err)
 
 		arraySchema := buildArraySchema(tdbCtx, t)
-		outerArray, err := NewArray(tdbCtx, outerArrayURI)
+		err = CreateArray(tdbCtx, outerArrayURI, arraySchema)
 		require.NoError(t, err)
-		err = outerArray.Create(arraySchema)
-		require.NoError(t, err)
-		innerArray, err := NewArray(tdbCtx, innerArrayURI)
-		require.NoError(t, err)
-		err = innerArray.Create(arraySchema)
+		err = CreateArray(tdbCtx, innerArrayURI, arraySchema)
 		require.NoError(t, err)
 
 		require.NoError(t, innerGroup.Open(TILEDB_WRITE))
-		require.NoError(t, innerGroup.AddMember(innerArray.uri, "innerArray", false))
+		require.NoError(t, innerGroup.AddMember(innerArrayURI, "innerArray", false))
 		require.NoError(t, innerGroup.Close())
 		require.NoError(t, outerGroup.Open(TILEDB_WRITE))
-		require.NoError(t, outerGroup.AddMember(outerArray.uri, "outerArray", false))
+		require.NoError(t, outerGroup.AddMember(outerArrayURI, "outerArray", false))
 		require.NoError(t, outerGroup.AddMember(innerGroup.uri, "innerGroup", false))
 		require.NoError(t, outerGroup.Close())
 
@@ -407,34 +399,25 @@ func memberCount(group *Group) (uint64, error) {
 }
 
 func createTestGroup(tdbCtx *Context, uri string) (*Group, error) {
+	if err := CreateGroup(tdbCtx, uri); err != nil {
+		return nil, err
+	}
+
 	// Create initial group
 	group, err := NewGroup(tdbCtx, uri)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := group.Create(); err != nil {
-		return nil, err
-	}
 	return group, nil
 }
 
 func addTwoArraysToGroup(tdbCtx *Context, group *Group, arraySchema *ArraySchema, arrayURI1, arrayURI2 string) error {
-	array1, err := NewArray(tdbCtx, arrayURI1)
-	if err != nil {
+	if err := CreateArray(tdbCtx, arrayURI1, arraySchema); err != nil {
 		return err
 	}
 
-	if err := array1.Create(arraySchema); err != nil {
-		return err
-	}
-
-	array2, err := NewArray(tdbCtx, arrayURI2)
-	if err != nil {
-		return err
-	}
-
-	if err := array2.Create(arraySchema); err != nil {
+	if err := CreateArray(tdbCtx, arrayURI2, arraySchema); err != nil {
 		return err
 	}
 
@@ -446,11 +429,11 @@ func addTwoArraysToGroup(tdbCtx *Context, group *Group, arraySchema *ArraySchema
 		return err
 	}
 
-	if err := group.AddMember(array1.uri, arrayURI1, false); err != nil {
+	if err := group.AddMember(arrayURI1, arrayURI1, false); err != nil {
 		return err
 	}
 
-	if err := group.AddMember(array2.uri, arrayURI2, false); err != nil {
+	if err := group.AddMember(arrayURI2, arrayURI2, false); err != nil {
 		return err
 	}
 

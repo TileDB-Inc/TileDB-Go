@@ -208,17 +208,22 @@ func (a *Array) Close() error {
 	return nil
 }
 
-// Create creates a new TileDB array given an input schema.
-func (a *Array) Create(arraySchema *ArraySchema) error {
-	curi := C.CString(a.uri)
+// Create creates a new TileDB array given a context, URI and schema.
+func CreateArray(tdbCtx *Context, uri string, arraySchema *ArraySchema) error {
+	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_array_create(a.context.tiledbContext, curi, arraySchema.tiledbArraySchema)
-	runtime.KeepAlive(a)
+	ret := C.tiledb_array_create(tdbCtx.tiledbContext, curi, arraySchema.tiledbArraySchema)
+	runtime.KeepAlive(tdbCtx)
 	runtime.KeepAlive(arraySchema)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error creating tiledb array: %w", a.context.LastError())
+		return fmt.Errorf("error creating tiledb array: %w", tdbCtx.LastError())
 	}
 	return nil
+}
+
+// Create creates a new TileDB array given an input schema.
+func (a *Array) Create(arraySchema *ArraySchema) error {
+	return CreateArray(a.context, a.uri, arraySchema)
 }
 
 // Consolidate consolidates the fragments of an array into a single fragment.

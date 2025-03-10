@@ -36,17 +36,22 @@ func NewGroup(tdbCtx *Context, uri string) (*Group, error) {
 	return &group, nil
 }
 
-// Create creates a new TileDB group.
-func (g *Group) Create() error {
-	curi := C.CString(g.uri)
+// Create creates a new TileDB group given a context and URI.
+func CreateGroup(tdbCtx *Context, uri string) error {
+	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
 
-	ret := C.tiledb_group_create(g.context.tiledbContext, curi)
-	runtime.KeepAlive(g)
+	ret := C.tiledb_group_create(tdbCtx.tiledbContext, curi)
+	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error in creating group: %w", g.context.LastError())
+		return fmt.Errorf("error in creating group: %w", tdbCtx.LastError())
 	}
 	return nil
+}
+
+// Create creates a new TileDB group.
+func (g *Group) Create() error {
+	return CreateGroup(g.context, g.uri)
 }
 
 func (g *Group) Open(queryType QueryType) error {

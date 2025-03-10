@@ -306,9 +306,7 @@ func createDenseIntegerGrid(t *testing.T, n uint8) string {
 	vAttr, err := NewAttribute(tdbCtx, "v", TILEDB_UINT16)
 	require.NoError(t, err)
 	require.NoError(t, schema.AddAttributes(vAttr))
-	array, err := NewArray(tdbCtx, arrPath)
-	require.NoError(t, err)
-	require.NoError(t, array.Create(schema))
+	require.NoError(t, CreateArray(tdbCtx, arrPath, schema))
 	return arrPath
 }
 
@@ -331,9 +329,7 @@ func createSparse2dTable(t *testing.T) string {
 	vAttr, err := NewAttribute(tdbCtx, "v", TILEDB_UINT16)
 	require.NoError(t, err)
 	require.NoError(t, schema.AddAttributes(vAttr))
-	array, err := NewArray(tdbCtx, arrPath)
-	require.NoError(t, err)
-	require.NoError(t, array.Create(schema))
+	require.NoError(t, CreateArray(tdbCtx, arrPath, schema))
 	return arrPath
 }
 
