@@ -23,7 +23,7 @@ e.g. on disk, in an S3 bucket, etc. Once an array has been opened for reading
 or writing, interact with the data through Query objects.
 */
 type Array struct {
-	tiledbArray *C.tiledb_array_t
+	tiledbArray *capiHandle[C.tiledb_array_t]
 	context     *Context
 	uri         string
 	config      *Config
@@ -54,6 +54,10 @@ type NonEmptyDomain struct {
 	Bounds        interface{}
 }
 
+func newArrayFromHandle(tdbCtx *Context, arrayHandle *capiHandle[C.tiledb_array_t]) *Array {
+	return &Array{context: tdbCtx, tiledbArray: arrayHandle}
+}
+
 // NewArray allocates a new array.
 // If the provided Context is nil, a default context is allocated and used.
 func NewArray(tdbCtx *Context, uri string) (*Array, error) {
@@ -66,14 +70,15 @@ func NewArray(tdbCtx *Context, uri string) (*Array, error) {
 	}
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	array := Array{context: tdbCtx, uri: uri}
-	ret := C.tiledb_array_alloc(array.context.tiledbContext, curi, &array.tiledbArray)
+	var arrayPtr *C.tiledb_array_t
+	ret := C.tiledb_array_alloc(tdbCtx.tiledbContext, curi, &arrayPtr)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error creating tiledb array: %w", array.context.LastError())
+		return nil, fmt.Errorf("error creating tiledb array: %w", tdbCtx.LastError())
 	}
-	freeOnGC(&array)
+	array := newArrayFromHandle(tdbCtx, newArrayHandle(arrayPtr))
+	array.uri = uri
 
-	return &array, nil
+	return array, nil
 }
 
 // Free releases the internal TileDB core data that was allocated on the C heap.
@@ -82,10 +87,7 @@ func NewArray(tdbCtx *Context, uri string) (*Array, error) {
 // can safely be called many times on the same object; if it has already
 // been freed, it will not be freed again.
 func (a *Array) Free() {
-	if a.tiledbArray != nil {
-		a.Close()
-		C.tiledb_array_free(&a.tiledbArray)
-	}
+	a.tiledbArray.Free()
 }
 
 // Context exposes the internal TileDB context used to initialize the array.
@@ -117,7 +119,7 @@ func WithStartTime(start time.Time) ArrayOpenOption {
 // WithEndTimestamp sets the subsequent Open call to use the end_timestamp of the passed value.
 func WithEndTimestamp(endTimestamp uint64) ArrayOpenOption {
 	return func(tdbArray *Array) error {
-		ret := C.tiledb_array_set_open_timestamp_end(tdbArray.context.tiledbContext, tdbArray.tiledbArray, C.uint64_t(endTimestamp))
+		ret := C.tiledb_array_set_open_timestamp_end(tdbArray.context.tiledbContext, tdbArray.tiledbArray.Get(), C.uint64_t(endTimestamp))
 		runtime.KeepAlive(tdbArray)
 		if ret != C.TILEDB_OK {
 			return fmt.Errorf("error setting end timestamp option: %w", tdbArray.context.LastError())
@@ -129,7 +131,7 @@ func WithEndTimestamp(endTimestamp uint64) ArrayOpenOption {
 // WithStartTimestamp sets the subsequent Open call to use the start_timestamp of the passed value.
 func WithStartTimestamp(startTimestamp uint64) ArrayOpenOption {
 	return func(tdbArray *Array) error {
-		ret := C.tiledb_array_set_open_timestamp_start(tdbArray.context.tiledbContext, tdbArray.tiledbArray, C.uint64_t(startTimestamp))
+		ret := C.tiledb_array_set_open_timestamp_start(tdbArray.context.tiledbContext, tdbArray.tiledbArray.Get(), C.uint64_t(startTimestamp))
 		runtime.KeepAlive(tdbArray)
 		if ret != C.TILEDB_OK {
 			return fmt.Errorf("error setting start timestamp option: %w", tdbArray.context.LastError())
@@ -155,7 +157,7 @@ func (a *Array) OpenWithOptions(queryType QueryType, opts ...ArrayOpenOption) er
 		}
 	}
 
-	ret := C.tiledb_array_open(a.context.tiledbContext, a.tiledbArray, C.tiledb_query_type_t(queryType))
+	ret := C.tiledb_array_open(a.context.tiledbContext, a.tiledbArray.Get(), C.tiledb_query_type_t(queryType))
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error opening tiledb array for querying: %w", a.context.LastError())
@@ -174,7 +176,7 @@ array_read for reads and another one array_write for writes, and interleave
 creation and submission of queries for both these array objects.
 */
 func (a *Array) Open(queryType QueryType) error {
-	ret := C.tiledb_array_open(a.context.tiledbContext, a.tiledbArray, C.tiledb_query_type_t(queryType))
+	ret := C.tiledb_array_open(a.context.tiledbContext, a.tiledbArray.Get(), C.tiledb_query_type_t(queryType))
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error opening tiledb array for querying: %w", a.context.LastError())
@@ -190,7 +192,7 @@ with open(), or just use reopen() without closing. This function will be
 generally faster than the former alternative.
 */
 func (a *Array) Reopen() error {
-	ret := C.tiledb_array_reopen(a.context.tiledbContext, a.tiledbArray)
+	ret := C.tiledb_array_reopen(a.context.tiledbContext, a.tiledbArray.Get())
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error reopening tiledb array for querying: %w", a.context.LastError())
@@ -200,7 +202,7 @@ func (a *Array) Reopen() error {
 
 // Close closes a tiledb array. This is automatically called on garbage collection.
 func (a *Array) Close() error {
-	ret := C.tiledb_array_close(a.context.tiledbContext, a.tiledbArray)
+	ret := C.tiledb_array_close(a.context.tiledbContext, a.tiledbArray.Get())
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error closing tiledb array for querying: %w", a.context.LastError())
@@ -264,7 +266,7 @@ func (a *Array) Vacuum(config *Config) error {
 // Schema returns the ArraySchema for the array.
 func (a *Array) Schema() (*ArraySchema, error) {
 	arraySchema := ArraySchema{context: a.context}
-	ret := C.tiledb_array_get_schema(a.context.tiledbContext, a.tiledbArray, &arraySchema.tiledbArraySchema)
+	ret := C.tiledb_array_get_schema(a.context.tiledbContext, a.tiledbArray.Get(), &arraySchema.tiledbArraySchema)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting schema for tiledb array: %w", a.context.LastError())
@@ -276,7 +278,7 @@ func (a *Array) Schema() (*ArraySchema, error) {
 // QueryType returns the current query type of an open array.
 func (a *Array) QueryType() (QueryType, error) {
 	var queryType C.tiledb_query_type_t
-	ret := C.tiledb_array_get_query_type(a.context.tiledbContext, a.tiledbArray, &queryType)
+	ret := C.tiledb_array_get_query_type(a.context.tiledbContext, a.tiledbArray.Get(), &queryType)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return -1, fmt.Errorf("error getting QueryType for tiledb array: %w", a.context.LastError())
@@ -312,7 +314,7 @@ func millisToTime(epochMillis uint64) time.Time {
 // OpenStartTimestamp returns the current start_timestamp value of an open array.
 func (a *Array) OpenStartTimestamp() (uint64, error) {
 	var start C.uint64_t
-	ret := C.tiledb_array_get_open_timestamp_start(a.context.tiledbContext, a.tiledbArray, &start)
+	ret := C.tiledb_array_get_open_timestamp_start(a.context.tiledbContext, a.tiledbArray.Get(), &start)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting start timestamp for tiledb array: %w", a.context.LastError())
@@ -323,7 +325,7 @@ func (a *Array) OpenStartTimestamp() (uint64, error) {
 // OpenEndTimestamp returns the current end_timestamp value of an open array.
 func (a *Array) OpenEndTimestamp() (uint64, error) {
 	var end C.uint64_t
-	ret := C.tiledb_array_get_open_timestamp_end(a.context.tiledbContext, a.tiledbArray, &end)
+	ret := C.tiledb_array_get_open_timestamp_end(a.context.tiledbContext, a.tiledbArray.Get(), &end)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting end timestamp for tiledb array: %w", a.context.LastError())
@@ -429,7 +431,7 @@ func (a *Array) NonEmptyDomain() ([]NonEmptyDomain, bool, error) {
 			var isEmpty C.int32_t
 			ret := C.tiledb_array_get_non_empty_domain_from_index(
 				a.context.tiledbContext,
-				a.tiledbArray,
+				a.tiledbArray.Get(),
 				(C.uint32_t)(dimIdx),
 				tmpDimensionPtr, &isEmpty)
 			runtime.KeepAlive(a)
@@ -527,7 +529,7 @@ func (a *Array) NonEmptyDomainMap() (map[string]interface{}, error) {
 			var isEmpty C.int32_t
 			ret := C.tiledb_array_get_non_empty_domain_from_index(
 				a.context.tiledbContext,
-				a.tiledbArray,
+				a.tiledbArray.Get(),
 				(C.uint32_t)(dimIdx),
 				tmpDimensionPtr, &isEmpty)
 			runtime.KeepAlive(a)
@@ -605,7 +607,7 @@ func (a *Array) NonEmptyDomainVarFromName(dimName string) (*NonEmptyDomain, bool
 
 	ret := C.tiledb_array_get_non_empty_domain_var_size_from_name(
 		a.context.tiledbContext,
-		a.tiledbArray,
+		a.tiledbArray.Get(),
 		cDimName,
 		&cstartSize,
 		&cendSize,
@@ -635,7 +637,7 @@ func (a *Array) NonEmptyDomainVarFromName(dimName string) (*NonEmptyDomain, bool
 
 	ret = C.tiledb_array_get_non_empty_domain_var_from_name(
 		a.context.tiledbContext,
-		a.tiledbArray,
+		a.tiledbArray.Get(),
 		cDimName,
 		cstart,
 		cend,
@@ -697,7 +699,7 @@ func (a *Array) NonEmptyDomainVarFromIndex(dimIdx uint) (*NonEmptyDomain, bool, 
 
 	ret := C.tiledb_array_get_non_empty_domain_var_size_from_index(
 		a.context.tiledbContext,
-		a.tiledbArray,
+		a.tiledbArray.Get(),
 		(C.uint32_t)(dimIdx),
 		&cstartSize,
 		&cendSize,
@@ -727,7 +729,7 @@ func (a *Array) NonEmptyDomainVarFromIndex(dimIdx uint) (*NonEmptyDomain, bool, 
 
 	ret = C.tiledb_array_get_non_empty_domain_var_from_index(
 		a.context.tiledbContext,
-		a.tiledbArray,
+		a.tiledbArray.Get(),
 		(C.uint32_t)(dimIdx),
 		cstart,
 		cend,
@@ -828,7 +830,7 @@ func (a *Array) NonEmptyDomainFromIndex(dimIdx uint) (*NonEmptyDomain, bool, err
 	var isEmpty C.int32_t
 	ret := C.tiledb_array_get_non_empty_domain_from_index(
 		a.context.tiledbContext,
-		a.tiledbArray,
+		a.tiledbArray.Get(),
 		(C.uint32_t)(dimIdx),
 		tmpDimensionPtr, &isEmpty)
 	runtime.KeepAlive(a)
@@ -863,7 +865,7 @@ func (a *Array) NonEmptyDomainFromName(dimName string) (*NonEmptyDomain, bool, e
 	var isEmpty C.int32_t
 	ret := C.tiledb_array_get_non_empty_domain_from_name(
 		a.context.tiledbContext,
-		a.tiledbArray,
+		a.tiledbArray.Get(),
 		cDimName,
 		tmpDimensionPtr, &isEmpty)
 	runtime.KeepAlive(a)
@@ -886,7 +888,7 @@ func (a *Array) NonEmptyDomainFromName(dimName string) (*NonEmptyDomain, bool, e
 // URI returns the array's uri.
 func (a *Array) URI() (string, error) {
 	var curi *C.char // a must be kept alive while curi is being accessed.
-	C.tiledb_array_get_uri(a.context.tiledbContext, a.tiledbArray, &curi)
+	C.tiledb_array_get_uri(a.context.tiledbContext, a.tiledbArray.Get(), &curi)
 	uri := C.GoString(curi)
 	runtime.KeepAlive(a)
 	if uri == "" {
@@ -903,7 +905,7 @@ func (a *Array) PutCharMetadata(key string, charData string) error {
 	var datatype Datatype = TILEDB_CHAR
 
 	valueNum := C.uint(len(charData))
-	ret := C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray,
+	ret := C.tiledb_array_put_metadata(a.context.tiledbContext, a.tiledbArray.Get(),
 		ckey, C.tiledb_datatype_t(datatype), valueNum, unsafe.Pointer(&[]byte(charData)[0]))
 	runtime.KeepAlive(a)
 
@@ -994,7 +996,7 @@ func arrayPutMetadata(a *Array, dt Datatype, key string, valuePtr unsafe.Pointer
 	defer C.free(unsafe.Pointer(cKey))
 	ret := C.tiledb_array_put_metadata(
 		a.context.tiledbContext,
-		a.tiledbArray,
+		a.tiledbArray.Get(),
 		cKey,
 		C.tiledb_datatype_t(dt),
 		C.uint(count),
@@ -1013,7 +1015,7 @@ func (a *Array) DeleteMetadata(key string) error {
 	ckey := C.CString(key)
 	defer C.free(unsafe.Pointer(ckey))
 
-	ret := C.tiledb_array_delete_metadata(a.context.tiledbContext, a.tiledbArray, ckey)
+	ret := C.tiledb_array_delete_metadata(a.context.tiledbContext, a.tiledbArray.Get(), ckey)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error deleting metadata from array: %w", a.context.LastError())
@@ -1031,7 +1033,7 @@ func (a *Array) GetMetadata(key string) (Datatype, uint, interface{}, error) {
 	var cValueNum C.uint
 	var cvalue unsafe.Pointer
 
-	ret := C.tiledb_array_get_metadata(a.context.tiledbContext, a.tiledbArray, ckey, &cType, &cValueNum, &cvalue)
+	ret := C.tiledb_array_get_metadata(a.context.tiledbContext, a.tiledbArray.Get(), ckey, &cType, &cValueNum, &cvalue)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return 0, 0, nil, fmt.Errorf("error getting metadata from array: %w, key: %s", a.context.LastError(), key)
@@ -1056,7 +1058,7 @@ func (a *Array) GetMetadata(key string) (Datatype, uint, interface{}, error) {
 func (a *Array) GetMetadataNum() (uint64, error) {
 	var cNum C.uint64_t
 
-	ret := C.tiledb_array_get_metadata_num(a.context.tiledbContext, a.tiledbArray, &cNum)
+	ret := C.tiledb_array_get_metadata_num(a.context.tiledbContext, a.tiledbArray.Get(), &cNum)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting number of metadata from array: %w", a.context.LastError())
@@ -1088,7 +1090,7 @@ func (a *Array) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 	var cvalue unsafe.Pointer
 
 	ret := C.tiledb_array_get_metadata_from_index(a.context.tiledbContext,
-		a.tiledbArray, cIndex, &cKey, &cKeyLen, &cType, &cValueNum, &cvalue)
+		a.tiledbArray.Get(), cIndex, &cKey, &cKeyLen, &cType, &cValueNum, &cvalue)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting metadata from array: %s, Index: %d", a.context.LastError(), index)
@@ -1156,7 +1158,7 @@ func (a *Array) GetMetadataMapWithValueLimit(limit *uint) (map[string]*ArrayMeta
 func (a *Array) SetConfig(config *Config) error {
 	a.config = config
 
-	ret := C.tiledb_array_set_config(a.context.tiledbContext, a.tiledbArray, a.config.tiledbConfig)
+	ret := C.tiledb_array_set_config(a.context.tiledbContext, a.tiledbArray.Get(), a.config.tiledbConfig)
 	runtime.KeepAlive(a)
 	runtime.KeepAlive(config)
 	if ret != C.TILEDB_OK {
@@ -1169,7 +1171,7 @@ func (a *Array) SetConfig(config *Config) error {
 // Config gets the array config.
 func (a *Array) Config() (*Config, error) {
 	config := Config{}
-	ret := C.tiledb_array_get_config(a.context.tiledbContext, a.tiledbArray, &config.tiledbConfig)
+	ret := C.tiledb_array_get_config(a.context.tiledbContext, a.tiledbArray.Get(), &config.tiledbConfig)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting config from array: %w", a.context.LastError())

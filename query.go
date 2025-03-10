@@ -67,7 +67,7 @@ func NewQuery(tdbCtx *Context, array *Array) (*Query, error) {
 	}
 
 	query := Query{context: tdbCtx, array: array}
-	ret := C.tiledb_query_alloc(query.context.tiledbContext, array.tiledbArray, C.tiledb_query_type_t(queryType), &query.tiledbQuery)
+	ret := C.tiledb_query_alloc(query.context.tiledbContext, array.tiledbArray.Get(), C.tiledb_query_type_t(queryType), &query.tiledbQuery)
 	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb query: %w", query.context.LastError())
@@ -681,14 +681,13 @@ func (q *Query) GetFragmentTimestampRange(num uint64) (*uint64, *uint64, error) 
 
 // Array returns array used by query.
 func (q *Query) Array() (*Array, error) {
-	array := Array{context: q.context}
-	ret := C.tiledb_query_get_array(q.context.tiledbContext, q.tiledbQuery, &array.tiledbArray)
+	var arrayPtr *C.tiledb_array_t
+	ret := C.tiledb_query_get_array(q.context.tiledbContext, q.tiledbQuery, &arrayPtr)
 	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting array from query: %w", q.context.LastError())
 	}
-	freeOnGC(&array)
-	return &array, nil
+	return newArrayFromHandle(q.context, newArrayHandle(arrayPtr)), nil
 }
 
 // SetConfig sets the config of query.

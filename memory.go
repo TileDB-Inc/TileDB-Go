@@ -30,6 +30,8 @@ type Freeable interface {
 //	  freeOnGC(&thingy)  // <-- put this here
 //	  return &thingy, nil
 //	}
+//
+// Deprecated: Use capiHandle.
 func freeOnGC(obj Freeable) {
 	runtime.SetFinalizer(obj, freeFreeable)
 }

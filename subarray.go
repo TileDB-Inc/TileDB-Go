@@ -23,7 +23,7 @@ type Subarray struct {
 func (a *Array) NewSubarray() (*Subarray, error) {
 	var sa *C.tiledb_subarray_t
 
-	ret := C.tiledb_subarray_alloc(a.context.tiledbContext, a.tiledbArray, &sa)
+	ret := C.tiledb_subarray_alloc(a.context.tiledbContext, a.tiledbArray.Get(), &sa)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating Subarray: %w", a.context.LastError())
 	}

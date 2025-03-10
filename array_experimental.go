@@ -26,7 +26,7 @@ func GetConsolidationPlan(arr *Array, fragmentSize uint64) (*ConsolidationPlan, 
 		context: arr.context,
 	}
 
-	ret := C.tiledb_consolidation_plan_create_with_mbr(cp.context.tiledbContext, arr.tiledbArray, C.uint64_t(fragmentSize), &cp.tiledbConsolidationPlan)
+	ret := C.tiledb_consolidation_plan_create_with_mbr(cp.context.tiledbContext, arr.tiledbArray.Get(), C.uint64_t(fragmentSize), &cp.tiledbConsolidationPlan)
 	runtime.KeepAlive(arr)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting consolidation plan for array: %w", cp.context.LastError())
