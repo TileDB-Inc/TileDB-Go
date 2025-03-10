@@ -192,7 +192,7 @@ func TestConsolidateFragments(t *testing.T) {
 			require.EqualValues(t, numFrags, fragToVacuumNum)
 			require.Equal(t, uint32(1), fragInfoNum)
 
-			err = array.Vacuum(config)
+			err = VacuumArray(array.context, array.uri, config)
 			require.NoError(t, err)
 
 			// Check for one fragment after vacuum.

@@ -196,7 +196,7 @@ func consolidateVacuum(dir string) {
 	err = config.Set("sm.consolidation.buffer_size", "8")
 	checkError(err)
 
-	err = array.Consolidate(config)
+	err = tiledb.ConsolidateArray(ctx, dir, config)
 	checkError(err)
 
 	numOfFragments = numFragments(dir)
