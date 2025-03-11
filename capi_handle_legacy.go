@@ -1,4 +1,4 @@
-//go:build go1.24
+//go:build !go1.24
 
 package tiledb
 
@@ -13,7 +13,6 @@ import (
 type capiHandle struct {
 	ptr      unsafe.Pointer
 	freeFunc func(unsafe.Pointer)
-	cleanup  runtime.Cleanup
 }
 
 // Free releases the resource held by the capiHandle.
@@ -21,7 +20,7 @@ type capiHandle struct {
 // However, freeing the handle while it is being used by another goroutine is not safe and
 // will result in crashes.
 func (x *capiHandle) Free() {
-	x.cleanup.Stop()
+	runtime.SetFinalizer(x, nil)
 	p := atomic.SwapPointer(&x.ptr, nil)
 	// Do not fail if a handle is freed multiple times.
 	if p != nil {
@@ -39,6 +38,8 @@ func (x *capiHandle) Get() (ptr unsafe.Pointer) {
 	return
 }
 
+func freeHandle(x *capiHandle) { x.Free() }
+
 // newCapiHandle creates a capiHandle. It accepts a pointer and a function that will
 // release the resources held by the pointer.
 func newCapiHandle(p unsafe.Pointer, freeFunc func(unsafe.Pointer)) *capiHandle {
@@ -49,6 +50,6 @@ func newCapiHandle(p unsafe.Pointer, freeFunc func(unsafe.Pointer)) *capiHandle 
 		freeFunc: freeFunc,
 	}
 	atomic.StorePointer(&handle.ptr, unsafe.Pointer(p))
-	handle.cleanup = runtime.AddCleanup(handle, freeFunc, p)
+	runtime.SetFinalizer(handle, freeHandle)
 	return handle
 }
