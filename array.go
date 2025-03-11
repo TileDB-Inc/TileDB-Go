@@ -23,7 +23,7 @@ e.g. on disk, in an S3 bucket, etc. Once an array has been opened for reading
 or writing, interact with the data through Query objects.
 */
 type Array struct {
-	tiledbArray *capiHandle[C.tiledb_array_t]
+	tiledbArray arrayHandle
 	context     *Context
 	uri         string
 	config      *Config
@@ -54,7 +54,7 @@ type NonEmptyDomain struct {
 	Bounds        interface{}
 }
 
-func newArrayFromHandle(tdbCtx *Context, arrayHandle *capiHandle[C.tiledb_array_t]) *Array {
+func newArrayFromHandle(tdbCtx *Context, arrayHandle arrayHandle) *Array {
 	return &Array{context: tdbCtx, tiledbArray: arrayHandle}
 }
 
