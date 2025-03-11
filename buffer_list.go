@@ -92,16 +92,14 @@ func (b *BufferList) NumBuffers() (uint64, error) {
 
 // GetBuffer returns a Buffer at the given index in the list.
 func (b *BufferList) GetBuffer(bufferIndex uint) (*Buffer, error) {
-	buffer := Buffer{context: b.context}
-
-	ret := C.tiledb_buffer_list_get_buffer(b.context.tiledbContext, b.tiledbBufferList, C.uint64_t(bufferIndex), &buffer.tiledbBuffer)
+	var bufferPtr *C.tiledb_buffer_t
+	ret := C.tiledb_buffer_list_get_buffer(b.context.tiledbContext, b.tiledbBufferList, C.uint64_t(bufferIndex), &bufferPtr)
 	runtime.KeepAlive(b)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb buffer index %d from buffer list: %w", bufferIndex, b.context.LastError())
 	}
-	freeOnGC(&buffer)
 
-	return &buffer, nil
+	return newBufferFromHandle(b.context, newBufferHandle(bufferPtr)), nil
 }
 
 // TotalSize returns the total number of bytes in the buffers in the list.
@@ -121,15 +119,13 @@ func (b *BufferList) TotalSize() (uint64, error) {
 //
 // Deprecated: Use WriteTo instead for increased performance.
 func (b *BufferList) Flatten() (*Buffer, error) {
-	buffer := Buffer{context: b.context}
-
-	ret := C.tiledb_buffer_list_flatten(b.context.tiledbContext, b.tiledbBufferList, &buffer.tiledbBuffer)
+	var bufferPtr *C.tiledb_buffer_t
+	ret := C.tiledb_buffer_list_flatten(b.context.tiledbContext, b.tiledbBufferList, &bufferPtr)
 	runtime.KeepAlive(b)
 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb bufferList num buffers: %w", b.context.LastError())
 	}
-	freeOnGC(&buffer)
 
-	return &buffer, nil
+	return newBufferFromHandle(b.context, newBufferHandle(bufferPtr)), nil
 }

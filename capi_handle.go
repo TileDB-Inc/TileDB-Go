@@ -6,7 +6,7 @@ import (
 	"unsafe"
 )
 
-// capiHandle encapsulates and manages the lifetime of a TileDB C API handle.
+// capiHandle encapsulates and manages the lifetime of a resource, usually a TileDB C API handle.
 // Do not use directly; use one of the wrapper types for specific handle kinds.
 type capiHandle struct {
 	ptr      unsafe.Pointer
@@ -14,11 +14,10 @@ type capiHandle struct {
 	cleanup  runtime.Cleanup
 }
 
-// Free releases the native handle held by the capiHandle.
+// Free releases the resource held by the capiHandle.
 // This method is safe to call from multiple goroutines concurrently.
 // However, freeing the handle while it is being used by another goroutine is not safe and
-// will result in crashes. If you cannot ensure that only one goroutine will free the handle
-// after the others have finished using it, you should not use
+// will result in crashes.
 func (x *capiHandle) Free() {
 	x.cleanup.Stop()
 	p := atomic.SwapPointer(&x.ptr, nil)
@@ -28,7 +27,7 @@ func (x *capiHandle) Free() {
 	}
 }
 
-// Get returns the native pointer contained in the capiHandle.
+// Get returns the pointer contained in the capiHandle.
 // This function will panic if it is called after calling Free.
 func (x *capiHandle) Get() (ptr unsafe.Pointer) {
 	ptr = atomic.LoadPointer(&x.ptr)
@@ -38,6 +37,8 @@ func (x *capiHandle) Get() (ptr unsafe.Pointer) {
 	return
 }
 
+// newCapiHandle creates a capiHandle. It accepts a pointer and a function that will
+// release the resources held by the pointer.
 func newCapiHandle(p unsafe.Pointer, freeFunc func(unsafe.Pointer)) *capiHandle {
 	if p == nil {
 		return nil

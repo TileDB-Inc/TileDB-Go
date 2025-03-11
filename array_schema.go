@@ -128,7 +128,7 @@ func (a *ArraySchema) UnmarshalJSON(b []byte) error {
 	// Deserialize into a new array schema
 	var newCSchema *C.tiledb_array_schema_t
 	var cClientSide = C.int32_t(0) // Currently this parameter is unused in libtiledb
-	ret := C.tiledb_deserialize_array_schema(a.context.tiledbContext, buffer.tiledbBuffer, C.TILEDB_JSON, cClientSide, &newCSchema)
+	ret := C.tiledb_deserialize_array_schema(a.context.tiledbContext, buffer.tiledbBuffer.Get(), C.TILEDB_JSON, cClientSide, &newCSchema)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error deserializing array schema: %w", a.context.LastError())

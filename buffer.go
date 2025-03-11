@@ -15,29 +15,70 @@ import (
 	"unsafe"
 )
 
+// bufferHandleState contains a native TileDB buffer handle, and the resources that must be released
+// alongside it.
+// Cleanup-based finalizers do not run in a predetermined order, so this type exists to tie the lifetime
+// of a buffer and its pinner together.
+type bufferHandleState struct {
+	ptr    *C.tiledb_buffer_t
+	pinner runtime.Pinner
+}
+
+func freeCapiBufferState(p unsafe.Pointer) {
+	h := (*bufferHandleState)(p)
+	if h.ptr != nil {
+		C.tiledb_buffer_free(&h.ptr)
+	}
+	h.pinner.Unpin()
+}
+
+type bufferHandle struct {
+	// Important: this capiHandle stores a pointer to bufferHandleState, not to tiledb_buffer_t!
+	*capiHandle
+}
+
+func newBufferHandle(ptr *C.tiledb_buffer_t) bufferHandle {
+	state := &bufferHandleState{ptr: ptr}
+	return bufferHandle{newCapiHandle(unsafe.Pointer(state), freeCapiBufferState)}
+}
+
+func (x *bufferHandle) getState() *bufferHandleState {
+	return (*bufferHandleState)(x.capiHandle.Get())
+}
+
+func (x *bufferHandle) Get() *C.tiledb_buffer_t {
+	return x.getState().ptr
+}
+
+func (x *bufferHandle) Pin(p any) {
+	x.getState().pinner.Pin(p)
+}
+
 // Buffer A generic Buffer object used by some TileDB APIs
 type Buffer struct {
-	tiledbBuffer *C.tiledb_buffer_t
+	tiledbBuffer bufferHandle
 	context      *Context
 	pinner       runtime.Pinner
 }
 
+func newBufferFromHandle(context *Context, handle bufferHandle) *Buffer {
+	return &Buffer{tiledbBuffer: handle, context: context}
+}
+
 // NewBuffer allocates a new buffer.
 func NewBuffer(context *Context) (*Buffer, error) {
-	buffer := Buffer{context: context}
-
-	if buffer.context == nil {
+	if context == nil {
 		return nil, errors.New("error creating tiledb buffer, context is nil")
 	}
 
-	ret := C.tiledb_buffer_alloc(buffer.context.tiledbContext, &buffer.tiledbBuffer)
+	var bufferPtr *C.tiledb_buffer_t
+	ret := C.tiledb_buffer_alloc(context.tiledbContext, &bufferPtr)
 	runtime.KeepAlive(context)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error creating tiledb buffer: %w", buffer.context.LastError())
+		return nil, fmt.Errorf("error creating tiledb buffer: %w", context.LastError())
 	}
-	freeOnGC(&buffer)
 
-	return &buffer, nil
+	return newBufferFromHandle(context, newBufferHandle(bufferPtr)), nil
 }
 
 // Free releases the internal TileDB core data that was allocated on the C heap.
@@ -46,10 +87,7 @@ func NewBuffer(context *Context) (*Buffer, error) {
 // can safely be called many times on the same object; if it has already
 // been freed, it will not be freed again.
 func (b *Buffer) Free() {
-	if b.tiledbBuffer != nil {
-		C.tiledb_buffer_free(&b.tiledbBuffer)
-	}
-	b.pinner.Unpin()
+	b.tiledbBuffer.Free()
 }
 
 // Context exposes the internal TileDB context used to initialize the buffer.
@@ -59,7 +97,7 @@ func (b *Buffer) Context() *Context {
 
 // SetType sets the buffer datatype.
 func (b *Buffer) SetType(datatype Datatype) error {
-	ret := C.tiledb_buffer_set_type(b.context.tiledbContext, b.tiledbBuffer, C.tiledb_datatype_t(datatype))
+	ret := C.tiledb_buffer_set_type(b.context.tiledbContext, b.tiledbBuffer.Get(), C.tiledb_datatype_t(datatype))
 	runtime.KeepAlive(b)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting datatype for tiledb buffer: %w", b.context.LastError())
@@ -70,7 +108,7 @@ func (b *Buffer) SetType(datatype Datatype) error {
 // Type returns the buffer datatype.
 func (b *Buffer) Type() (Datatype, error) {
 	var bufferType C.tiledb_datatype_t
-	ret := C.tiledb_buffer_get_type(b.context.tiledbContext, b.tiledbBuffer, &bufferType)
+	ret := C.tiledb_buffer_get_type(b.context.tiledbContext, b.tiledbBuffer.Get(), &bufferType)
 	runtime.KeepAlive(b)
 
 	if ret != C.TILEDB_OK {
@@ -109,7 +147,7 @@ func (b *Buffer) ReadAt(p []byte, off int64) (int, error) {
 	var cbuffer unsafe.Pointer // b must be kept alive while cbuffer is being accessed.
 	var csize C.uint64_t
 
-	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer, &cbuffer, &csize)
+	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer.Get(), &cbuffer, &csize)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting tiledb buffer data: %w", b.context.LastError())
 	}
@@ -138,7 +176,7 @@ func (b *Buffer) WriteTo(w io.Writer) (int64, error) {
 	var cbuffer unsafe.Pointer // b must be kept alive while cbuffer is being accessed.
 	var csize C.uint64_t
 
-	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer, &cbuffer, &csize)
+	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer.Get(), &cbuffer, &csize)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting tiledb buffer data: %w", b.context.LastError())
 	}
@@ -175,9 +213,9 @@ var _ io.ReaderAt = (*Buffer)(nil)
 // Go-managed.
 func (b *Buffer) SetBuffer(buffer []byte) error {
 	cbuffer := unsafe.Pointer(unsafe.SliceData(buffer))
-	b.pinner.Pin(cbuffer)
+	b.tiledbBuffer.Pin(cbuffer)
 
-	ret := C.tiledb_buffer_set_data(b.context.tiledbContext, b.tiledbBuffer, cbuffer, C.uint64_t(len(buffer)))
+	ret := C.tiledb_buffer_set_data(b.context.tiledbContext, b.tiledbBuffer.Get(), cbuffer, C.uint64_t(len(buffer)))
 	runtime.KeepAlive(b)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting tiledb buffer: %w", b.context.LastError())
@@ -191,7 +229,7 @@ func (b *Buffer) dataCopy() ([]byte, error) {
 	var cbuffer unsafe.Pointer // b must be kept alive while cbuffer is being accessed.
 	var csize C.uint64_t
 
-	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer, &cbuffer, &csize)
+	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer.Get(), &cbuffer, &csize)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb buffer data: %w", b.context.LastError())
 	}
@@ -213,7 +251,7 @@ func (b *Buffer) Len() (uint64, error) {
 	var cbuffer unsafe.Pointer
 	var csize C.uint64_t
 
-	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer, &cbuffer, &csize)
+	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer.Get(), &cbuffer, &csize)
 	runtime.KeepAlive(b)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting tiledb buffer data: %w", b.context.LastError())
