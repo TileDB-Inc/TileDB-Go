@@ -34,7 +34,7 @@ func (x *capiHandle) Free() {
 func (x *capiHandle) Get() (ptr unsafe.Pointer) {
 	ptr = atomic.LoadPointer(&x.ptr)
 	if ptr == nil {
-		panic("cannot use freed handle")
+		panic("capiHandle.Get: handle is freed")
 	}
 	return
 }
