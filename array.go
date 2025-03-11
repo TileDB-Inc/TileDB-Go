@@ -15,6 +15,18 @@ import (
 	"unsafe"
 )
 
+type arrayHandle struct{ *capiHandle }
+
+func freeCapiArray(c unsafe.Pointer) { C.tiledb_array_free((**C.tiledb_array_t)(unsafe.Pointer(&c))) }
+
+func newArrayHandle(ptr *C.tiledb_array_t) arrayHandle {
+	return arrayHandle{newCapiHandle(unsafe.Pointer(ptr), freeCapiArray)}
+}
+
+func (x arrayHandle) Get() *C.tiledb_array_t {
+	return (*C.tiledb_array_t)(x.capiHandle.Get())
+}
+
 /*
 Array struct representing a TileDB array object.
 

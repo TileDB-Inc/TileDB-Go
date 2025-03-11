@@ -1,10 +1,5 @@
 package tiledb
 
-/*
-#include <tiledb/tiledb.h>
-*/
-import "C"
-
 import (
 	"runtime"
 	"sync/atomic"
@@ -12,7 +7,7 @@ import (
 )
 
 // capiHandle encapsulates and manages the lifetime of a TileDB C API handle.
-// Do not use directly; use one of the wrapper types for specialized handle kinds.
+// Do not use directly; use one of the wrapper types for specific handle kinds.
 type capiHandle struct {
 	ptr      unsafe.Pointer
 	freeFunc func(unsafe.Pointer)
@@ -53,16 +48,4 @@ func newCapiHandle(p unsafe.Pointer, freeFunc func(unsafe.Pointer)) *capiHandle 
 	atomic.StorePointer(&handle.ptr, unsafe.Pointer(p))
 	handle.cleanup = runtime.AddCleanup(handle, freeFunc, p)
 	return handle
-}
-
-type arrayHandle struct{ *capiHandle }
-
-func freeCapiArray(c unsafe.Pointer) { C.tiledb_array_free((**C.tiledb_array_t)(unsafe.Pointer(&c))) }
-
-func newArrayHandle(ptr *C.tiledb_array_t) arrayHandle {
-	return arrayHandle{newCapiHandle(unsafe.Pointer(ptr), freeCapiArray)}
-}
-
-func (x arrayHandle) Get() *C.tiledb_array_t {
-	return (*C.tiledb_array_t)(x.capiHandle.Get())
 }
