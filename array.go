@@ -226,7 +226,7 @@ func (a *Array) Close() error {
 func (a *Array) Create(arraySchema *ArraySchema) error {
 	curi := C.CString(a.uri)
 	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_array_create(a.context.tiledbContext, curi, arraySchema.tiledbArraySchema)
+	ret := C.tiledb_array_create(a.context.tiledbContext, curi, arraySchema.tiledbArraySchema.Get())
 	runtime.KeepAlive(a)
 	runtime.KeepAlive(arraySchema)
 	if ret != C.TILEDB_OK {
@@ -277,14 +277,13 @@ func (a *Array) Vacuum(config *Config) error {
 
 // Schema returns the ArraySchema for the array.
 func (a *Array) Schema() (*ArraySchema, error) {
-	arraySchema := ArraySchema{context: a.context}
-	ret := C.tiledb_array_get_schema(a.context.tiledbContext, a.tiledbArray.Get(), &arraySchema.tiledbArraySchema)
+	var arraySchemaPtr *C.tiledb_array_schema_t
+	ret := C.tiledb_array_get_schema(a.context.tiledbContext, a.tiledbArray.Get(), &arraySchemaPtr)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting schema for tiledb array: %w", a.context.LastError())
 	}
-	freeOnGC(&arraySchema)
-	return &arraySchema, nil
+	return newArraySchemaFromHandle(a.context, newArraySchemaHandle(arraySchemaPtr)), nil
 }
 
 // QueryType returns the current query type of an open array.

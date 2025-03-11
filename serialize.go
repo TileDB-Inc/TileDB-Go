@@ -27,7 +27,7 @@ func SerializeArraySchemaToBuffer(schema *ArraySchema, serializationType Seriali
 	buffer := Buffer{context: schema.context}
 	freeOnGC(&buffer)
 
-	ret := C.tiledb_serialize_array_schema(schema.context.tiledbContext, schema.tiledbArraySchema, C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
+	ret := C.tiledb_serialize_array_schema(schema.context.tiledbContext, schema.tiledbArraySchema.Get(), C.tiledb_serialization_type_t(serializationType), cClientSide, &buffer.tiledbBuffer)
 	runtime.KeepAlive(schema)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error serializing array schema: %w", schema.context.LastError())
@@ -50,8 +50,6 @@ func SerializeArraySchema(schema *ArraySchema, serializationType SerializationTy
 
 // DeserializeArraySchema deserializes a new array schema from the given buffer.
 func DeserializeArraySchema(buffer *Buffer, serializationType SerializationType, clientSide bool) (*ArraySchema, error) {
-	schema := ArraySchema{context: buffer.context}
-
 	var cClientSide C.int32_t
 	if clientSide {
 		cClientSide = 1
@@ -59,18 +57,14 @@ func DeserializeArraySchema(buffer *Buffer, serializationType SerializationType,
 		cClientSide = 0
 	}
 
-	ret := C.tiledb_deserialize_array_schema(schema.context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, &schema.tiledbArraySchema)
+	var arraySchemaPtr *C.tiledb_array_schema_t
+	ret := C.tiledb_deserialize_array_schema(buffer.context.tiledbContext, buffer.tiledbBuffer, C.tiledb_serialization_type_t(serializationType), cClientSide, &arraySchemaPtr)
+	runtime.KeepAlive(buffer)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error deserializing array schema: %w", schema.context.LastError())
+		return nil, fmt.Errorf("error deserializing array schema: %w", buffer.context.LastError())
 	}
-	runtime.KeepAlive(schema)
 
-	// This needs to happen *after* the tiledb_deserialize_array_schema call
-	// because that may leave the arraySchema with a non-nil pointer
-	// to already-freed memory.
-	freeOnGC(&schema)
-
-	return &schema, nil
+	return newArraySchemaFromHandle(buffer.context, newArraySchemaHandle(arraySchemaPtr)), nil
 }
 
 // SerializeArraySchemaEvolution serializes the given array schema evolution and serializes the group metadata and returns a Buffer object containing the payload.

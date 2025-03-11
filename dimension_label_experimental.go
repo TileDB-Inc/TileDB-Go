@@ -120,7 +120,7 @@ func (d *DimensionLabel) URI() (string, error) {
 // AddDimensionLabel adds a dimension label to the array schema.
 func (a *ArraySchema) AddDimensionLabel(dimIndex uint32, name string, order DataOrder, labelType Datatype) error {
 	cLabelName := C.CString(name)
-	ret := C.tiledb_array_schema_add_dimension_label(a.context.tiledbContext, a.tiledbArraySchema,
+	ret := C.tiledb_array_schema_add_dimension_label(a.context.tiledbContext, a.tiledbArraySchema.Get(),
 		C.uint32_t(dimIndex), cLabelName, C.tiledb_data_order_t(order), C.tiledb_datatype_t(labelType))
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
@@ -133,7 +133,7 @@ func (a *ArraySchema) AddDimensionLabel(dimIndex uint32, name string, order Data
 // DimensionLabelFromName retrieves a dimension label from an array schema with the requested index.
 func (a *ArraySchema) DimensionLabelFromIndex(labelIdx uint64) (*DimensionLabel, error) {
 	dimLabel := DimensionLabel{context: a.context}
-	ret := C.tiledb_array_schema_get_dimension_label_from_index(a.context.tiledbContext, a.tiledbArraySchema,
+	ret := C.tiledb_array_schema_get_dimension_label_from_index(a.context.tiledbContext, a.tiledbArraySchema.Get(),
 		C.uint64_t(labelIdx), &dimLabel.tiledbDimensionLabel)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
@@ -149,7 +149,7 @@ func (a *ArraySchema) DimensionLabelFromName(name string) (*DimensionLabel, erro
 	cAttrName := C.CString(name)
 	defer C.free(unsafe.Pointer(cAttrName))
 	dimLabel := DimensionLabel{context: a.context}
-	ret := C.tiledb_array_schema_get_dimension_label_from_name(a.context.tiledbContext, a.tiledbArraySchema,
+	ret := C.tiledb_array_schema_get_dimension_label_from_name(a.context.tiledbContext, a.tiledbArraySchema.Get(),
 		cAttrName, &dimLabel.tiledbDimensionLabel)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
@@ -166,7 +166,7 @@ func (a *ArraySchema) HasDimensionLabel(name string) (bool, error) {
 	defer C.free(unsafe.Pointer(cLabelName))
 
 	var hasLabel C.int32_t
-	ret := C.tiledb_array_schema_has_dimension_label(a.context.tiledbContext, a.tiledbArraySchema,
+	ret := C.tiledb_array_schema_has_dimension_label(a.context.tiledbContext, a.tiledbArraySchema.Get(),
 		cLabelName, &hasLabel)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
@@ -180,7 +180,7 @@ func (a *ArraySchema) HasDimensionLabel(name string) (bool, error) {
 func (a *ArraySchema) DimensionLabelsNum() (uint64, error) {
 	var labelNum C.uint64_t
 
-	ret := C.tiledb_array_schema_get_dimension_label_num(a.context.tiledbContext, a.tiledbArraySchema, &labelNum)
+	ret := C.tiledb_array_schema_get_dimension_label_num(a.context.tiledbContext, a.tiledbArraySchema.Get(), &labelNum)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error fetching dimension label number: %w", a.context.LastError())
@@ -194,7 +194,7 @@ func (a *ArraySchema) SetDimensionLabelFilterList(name string, filterList Filter
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
 
-	ret := C.tiledb_array_schema_set_dimension_label_filter_list(a.context.tiledbContext, a.tiledbArraySchema,
+	ret := C.tiledb_array_schema_set_dimension_label_filter_list(a.context.tiledbContext, a.tiledbArraySchema.Get(),
 		cName, filterList.tiledbFilterList)
 	runtime.KeepAlive(a)
 	runtime.KeepAlive(filterList)
@@ -246,7 +246,7 @@ func (a *ArraySchema) SetDimensionLabelTileExtent(labelName string, dimType Data
 			dimType.String())
 	}
 
-	ret := C.tiledb_array_schema_set_dimension_label_tile_extent(a.context.tiledbContext, a.tiledbArraySchema,
+	ret := C.tiledb_array_schema_set_dimension_label_tile_extent(a.context.tiledbContext, a.tiledbArraySchema.Get(),
 		cName, C.tiledb_datatype_t(dimType), cExtent)
 	runtime.KeepAlive(a)
 	// cExtent is being kept alive by passing it to cgo call.

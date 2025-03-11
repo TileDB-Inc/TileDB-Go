@@ -383,7 +383,7 @@ func ExtendEnumeration[T EnumerationType](tdbCtx *Context, e *Enumeration, value
 
 // AddEnumeration adds the Enumeration to the schema. It must be added before we add it to an attribute.
 func (a *ArraySchema) AddEnumeration(e *Enumeration) error {
-	ret := C.tiledb_array_schema_add_enumeration(a.context.tiledbContext, a.tiledbArraySchema, e.tiledbEnum)
+	ret := C.tiledb_array_schema_add_enumeration(a.context.tiledbContext, a.tiledbArraySchema.Get(), e.tiledbEnum)
 	runtime.KeepAlive(a)
 	runtime.KeepAlive(e)
 	if ret != C.TILEDB_OK {
@@ -398,7 +398,7 @@ func (a *ArraySchema) EnumerationFromName(name string) (*Enumeration, error) {
 	enum := &Enumeration{context: a.context}
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
-	ret := C.tiledb_array_schema_get_enumeration_from_name(a.context.tiledbContext, a.tiledbArraySchema, cName, &enum.tiledbEnum)
+	ret := C.tiledb_array_schema_get_enumeration_from_name(a.context.tiledbContext, a.tiledbArraySchema.Get(), cName, &enum.tiledbEnum)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting enumeration from name: %w", a.context.LastError())
@@ -412,7 +412,7 @@ func (a *ArraySchema) EnumerationFromAttributeName(name string) (*Enumeration, e
 	enum := &Enumeration{context: a.context}
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
-	ret := C.tiledb_array_schema_get_enumeration_from_attribute_name(a.context.tiledbContext, a.tiledbArraySchema, cName, &enum.tiledbEnum)
+	ret := C.tiledb_array_schema_get_enumeration_from_attribute_name(a.context.tiledbContext, a.tiledbArraySchema.Get(), cName, &enum.tiledbEnum)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting enumeration from attribute name: %w", a.context.LastError())

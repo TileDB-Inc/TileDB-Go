@@ -164,15 +164,14 @@ func NewArraySchemaForFile(tdbCtx *Context, filePath string) (*ArraySchema, erro
 		defer C.free(unsafe.Pointer(fileURI))
 	}
 
-	arraySchema := ArraySchema{context: tdbCtx}
-	ret := C.tiledb_filestore_schema_create(tdbCtx.tiledbContext, fileURI, &arraySchema.tiledbArraySchema)
+	var arraySchemaPtr *C.tiledb_array_schema_t
+	ret := C.tiledb_filestore_schema_create(tdbCtx.tiledbContext, fileURI, &arraySchemaPtr)
 	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating schema: %w", tdbCtx.LastError())
 	}
-	freeOnGC(&arraySchema)
 
-	return &arraySchema, nil
+	return newArraySchemaFromHandle(tdbCtx, newArraySchemaHandle(arraySchemaPtr)), nil
 }
 
 // bufferExport reads len(p) bytes into p starting at array offset off
