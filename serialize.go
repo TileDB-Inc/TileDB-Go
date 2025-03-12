@@ -598,7 +598,7 @@ func DeserializeQueryAndArray(context *Context, buffer *Buffer, serializationTyp
 	return array, query, nil
 }
 
-// SerializeGroupMetadata gets and serializes the group metadata and returns a Buffer object containing the payload
+// SerializeGroupMetadataToBuffer gets and serializes the group metadata and returns a Buffer object containing the payload
 func SerializeGroupMetadataToBuffer(g *Group, serializationType SerializationType) (*Buffer, error) {
 	var bufferPtr *C.tiledb_buffer_t
 	ret := C.tiledb_serialize_group_metadata(g.context.tiledbContext.Get(), g.group.Get(), C.tiledb_serialization_type_t(serializationType), &bufferPtr)
