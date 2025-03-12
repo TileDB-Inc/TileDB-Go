@@ -79,7 +79,7 @@ type VFS struct {
 // garbage collection
 func NewVFS(context *Context, config *Config) (*VFS, error) {
 	vfs := VFS{context: context}
-	ret := C.tiledb_vfs_alloc(context.tiledbContext, config.tiledbConfig, &vfs.tiledbVFS)
+	ret := C.tiledb_vfs_alloc(context.tiledbContext, config.tiledbConfig.Get(), &vfs.tiledbVFS)
 	runtime.KeepAlive(context)
 	runtime.KeepAlive(config)
 	if ret != C.TILEDB_OK {
@@ -108,18 +108,17 @@ func (v *VFS) Context() *Context {
 
 // Config retrieves a copy of the config from vfs.
 func (v *VFS) Config() (*Config, error) {
-	var config Config
+	var configPtr *C.tiledb_config_t
 	ret := C.tiledb_vfs_get_config(v.context.tiledbContext, v.tiledbVFS,
-		&config.tiledbConfig)
+		&configPtr)
 
 	if ret == C.TILEDB_OOM {
 		return nil, errors.New("out of Memory error in GetConfig")
 	} else if ret != C.TILEDB_OK {
 		return nil, errors.New("unknown error in GetConfig")
 	}
-	freeOnGC(&config)
 
-	return &config, nil
+	return newConfigFromHandle(newConfigHandle(configPtr)), nil
 }
 
 // CreateBucket creates an object-store bucket with the input URI.

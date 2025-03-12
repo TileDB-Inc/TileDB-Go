@@ -43,7 +43,7 @@ func NewConfigIter(config *Config, prefix string) (*ConfigIter, error) {
 	cprefix := C.CString(prefix)
 	defer C.free(unsafe.Pointer(cprefix))
 	var configIterPtr *C.tiledb_config_iter_t
-	C.tiledb_config_iter_alloc(config.tiledbConfig, cprefix, &configIterPtr, &err)
+	C.tiledb_config_iter_alloc(config.tiledbConfig.Get(), cprefix, &configIterPtr, &err)
 	runtime.KeepAlive(config)
 	if err != nil {
 		defer C.tiledb_error_free(&err)
@@ -121,7 +121,7 @@ func (ci *ConfigIter) Reset(prefix string) error {
 	var err *C.tiledb_error_t
 	cprefix := C.CString(prefix)
 	defer C.free(unsafe.Pointer(cprefix))
-	C.tiledb_config_iter_reset(ci.config.tiledbConfig, ci.tiledbConfigIter.Get(), cprefix, &err)
+	C.tiledb_config_iter_reset(ci.config.tiledbConfig.Get(), ci.tiledbConfigIter.Get(), cprefix, &err)
 	runtime.KeepAlive(ci)
 	if err != nil {
 		defer C.tiledb_error_free(&err)

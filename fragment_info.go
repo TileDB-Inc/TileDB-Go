@@ -612,7 +612,7 @@ func (fI *FragmentInfo) String() (string, error) {
 
 // SetConfig sets the fragment config.
 func (fI *FragmentInfo) SetConfig(config *Config) error {
-	ret := C.tiledb_fragment_info_set_config(fI.context.tiledbContext, fI.tiledbFragmentInfo, config.tiledbConfig)
+	ret := C.tiledb_fragment_info_set_config(fI.context.tiledbContext, fI.tiledbFragmentInfo, config.tiledbConfig.Get())
 	runtime.KeepAlive(fI)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting config on group: %w", fI.context.LastError())
@@ -623,17 +623,12 @@ func (fI *FragmentInfo) SetConfig(config *Config) error {
 
 // Config gets the fragment config.
 func (fI *FragmentInfo) Config() (*Config, error) {
-	var config Config
-	ret := C.tiledb_fragment_info_get_config(fI.context.tiledbContext, fI.tiledbFragmentInfo, &config.tiledbConfig)
+	var configPtr *C.tiledb_config_t
+	ret := C.tiledb_fragment_info_get_config(fI.context.tiledbContext, fI.tiledbFragmentInfo, &configPtr)
 	runtime.KeepAlive(fI)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting config from fragment info: %w", fI.context.LastError())
 	}
-	freeOnGC(&config)
 
-	if fI.config == nil {
-		fI.config = &config
-	}
-
-	return &config, nil
+	return newConfigFromHandle(newConfigHandle(configPtr)), nil
 }

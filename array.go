@@ -38,7 +38,6 @@ type Array struct {
 	tiledbArray arrayHandle
 	context     *Context
 	uri         string
-	config      *Config
 }
 
 // ArrayMetadata defines metadata for the array
@@ -245,7 +244,7 @@ func (a *Array) Consolidate(config *Config) error {
 
 	curi := C.CString(a.uri)
 	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_array_consolidate(a.context.tiledbContext, curi, config.tiledbConfig)
+	ret := C.tiledb_array_consolidate(a.context.tiledbContext, curi, config.tiledbConfig.Get())
 	runtime.KeepAlive(a)
 	runtime.KeepAlive(config)
 	if ret != C.TILEDB_OK {
@@ -264,7 +263,7 @@ func (a *Array) Vacuum(config *Config) error {
 
 	curi := C.CString(a.uri)
 	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_array_vacuum(a.context.tiledbContext, curi, config.tiledbConfig)
+	ret := C.tiledb_array_vacuum(a.context.tiledbContext, curi, config.tiledbConfig.Get())
 	runtime.KeepAlive(a)
 	runtime.KeepAlive(config)
 	if ret != C.TILEDB_OK {
@@ -1167,9 +1166,7 @@ func (a *Array) GetMetadataMapWithValueLimit(limit *uint) (map[string]*ArrayMeta
 
 // SetConfig sets the array config.
 func (a *Array) SetConfig(config *Config) error {
-	a.config = config
-
-	ret := C.tiledb_array_set_config(a.context.tiledbContext, a.tiledbArray.Get(), a.config.tiledbConfig)
+	ret := C.tiledb_array_set_config(a.context.tiledbContext, a.tiledbArray.Get(), config.tiledbConfig.Get())
 	runtime.KeepAlive(a)
 	runtime.KeepAlive(config)
 	if ret != C.TILEDB_OK {
@@ -1181,20 +1178,14 @@ func (a *Array) SetConfig(config *Config) error {
 
 // Config gets the array config.
 func (a *Array) Config() (*Config, error) {
-	config := Config{}
-	ret := C.tiledb_array_get_config(a.context.tiledbContext, a.tiledbArray.Get(), &config.tiledbConfig)
+	var configPtr *C.tiledb_config_t
+	ret := C.tiledb_array_get_config(a.context.tiledbContext, a.tiledbArray.Get(), &configPtr)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting config from array: %w", a.context.LastError())
 	}
 
-	freeOnGC(&config)
-
-	if a.config == nil {
-		a.config = &config
-	}
-
-	return &config, nil
+	return newConfigFromHandle(newConfigHandle(configPtr)), nil
 }
 
 // DeleteFragments deletes the range of fragments from startTimestamp to endTimestamp.

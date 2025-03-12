@@ -694,7 +694,7 @@ func (q *Query) Array() (*Array, error) {
 func (q *Query) SetConfig(config *Config) error {
 	q.config = config
 
-	ret := C.tiledb_query_set_config(q.context.tiledbContext, q.tiledbQuery, q.config.tiledbConfig)
+	ret := C.tiledb_query_set_config(q.context.tiledbContext, q.tiledbQuery, q.config.tiledbConfig.Get())
 	runtime.KeepAlive(q)
 	runtime.KeepAlive(config)
 	if ret != C.TILEDB_OK {
@@ -706,19 +706,14 @@ func (q *Query) SetConfig(config *Config) error {
 
 // Config gets the config of query.
 func (q *Query) Config() (*Config, error) {
-	config := Config{}
-	ret := C.tiledb_query_get_config(q.context.tiledbContext, q.tiledbQuery, &config.tiledbConfig)
+	var configPtr *C.tiledb_config_t
+	ret := C.tiledb_query_get_config(q.context.tiledbContext, q.tiledbQuery, &configPtr)
 	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting config from query: %w", q.context.LastError())
 	}
-	freeOnGC(&config)
 
-	if q.config == nil {
-		q.config = &config
-	}
-
-	return &config, nil
+	return newConfigFromHandle(newConfigHandle(configPtr)), nil
 }
 
 // Stats gets stats for a query as json bytes.

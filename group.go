@@ -75,7 +75,7 @@ func (g *Group) Close() error {
 }
 
 func (g *Group) SetConfig(config *Config) error {
-	ret := C.tiledb_group_set_config(g.context.tiledbContext, g.group, config.tiledbConfig)
+	ret := C.tiledb_group_set_config(g.context.tiledbContext, g.group, config.tiledbConfig.Get())
 	runtime.KeepAlive(g)
 	runtime.KeepAlive(config)
 	if ret != C.TILEDB_OK {
@@ -86,19 +86,14 @@ func (g *Group) SetConfig(config *Config) error {
 }
 
 func (g *Group) Config() (*Config, error) {
-	var config Config
-	ret := C.tiledb_group_get_config(g.context.tiledbContext, g.group, &config.tiledbConfig)
+	var configPtr *C.tiledb_config_t
+	ret := C.tiledb_group_get_config(g.context.tiledbContext, g.group, &configPtr)
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting config from query: %w", g.context.LastError())
 	}
-	freeOnGC(&config)
 
-	if g.config == nil {
-		g.config = &config
-	}
-
-	return &config, nil
+	return newConfigFromHandle(newConfigHandle(configPtr)), nil
 }
 
 func (g *Group) AddMember(uri, name string, isRelativeURI bool) error {

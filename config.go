@@ -13,23 +13,40 @@ import (
 	"unsafe"
 )
 
+type configHandle struct{ *capiHandle }
+
+func freeCapiConfig(c unsafe.Pointer) {
+	C.tiledb_config_free((**C.tiledb_config_t)(unsafe.Pointer(&c)))
+}
+
+func newConfigHandle(ptr *C.tiledb_config_t) configHandle {
+	return configHandle{newCapiHandle(unsafe.Pointer(ptr), freeCapiConfig)}
+}
+
+func (x configHandle) Get() *C.tiledb_config_t {
+	return (*C.tiledb_config_t)(x.capiHandle.Get())
+}
+
 // Config carries configuration parameters for a context.
 type Config struct {
-	tiledbConfig *C.tiledb_config_t
+	tiledbConfig configHandle
+}
+
+func newConfigFromHandle(handle configHandle) *Config {
+	return &Config{tiledbConfig: handle}
 }
 
 // NewConfig allocates a new configuration.
 func NewConfig() (*Config, error) {
-	var config Config
+	var configPtr *C.tiledb_config_t
 	var err *C.tiledb_error_t
-	C.tiledb_config_alloc(&config.tiledbConfig, &err)
+	C.tiledb_config_alloc(&configPtr, &err)
 	if err != nil {
 		defer C.tiledb_error_free(&err)
 		return nil, fmt.Errorf("error creating tiledb config: %w", cError(err))
 	}
-	freeOnGC(&config)
 
-	return &config, nil
+	return newConfigFromHandle(newConfigHandle(configPtr)), nil
 }
 
 // Set sets a config parameter-value pair.
@@ -39,7 +56,7 @@ func (c *Config) Set(param string, value string) error {
 	defer C.free(unsafe.Pointer(cparam))
 	cvalue := C.CString(value)
 	defer C.free(unsafe.Pointer(cvalue))
-	C.tiledb_config_set(c.tiledbConfig, cparam, cvalue, &err)
+	C.tiledb_config_set(c.tiledbConfig.Get(), cparam, cvalue, &err)
 	runtime.KeepAlive(c)
 
 	if err != nil {
@@ -56,7 +73,7 @@ func (c *Config) Get(param string) (string, error) {
 	var cvalue *C.char // c must be kept alive while cvalue is being accessed.
 	cparam := C.CString(param)
 	defer C.free(unsafe.Pointer(cparam))
-	C.tiledb_config_get(c.tiledbConfig, cparam, &cvalue, &err)
+	C.tiledb_config_get(c.tiledbConfig.Get(), cparam, &cvalue, &err)
 
 	if err != nil {
 		defer C.tiledb_error_free(&err)
@@ -74,7 +91,7 @@ func (c *Config) Unset(param string) error {
 	var err *C.tiledb_error_t
 	cparam := C.CString(param)
 	defer C.free(unsafe.Pointer(cparam))
-	C.tiledb_config_unset(c.tiledbConfig, cparam, &err)
+	C.tiledb_config_unset(c.tiledbConfig.Get(), cparam, &err)
 	runtime.KeepAlive(c)
 
 	if err != nil {
@@ -90,7 +107,7 @@ func (c *Config) SaveToFile(file string) error {
 	var err *C.tiledb_error_t
 	cfile := C.CString(file)
 	defer C.free(unsafe.Pointer(cfile))
-	C.tiledb_config_save_to_file(c.tiledbConfig, cfile, &err)
+	C.tiledb_config_save_to_file(c.tiledbConfig.Get(), cfile, &err)
 	runtime.KeepAlive(c)
 
 	if err != nil {
@@ -108,24 +125,21 @@ func LoadConfig(uri string) (*Config, error) {
 		return nil, errors.New("error loading tiledb config: passed uri is empty")
 	}
 
-	var config Config
-	var err *C.tiledb_error_t
-	C.tiledb_config_alloc(&config.tiledbConfig, &err)
+	config, err := NewConfig()
 	if err != nil {
-		defer C.tiledb_error_free(&err)
-		return nil, fmt.Errorf("error loading tiledb config: %w", cError(err))
+		return nil, err
 	}
 
+	var tdbErr *C.tiledb_error_t
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	C.tiledb_config_load_from_file(config.tiledbConfig, curi, &err)
+	C.tiledb_config_load_from_file(config.tiledbConfig.Get(), curi, &tdbErr)
 	if err != nil {
-		defer C.tiledb_error_free(&err)
-		return nil, fmt.Errorf("error loading config from file %s: %w", uri, cError(err))
+		defer C.tiledb_error_free(&tdbErr)
+		return nil, fmt.Errorf("error loading config from file %s: %w", uri, cError(tdbErr))
 	}
-	freeOnGC(&config)
 
-	return &config, nil
+	return config, nil
 }
 
 // Free releases the internal TileDB core data that was allocated on the C heap.
@@ -134,9 +148,7 @@ func LoadConfig(uri string) (*Config, error) {
 // can safely be called many times on the same object; if it has already
 // been freed, it will not be freed again.
 func (c *Config) Free() {
-	if c.tiledbConfig != nil {
-		C.tiledb_config_free(&c.tiledbConfig)
-	}
+	c.tiledbConfig.Free()
 }
 
 // Iterate iterates over configuration.
@@ -151,7 +163,7 @@ func (c *Config) Iterate(prefix string) (*ConfigIter, error) {
 // Cmp compares two configs.
 func (c *Config) Cmp(other *Config) bool {
 	var equal C.uint8_t
-	C.tiledb_config_compare(c.tiledbConfig, other.tiledbConfig, &equal)
+	C.tiledb_config_compare(c.tiledbConfig.Get(), other.tiledbConfig.Get(), &equal)
 	runtime.KeepAlive(c)
 	runtime.KeepAlive(other)
 

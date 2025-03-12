@@ -36,7 +36,7 @@ func (a *Array) NewSubarray() (*Subarray, error) {
 
 // SetConfig sets the subarray config. Currently it overrides only sm.read_range_oob.
 func (sa *Subarray) SetConfig(cfg *Config) error {
-	ret := C.tiledb_subarray_set_config(sa.context.tiledbContext, sa.subarray, cfg.tiledbConfig)
+	ret := C.tiledb_subarray_set_config(sa.context.tiledbContext, sa.subarray, cfg.tiledbConfig.Get())
 	runtime.KeepAlive(sa)
 	runtime.KeepAlive(cfg)
 	if ret != C.TILEDB_OK {

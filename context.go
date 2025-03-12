@@ -29,7 +29,7 @@ func NewContext(config *Config) (*Context, error) {
 	var ret C.int32_t
 	var tdbErr *C.tiledb_error_t
 	if config != nil {
-		ret = C.tiledb_ctx_alloc_with_error(config.tiledbConfig, &context.tiledbContext, &tdbErr)
+		ret = C.tiledb_ctx_alloc_with_error(config.tiledbConfig.Get(), &context.tiledbContext, &tdbErr)
 	} else {
 		ret = C.tiledb_ctx_alloc_with_error(nil, &context.tiledbContext, &tdbErr)
 	}
@@ -103,8 +103,8 @@ func (c *Context) CancelAllTasks() error {
 
 // Config retrieves a copy of the config from context.
 func (c *Context) Config() (*Config, error) {
-	config := Config{}
-	ret := C.tiledb_ctx_get_config(c.tiledbContext, &config.tiledbConfig)
+	var configPtr *C.tiledb_config_t
+	ret := C.tiledb_ctx_get_config(c.tiledbContext, &configPtr)
 	runtime.KeepAlive(c)
 
 	if ret == C.TILEDB_OOM {
@@ -112,9 +112,8 @@ func (c *Context) Config() (*Config, error) {
 	} else if ret != C.TILEDB_OK {
 		return nil, errors.New("unknown error in GetConfig")
 	}
-	freeOnGC(&config)
 
-	return &config, nil
+	return newConfigFromHandle(newConfigHandle(configPtr)), nil
 }
 
 // LastError returns the last error from this context.
