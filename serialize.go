@@ -150,9 +150,6 @@ func SerializeArrayNonEmptyDomainToBuffer(a *Array, serializationType Serializat
 		return nil, fmt.Errorf("error serializing array nonempty domain: %w", a.context.LastError())
 	}
 
-	buffer := Buffer{context: schema.context}
-	freeOnGC(&buffer)
-
 	var cClientSide = C.int32_t(0) // Currently this parameter is unused in libtiledb
 	var bufferPtr *C.tiledb_buffer_t
 	ret = C.tiledb_serialize_array_nonempty_domain(a.context.tiledbContext.Get(), a.tiledbArray.Get(), slicePtr(tmpDomain), isEmpty, C.tiledb_serialization_type_t(serializationType), cClientSide, &bufferPtr)
@@ -161,7 +158,7 @@ func SerializeArrayNonEmptyDomainToBuffer(a *Array, serializationType Serializat
 	}
 
 	runtime.KeepAlive(a)
-	return &buffer, nil
+	return newBufferFromHandle(a.context, newBufferHandle(bufferPtr)), nil
 }
 
 // SerializeArrayNonEmptyDomain gets and serializes the array nonempty domain.
