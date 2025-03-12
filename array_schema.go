@@ -291,7 +291,7 @@ func (a *ArraySchema) Attributes() ([]*Attribute, error) {
 
 // SetDomain sets the array domain.
 func (a *ArraySchema) SetDomain(domain *Domain) error {
-	ret := C.tiledb_array_schema_set_domain(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), domain.tiledbDomain)
+	ret := C.tiledb_array_schema_set_domain(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), domain.tiledbDomain.Get())
 	runtime.KeepAlive(a)
 	runtime.KeepAlive(domain)
 	if ret != C.TILEDB_OK {
@@ -302,14 +302,14 @@ func (a *ArraySchema) SetDomain(domain *Domain) error {
 
 // Domain returns the array's domain.
 func (a *ArraySchema) Domain() (*Domain, error) {
-	domain := Domain{context: a.context}
-	ret := C.tiledb_array_schema_get_domain(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), &domain.tiledbDomain)
+	var domainPtr *C.tiledb_domain_t
+	ret := C.tiledb_array_schema_get_domain(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), &domainPtr)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error setting domain for tiledb arraySchema: %w", a.context.LastError())
 	}
-	freeOnGC(&domain)
-	return &domain, nil
+
+	return newDomainFromHandle(a.context, newDomainHandle(domainPtr)), nil
 }
 
 // SetCapacity sets the tile capacity.
@@ -377,7 +377,7 @@ func (a *ArraySchema) TileOrder() (Layout, error) {
 
 // SetCoordsFilterList sets the filter list used for coordinates.
 func (a *ArraySchema) SetCoordsFilterList(filterList *FilterList) error {
-	ret := C.tiledb_array_schema_set_coords_filter_list(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), filterList.tiledbFilterList)
+	ret := C.tiledb_array_schema_set_coords_filter_list(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), filterList.tiledbFilterList.Get())
 	runtime.KeepAlive(a)
 	runtime.KeepAlive(filterList)
 	if ret != C.TILEDB_OK {
@@ -388,14 +388,14 @@ func (a *ArraySchema) SetCoordsFilterList(filterList *FilterList) error {
 
 // CoordsFilterList returns a copy of the filter list of the coordinates.
 func (a *ArraySchema) CoordsFilterList() (*FilterList, error) {
-	filterList := FilterList{context: a.context}
-	ret := C.tiledb_array_schema_get_coords_filter_list(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), &filterList.tiledbFilterList)
+	var filterListPtr *C.tiledb_filter_list_t
+	ret := C.tiledb_array_schema_get_coords_filter_list(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), &filterListPtr)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting coordinates filter list for tiledb arraySchema: %w", a.context.LastError())
 	}
-	freeOnGC(&filterList)
-	return &filterList, nil
+
+	return newFilterListFromHandle(a.context, newFilterListHandle(filterListPtr)), nil
 }
 
 // SetOffsetsFilterList sets the filter list for the offsets of
@@ -403,7 +403,7 @@ func (a *ArraySchema) CoordsFilterList() (*FilterList, error) {
 func (a *ArraySchema) SetOffsetsFilterList(filterList *FilterList) error {
 	runtime.KeepAlive(a)
 	runtime.KeepAlive(filterList)
-	ret := C.tiledb_array_schema_set_offsets_filter_list(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), filterList.tiledbFilterList)
+	ret := C.tiledb_array_schema_set_offsets_filter_list(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), filterList.tiledbFilterList.Get())
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting offsets filter list for tiledb arraySchema: %w", a.context.LastError())
 	}
@@ -413,14 +413,14 @@ func (a *ArraySchema) SetOffsetsFilterList(filterList *FilterList) error {
 // OffsetsFilterList returns a copy of the FilterList of the offsets for
 // variable-length attributes.
 func (a *ArraySchema) OffsetsFilterList() (*FilterList, error) {
-	filterList := FilterList{context: a.context}
-	ret := C.tiledb_array_schema_get_offsets_filter_list(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), &filterList.tiledbFilterList)
+	var filterListPtr *C.tiledb_filter_list_t
+	ret := C.tiledb_array_schema_get_offsets_filter_list(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), &filterListPtr)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting offsets filter list for tiledb arraySchema: %w", a.context.LastError())
 	}
-	freeOnGC(&filterList)
-	return &filterList, nil
+
+	return newFilterListFromHandle(a.context, newFilterListHandle(filterListPtr)), nil
 }
 
 // Check validates the schema.

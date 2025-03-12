@@ -76,7 +76,7 @@ func (a *Attribute) Context() *Context {
 
 // SetFilterList sets the attribute filterList.
 func (a *Attribute) SetFilterList(filterlist *FilterList) error {
-	ret := C.tiledb_attribute_set_filter_list(a.context.tiledbContext.Get(), a.tiledbAttribute.Get(), filterlist.tiledbFilterList)
+	ret := C.tiledb_attribute_set_filter_list(a.context.tiledbContext.Get(), a.tiledbAttribute.Get(), filterlist.tiledbFilterList.Get())
 	runtime.KeepAlive(a)
 	runtime.KeepAlive(filterlist)
 	if ret != C.TILEDB_OK {
@@ -87,15 +87,14 @@ func (a *Attribute) SetFilterList(filterlist *FilterList) error {
 
 // FilterList returns a copy of the filter list for attribute.
 func (a *Attribute) FilterList() (*FilterList, error) {
-	filterList := FilterList{context: a.context}
-	ret := C.tiledb_attribute_get_filter_list(a.context.tiledbContext.Get(), a.tiledbAttribute.Get(), &filterList.tiledbFilterList)
+	var filterListPtr *C.tiledb_filter_list_t
+	ret := C.tiledb_attribute_get_filter_list(a.context.tiledbContext.Get(), a.tiledbAttribute.Get(), &filterListPtr)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb attribute filter list: %w", a.context.LastError())
 	}
-	freeOnGC(&filterList)
 
-	return &filterList, nil
+	return newFilterListFromHandle(a.context, newFilterListHandle(filterListPtr)), nil
 }
 
 // SetCellValNum sets the number of attribute values per cell.

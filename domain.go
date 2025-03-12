@@ -13,26 +13,43 @@ import (
 	"unsafe"
 )
 
+type domainHandle struct{ *capiHandle }
+
+func freeCapiDomain(c unsafe.Pointer) {
+	C.tiledb_domain_free((**C.tiledb_domain_t)(unsafe.Pointer(&c)))
+}
+
+func newDomainHandle(ptr *C.tiledb_domain_t) domainHandle {
+	return domainHandle{newCapiHandle(unsafe.Pointer(ptr), freeCapiDomain)}
+}
+
+func (x domainHandle) Get() *C.tiledb_domain_t {
+	return (*C.tiledb_domain_t)(x.capiHandle.Get())
+}
+
 // Domain represents the domain of an array.
 // A Domain defines the set of Dimension objects for a given array.
 // The properties of a Domain derive from the underlying dimensions.
 // A Domain is a component of an ArraySchema.
 type Domain struct {
-	tiledbDomain *C.tiledb_domain_t
+	tiledbDomain domainHandle
 	context      *Context
+}
+
+func newDomainFromHandle(context *Context, handle domainHandle) *Domain {
+	return &Domain{tiledbDomain: handle, context: context}
 }
 
 // NewDomain allocates a new domain.
 func NewDomain(tdbCtx *Context) (*Domain, error) {
-	domain := Domain{context: tdbCtx}
-	ret := C.tiledb_domain_alloc(domain.context.tiledbContext.Get(), &domain.tiledbDomain)
+	var domainPtr *C.tiledb_domain_t
+	ret := C.tiledb_domain_alloc(tdbCtx.tiledbContext.Get(), &domainPtr)
 	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error creating tiledb domain: %w", domain.context.LastError())
+		return nil, fmt.Errorf("error creating tiledb domain: %w", tdbCtx.LastError())
 	}
-	freeOnGC(&domain)
 
-	return &domain, nil
+	return newDomainFromHandle(tdbCtx, newDomainHandle(domainPtr)), nil
 }
 
 // Free releases the internal TileDB core data that was allocated on the C heap.
@@ -41,9 +58,7 @@ func NewDomain(tdbCtx *Context) (*Domain, error) {
 // can safely be called many times on the same object; if it has already
 // been freed, it will not be freed again.
 func (d *Domain) Free() {
-	if d.tiledbDomain != nil {
-		C.tiledb_domain_free(&d.tiledbDomain)
-	}
+	d.tiledbDomain.Free()
 }
 
 // Context exposes the internal TileDB context used to initialize the domain.
@@ -54,7 +69,7 @@ func (d *Domain) Context() *Context {
 // Type returns a domain's type deduced from dimensions.
 func (d *Domain) Type() (Datatype, error) {
 	var datatype C.tiledb_datatype_t
-	ret := C.tiledb_domain_get_type(d.context.tiledbContext.Get(), d.tiledbDomain, &datatype)
+	ret := C.tiledb_domain_get_type(d.context.tiledbContext.Get(), d.tiledbDomain.Get(), &datatype)
 	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return -1, fmt.Errorf("error getting tiledb domain type: %w", d.context.LastError())
@@ -65,7 +80,7 @@ func (d *Domain) Type() (Datatype, error) {
 // NDim returns the number of dimensions.
 func (d *Domain) NDim() (uint, error) {
 	var ndim C.uint32_t
-	ret := C.tiledb_domain_get_ndim(d.context.tiledbContext.Get(), d.tiledbDomain, &ndim)
+	ret := C.tiledb_domain_get_ndim(d.context.tiledbContext.Get(), d.tiledbDomain.Get(), &ndim)
 	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting tiledb domain number of dimensions: %w", d.context.LastError())
@@ -77,16 +92,13 @@ func (d *Domain) NDim() (uint, error) {
 func (d *Domain) DimensionFromIndex(index uint) (*Dimension, error) {
 	var dim *C.tiledb_dimension_t
 	ret := C.tiledb_domain_get_dimension_from_index(d.context.tiledbContext.Get(),
-		d.tiledbDomain, C.uint32_t(index), &dim)
+		d.tiledbDomain.Get(), C.uint32_t(index), &dim)
 	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb dimension by index for domain: %w", d.context.LastError())
 	}
 
-	dimension := Dimension{tiledbDimension: dim, context: d.context}
-	freeOnGC(&dimension)
-
-	return &dimension, nil
+	return newDimensionFromHandle(d.context, newDimensionHandle(dim)), nil
 }
 
 // DimensionFromName retrieves a dimension object from a domain by name (key).
@@ -94,20 +106,19 @@ func (d *Domain) DimensionFromName(name string) (*Dimension, error) {
 	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
 	var dim *C.tiledb_dimension_t
-	ret := C.tiledb_domain_get_dimension_from_name(d.context.tiledbContext.Get(), d.tiledbDomain, cname, &dim)
+	ret := C.tiledb_domain_get_dimension_from_name(d.context.tiledbContext.Get(), d.tiledbDomain.Get(), cname, &dim)
 	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb dimension by name for domain: %w", d.context.LastError())
 	}
-	dimension := Dimension{tiledbDimension: dim, context: d.context}
-	freeOnGC(&dimension)
-	return &dimension, nil
+
+	return newDimensionFromHandle(d.context, newDimensionHandle(dim)), nil
 }
 
 // AddDimensions adds one or more dimensions to a domain.
 func (d *Domain) AddDimensions(dimensions ...*Dimension) error {
 	for _, dimension := range dimensions {
-		ret := C.tiledb_domain_add_dimension(d.context.tiledbContext.Get(), d.tiledbDomain, dimension.tiledbDimension)
+		ret := C.tiledb_domain_add_dimension(d.context.tiledbContext.Get(), d.tiledbDomain.Get(), dimension.tiledbDimension.Get())
 		runtime.KeepAlive(dimension)
 		if ret != C.TILEDB_OK {
 			return fmt.Errorf("error adding dimension to domain: %w", d.context.LastError())
@@ -121,7 +132,7 @@ func (d *Domain) HasDimension(dimName string) (bool, error) {
 	var hasDim C.int32_t
 	cDimName := C.CString(dimName)
 	defer C.free(unsafe.Pointer(cDimName))
-	ret := C.tiledb_domain_has_dimension(d.context.tiledbContext.Get(), d.tiledbDomain, cDimName, &hasDim)
+	ret := C.tiledb_domain_has_dimension(d.context.tiledbContext.Get(), d.tiledbDomain.Get(), cDimName, &hasDim)
 	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("error finding dimension %s in domain: %w", dimName, d.context.LastError())
@@ -136,7 +147,7 @@ func (d *Domain) HasDimension(dimName string) (bool, error) {
 
 // DumpSTDOUT dumps the domain in ASCII format to stdout.
 func (d *Domain) DumpSTDOUT() error {
-	ret := C.tiledb_domain_dump(d.context.tiledbContext.Get(), d.tiledbDomain, C.stdout)
+	ret := C.tiledb_domain_dump(d.context.tiledbContext.Get(), d.tiledbDomain.Get(), C.stdout)
 	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error dumping domain to stdout: %w", d.context.LastError())
@@ -164,7 +175,7 @@ func (d *Domain) Dump(path string) error {
 	defer C.fclose(cFile)
 
 	// Dump domain to file
-	ret := C.tiledb_domain_dump(d.context.tiledbContext.Get(), d.tiledbDomain, cFile)
+	ret := C.tiledb_domain_dump(d.context.tiledbContext.Get(), d.tiledbDomain.Get(), cFile)
 	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error dumping domain to file %s: %w", path, d.context.LastError())
