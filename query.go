@@ -67,7 +67,7 @@ func NewQuery(tdbCtx *Context, array *Array) (*Query, error) {
 	}
 
 	query := Query{context: tdbCtx, array: array}
-	ret := C.tiledb_query_alloc(query.context.tiledbContext, array.tiledbArray.Get(), C.tiledb_query_type_t(queryType), &query.tiledbQuery)
+	ret := C.tiledb_query_alloc(query.context.tiledbContext.Get(), array.tiledbArray.Get(), C.tiledb_query_type_t(queryType), &query.tiledbQuery)
 	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb query: %w", query.context.LastError())
@@ -282,7 +282,7 @@ func (q *Query) ResultBufferElements() (map[string][3]uint64, error) {
 
 // SetLayout sets the layout of the cells to be written or read.
 func (q *Query) SetLayout(layout Layout) error {
-	ret := C.tiledb_query_set_layout(q.context.tiledbContext, q.tiledbQuery, C.tiledb_layout_t(layout))
+	ret := C.tiledb_query_set_layout(q.context.tiledbContext.Get(), q.tiledbQuery, C.tiledb_layout_t(layout))
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting query layout: %w", q.context.LastError())
 	}
@@ -292,7 +292,7 @@ func (q *Query) SetLayout(layout Layout) error {
 
 // SetQueryCondition sets a query condition on a read query.
 func (q *Query) SetQueryCondition(cond *QueryCondition) error {
-	if ret := C.tiledb_query_set_condition(q.context.tiledbContext, q.tiledbQuery, cond.cond); ret != C.TILEDB_OK {
+	if ret := C.tiledb_query_set_condition(q.context.tiledbContext.Get(), q.tiledbQuery, cond.cond); ret != C.TILEDB_OK {
 		return fmt.Errorf("error getting config from query: %w", q.context.LastError())
 	}
 	runtime.KeepAlive(q)
@@ -303,7 +303,7 @@ func (q *Query) SetQueryCondition(cond *QueryCondition) error {
 // query. This is applicable only to global layout writes. It has no effect
 // for any other query type.
 func (q *Query) Finalize() error {
-	ret := C.tiledb_query_finalize(q.context.tiledbContext, q.tiledbQuery)
+	ret := C.tiledb_query_finalize(q.context.tiledbContext.Get(), q.tiledbQuery)
 	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error finalizing query: %w", q.context.LastError())
@@ -330,7 +330,7 @@ to proceed. In this case, the users must reallocate their buffers
 and resubmit the query.
 */
 func (q *Query) Submit() error {
-	ret := C.tiledb_query_submit(q.context.tiledbContext, q.tiledbQuery)
+	ret := C.tiledb_query_submit(q.context.tiledbContext.Get(), q.tiledbQuery)
 	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error submitting query: %w", q.context.LastError())
@@ -342,7 +342,7 @@ func (q *Query) Submit() error {
 // Status returns the status of a query.
 func (q *Query) Status() (QueryStatus, error) {
 	var status C.tiledb_query_status_t
-	ret := C.tiledb_query_get_status(q.context.tiledbContext, q.tiledbQuery, &status)
+	ret := C.tiledb_query_get_status(q.context.tiledbContext.Get(), q.tiledbQuery, &status)
 	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return -1, fmt.Errorf("error getting query status: %w", q.context.LastError())
@@ -353,7 +353,7 @@ func (q *Query) Status() (QueryStatus, error) {
 // Type returns the query type.
 func (q *Query) Type() (QueryType, error) {
 	var queryType C.tiledb_query_type_t
-	ret := C.tiledb_query_get_type(q.context.tiledbContext, q.tiledbQuery, &queryType)
+	ret := C.tiledb_query_get_type(q.context.tiledbContext.Get(), q.tiledbQuery, &queryType)
 	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return -1, fmt.Errorf("error getting query type: %w", q.context.LastError())
@@ -365,7 +365,7 @@ func (q *Query) Type() (QueryType, error) {
 // Applicable only to read queries (it returns false for write queries).
 func (q *Query) HasResults() (bool, error) {
 	var hasResults C.int32_t
-	ret := C.tiledb_query_has_results(q.context.tiledbContext, q.tiledbQuery, &hasResults)
+	ret := C.tiledb_query_has_results(q.context.tiledbContext.Get(), q.tiledbQuery, &hasResults)
 	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("error checking if query has results: %w", q.context.LastError())
@@ -381,7 +381,7 @@ func (q *Query) EstResultSize(attributeName string) (*uint64, error) {
 	var size uint64
 
 	ret := C.tiledb_query_get_est_result_size(
-		q.context.tiledbContext,
+		q.context.tiledbContext.Get(),
 		q.tiledbQuery,
 		cAttributeName,
 		(*C.uint64_t)(unsafe.Pointer(&size)))
@@ -401,7 +401,7 @@ func (q *Query) EstResultSizeVar(attributeName string) (*uint64, *uint64, error)
 	var sizeOff, sizeVal uint64
 
 	ret := C.tiledb_query_get_est_result_size_var(
-		q.context.tiledbContext,
+		q.context.tiledbContext.Get(),
 		q.tiledbQuery,
 		cAttributeName,
 		(*C.uint64_t)(unsafe.Pointer(&sizeOff)),
@@ -422,7 +422,7 @@ func (q *Query) EstResultSizeNullable(attributeName string) (*uint64, *uint64, e
 	var size, sizeValidity uint64
 
 	ret := C.tiledb_query_get_est_result_size_nullable(
-		q.context.tiledbContext,
+		q.context.tiledbContext.Get(),
 		q.tiledbQuery,
 		cAttributeName,
 		(*C.uint64_t)(unsafe.Pointer(&size)),
@@ -443,7 +443,7 @@ func (q *Query) EstResultSizeVarNullable(attributeName string) (*uint64, *uint64
 	var sizeOff, sizeVal, sizeValidity uint64
 
 	ret := C.tiledb_query_get_est_result_size_var_nullable(
-		q.context.tiledbContext,
+		q.context.tiledbContext.Get(),
 		q.tiledbQuery,
 		cAttributeName,
 		(*C.uint64_t)(unsafe.Pointer(&sizeOff)),
@@ -630,7 +630,7 @@ func (q *Query) GetFragmentNum() (*uint32, error) {
 	var num uint32
 
 	ret := C.tiledb_query_get_fragment_num(
-		q.context.tiledbContext,
+		q.context.tiledbContext.Get(),
 		q.tiledbQuery,
 		(*C.uint32_t)(unsafe.Pointer(&num)))
 	runtime.KeepAlive(q)
@@ -646,7 +646,7 @@ func (q *Query) GetFragmentURI(num uint64) (*string, error) {
 	var cURI *C.char // q must be kept alive while cURI is being accessed.
 
 	ret := C.tiledb_query_get_fragment_uri(
-		q.context.tiledbContext,
+		q.context.tiledbContext.Get(),
 		q.tiledbQuery,
 		(C.uint64_t)(num),
 		&cURI)
@@ -666,7 +666,7 @@ func (q *Query) GetFragmentTimestampRange(num uint64) (*uint64, *uint64, error) 
 	var t1, t2 uint64
 
 	ret := C.tiledb_query_get_fragment_timestamp_range(
-		q.context.tiledbContext,
+		q.context.tiledbContext.Get(),
 		q.tiledbQuery,
 		(C.uint64_t)(num),
 		(*C.uint64_t)(unsafe.Pointer(&t1)),
@@ -682,7 +682,7 @@ func (q *Query) GetFragmentTimestampRange(num uint64) (*uint64, *uint64, error) 
 // Array returns array used by query.
 func (q *Query) Array() (*Array, error) {
 	var arrayPtr *C.tiledb_array_t
-	ret := C.tiledb_query_get_array(q.context.tiledbContext, q.tiledbQuery, &arrayPtr)
+	ret := C.tiledb_query_get_array(q.context.tiledbContext.Get(), q.tiledbQuery, &arrayPtr)
 	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting array from query: %w", q.context.LastError())
@@ -694,7 +694,7 @@ func (q *Query) Array() (*Array, error) {
 func (q *Query) SetConfig(config *Config) error {
 	q.config = config
 
-	ret := C.tiledb_query_set_config(q.context.tiledbContext, q.tiledbQuery, q.config.tiledbConfig.Get())
+	ret := C.tiledb_query_set_config(q.context.tiledbContext.Get(), q.tiledbQuery, q.config.tiledbConfig.Get())
 	runtime.KeepAlive(q)
 	runtime.KeepAlive(config)
 	if ret != C.TILEDB_OK {
@@ -707,7 +707,7 @@ func (q *Query) SetConfig(config *Config) error {
 // Config gets the config of query.
 func (q *Query) Config() (*Config, error) {
 	var configPtr *C.tiledb_config_t
-	ret := C.tiledb_query_get_config(q.context.tiledbContext, q.tiledbQuery, &configPtr)
+	ret := C.tiledb_query_get_config(q.context.tiledbContext.Get(), q.tiledbQuery, &configPtr)
 	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting config from query: %w", q.context.LastError())
@@ -719,7 +719,7 @@ func (q *Query) Config() (*Config, error) {
 // Stats gets stats for a query as json bytes.
 func (q *Query) Stats() ([]byte, error) {
 	var stats *C.char
-	if ret := C.tiledb_query_get_stats(q.context.tiledbContext, q.tiledbQuery, &stats); ret != C.TILEDB_OK {
+	if ret := C.tiledb_query_get_stats(q.context.tiledbContext.Get(), q.tiledbQuery, &stats); ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting stats from query: %w", q.context.LastError())
 	}
 	runtime.KeepAlive(q)
@@ -761,7 +761,7 @@ func (q *Query) SetDataBufferUnsafe(attribute string, buffer unsafe.Pointer, buf
 	q.pinner.Pin(&bufferSize)
 
 	ret := C.tiledb_query_set_data_buffer(
-		q.context.tiledbContext,
+		q.context.tiledbContext.Get(),
 		q.tiledbQuery,
 		cAttribute,
 		buffer,
@@ -933,7 +933,7 @@ func (q *Query) SetDataBuffer(attributeOrDimension string, buffer interface{}) (
 	defer C.free(unsafe.Pointer(cAttributeOrDimension))
 
 	ret := C.tiledb_query_set_data_buffer(
-		q.context.tiledbContext,
+		q.context.tiledbContext.Get(),
 		q.tiledbQuery,
 		cAttributeOrDimension,
 		cbuffer,
@@ -1044,7 +1044,7 @@ func (q *Query) getDataBufferAndSize(attributeOrDimension string) (interface{}, 
 	var cbuffer unsafe.Pointer
 	var buffer interface{}
 
-	ret = C.tiledb_query_get_data_buffer(q.context.tiledbContext, q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
+	ret = C.tiledb_query_get_data_buffer(q.context.tiledbContext.Get(), q.tiledbQuery, cAttributeOrDimension, &cbuffer, &cbufferSize)
 	runtime.KeepAlive(q)
 	// cbuffer and cbufferSize are in Go-owned memory and don't need a KeepAlive.
 	if ret != C.TILEDB_OK {
@@ -1156,7 +1156,7 @@ func (q *Query) SetValidityBufferUnsafe(attribute string, buffer unsafe.Pointer,
 	q.pinner.Pin(&bufferSize)
 
 	ret := C.tiledb_query_set_validity_buffer(
-		q.context.tiledbContext,
+		q.context.tiledbContext.Get(),
 		q.tiledbQuery,
 		cAttribute,
 		(*C.uint8_t)(buffer),
@@ -1190,7 +1190,7 @@ func (q *Query) SetValidityBuffer(attributeOrDimension string, buffer []uint8) (
 	q.pinner.Pin(&bufferSize)
 
 	ret := C.tiledb_query_set_validity_buffer(
-		q.context.tiledbContext,
+		q.context.tiledbContext.Get(),
 		q.tiledbQuery,
 		cAttributeOrDimension,
 		(*C.uint8_t)(cbuffer),
@@ -1232,7 +1232,7 @@ func (q *Query) getValidityBufferAndSize(attributeOrDimension string) ([]uint8, 
 	var cvalidityByteMapSize *C.uint64_t
 	var cvalidityByteMap *C.uint8_t
 
-	ret := C.tiledb_query_get_validity_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &cvalidityByteMap, &cvalidityByteMapSize)
+	ret := C.tiledb_query_get_validity_buffer(q.context.tiledbContext.Get(), q.tiledbQuery, cattributeNameOrDimension, &cvalidityByteMap, &cvalidityByteMapSize)
 	runtime.KeepAlive(q)
 	// cvalidityByteMapSize and cvalidityByteMap are in Go-owned memory and do not need a KeepAlive.
 	if ret != C.TILEDB_OK {
@@ -1269,7 +1269,7 @@ func (q *Query) SetOffsetsBufferUnsafe(attribute string, offset unsafe.Pointer, 
 	q.pinner.Pin(&offsetSize)
 
 	ret := C.tiledb_query_set_offsets_buffer(
-		q.context.tiledbContext,
+		q.context.tiledbContext.Get(),
 		q.tiledbQuery,
 		cAttribute,
 		(*C.uint64_t)(offset),
@@ -1303,7 +1303,7 @@ func (q *Query) SetOffsetsBuffer(attributeOrDimension string, offset []uint64) (
 	q.pinner.Pin(&offsetSize)
 
 	ret := C.tiledb_query_set_offsets_buffer(
-		q.context.tiledbContext,
+		q.context.tiledbContext.Get(),
 		q.tiledbQuery,
 		cAttributeOrDimension,
 		(*C.uint64_t)(unsafe.Pointer(&offset[0])),
@@ -1345,7 +1345,7 @@ func (q *Query) getOffsetsBufferAndSize(attributeOrDimension string) ([]uint64, 
 	var coffsetsSize *C.uint64_t
 	var coffsets *C.uint64_t
 
-	ret := C.tiledb_query_get_offsets_buffer(q.context.tiledbContext, q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize)
+	ret := C.tiledb_query_get_offsets_buffer(q.context.tiledbContext.Get(), q.tiledbQuery, cattributeNameOrDimension, &coffsets, &coffsetsSize)
 	runtime.KeepAlive(q)
 	// coffsetsSize and coffsets point to Go-owned memory and do not need a KeepAlive
 	if ret != C.TILEDB_OK {
@@ -1371,7 +1371,7 @@ func (q *Query) getOffsetsBufferAndSize(attributeOrDimension string) ([]uint64, 
 
 // SetSubarray sets the subarray for the query.
 func (q *Query) SetSubarray(sa *Subarray) error {
-	ret := C.tiledb_query_set_subarray_t(q.context.tiledbContext, q.tiledbQuery, sa.subarray)
+	ret := C.tiledb_query_set_subarray_t(q.context.tiledbContext.Get(), q.tiledbQuery, sa.subarray)
 	runtime.KeepAlive(q)
 	runtime.KeepAlive(sa)
 	if ret != C.TILEDB_OK {
@@ -1384,7 +1384,7 @@ func (q *Query) SetSubarray(sa *Subarray) error {
 func (q *Query) GetSubarray() (*Subarray, error) {
 	var sa *C.tiledb_subarray_t
 
-	ret := C.tiledb_query_get_subarray_t(q.context.tiledbContext, q.tiledbQuery, &sa)
+	ret := C.tiledb_query_get_subarray_t(q.context.tiledbContext.Get(), q.tiledbQuery, &sa)
 	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb query subarray: %w", q.context.LastError())

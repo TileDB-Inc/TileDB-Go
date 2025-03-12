@@ -40,7 +40,7 @@ func newArraySchemaEvolutionFromHandle(context *Context, handle arraySchemaEvolu
 func NewArraySchemaEvolution(tdbCtx *Context) (*ArraySchemaEvolution, error) {
 	var arraySchemaEvolutionPtr *C.tiledb_array_schema_evolution_t
 	ret := C.tiledb_array_schema_evolution_alloc(
-		tdbCtx.tiledbContext,
+		tdbCtx.tiledbContext.Get(),
 		&arraySchemaEvolutionPtr)
 	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
@@ -73,7 +73,7 @@ func (ase *ArraySchemaEvolution) AddAttribute(attribute *Attribute) error {
 	}
 
 	ret := C.tiledb_array_schema_evolution_add_attribute(
-		ase.context.tiledbContext, ase.tiledbArraySchemaEvolution.Get(),
+		ase.context.tiledbContext.Get(), ase.tiledbArraySchemaEvolution.Get(),
 		attribute.tiledbAttribute.Get())
 	runtime.KeepAlive(ase)
 	runtime.KeepAlive(attribute)
@@ -92,7 +92,7 @@ func (ase *ArraySchemaEvolution) DropAttribute(name string) error {
 	defer C.free(unsafe.Pointer(cname))
 
 	ret := C.tiledb_array_schema_evolution_drop_attribute(
-		ase.context.tiledbContext, ase.tiledbArraySchemaEvolution.Get(), cname)
+		ase.context.tiledbContext.Get(), ase.tiledbArraySchemaEvolution.Get(), cname)
 	runtime.KeepAlive(ase)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error dropping tiledb attribute: %w",
@@ -107,7 +107,7 @@ func (ase *ArraySchemaEvolution) Evolve(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
 
-	ret := C.tiledb_array_evolve(ase.context.tiledbContext, curi,
+	ret := C.tiledb_array_evolve(ase.context.tiledbContext.Get(), curi,
 		ase.tiledbArraySchemaEvolution.Get())
 	runtime.KeepAlive(ase)
 	if ret != C.TILEDB_OK {

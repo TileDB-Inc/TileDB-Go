@@ -41,7 +41,7 @@ func newConsolidationPlanFromHandle(context *Context, handle consolidationPlanHa
 // The plan and the array will share the same tiledb context
 func GetConsolidationPlan(arr *Array, fragmentSize uint64) (*ConsolidationPlan, error) {
 	var consolidationPlanPtr *C.tiledb_consolidation_plan_t
-	ret := C.tiledb_consolidation_plan_create_with_mbr(arr.context.tiledbContext, arr.tiledbArray.Get(), C.uint64_t(fragmentSize), &consolidationPlanPtr)
+	ret := C.tiledb_consolidation_plan_create_with_mbr(arr.context.tiledbContext.Get(), arr.tiledbArray.Get(), C.uint64_t(fragmentSize), &consolidationPlanPtr)
 	runtime.KeepAlive(arr)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting consolidation plan for array: %w", arr.context.LastError())
@@ -63,7 +63,7 @@ func (cp *ConsolidationPlan) Free() {
 func (cp *ConsolidationPlan) NumNodes() (uint64, error) {
 	var numNodes C.uint64_t
 
-	ret := C.tiledb_consolidation_plan_get_num_nodes(cp.context.tiledbContext, cp.tiledbConsolidationPlan.Get(), &numNodes)
+	ret := C.tiledb_consolidation_plan_get_num_nodes(cp.context.tiledbContext.Get(), cp.tiledbConsolidationPlan.Get(), &numNodes)
 	runtime.KeepAlive(cp)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting consolidation plan num nodes: %w", cp.context.LastError())
@@ -76,7 +76,7 @@ func (cp *ConsolidationPlan) NumNodes() (uint64, error) {
 func (cp *ConsolidationPlan) NumFragments(nodeIndex uint64) (uint64, error) {
 	var numFragments C.uint64_t
 
-	ret := C.tiledb_consolidation_plan_get_num_fragments(cp.context.tiledbContext, cp.tiledbConsolidationPlan.Get(), C.uint64_t(nodeIndex), &numFragments)
+	ret := C.tiledb_consolidation_plan_get_num_fragments(cp.context.tiledbContext.Get(), cp.tiledbConsolidationPlan.Get(), C.uint64_t(nodeIndex), &numFragments)
 	runtime.KeepAlive(cp)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting consolidation plan num fragments: %w", cp.context.LastError())
@@ -89,7 +89,7 @@ func (cp *ConsolidationPlan) NumFragments(nodeIndex uint64) (uint64, error) {
 func (cp *ConsolidationPlan) FragmentURI(nodeIndex, fragmentIndex uint64) (string, error) {
 	var curi *C.char
 
-	ret := C.tiledb_consolidation_plan_get_fragment_uri(cp.context.tiledbContext, cp.tiledbConsolidationPlan.Get(), C.uint64_t(nodeIndex), C.uint64_t(fragmentIndex), &curi)
+	ret := C.tiledb_consolidation_plan_get_fragment_uri(cp.context.tiledbContext.Get(), cp.tiledbConsolidationPlan.Get(), C.uint64_t(nodeIndex), C.uint64_t(fragmentIndex), &curi)
 	runtime.KeepAlive(cp)
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("error getting consolidation plan fragment uri for node %d and fragment %d: %w", nodeIndex, fragmentIndex, cp.context.LastError())
@@ -101,7 +101,7 @@ func (cp *ConsolidationPlan) FragmentURI(nodeIndex, fragmentIndex uint64) (strin
 // DumpJSON returns a json serialization of the plan
 func (cp *ConsolidationPlan) DumpJSON() (string, error) {
 	var cjson *C.char
-	ret := C.tiledb_consolidation_plan_dump_json_str(cp.context.tiledbContext, cp.tiledbConsolidationPlan.Get(), &cjson)
+	ret := C.tiledb_consolidation_plan_dump_json_str(cp.context.tiledbContext.Get(), cp.tiledbConsolidationPlan.Get(), &cjson)
 	runtime.KeepAlive(cp)
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("error getting consolidation plan json dump: %w", cp.context.LastError())
@@ -131,7 +131,7 @@ func (a *Array) ConsolidateFragments(config *Config, fragmentList []string) erro
 	list, freeMemory := cStringArray(fragmentList)
 	defer freeMemory()
 
-	ret := C.tiledb_array_consolidate_fragments(a.context.tiledbContext, curi, (**C.char)(slicePtr(list)), C.uint64_t(len(list)), config.tiledbConfig.Get())
+	ret := C.tiledb_array_consolidate_fragments(a.context.tiledbContext.Get(), curi, (**C.char)(slicePtr(list)), C.uint64_t(len(list)), config.tiledbConfig.Get())
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error consolidating tiledb array fragment list: %w", a.context.LastError())

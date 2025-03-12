@@ -72,7 +72,7 @@ func NewBuffer(context *Context) (*Buffer, error) {
 	}
 
 	var bufferPtr *C.tiledb_buffer_t
-	ret := C.tiledb_buffer_alloc(context.tiledbContext, &bufferPtr)
+	ret := C.tiledb_buffer_alloc(context.tiledbContext.Get(), &bufferPtr)
 	runtime.KeepAlive(context)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb buffer: %w", context.LastError())
@@ -97,7 +97,7 @@ func (b *Buffer) Context() *Context {
 
 // SetType sets the buffer datatype.
 func (b *Buffer) SetType(datatype Datatype) error {
-	ret := C.tiledb_buffer_set_type(b.context.tiledbContext, b.tiledbBuffer.Get(), C.tiledb_datatype_t(datatype))
+	ret := C.tiledb_buffer_set_type(b.context.tiledbContext.Get(), b.tiledbBuffer.Get(), C.tiledb_datatype_t(datatype))
 	runtime.KeepAlive(b)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting datatype for tiledb buffer: %w", b.context.LastError())
@@ -108,7 +108,7 @@ func (b *Buffer) SetType(datatype Datatype) error {
 // Type returns the buffer datatype.
 func (b *Buffer) Type() (Datatype, error) {
 	var bufferType C.tiledb_datatype_t
-	ret := C.tiledb_buffer_get_type(b.context.tiledbContext, b.tiledbBuffer.Get(), &bufferType)
+	ret := C.tiledb_buffer_get_type(b.context.tiledbContext.Get(), b.tiledbBuffer.Get(), &bufferType)
 	runtime.KeepAlive(b)
 
 	if ret != C.TILEDB_OK {
@@ -147,7 +147,7 @@ func (b *Buffer) ReadAt(p []byte, off int64) (int, error) {
 	var cbuffer unsafe.Pointer // b must be kept alive while cbuffer is being accessed.
 	var csize C.uint64_t
 
-	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer.Get(), &cbuffer, &csize)
+	ret := C.tiledb_buffer_get_data(b.context.tiledbContext.Get(), b.tiledbBuffer.Get(), &cbuffer, &csize)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting tiledb buffer data: %w", b.context.LastError())
 	}
@@ -176,7 +176,7 @@ func (b *Buffer) WriteTo(w io.Writer) (int64, error) {
 	var cbuffer unsafe.Pointer // b must be kept alive while cbuffer is being accessed.
 	var csize C.uint64_t
 
-	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer.Get(), &cbuffer, &csize)
+	ret := C.tiledb_buffer_get_data(b.context.tiledbContext.Get(), b.tiledbBuffer.Get(), &cbuffer, &csize)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting tiledb buffer data: %w", b.context.LastError())
 	}
@@ -215,7 +215,7 @@ func (b *Buffer) SetBuffer(buffer []byte) error {
 	cbuffer := unsafe.Pointer(unsafe.SliceData(buffer))
 	b.tiledbBuffer.Pin(cbuffer)
 
-	ret := C.tiledb_buffer_set_data(b.context.tiledbContext, b.tiledbBuffer.Get(), cbuffer, C.uint64_t(len(buffer)))
+	ret := C.tiledb_buffer_set_data(b.context.tiledbContext.Get(), b.tiledbBuffer.Get(), cbuffer, C.uint64_t(len(buffer)))
 	runtime.KeepAlive(b)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting tiledb buffer: %w", b.context.LastError())
@@ -229,7 +229,7 @@ func (b *Buffer) dataCopy() ([]byte, error) {
 	var cbuffer unsafe.Pointer // b must be kept alive while cbuffer is being accessed.
 	var csize C.uint64_t
 
-	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer.Get(), &cbuffer, &csize)
+	ret := C.tiledb_buffer_get_data(b.context.tiledbContext.Get(), b.tiledbBuffer.Get(), &cbuffer, &csize)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb buffer data: %w", b.context.LastError())
 	}
@@ -251,7 +251,7 @@ func (b *Buffer) Len() (uint64, error) {
 	var cbuffer unsafe.Pointer
 	var csize C.uint64_t
 
-	ret := C.tiledb_buffer_get_data(b.context.tiledbContext, b.tiledbBuffer.Get(), &cbuffer, &csize)
+	ret := C.tiledb_buffer_get_data(b.context.tiledbContext.Get(), b.tiledbBuffer.Get(), &cbuffer, &csize)
 	runtime.KeepAlive(b)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting tiledb buffer data: %w", b.context.LastError())

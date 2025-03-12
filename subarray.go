@@ -23,7 +23,7 @@ type Subarray struct {
 func (a *Array) NewSubarray() (*Subarray, error) {
 	var sa *C.tiledb_subarray_t
 
-	ret := C.tiledb_subarray_alloc(a.context.tiledbContext, a.tiledbArray.Get(), &sa)
+	ret := C.tiledb_subarray_alloc(a.context.tiledbContext.Get(), a.tiledbArray.Get(), &sa)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating Subarray: %w", a.context.LastError())
 	}
@@ -36,7 +36,7 @@ func (a *Array) NewSubarray() (*Subarray, error) {
 
 // SetConfig sets the subarray config. Currently it overrides only sm.read_range_oob.
 func (sa *Subarray) SetConfig(cfg *Config) error {
-	ret := C.tiledb_subarray_set_config(sa.context.tiledbContext, sa.subarray, cfg.tiledbConfig.Get())
+	ret := C.tiledb_subarray_set_config(sa.context.tiledbContext.Get(), sa.subarray, cfg.tiledbConfig.Get())
 	runtime.KeepAlive(sa)
 	runtime.KeepAlive(cfg)
 	if ret != C.TILEDB_OK {
@@ -144,7 +144,7 @@ func (sa *Subarray) SetSubArray(subArray interface{}) error {
 		return fmt.Errorf("unrecognized subArray type passed: %s", subArrayType.String())
 	}
 
-	ret := C.tiledb_subarray_set_subarray(sa.context.tiledbContext, sa.subarray, csubArray)
+	ret := C.tiledb_subarray_set_subarray(sa.context.tiledbContext.Get(), sa.subarray, csubArray)
 	runtime.KeepAlive(sa)
 	// csubarray is being kept alive by passing it to cgo call.
 	if ret != C.TILEDB_OK {
@@ -161,7 +161,7 @@ func (sa *Subarray) SetCoalesceRanges(b bool) error {
 		coalesce = 1
 	}
 
-	ret := C.tiledb_subarray_set_coalesce_ranges(sa.context.tiledbContext, sa.subarray, coalesce)
+	ret := C.tiledb_subarray_set_coalesce_ranges(sa.context.tiledbContext.Get(), sa.subarray, coalesce)
 	runtime.KeepAlive(sa)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting coalesce ranges on subarray: %w", sa.context.LastError())
@@ -185,12 +185,12 @@ func (sa *Subarray) AddRange(dimIdx uint32, r Range) error {
 	if isVar {
 		startSlice := []byte(r.start.(string))
 		endSlice := []byte(r.end.(string))
-		ret = C.tiledb_subarray_add_range_var(sa.context.tiledbContext, sa.subarray, C.uint32_t(dimIdx),
+		ret = C.tiledb_subarray_add_range_var(sa.context.tiledbContext.Get(), sa.subarray, C.uint32_t(dimIdx),
 			slicePtr(startSlice), C.uint64_t(len(startSlice)), slicePtr(endSlice), C.uint64_t(len(endSlice)))
 	} else {
 		startValue := addressableValue(r.start)
 		endValue := addressableValue(r.end)
-		ret = C.tiledb_subarray_add_range(sa.context.tiledbContext, sa.subarray, C.uint32_t(dimIdx),
+		ret = C.tiledb_subarray_add_range(sa.context.tiledbContext.Get(), sa.subarray, C.uint32_t(dimIdx),
 			startValue.UnsafePointer(), endValue.UnsafePointer(), nil)
 	}
 	runtime.KeepAlive(sa)
@@ -220,12 +220,12 @@ func (sa *Subarray) AddRangeByName(dimName string, r Range) error {
 	if isVar {
 		startSlice := []byte(r.start.(string))
 		endSlice := []byte(r.end.(string))
-		ret = C.tiledb_subarray_add_range_var_by_name(sa.context.tiledbContext, sa.subarray, cDimName,
+		ret = C.tiledb_subarray_add_range_var_by_name(sa.context.tiledbContext.Get(), sa.subarray, cDimName,
 			slicePtr(startSlice), C.uint64_t(len(startSlice)), slicePtr(endSlice), C.uint64_t(len(endSlice)))
 	} else {
 		startValue := addressableValue(r.start)
 		endValue := addressableValue(r.end)
-		ret = C.tiledb_subarray_add_range_by_name(sa.context.tiledbContext, sa.subarray, cDimName,
+		ret = C.tiledb_subarray_add_range_by_name(sa.context.tiledbContext.Get(), sa.subarray, cDimName,
 			startValue.UnsafePointer(), endValue.UnsafePointer(), nil)
 	}
 	runtime.KeepAlive(sa)
@@ -241,7 +241,7 @@ func (sa *Subarray) AddRangeByName(dimName string, r Range) error {
 func (sa *Subarray) GetRangeNum(dimIdx uint32) (uint64, error) {
 	var rangeNum uint64
 
-	ret := C.tiledb_subarray_get_range_num(sa.context.tiledbContext, sa.subarray, C.uint32_t(dimIdx), (*C.uint64_t)(unsafe.Pointer(&rangeNum)))
+	ret := C.tiledb_subarray_get_range_num(sa.context.tiledbContext.Get(), sa.subarray, C.uint32_t(dimIdx), (*C.uint64_t)(unsafe.Pointer(&rangeNum)))
 	runtime.KeepAlive(sa)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error retrieving subarray range num: %w", sa.context.LastError())
@@ -257,7 +257,7 @@ func (sa *Subarray) GetRangeNumFromName(dimName string) (uint64, error) {
 	cDimName := C.CString(dimName)
 	defer C.free(unsafe.Pointer(cDimName))
 
-	ret := C.tiledb_subarray_get_range_num_from_name(sa.context.tiledbContext, sa.subarray, cDimName, (*C.uint64_t)(unsafe.Pointer(&rangeNum)))
+	ret := C.tiledb_subarray_get_range_num_from_name(sa.context.tiledbContext.Get(), sa.subarray, cDimName, (*C.uint64_t)(unsafe.Pointer(&rangeNum)))
 	runtime.KeepAlive(sa)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error retrieving subarray range num: %w", sa.context.LastError())
@@ -351,7 +351,7 @@ func (sa *Subarray) GetRange(dimIdx uint32, rangeNum uint64) (Range, error) {
 	var ret C.int32_t
 	if isVar {
 		var startSize, endSize uint64
-		ret = C.tiledb_subarray_get_range_var_size(sa.context.tiledbContext, sa.subarray, C.uint32_t(dimIdx), C.uint64_t(rangeNum),
+		ret = C.tiledb_subarray_get_range_var_size(sa.context.tiledbContext.Get(), sa.subarray, C.uint32_t(dimIdx), C.uint64_t(rangeNum),
 			(*C.uint64_t)(unsafe.Pointer(&startSize)), (*C.uint64_t)(unsafe.Pointer(&endSize)))
 		if startSize == 0 && endSize == 0 {
 			r.start = ""
@@ -362,7 +362,7 @@ func (sa *Subarray) GetRange(dimIdx uint32, rangeNum uint64) (Range, error) {
 			endData := make([]byte, int(endSize))
 			ep := slicePtr(endData)
 
-			ret = C.tiledb_subarray_get_range_var(sa.context.tiledbContext, sa.subarray,
+			ret = C.tiledb_subarray_get_range_var(sa.context.tiledbContext.Get(), sa.subarray,
 				C.uint32_t(dimIdx), C.uint64_t(rangeNum), sp, ep)
 			if ret == C.TILEDB_OK {
 				r.start = string(startData)
@@ -371,7 +371,7 @@ func (sa *Subarray) GetRange(dimIdx uint32, rangeNum uint64) (Range, error) {
 		}
 	} else {
 		var startPointer, endPointer, stridePointer unsafe.Pointer
-		ret = C.tiledb_subarray_get_range(sa.context.tiledbContext, sa.subarray,
+		ret = C.tiledb_subarray_get_range(sa.context.tiledbContext.Get(), sa.subarray,
 			C.uint32_t(dimIdx), C.uint64_t(rangeNum), &startPointer, &endPointer, &stridePointer)
 		typ := dt.ReflectType()
 		if ret == C.TILEDB_OK {
@@ -401,7 +401,7 @@ func (sa *Subarray) GetRangeFromName(dimName string, rangeNum uint64) (Range, er
 	var ret C.int32_t
 	if isVar {
 		var startSize, endSize uint64
-		ret = C.tiledb_subarray_get_range_var_size_from_name(sa.context.tiledbContext, sa.subarray, cDimName, C.uint64_t(rangeNum),
+		ret = C.tiledb_subarray_get_range_var_size_from_name(sa.context.tiledbContext.Get(), sa.subarray, cDimName, C.uint64_t(rangeNum),
 			(*C.uint64_t)(unsafe.Pointer(&startSize)), (*C.uint64_t)(unsafe.Pointer(&endSize)))
 		if startSize == 0 && endSize == 0 {
 			r.start = ""
@@ -412,7 +412,7 @@ func (sa *Subarray) GetRangeFromName(dimName string, rangeNum uint64) (Range, er
 			endData := make([]byte, int(endSize))
 			ep := slicePtr(endData)
 
-			ret = C.tiledb_subarray_get_range_var_from_name(sa.context.tiledbContext, sa.subarray,
+			ret = C.tiledb_subarray_get_range_var_from_name(sa.context.tiledbContext.Get(), sa.subarray,
 				cDimName, C.uint64_t(rangeNum), sp, ep)
 			// startData and endData are being kept alive by passing them to the cgo call.
 			if ret == C.TILEDB_OK {
@@ -422,7 +422,7 @@ func (sa *Subarray) GetRangeFromName(dimName string, rangeNum uint64) (Range, er
 		}
 	} else {
 		var startPointer, endPointer, stridePointer unsafe.Pointer // sa must be kept alive while these pointers are being accessed.
-		ret = C.tiledb_subarray_get_range_from_name(sa.context.tiledbContext, sa.subarray,
+		ret = C.tiledb_subarray_get_range_from_name(sa.context.tiledbContext.Get(), sa.subarray,
 			cDimName, C.uint64_t(rangeNum), &startPointer, &endPointer, &stridePointer)
 		typ := dt.ReflectType()
 		if ret == C.TILEDB_OK {

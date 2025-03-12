@@ -23,7 +23,7 @@ type Filter struct {
 func NewFilter(context *Context, filterType FilterType) (*Filter, error) {
 	filter := Filter{context: context}
 
-	ret := C.tiledb_filter_alloc(filter.context.tiledbContext, C.tiledb_filter_type_t(filterType), &filter.tiledbFilter)
+	ret := C.tiledb_filter_alloc(filter.context.tiledbContext.Get(), C.tiledb_filter_type_t(filterType), &filter.tiledbFilter)
 	runtime.KeepAlive(context)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb filter: %w", filter.context.LastError())
@@ -52,7 +52,7 @@ func (f *Filter) Context() *Context {
 // Type returns the filter type.
 func (f *Filter) Type() (FilterType, error) {
 	var filterType C.tiledb_filter_type_t
-	ret := C.tiledb_filter_get_type(f.context.tiledbContext, f.tiledbFilter, &filterType)
+	ret := C.tiledb_filter_get_type(f.context.tiledbContext.Get(), f.tiledbFilter, &filterType)
 	runtime.KeepAlive(f)
 
 	if ret != C.TILEDB_OK {
@@ -75,7 +75,7 @@ func (f *Filter) SetOption(filterOption FilterOption, valueInterface interface{}
 			return errors.New("error setting tiledb filter option TILEDB_COMPRESSION_LEVEL, passed data is not int32")
 		}
 		cvalue = unsafe.Pointer(&value)
-		ret := C.tiledb_filter_set_option(f.context.tiledbContext, f.tiledbFilter, C.tiledb_filter_option_t(filterOption), cvalue)
+		ret := C.tiledb_filter_set_option(f.context.tiledbContext.Get(), f.tiledbFilter, C.tiledb_filter_option_t(filterOption), cvalue)
 		if ret != C.TILEDB_OK {
 			return fmt.Errorf("error setting tiledb filter option: %w", f.context.LastError())
 		}
@@ -85,7 +85,7 @@ func (f *Filter) SetOption(filterOption FilterOption, valueInterface interface{}
 			return errors.New("error setting tiledb filter option TILEDB_BIT_WIDTH_MAX_WINDOW, passed data is not uint32")
 		}
 		cvalue = unsafe.Pointer(&value)
-		ret := C.tiledb_filter_set_option(f.context.tiledbContext, f.tiledbFilter, C.tiledb_filter_option_t(filterOption), cvalue)
+		ret := C.tiledb_filter_set_option(f.context.tiledbContext.Get(), f.tiledbFilter, C.tiledb_filter_option_t(filterOption), cvalue)
 		if ret != C.TILEDB_OK {
 			return fmt.Errorf("error setting tiledb filter option: %w", f.context.LastError())
 		}
@@ -95,7 +95,7 @@ func (f *Filter) SetOption(filterOption FilterOption, valueInterface interface{}
 			return errors.New("error setting tiledb filter option TILEDB_POSITIVE_DELTA_MAX_WINDOW, passed data is not uint32")
 		}
 		cvalue = unsafe.Pointer(&value)
-		ret := C.tiledb_filter_set_option(f.context.tiledbContext, f.tiledbFilter, C.tiledb_filter_option_t(filterOption), cvalue)
+		ret := C.tiledb_filter_set_option(f.context.tiledbContext.Get(), f.tiledbFilter, C.tiledb_filter_option_t(filterOption), cvalue)
 		if ret != C.TILEDB_OK {
 			return fmt.Errorf("error setting tiledb filter option: %w", f.context.LastError())
 		}
@@ -118,7 +118,7 @@ func (f *Filter) Option(filterOption FilterOption) (interface{}, error) {
 	case TILEDB_COMPRESSION_LEVEL:
 		var val int32
 		cvalue = unsafe.Pointer(&val)
-		ret := C.tiledb_filter_get_option(f.context.tiledbContext, f.tiledbFilter, C.tiledb_filter_option_t(filterOption), cvalue)
+		ret := C.tiledb_filter_get_option(f.context.tiledbContext.Get(), f.tiledbFilter, C.tiledb_filter_option_t(filterOption), cvalue)
 		if ret != C.TILEDB_OK {
 			return nil, fmt.Errorf("error getting tiledb filter option: %w", f.context.LastError())
 		}
@@ -126,7 +126,7 @@ func (f *Filter) Option(filterOption FilterOption) (interface{}, error) {
 	case TILEDB_BIT_WIDTH_MAX_WINDOW:
 		var val uint32
 		cvalue = unsafe.Pointer(&val)
-		ret := C.tiledb_filter_get_option(f.context.tiledbContext, f.tiledbFilter, C.tiledb_filter_option_t(filterOption), cvalue)
+		ret := C.tiledb_filter_get_option(f.context.tiledbContext.Get(), f.tiledbFilter, C.tiledb_filter_option_t(filterOption), cvalue)
 		if ret != C.TILEDB_OK {
 			return nil, fmt.Errorf("error getting tiledb filter option: %w", f.context.LastError())
 		}
@@ -134,7 +134,7 @@ func (f *Filter) Option(filterOption FilterOption) (interface{}, error) {
 	case TILEDB_POSITIVE_DELTA_MAX_WINDOW:
 		var val uint32
 		cvalue = unsafe.Pointer(&val)
-		ret := C.tiledb_filter_get_option(f.context.tiledbContext, f.tiledbFilter, C.tiledb_filter_option_t(filterOption), cvalue)
+		ret := C.tiledb_filter_get_option(f.context.tiledbContext.Get(), f.tiledbFilter, C.tiledb_filter_option_t(filterOption), cvalue)
 		if ret != C.TILEDB_OK {
 			return nil, fmt.Errorf("error getting tiledb filter option: %w", f.context.LastError())
 		}
