@@ -39,8 +39,8 @@ type FragmentInfo struct {
 	array              *Array
 }
 
-func newFragmentInfoFromHandle(context *Context, handle fragmentInfoHandle) *FragmentInfo {
-	return &FragmentInfo{context: context, tiledbFragmentInfo: handle}
+func newFragmentInfoFromHandle(context *Context, uri string, handle fragmentInfoHandle) *FragmentInfo {
+	return &FragmentInfo{context: context, uri: uri, tiledbFragmentInfo: handle}
 }
 
 // NewFragmentInfo allocates a new fragment info for a given array and fetches all
@@ -56,7 +56,7 @@ func NewFragmentInfo(tdbCtx *Context, uri string) (*FragmentInfo, error) {
 		return nil, fmt.Errorf("error creating tiledb fragment info: %w", tdbCtx.LastError())
 	}
 
-	return newFragmentInfoFromHandle(tdbCtx, newfragmentInfoHandle(fragmentInfoPtr)), nil
+	return newFragmentInfoFromHandle(tdbCtx, uri, newfragmentInfoHandle(fragmentInfoPtr)), nil
 }
 
 // Free releases the internal TileDB core data that was allocated on the C heap.

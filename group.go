@@ -35,8 +35,8 @@ type Group struct {
 	context *Context
 }
 
-func newGroupFromHandle(context *Context, group groupHandle) *Group {
-	return &Group{group: group, context: context}
+func newGroupFromHandle(context *Context, uri string, group groupHandle) *Group {
+	return &Group{group: group, uri: uri, context: context}
 }
 
 // NewGroup allocates an embedded group.
@@ -50,7 +50,7 @@ func NewGroup(tdbCtx *Context, uri string) (*Group, error) {
 		return nil, fmt.Errorf("error creating tiledb group: %w", tdbCtx.LastError())
 	}
 
-	return newGroupFromHandle(tdbCtx, newGroupHandle(groupPtr)), nil
+	return newGroupFromHandle(tdbCtx, uri, newGroupHandle(groupPtr)), nil
 }
 
 // Create creates a new TileDB group.
