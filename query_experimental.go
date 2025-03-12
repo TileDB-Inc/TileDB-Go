@@ -71,12 +71,5 @@ func (q *Query) GetPlan() (string, error) {
 	runtime.KeepAlive(q)
 	defer C.tiledb_string_free(&plan)
 
-	var sPlan *C.char
-	var sPlanSize C.size_t
-	ret = C.tiledb_string_view(plan, &sPlan, &sPlanSize)
-	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("error extracting query query: %w", q.context.LastError())
-	}
-
-	return C.GoStringN(sPlan, C.int(sPlanSize)), nil
+	return stringHandleToString(plan)
 }

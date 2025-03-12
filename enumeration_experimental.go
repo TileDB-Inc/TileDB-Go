@@ -157,14 +157,7 @@ func (e *Enumeration) Name() (string, error) {
 	}
 	defer C.tiledb_string_free(&str)
 
-	var cName *C.char
-	var cNameSize C.size_t
-	ret = C.tiledb_string_view(str, &cName, &cNameSize)
-	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("error getting name: %w", e.context.LastError())
-	}
-
-	return C.GoStringN(cName, C.int(cNameSize)), nil
+	return stringHandleToString(str)
 }
 
 // Type returns the TileDB type of the enumeration.
@@ -485,14 +478,7 @@ func (a *Attribute) GetEnumerationName() (string, error) {
 	}
 	defer C.tiledb_string_free(&str)
 
-	var cName *C.char
-	var cNameSize C.size_t
-	ret = C.tiledb_string_view(str, &cName, &cNameSize)
-	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("error getting name: %w", a.context.LastError())
-	}
-
-	return C.GoStringN(cName, C.int(cNameSize)), nil
+	return stringHandleToString(str)
 }
 
 // UseEnumerations set true to allow query conditions with enumeration literals.
