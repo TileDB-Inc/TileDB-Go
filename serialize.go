@@ -305,7 +305,7 @@ func SerializeQuery(query *Query, serializationType SerializationType, clientSid
 	}
 
 	var bufferListPtr *C.tiledb_buffer_list_t
-	ret := C.tiledb_serialize_query(query.context.tiledbContext.Get(), query.tiledbQuery, C.tiledb_serialization_type_t(serializationType), cClientSide, &bufferListPtr)
+	ret := C.tiledb_serialize_query(query.context.tiledbContext.Get(), query.tiledbQuery.Get(), C.tiledb_serialization_type_t(serializationType), cClientSide, &bufferListPtr)
 	runtime.KeepAlive(query)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error serializing query: %w", query.context.LastError())
@@ -323,7 +323,7 @@ func DeserializeQuery(query *Query, buffer *Buffer, serializationType Serializat
 		cClientSide = 0
 	}
 
-	ret := C.tiledb_deserialize_query(query.context.tiledbContext.Get(), buffer.tiledbBuffer.Get(), C.tiledb_serialization_type_t(serializationType), cClientSide, query.tiledbQuery)
+	ret := C.tiledb_deserialize_query(query.context.tiledbContext.Get(), buffer.tiledbBuffer.Get(), C.tiledb_serialization_type_t(serializationType), cClientSide, query.tiledbQuery.Get())
 	runtime.KeepAlive(query)
 	runtime.KeepAlive(buffer)
 	if ret != C.TILEDB_OK {
@@ -378,7 +378,7 @@ func SerializeQueryEstResultSizesToBuffer(q *Query, serializationType Serializat
 	}
 
 	var bufferPtr *C.tiledb_buffer_t
-	ret := C.tiledb_serialize_query_est_result_sizes(q.context.tiledbContext.Get(), q.tiledbQuery, C.tiledb_serialization_type_t(serializationType), cClientSide, &bufferPtr)
+	ret := C.tiledb_serialize_query_est_result_sizes(q.context.tiledbContext.Get(), q.tiledbQuery.Get(), C.tiledb_serialization_type_t(serializationType), cClientSide, &bufferPtr)
 	runtime.KeepAlive(q)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error serializing query est buffer sizes: %w", q.context.LastError())
@@ -408,7 +408,7 @@ func DeserializeQueryEstResultSizes(q *Query, buffer *Buffer, serializationType 
 		cClientSide = 0
 	}
 
-	ret := C.tiledb_deserialize_query_est_result_sizes(q.context.tiledbContext.Get(), q.tiledbQuery, C.tiledb_serialization_type_t(serializationType), cClientSide, buffer.tiledbBuffer.Get())
+	ret := C.tiledb_deserialize_query_est_result_sizes(q.context.tiledbContext.Get(), q.tiledbQuery.Get(), C.tiledb_serialization_type_t(serializationType), cClientSide, buffer.tiledbBuffer.Get())
 	runtime.KeepAlive(q)
 	runtime.KeepAlive(buffer)
 	if ret != C.TILEDB_OK {
@@ -584,24 +584,17 @@ func DeserializeQueryAndArray(context *Context, buffer *Buffer, serializationTyp
 	cArrayURI := C.CString(arrayURI)
 	defer C.free(unsafe.Pointer(cArrayURI))
 
-	query := &Query{
-		context: context,
-	}
-
 	var arrayPtr *C.tiledb_array_t
-	ret := C.tiledb_deserialize_query_and_array(context.tiledbContext.Get(), buffer.tiledbBuffer.Get(), C.tiledb_serialization_type_t(serializationType), cClientSide, cArrayURI, &query.tiledbQuery, &arrayPtr)
+	var queryPtr *C.tiledb_query_t
+	ret := C.tiledb_deserialize_query_and_array(context.tiledbContext.Get(), buffer.tiledbBuffer.Get(), C.tiledb_serialization_type_t(serializationType), cClientSide, cArrayURI, &queryPtr, &arrayPtr)
+	runtime.KeepAlive(buffer)
 	if ret != C.TILEDB_OK {
 		return nil, nil, fmt.Errorf("error deserializing query: %w", context.LastError())
 	}
 
 	array := newArrayFromHandle(context, newArrayHandle(arrayPtr))
-	query.array = array
-	freeOnGC(query)
+	query := newQueryFromHandle(context, array, newQueryHandle(queryPtr))
 
-	query.resultBufferElements = make(map[string][3]*uint64)
-
-	// Make sure the buffer stays alive untill after the deserialization is complete
-	runtime.KeepAlive(buffer)
 	return array, query, nil
 }
 
