@@ -15,10 +15,12 @@ import (
 	"unsafe"
 )
 
+// arraySchemaHandle safely wraps a pointer to tiledb_array_schema_t.
+// This handle type differs from the rest because it supports replacing the
+// handle after creation. For this reason, its member functions must use a pointer receiver.
 type arraySchemaHandle struct {
 	// An unsafe pointer to the capiHandle holding the schema.
-	// This pointer must be accessed using atomic functions, because the MarshalJSON function
-	// replaces the native handle of an existing object.
+	// This pointer must be accessed using atomic functions.
 	// We cannot wrap atomic.Pointer[capiHandle] in a struct and pass it around because of lint warnings,
 	// and we cannot mutate the native handle of an existing capiHandle because it's impossible to atomically
 	// set the finalizer.

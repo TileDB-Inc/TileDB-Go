@@ -42,15 +42,15 @@ func newBufferHandle(ptr *C.tiledb_buffer_t) bufferHandle {
 	return bufferHandle{newCapiHandle(unsafe.Pointer(state), freeCapiBufferState)}
 }
 
-func (x *bufferHandle) getState() *bufferHandleState {
+func (x bufferHandle) getState() *bufferHandleState {
 	return (*bufferHandleState)(x.capiHandle.Get())
 }
 
-func (x *bufferHandle) Get() *C.tiledb_buffer_t {
+func (x bufferHandle) Get() *C.tiledb_buffer_t {
 	return x.getState().ptr
 }
 
-func (x *bufferHandle) Pin(p any) {
+func (x bufferHandle) Pin(p any) {
 	x.getState().pinner.Pin(p)
 }
 
