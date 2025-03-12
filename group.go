@@ -14,26 +14,43 @@ import (
 */
 import "C"
 
+type groupHandle struct{ *capiHandle }
+
+func freeCapiGroup(c unsafe.Pointer) {
+	C.tiledb_group_free((**C.tiledb_group_t)(unsafe.Pointer(&c)))
+}
+
+func newGroupHandle(ptr *C.tiledb_group_t) groupHandle {
+	return groupHandle{newCapiHandle(unsafe.Pointer(ptr), freeCapiGroup)}
+}
+
+func (x groupHandle) Get() *C.tiledb_group_t {
+	return (*C.tiledb_group_t)(x.capiHandle.Get())
+}
+
 // Group represents a wrapped TileDB embedded group
 type Group struct {
-	group   *C.tiledb_group_t
+	group   groupHandle
 	uri     string
 	context *Context
-	config  *Config
+}
+
+func newGroupFromHandle(context *Context, group groupHandle) *Group {
+	return &Group{group: group, context: context}
 }
 
 // NewGroup allocates an embedded group.
 func NewGroup(tdbCtx *Context, uri string) (*Group, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	group := Group{context: tdbCtx, uri: uri}
-	ret := C.tiledb_group_alloc(group.context.tiledbContext.Get(), curi, &group.group)
+	var groupPtr *C.tiledb_group_t
+	ret := C.tiledb_group_alloc(tdbCtx.tiledbContext.Get(), curi, &groupPtr)
+	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error creating tiledb group: %w", group.context.LastError())
+		return nil, fmt.Errorf("error creating tiledb group: %w", tdbCtx.LastError())
 	}
-	freeOnGC(&group)
 
-	return &group, nil
+	return newGroupFromHandle(tdbCtx, newGroupHandle(groupPtr)), nil
 }
 
 // Create creates a new TileDB group.
@@ -50,7 +67,7 @@ func (g *Group) Create() error {
 }
 
 func (g *Group) Open(queryType QueryType) error {
-	ret := C.tiledb_group_open(g.context.tiledbContext.Get(), g.group, C.tiledb_query_type_t(queryType))
+	ret := C.tiledb_group_open(g.context.tiledbContext.Get(), g.group.Get(), C.tiledb_query_type_t(queryType))
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error opening tiledb group for querying: %w", g.context.LastError())
@@ -59,14 +76,11 @@ func (g *Group) Open(queryType QueryType) error {
 }
 
 func (g *Group) Free() {
-	if g.group != nil {
-		g.Close()
-		C.tiledb_group_free(&g.group)
-	}
+	g.group.Free()
 }
 
 func (g *Group) Close() error {
-	ret := C.tiledb_group_close(g.context.tiledbContext.Get(), g.group)
+	ret := C.tiledb_group_close(g.context.tiledbContext.Get(), g.group.Get())
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error closing tiledb group: %w", g.context.LastError())
@@ -75,19 +89,18 @@ func (g *Group) Close() error {
 }
 
 func (g *Group) SetConfig(config *Config) error {
-	ret := C.tiledb_group_set_config(g.context.tiledbContext.Get(), g.group, config.tiledbConfig.Get())
+	ret := C.tiledb_group_set_config(g.context.tiledbContext.Get(), g.group.Get(), config.tiledbConfig.Get())
 	runtime.KeepAlive(g)
 	runtime.KeepAlive(config)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting config on group: %w", g.context.LastError())
 	}
-	g.config = config
 	return nil
 }
 
 func (g *Group) Config() (*Config, error) {
 	var configPtr *C.tiledb_config_t
-	ret := C.tiledb_group_get_config(g.context.tiledbContext.Get(), g.group, &configPtr)
+	ret := C.tiledb_group_get_config(g.context.tiledbContext.Get(), g.group.Get(), &configPtr)
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting config from query: %w", g.context.LastError())
@@ -108,7 +121,7 @@ func (g *Group) AddMember(uri, name string, isRelativeURI bool) error {
 		cRelative = 1
 	}
 
-	ret := C.tiledb_group_add_member(g.context.tiledbContext.Get(), g.group, curi, cRelative, cname)
+	ret := C.tiledb_group_add_member(g.context.tiledbContext.Get(), g.group.Get(), curi, cRelative, cname)
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error adding member to group: %w", g.context.LastError())
@@ -215,7 +228,7 @@ func groupPutMetadata(g *Group, dt Datatype, key string, valuePtr unsafe.Pointer
 	defer C.free(unsafe.Pointer(cKey))
 	ret := C.tiledb_group_put_metadata(
 		g.context.tiledbContext.Get(),
-		g.group,
+		g.group.Get(),
 		cKey,
 		C.tiledb_datatype_t(dt),
 		C.uint(count),
@@ -231,7 +244,7 @@ func groupPutMetadata(g *Group, dt Datatype, key string, valuePtr unsafe.Pointer
 func (g *Group) RemoveMember(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_group_remove_member(g.context.tiledbContext.Get(), g.group, curi)
+	ret := C.tiledb_group_remove_member(g.context.tiledbContext.Get(), g.group.Get(), curi)
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error removing member from group: %w", g.context.LastError())
@@ -241,7 +254,7 @@ func (g *Group) RemoveMember(uri string) error {
 
 func (g *Group) GetMemberCount() (uint64, error) {
 	var count C.uint64_t
-	ret := C.tiledb_group_get_member_count(g.context.tiledbContext.Get(), g.group, &count)
+	ret := C.tiledb_group_get_member_count(g.context.tiledbContext.Get(), g.group.Get(), &count)
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error retrieving member count in group: %w", g.context.LastError())
@@ -255,7 +268,7 @@ func (g *Group) GetMemberFromIndex(index uint64) (string, string, ObjectTypeEnum
 	var cname *C.tiledb_string_t
 
 	var objectTypeEnum C.tiledb_object_t
-	ret := C.tiledb_group_get_member_by_index_v2(g.context.tiledbContext.Get(), g.group, C.uint64_t(index), &curi, &objectTypeEnum, &cname)
+	ret := C.tiledb_group_get_member_by_index_v2(g.context.tiledbContext.Get(), g.group.Get(), C.uint64_t(index), &curi, &objectTypeEnum, &cname)
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return "", "", TILEDB_INVALID, fmt.Errorf("error getting member by index for group: %w", g.context.LastError())
@@ -283,7 +296,7 @@ func (g *Group) GetMemberByName(name string) (string, string, ObjectTypeEnum, er
 	defer C.free(unsafe.Pointer(cname))
 
 	var objectTypeEnum C.tiledb_object_t
-	ret := C.tiledb_group_get_member_by_name_v2(g.context.tiledbContext.Get(), g.group, cname, &curi, &objectTypeEnum)
+	ret := C.tiledb_group_get_member_by_name_v2(g.context.tiledbContext.Get(), g.group.Get(), cname, &curi, &objectTypeEnum)
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return "", "", TILEDB_INVALID, fmt.Errorf("error getting member by index for group: %w", g.context.LastError())
@@ -310,7 +323,7 @@ func (g *Group) GetMetadata(key string) (Datatype, uint, interface{}, error) {
 	var cValueNum C.uint
 	var cvalue unsafe.Pointer // g must be kept alive while cvalue is being accessed.
 
-	ret := C.tiledb_group_get_metadata(g.context.tiledbContext.Get(), g.group, ckey, &cType, &cValueNum, &cvalue)
+	ret := C.tiledb_group_get_metadata(g.context.tiledbContext.Get(), g.group.Get(), ckey, &cType, &cValueNum, &cvalue)
 	if ret != C.TILEDB_OK {
 		return 0, 0, nil, fmt.Errorf("error getting metadata from group: %w, key: %s", g.context.LastError(), key)
 	}
@@ -334,7 +347,7 @@ func (g *Group) DeleteMetadata(key string) error {
 	ckey := C.CString(key)
 	defer C.free(unsafe.Pointer(ckey))
 
-	ret := C.tiledb_group_delete_metadata(g.context.tiledbContext.Get(), g.group, ckey)
+	ret := C.tiledb_group_delete_metadata(g.context.tiledbContext.Get(), g.group.Get(), ckey)
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error deleting metadata from group: %w", g.context.LastError())
@@ -345,7 +358,7 @@ func (g *Group) DeleteMetadata(key string) error {
 func (g *Group) GetMetadataNum() (uint64, error) {
 	var cNum C.uint64_t
 
-	ret := C.tiledb_group_get_metadata_num(g.context.tiledbContext.Get(), g.group, &cNum)
+	ret := C.tiledb_group_get_metadata_num(g.context.tiledbContext.Get(), g.group.Get(), &cNum)
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting number of metadata from group: %w", g.context.LastError())
@@ -368,7 +381,7 @@ func (g *Group) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 	var cvalue unsafe.Pointer // g must be kept alive while cvalue is being accessed.
 
 	ret := C.tiledb_group_get_metadata_from_index(g.context.tiledbContext.Get(),
-		g.group, cIndex, &cKey, &cKeyLen, &cType, &cValueNum, &cvalue)
+		g.group.Get(), cIndex, &cKey, &cKeyLen, &cType, &cValueNum, &cvalue)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting metadata from group: %s, index: %d", g.context.LastError(), index)
 	}
@@ -415,7 +428,7 @@ func (g *Group) Dump(recurse bool) (string, error) {
 		cRecurse = 1
 	}
 
-	ret := C.tiledb_group_dump_str_v2(g.context.tiledbContext.Get(), g.group, &tdbString, cRecurse)
+	ret := C.tiledb_group_dump_str_v2(g.context.tiledbContext.Get(), g.group.Get(), &tdbString, cRecurse)
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("error dumping group contents: %w", g.context.LastError())
@@ -436,7 +449,7 @@ func (g *Group) GetIsRelativeURIByName(name string) (bool, error) {
 	defer C.free(unsafe.Pointer(cName))
 
 	var isRelative C.uint8_t
-	ret := C.tiledb_group_get_is_relative_uri_by_name(g.context.tiledbContext.Get(), g.group, cName, &isRelative)
+	ret := C.tiledb_group_get_is_relative_uri_by_name(g.context.tiledbContext.Get(), g.group.Get(), cName, &isRelative)
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("error getting if member %s has a relative uri: %w", name, g.context.LastError())
@@ -456,7 +469,7 @@ func (g *Group) Delete(recursive bool) error {
 		cRecursive = 1
 	}
 
-	ret := C.tiledb_group_delete_group(g.context.tiledbContext.Get(), g.group, curi, cRecursive)
+	ret := C.tiledb_group_delete_group(g.context.tiledbContext.Get(), g.group.Get(), curi, cRecursive)
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error deleting group: %w", g.context.LastError())
@@ -478,7 +491,7 @@ func (g *Group) AddMemberWithType(uri, name string, isRelativeURI bool, objectTy
 		cRelative = 1
 	}
 
-	ret := C.tiledb_group_add_member_with_type(g.context.tiledbContext.Get(), g.group, curi, cRelative, cname, C.tiledb_object_t(objectType))
+	ret := C.tiledb_group_add_member_with_type(g.context.tiledbContext.Get(), g.group.Get(), curi, cRelative, cname, C.tiledb_object_t(objectType))
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error adding member with type to group: %w", g.context.LastError())
@@ -490,7 +503,7 @@ func (g *Group) AddMemberWithType(uri, name string, isRelativeURI bool, objectTy
 func (g *Group) IsOpen() (bool, error) {
 	var isOpen C.int32_t
 
-	ret := C.tiledb_group_is_open(g.context.tiledbContext.Get(), g.group, &isOpen)
+	ret := C.tiledb_group_is_open(g.context.tiledbContext.Get(), g.group.Get(), &isOpen)
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return false, fmt.Errorf("error checking if group is open: %w", g.context.LastError())
@@ -503,7 +516,7 @@ func (g *Group) IsOpen() (bool, error) {
 func (g *Group) QueryType() (QueryType, error) {
 	var queryType C.tiledb_query_type_t
 
-	ret := C.tiledb_group_get_query_type(g.context.tiledbContext.Get(), g.group, &queryType)
+	ret := C.tiledb_group_get_query_type(g.context.tiledbContext.Get(), g.group.Get(), &queryType)
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return -1, fmt.Errorf("error retrieving group QueryType: %w", g.context.LastError())

@@ -498,7 +498,7 @@ func (qc *QueryCondition) UseEnumeration(useEnum bool) error {
 		cUseEnum = 1
 	}
 
-	ret := C.tiledb_query_condition_set_use_enumeration(qc.context.tiledbContext.Get(), qc.cond, cUseEnum)
+	ret := C.tiledb_query_condition_set_use_enumeration(qc.context.tiledbContext.Get(), qc.cond.Get(), cUseEnum)
 	runtime.KeepAlive(qc)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error toggling enumerations use: %w", qc.context.LastError())

@@ -480,7 +480,7 @@ func SerializeFragmentInfoToBuffer(fragmentInfo *FragmentInfo, serializationType
 	}
 
 	var bufferPtr *C.tiledb_buffer_t
-	ret := C.tiledb_serialize_fragment_info(fragmentInfo.context.tiledbContext.Get(), fragmentInfo.tiledbFragmentInfo, C.tiledb_serialization_type_t(serializationType), cClientSide, &bufferPtr)
+	ret := C.tiledb_serialize_fragment_info(fragmentInfo.context.tiledbContext.Get(), fragmentInfo.tiledbFragmentInfo.Get(), C.tiledb_serialization_type_t(serializationType), cClientSide, &bufferPtr)
 	runtime.KeepAlive(fragmentInfo)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error serializing array: %w", fragmentInfo.context.LastError())
@@ -513,7 +513,7 @@ func DeserializeFragmentInfo(fragmentInfo FragmentInfo, buffer *Buffer, arrayURI
 	cArrayURI := C.CString(arrayURI)
 	defer C.free(unsafe.Pointer(cArrayURI))
 
-	ret := C.tiledb_deserialize_fragment_info(fragmentInfo.context.tiledbContext.Get(), buffer.tiledbBuffer.Get(), C.tiledb_serialization_type_t(serializationType), cArrayURI, cClientSide, fragmentInfo.tiledbFragmentInfo)
+	ret := C.tiledb_deserialize_fragment_info(fragmentInfo.context.tiledbContext.Get(), buffer.tiledbBuffer.Get(), C.tiledb_serialization_type_t(serializationType), cArrayURI, cClientSide, fragmentInfo.tiledbFragmentInfo.Get())
 	runtime.KeepAlive(fragmentInfo)
 	runtime.KeepAlive(buffer)
 	if ret != C.TILEDB_OK {
@@ -533,7 +533,7 @@ func SerializeFragmentInfoRequestToBuffer(fragmentInfo *FragmentInfo, serializat
 	}
 
 	var bufferPtr *C.tiledb_buffer_t
-	ret := C.tiledb_serialize_fragment_info_request(fragmentInfo.context.tiledbContext.Get(), fragmentInfo.tiledbFragmentInfo, C.tiledb_serialization_type_t(serializationType), cClientSide, &bufferPtr)
+	ret := C.tiledb_serialize_fragment_info_request(fragmentInfo.context.tiledbContext.Get(), fragmentInfo.tiledbFragmentInfo.Get(), C.tiledb_serialization_type_t(serializationType), cClientSide, &bufferPtr)
 	runtime.KeepAlive(fragmentInfo)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error serializing array: %w", fragmentInfo.context.LastError())
@@ -563,7 +563,7 @@ func DeserializeFragmentInfoRequest(fragmentInfo FragmentInfo, buffer *Buffer, s
 		cClientSide = 0
 	}
 
-	ret := C.tiledb_deserialize_fragment_info_request(fragmentInfo.context.tiledbContext.Get(), buffer.tiledbBuffer.Get(), C.tiledb_serialization_type_t(serializationType), cClientSide, fragmentInfo.tiledbFragmentInfo)
+	ret := C.tiledb_deserialize_fragment_info_request(fragmentInfo.context.tiledbContext.Get(), buffer.tiledbBuffer.Get(), C.tiledb_serialization_type_t(serializationType), cClientSide, fragmentInfo.tiledbFragmentInfo.Get())
 	runtime.KeepAlive(fragmentInfo)
 	runtime.KeepAlive(buffer)
 	if ret != C.TILEDB_OK {
@@ -608,7 +608,7 @@ func DeserializeQueryAndArray(context *Context, buffer *Buffer, serializationTyp
 // SerializeGroupMetadata gets and serializes the group metadata and returns a Buffer object containing the payload
 func SerializeGroupMetadataToBuffer(g *Group, serializationType SerializationType) (*Buffer, error) {
 	var bufferPtr *C.tiledb_buffer_t
-	ret := C.tiledb_serialize_group_metadata(g.context.tiledbContext.Get(), g.group, C.tiledb_serialization_type_t(serializationType), &bufferPtr)
+	ret := C.tiledb_serialize_group_metadata(g.context.tiledbContext.Get(), g.group.Get(), C.tiledb_serialization_type_t(serializationType), &bufferPtr)
 	runtime.KeepAlive(g)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error serializing group metadata: %w", g.context.LastError())
@@ -640,7 +640,7 @@ func DeserializeGroupMetadata(g *Group, buffer *Buffer, serializationType Serial
 		return errors.New("failed to add null terminator to buffer")
 	}
 
-	ret := C.tiledb_deserialize_group_metadata(g.context.tiledbContext.Get(), g.group, C.tiledb_serialization_type_t(serializationType), buffer.tiledbBuffer.Get())
+	ret := C.tiledb_deserialize_group_metadata(g.context.tiledbContext.Get(), g.group.Get(), C.tiledb_serialization_type_t(serializationType), buffer.tiledbBuffer.Get())
 	runtime.KeepAlive(g)
 	runtime.KeepAlive(buffer)
 	if ret != C.TILEDB_OK {
@@ -669,7 +669,7 @@ func (g *Group) Deserialize(buffer *Buffer, serializationType SerializationType,
 		return errors.New("failed to add null terminator to buffer")
 	}
 
-	ret := C.tiledb_deserialize_group(g.context.tiledbContext.Get(), buffer.tiledbBuffer.Get(), C.tiledb_serialization_type_t(serializationType), cClientSide, g.group)
+	ret := C.tiledb_deserialize_group(g.context.tiledbContext.Get(), buffer.tiledbBuffer.Get(), C.tiledb_serialization_type_t(serializationType), cClientSide, g.group.Get())
 	runtime.KeepAlive(g)
 	runtime.KeepAlive(buffer)
 	if ret != C.TILEDB_OK {

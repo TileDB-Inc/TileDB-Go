@@ -300,7 +300,7 @@ func (sa *Subarray) GetDimensionLabelRangeNum(labelName string) (uint64, error) 
 	cLabelName := C.CString(labelName)
 	defer C.free(unsafe.Pointer(cLabelName))
 
-	ret := C.tiledb_subarray_get_label_range_num(sa.context.tiledbContext.Get(), sa.subarray, cLabelName, &rangeNum)
+	ret := C.tiledb_subarray_get_label_range_num(sa.context.tiledbContext.Get(), sa.subarray.Get(), cLabelName, &rangeNum)
 	runtime.KeepAlive(sa)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error retrieving subarray label range num: %w", sa.context.LastError())
@@ -327,12 +327,12 @@ func (sa *Subarray) AddDimensionLabelRange(labelName string, r Range) error {
 	if isVar {
 		startSlice := []byte(r.start.(string))
 		endSlice := []byte(r.end.(string))
-		ret = C.tiledb_subarray_add_label_range_var(sa.context.tiledbContext.Get(), sa.subarray, cLabelName,
+		ret = C.tiledb_subarray_add_label_range_var(sa.context.tiledbContext.Get(), sa.subarray.Get(), cLabelName,
 			slicePtr(startSlice), C.uint64_t(len(startSlice)), slicePtr(endSlice), C.uint64_t(len(endSlice)))
 	} else {
 		startValue := addressableValue(r.start)
 		endValue := addressableValue(r.end)
-		ret = C.tiledb_subarray_add_label_range(sa.context.tiledbContext.Get(), sa.subarray, cLabelName,
+		ret = C.tiledb_subarray_add_label_range(sa.context.tiledbContext.Get(), sa.subarray.Get(), cLabelName,
 			startValue.UnsafePointer(), endValue.UnsafePointer(), nil)
 	}
 	runtime.KeepAlive(sa)
@@ -358,7 +358,7 @@ func (sa *Subarray) GetDimensionLabelRange(labelName string, rangeNum uint64) (R
 	var ret C.int32_t
 	if isVar {
 		var startSize, endSize uint64
-		ret = C.tiledb_subarray_get_label_range_var_size(sa.context.tiledbContext.Get(), sa.subarray, cLabelName, C.uint64_t(rangeNum),
+		ret = C.tiledb_subarray_get_label_range_var_size(sa.context.tiledbContext.Get(), sa.subarray.Get(), cLabelName, C.uint64_t(rangeNum),
 			(*C.uint64_t)(unsafe.Pointer(&startSize)), (*C.uint64_t)(unsafe.Pointer(&endSize)))
 		if ret == C.TILEDB_OK {
 			var sp, ep unsafe.Pointer
@@ -371,7 +371,7 @@ func (sa *Subarray) GetDimensionLabelRange(labelName string, rangeNum uint64) (R
 				endData = make([]byte, int(endSize))
 				ep = slicePtr(endData)
 			}
-			ret = C.tiledb_subarray_get_label_range_var(sa.context.tiledbContext.Get(), sa.subarray,
+			ret = C.tiledb_subarray_get_label_range_var(sa.context.tiledbContext.Get(), sa.subarray.Get(),
 				cLabelName, C.uint64_t(rangeNum), sp, ep)
 			if ret == C.TILEDB_OK {
 				r.start = string(startData)
@@ -380,7 +380,7 @@ func (sa *Subarray) GetDimensionLabelRange(labelName string, rangeNum uint64) (R
 		}
 	} else {
 		var startPointer, endPointer, stridePointer unsafe.Pointer
-		ret = C.tiledb_subarray_get_label_range(sa.context.tiledbContext.Get(), sa.subarray,
+		ret = C.tiledb_subarray_get_label_range(sa.context.tiledbContext.Get(), sa.subarray.Get(),
 			cLabelName, C.uint64_t(rangeNum), &startPointer, &endPointer, &stridePointer)
 		typ := dt.ReflectType()
 		if ret == C.TILEDB_OK {

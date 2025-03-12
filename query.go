@@ -292,7 +292,7 @@ func (q *Query) SetLayout(layout Layout) error {
 
 // SetQueryCondition sets a query condition on a read query.
 func (q *Query) SetQueryCondition(cond *QueryCondition) error {
-	if ret := C.tiledb_query_set_condition(q.context.tiledbContext.Get(), q.tiledbQuery, cond.cond); ret != C.TILEDB_OK {
+	if ret := C.tiledb_query_set_condition(q.context.tiledbContext.Get(), q.tiledbQuery, cond.cond.Get()); ret != C.TILEDB_OK {
 		return fmt.Errorf("error getting config from query: %w", q.context.LastError())
 	}
 	runtime.KeepAlive(q)
@@ -1371,7 +1371,7 @@ func (q *Query) getOffsetsBufferAndSize(attributeOrDimension string) ([]uint64, 
 
 // SetSubarray sets the subarray for the query.
 func (q *Query) SetSubarray(sa *Subarray) error {
-	ret := C.tiledb_query_set_subarray_t(q.context.tiledbContext.Get(), q.tiledbQuery, sa.subarray)
+	ret := C.tiledb_query_set_subarray_t(q.context.tiledbContext.Get(), q.tiledbQuery, sa.subarray.Get())
 	runtime.KeepAlive(q)
 	runtime.KeepAlive(sa)
 	if ret != C.TILEDB_OK {
@@ -1390,5 +1390,5 @@ func (q *Query) GetSubarray() (*Subarray, error) {
 		return nil, fmt.Errorf("error getting tiledb query subarray: %w", q.context.LastError())
 	}
 
-	return &Subarray{array: q.array, subarray: sa, context: q.context}, nil
+	return newSubarrayFromHandle(q.context, q.array, newSubarrayHandle(sa)), nil
 }
