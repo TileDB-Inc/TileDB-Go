@@ -165,7 +165,7 @@ func (a *ArraySchema) Free() {
 // AddAttributes adds one or more attributes to the array.
 func (a *ArraySchema) AddAttributes(attributes ...*Attribute) error {
 	for _, attribute := range attributes {
-		ret := C.tiledb_array_schema_add_attribute(a.context.tiledbContext, a.tiledbArraySchema.Get(), attribute.tiledbAttribute)
+		ret := C.tiledb_array_schema_add_attribute(a.context.tiledbContext, a.tiledbArraySchema.Get(), attribute.tiledbAttribute.Get())
 		runtime.KeepAlive(a)
 		runtime.KeepAlive(attribute)
 		if ret != C.TILEDB_OK {
@@ -188,18 +188,17 @@ func (a *ArraySchema) AttributeNum() (uint, error) {
 
 // AttributeFromIndex gets a copy of an Attribute in the schema by name.
 func (a *ArraySchema) AttributeFromIndex(index uint) (*Attribute, error) {
-	attr := Attribute{context: a.context}
+	var attributePtr *C.tiledb_attribute_t
 	ret := C.tiledb_array_schema_get_attribute_from_index(
 		a.context.tiledbContext,
 		a.tiledbArraySchema.Get(),
 		C.uint32_t(index),
-		&attr.tiledbAttribute)
+		&attributePtr)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting attribute %d for tiledb arraySchema: %w", index, a.context.LastError())
 	}
-	freeOnGC(&attr)
-	return &attr, nil
+	return newAttributeFromHandle(a.context, newAttributeHandle(attributePtr)), nil
 }
 
 // AttributeFromName gets a copy of an Attribute in the schema by index.
@@ -208,14 +207,13 @@ func (a *ArraySchema) AttributeFromIndex(index uint) (*Attribute, error) {
 func (a *ArraySchema) AttributeFromName(attrName string) (*Attribute, error) {
 	cAttrName := C.CString(attrName)
 	defer C.free(unsafe.Pointer(cAttrName))
-	attr := Attribute{context: a.context}
-	ret := C.tiledb_array_schema_get_attribute_from_name(a.context.tiledbContext, a.tiledbArraySchema.Get(), cAttrName, &attr.tiledbAttribute)
+	var attributePtr *C.tiledb_attribute_t
+	ret := C.tiledb_array_schema_get_attribute_from_name(a.context.tiledbContext, a.tiledbArraySchema.Get(), cAttrName, &attributePtr)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting attribute %s for tiledb arraySchema: %w", attrName, a.context.LastError())
 	}
-	freeOnGC(&attr)
-	return &attr, nil
+	return newAttributeFromHandle(a.context, newAttributeHandle(attributePtr)), nil
 }
 
 // HasAttribute returns true if attribute: `attrName` is part of the schema.

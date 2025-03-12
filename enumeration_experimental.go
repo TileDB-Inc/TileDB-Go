@@ -465,7 +465,7 @@ func (a *Attribute) SetEnumerationName(name string) error {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
 
-	ret := C.tiledb_attribute_set_enumeration_name(a.context.tiledbContext, a.tiledbAttribute, cName)
+	ret := C.tiledb_attribute_set_enumeration_name(a.context.tiledbContext, a.tiledbAttribute.Get(), cName)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error setting enumeration name: %w", a.context.LastError())
@@ -478,7 +478,7 @@ func (a *Attribute) SetEnumerationName(name string) error {
 func (a *Attribute) GetEnumerationName() (string, error) {
 	var str *C.tiledb_string_t
 
-	ret := C.tiledb_attribute_get_enumeration_name(a.context.tiledbContext, a.tiledbAttribute, &str)
+	ret := C.tiledb_attribute_get_enumeration_name(a.context.tiledbContext, a.tiledbAttribute.Get(), &str)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("error getting enumeration name: %w", a.context.LastError())
@@ -518,7 +518,7 @@ func (ase *ArraySchemaEvolution) AddEnumeration(e *Enumeration) error {
 		return fmt.Errorf("error getting enumeration name: %w", e.context.LastError())
 	}
 
-	ret := C.tiledb_array_schema_evolution_add_enumeration(ase.context.tiledbContext, ase.tiledbArraySchemaEvolution, e.tiledbEnum)
+	ret := C.tiledb_array_schema_evolution_add_enumeration(ase.context.tiledbContext, ase.tiledbArraySchemaEvolution.Get(), e.tiledbEnum)
 	runtime.KeepAlive(ase)
 	runtime.KeepAlive(e)
 	if ret != C.TILEDB_OK {
@@ -533,7 +533,7 @@ func (ase *ArraySchemaEvolution) DropEnumeration(name string) error {
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
 
-	ret := C.tiledb_array_schema_evolution_drop_enumeration(ase.context.tiledbContext, ase.tiledbArraySchemaEvolution, cName)
+	ret := C.tiledb_array_schema_evolution_drop_enumeration(ase.context.tiledbContext, ase.tiledbArraySchemaEvolution.Get(), cName)
 	runtime.KeepAlive(ase)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error dropping enumeration %s from tiledb arraySchemaEvolution: %w", name, ase.context.LastError())
@@ -544,7 +544,7 @@ func (ase *ArraySchemaEvolution) DropEnumeration(name string) error {
 
 // ApplyExtendedEnumeration applies to the schema evolution the result of ExtendEnumeration.
 func (ase *ArraySchemaEvolution) ApplyExtendedEnumeration(e *Enumeration) error {
-	ret := C.tiledb_array_schema_evolution_extend_enumeration(ase.context.tiledbContext, ase.tiledbArraySchemaEvolution, e.tiledbEnum)
+	ret := C.tiledb_array_schema_evolution_extend_enumeration(ase.context.tiledbContext, ase.tiledbArraySchemaEvolution.Get(), e.tiledbEnum)
 	runtime.KeepAlive(ase)
 	runtime.KeepAlive(e)
 	if ret != C.TILEDB_OK {
