@@ -21,14 +21,32 @@ import (
 
 const arrayMetadataFolderName = "__meta"
 
+type vfsFhHandle struct{ *capiHandle }
+
+func freeCapiVfsFh(c unsafe.Pointer) {
+	C.tiledb_vfs_fh_free((**C.tiledb_vfs_fh_t)(unsafe.Pointer(&c)))
+}
+
+func newVfsFhHandle(ptr *C.tiledb_vfs_fh_t) vfsFhHandle {
+	return vfsFhHandle{newCapiHandle(unsafe.Pointer(ptr), freeCapiVfsFh)}
+}
+
+func (x vfsFhHandle) Get() *C.tiledb_vfs_fh_t {
+	return (*C.tiledb_vfs_fh_t)(x.capiHandle.Get())
+}
+
 // VFSfh is a virtual file system file handler
 type VFSfh struct {
 	vfs         *VFS
-	tiledbVFSfh *C.tiledb_vfs_fh_t
+	tiledbVFSfh vfsFhHandle
 	context     *Context
 	offset      uint64
 	size        *uint64
 	uri         string
+}
+
+func newVfsFhFromHandle(context *Context, vfs *VFS, uri string, handle vfsFhHandle) *VFSfh {
+	return &VFSfh{vfs: vfs, tiledbVFSfh: handle, context: context, uri: uri}
 }
 
 // Free releases the internal TileDB core data that was allocated on the C heap.
@@ -37,9 +55,7 @@ type VFSfh struct {
 // can safely be called many times on the same object; if it has already
 // been freed, it will not be freed again.
 func (v *VFSfh) Free() {
-	if v.tiledbVFSfh != nil {
-		C.tiledb_vfs_fh_free(&v.tiledbVFSfh)
-	}
+	v.tiledbVFSfh.Free()
 }
 
 // Context exposes the internal TileDB context used to initialize the vfsh.
@@ -52,7 +68,7 @@ func (v *VFSfh) Context() *Context {
 func (v *VFSfh) IsClosed() (bool, error) {
 	var isClosed C.int32_t
 
-	ret := C.tiledb_vfs_fh_is_closed(v.context.tiledbContext.Get(), v.tiledbVFSfh, &isClosed)
+	ret := C.tiledb_vfs_fh_is_closed(v.context.tiledbContext.Get(), v.tiledbVFSfh.Get(), &isClosed)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -66,28 +82,45 @@ func (v *VFSfh) IsClosed() (bool, error) {
 	return false, nil
 }
 
+type vfsHandle struct{ *capiHandle }
+
+func freeCapiVfs(c unsafe.Pointer) {
+	C.tiledb_vfs_free((**C.tiledb_vfs_t)(unsafe.Pointer(&c)))
+}
+
+func newVfsHandle(ptr *C.tiledb_vfs_t) vfsHandle {
+	return vfsHandle{newCapiHandle(unsafe.Pointer(ptr), freeCapiVfs)}
+}
+
+func (x vfsHandle) Get() *C.tiledb_vfs_t {
+	return (*C.tiledb_vfs_t)(x.capiHandle.Get())
+}
+
 // VFS Implements a virtual filesystem that enables performing directory/file
 // operations with a unified API on different filesystems, such as local
 // posix/windows, HDFS, AWS S3, etc.
 type VFS struct {
-	tiledbVFS *C.tiledb_vfs_t
+	tiledbVFS vfsHandle
 	context   *Context
+}
+
+func newVfsFromHandle(context *Context, handle vfsHandle) *VFS {
+	return &VFS{context: context, tiledbVFS: handle}
 }
 
 // NewVFS alloc a new context using tiledb_vfs_alloc. This also registers the
 // `runtime.SetFinalizer` for handling the free'ing of the c data structure on
 // garbage collection
 func NewVFS(context *Context, config *Config) (*VFS, error) {
-	vfs := VFS{context: context}
-	ret := C.tiledb_vfs_alloc(context.tiledbContext.Get(), config.tiledbConfig.Get(), &vfs.tiledbVFS)
+	var vfsPtr *C.tiledb_vfs_t
+	ret := C.tiledb_vfs_alloc(context.tiledbContext.Get(), config.tiledbConfig.Get(), &vfsPtr)
 	runtime.KeepAlive(context)
 	runtime.KeepAlive(config)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb VFS: %w", context.LastError())
 	}
-	freeOnGC(&vfs)
 
-	return &vfs, nil
+	return newVfsFromHandle(context, newVfsHandle(vfsPtr)), nil
 }
 
 // Free releases the internal TileDB core data that was allocated on the C heap.
@@ -96,9 +129,7 @@ func NewVFS(context *Context, config *Config) (*VFS, error) {
 // can safely be called many times on the same object; if it has already
 // been freed, it will not be freed again.
 func (v *VFS) Free() {
-	if v.tiledbVFS != nil {
-		C.tiledb_vfs_free(&v.tiledbVFS)
-	}
+	v.tiledbVFS.Free()
 }
 
 // Context exposes the internal TileDB context used to initialize the vfs.
@@ -109,7 +140,7 @@ func (v *VFS) Context() *Context {
 // Config retrieves a copy of the config from vfs.
 func (v *VFS) Config() (*Config, error) {
 	var configPtr *C.tiledb_config_t
-	ret := C.tiledb_vfs_get_config(v.context.tiledbContext.Get(), v.tiledbVFS,
+	ret := C.tiledb_vfs_get_config(v.context.tiledbContext.Get(), v.tiledbVFS.Get(),
 		&configPtr)
 
 	if ret == C.TILEDB_OOM {
@@ -125,7 +156,7 @@ func (v *VFS) Config() (*Config, error) {
 func (v *VFS) CreateBucket(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_vfs_create_bucket(v.context.tiledbContext.Get(), v.tiledbVFS, curi)
+	ret := C.tiledb_vfs_create_bucket(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), curi)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -139,7 +170,7 @@ func (v *VFS) CreateBucket(uri string) error {
 func (v *VFS) RemoveBucket(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_vfs_remove_bucket(v.context.tiledbContext.Get(), v.tiledbVFS, curi)
+	ret := C.tiledb_vfs_remove_bucket(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), curi)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -153,7 +184,7 @@ func (v *VFS) RemoveBucket(uri string) error {
 func (v *VFS) EmptyBucket(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_vfs_empty_bucket(v.context.tiledbContext.Get(), v.tiledbVFS, curi)
+	ret := C.tiledb_vfs_empty_bucket(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), curi)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -168,7 +199,7 @@ func (v *VFS) IsEmptyBucket(uri string) (bool, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
 	var isEmpty C.int32_t
-	ret := C.tiledb_vfs_is_empty_bucket(v.context.tiledbContext.Get(), v.tiledbVFS, curi, &isEmpty)
+	ret := C.tiledb_vfs_is_empty_bucket(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), curi, &isEmpty)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -187,7 +218,7 @@ func (v *VFS) IsBucket(uri string) (bool, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
 	var isBucket C.int32_t
-	ret := C.tiledb_vfs_is_bucket(v.context.tiledbContext.Get(), v.tiledbVFS, curi, &isBucket)
+	ret := C.tiledb_vfs_is_bucket(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), curi, &isBucket)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -205,7 +236,7 @@ func (v *VFS) IsBucket(uri string) (bool, error) {
 func (v *VFS) CreateDir(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_vfs_create_dir(v.context.tiledbContext.Get(), v.tiledbVFS, curi)
+	ret := C.tiledb_vfs_create_dir(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), curi)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -220,7 +251,7 @@ func (v *VFS) IsDir(uri string) (bool, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
 	var isDir C.int32_t
-	ret := C.tiledb_vfs_is_dir(v.context.tiledbContext.Get(), v.tiledbVFS, curi, &isDir)
+	ret := C.tiledb_vfs_is_dir(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), curi, &isDir)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -238,7 +269,7 @@ func (v *VFS) IsDir(uri string) (bool, error) {
 func (v *VFS) RemoveDir(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_vfs_remove_dir(v.context.tiledbContext.Get(), v.tiledbVFS, curi)
+	ret := C.tiledb_vfs_remove_dir(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), curi)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -253,7 +284,7 @@ func (v *VFS) IsFile(uri string) (bool, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
 	var isFile C.int32_t
-	ret := C.tiledb_vfs_is_file(v.context.tiledbContext.Get(), v.tiledbVFS, curi, &isFile)
+	ret := C.tiledb_vfs_is_file(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), curi, &isFile)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -271,7 +302,7 @@ func (v *VFS) IsFile(uri string) (bool, error) {
 func (v *VFS) RemoveFile(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_vfs_remove_file(v.context.tiledbContext.Get(), v.tiledbVFS, curi)
+	ret := C.tiledb_vfs_remove_file(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), curi)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -286,7 +317,7 @@ func (v *VFS) FileSize(uri string) (uint64, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
 	var cfsize C.uint64_t
-	ret := C.tiledb_vfs_file_size(v.context.tiledbContext.Get(), v.tiledbVFS, curi, &cfsize)
+	ret := C.tiledb_vfs_file_size(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), curi, &cfsize)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -303,7 +334,7 @@ func (v *VFS) MoveFile(oldURI string, newURI string) error {
 	cNewURI := C.CString(newURI)
 	defer C.free(unsafe.Pointer(cNewURI))
 
-	ret := C.tiledb_vfs_move_file(v.context.tiledbContext.Get(), v.tiledbVFS, cOldURI, cNewURI)
+	ret := C.tiledb_vfs_move_file(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), cOldURI, cNewURI)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -320,7 +351,7 @@ func (v *VFS) CopyFile(oldURI string, newURI string) error {
 	cNewURI := C.CString(newURI)
 	defer C.free(unsafe.Pointer(cNewURI))
 
-	ret := C.tiledb_vfs_copy_file(v.context.tiledbContext.Get(), v.tiledbVFS, cOldURI, cNewURI)
+	ret := C.tiledb_vfs_copy_file(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), cOldURI, cNewURI)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -337,7 +368,7 @@ func (v *VFS) MoveDir(oldURI string, newURI string) error {
 	cNewURI := C.CString(newURI)
 	defer C.free(unsafe.Pointer(cNewURI))
 
-	ret := C.tiledb_vfs_move_dir(v.context.tiledbContext.Get(), v.tiledbVFS, cOldURI, cNewURI)
+	ret := C.tiledb_vfs_move_dir(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), cOldURI, cNewURI)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -351,10 +382,9 @@ func (v *VFS) MoveDir(oldURI string, newURI string) error {
 func (v *VFS) Open(uri string, mode VFSMode) (*VFSfh, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	fh := &VFSfh{context: v.context, uri: uri, vfs: v}
-	freeOnGC(fh)
 
-	ret := C.tiledb_vfs_open(v.context.tiledbContext.Get(), v.tiledbVFS, curi, C.tiledb_vfs_mode_t(mode), &fh.tiledbVFSfh)
+	var fhPtr *C.tiledb_vfs_fh_t
+	ret := C.tiledb_vfs_open(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), curi, C.tiledb_vfs_mode_t(mode), &fhPtr)
 	runtime.KeepAlive(v)
 
 	if ret == C.TILEDB_OOM {
@@ -363,14 +393,14 @@ func (v *VFS) Open(uri string, mode VFSMode) (*VFSfh, error) {
 		return nil, fmt.Errorf("unknown error in VFS.Open: %w", v.context.LastError())
 	}
 
-	return fh, nil
+	return newVfsFhFromHandle(v.context, v, uri, newVfsFhHandle(fhPtr)), nil
 }
 
 // Close closes a file. This is flushes the buffered data into the file when the file
 // was opened in write (or append) mode. It is particularly important to be
 // called after S3 writes, as otherwise the writes will not take effect.
 func (v *VFS) Close(fh *VFSfh) error {
-	ret := C.tiledb_vfs_close(v.context.tiledbContext.Get(), fh.tiledbVFSfh)
+	ret := C.tiledb_vfs_close(v.context.tiledbContext.Get(), fh.tiledbVFSfh.Get())
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -385,7 +415,7 @@ func (v *VFS) Close(fh *VFSfh) error {
 func (v *VFS) Read(fh *VFSfh, offset uint64, nbytes uint64) ([]byte, error) {
 	bytes := make([]byte, nbytes)
 	cbuffer := slicePtr(bytes)
-	ret := C.tiledb_vfs_read(v.context.tiledbContext.Get(), fh.tiledbVFSfh, C.uint64_t(offset), cbuffer, C.uint64_t(nbytes))
+	ret := C.tiledb_vfs_read(v.context.tiledbContext.Get(), fh.tiledbVFSfh.Get(), C.uint64_t(offset), cbuffer, C.uint64_t(nbytes))
 	runtime.KeepAlive(v)
 	runtime.KeepAlive(fh)
 
@@ -402,7 +432,7 @@ func (v *VFS) Read(fh *VFSfh, offset uint64, nbytes uint64) ([]byte, error) {
 func (v *VFS) Write(fh *VFSfh, bytes []byte) error {
 	cbuffer := slicePtr(bytes)
 	defer runtime.KeepAlive(bytes)
-	ret := C.tiledb_vfs_write(v.context.tiledbContext.Get(), fh.tiledbVFSfh, cbuffer, C.uint64_t(len(bytes)))
+	ret := C.tiledb_vfs_write(v.context.tiledbContext.Get(), fh.tiledbVFSfh.Get(), cbuffer, C.uint64_t(len(bytes)))
 	runtime.KeepAlive(v)
 	runtime.KeepAlive(fh)
 
@@ -415,7 +445,7 @@ func (v *VFS) Write(fh *VFSfh, bytes []byte) error {
 
 // Sync flushes a file.
 func (v *VFS) Sync(fh *VFSfh) error {
-	ret := C.tiledb_vfs_sync(v.context.tiledbContext.Get(), fh.tiledbVFSfh)
+	ret := C.tiledb_vfs_sync(v.context.tiledbContext.Get(), fh.tiledbVFSfh.Get())
 	runtime.KeepAlive(v)
 	runtime.KeepAlive(fh)
 
@@ -430,7 +460,7 @@ func (v *VFS) Sync(fh *VFSfh) error {
 func (v *VFS) Touch(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_vfs_touch(v.context.tiledbContext.Get(), v.tiledbVFS, curi)
+	ret := C.tiledb_vfs_touch(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), curi)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -445,7 +475,7 @@ func (v *VFS) DirSize(uri string) (uint64, error) {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
 	var cfsize C.uint64_t
-	ret := C.tiledb_vfs_dir_size(v.context.tiledbContext.Get(), v.tiledbVFS, curi, &cfsize)
+	ret := C.tiledb_vfs_dir_size(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), curi, &cfsize)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -491,7 +521,7 @@ func (v *VFS) NumOfFragmentsInPath(path string) (int, error) {
 	data := pointer.Save(&numOfFragmentsData)
 	defer pointer.Unref(data)
 
-	ret := C._num_of_folders_in_path(v.context.tiledbContext.Get(), v.tiledbVFS, cpath, data)
+	ret := C._num_of_folders_in_path(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), cpath, data)
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -506,7 +536,7 @@ func (v *VFS) NumOfFragmentsInPath(path string) (int, error) {
 // called after S3 writes, as otherwise the writes will not take effect.
 func (v *VFSfh) Close() error {
 
-	ret := C.tiledb_vfs_close(v.context.tiledbContext.Get(), v.tiledbVFSfh)
+	ret := C.tiledb_vfs_close(v.context.tiledbContext.Get(), v.tiledbVFSfh.Get())
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -539,7 +569,7 @@ func (v *VFSfh) Read(p []byte) (int, error) {
 	}
 
 	cbuffer := slicePtr(p)
-	ret := C.tiledb_vfs_read(v.context.tiledbContext.Get(), v.tiledbVFSfh, C.uint64_t(v.offset), cbuffer, C.uint64_t(nbytes))
+	ret := C.tiledb_vfs_read(v.context.tiledbContext.Get(), v.tiledbVFSfh.Get(), C.uint64_t(v.offset), cbuffer, C.uint64_t(nbytes))
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -582,7 +612,7 @@ func (v *VFSfh) ReadAt(p []byte, off int64) (int, error) {
 	}
 
 	cbuffer := slicePtr(p)
-	ret := C.tiledb_vfs_read(v.context.tiledbContext.Get(), v.tiledbVFSfh, C.uint64_t(off), cbuffer, C.uint64_t(nbytes))
+	ret := C.tiledb_vfs_read(v.context.tiledbContext.Get(), v.tiledbVFSfh.Get(), C.uint64_t(off), cbuffer, C.uint64_t(nbytes))
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -600,7 +630,7 @@ func (v *VFSfh) Write(bytes []byte) (int, error) {
 		return 0, nil
 	}
 	cbuffer := slicePtr(bytes)
-	ret := C.tiledb_vfs_write(v.context.tiledbContext.Get(), v.tiledbVFSfh, cbuffer, C.uint64_t(len(bytes)))
+	ret := C.tiledb_vfs_write(v.context.tiledbContext.Get(), v.tiledbVFSfh.Get(), cbuffer, C.uint64_t(len(bytes)))
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -612,7 +642,7 @@ func (v *VFSfh) Write(bytes []byte) (int, error) {
 
 // Sync flushes a file.
 func (v *VFSfh) Sync() error {
-	ret := C.tiledb_vfs_sync(v.context.tiledbContext.Get(), v.tiledbVFSfh)
+	ret := C.tiledb_vfs_sync(v.context.tiledbContext.Get(), v.tiledbVFSfh.Get())
 	runtime.KeepAlive(v)
 
 	if ret != C.TILEDB_OK {
@@ -709,7 +739,7 @@ func (v *VFS) List(path string) ([]string, []string, error) {
 	data := pointer.Save(&folderData)
 	defer pointer.Unref(data)
 
-	ret := C._vfs_ls(v.context.tiledbContext.Get(), v.tiledbVFS, cpath, data)
+	ret := C._vfs_ls(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), cpath, data)
 	runtime.KeepAlive(v)
 	if ret != C.TILEDB_OK {
 		return nil, nil, fmt.Errorf("error in getting path listing %s: %w", path, v.context.LastError())
@@ -762,7 +792,7 @@ func (v *VFS) VisitRecursive(path string, callback VisitRecursiveCallback) error
 	data := pointer.Save(state)
 	defer pointer.Unref(data)
 
-	ret := C._vfs_ls_recursive(v.context.tiledbContext.Get(), v.tiledbVFS, cpath, data)
+	ret := C._vfs_ls_recursive(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), cpath, data)
 	runtime.KeepAlive(v)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error in recursively listing path %s: %w", path, v.context.LastError())
