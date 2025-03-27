@@ -25,7 +25,7 @@ func ObjectType(tdbCtx *Context, path string) (ObjectTypeEnum, error) {
 	var objectTypeEnum C.tiledb_object_t
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
-	ret := C.tiledb_object_type(tdbCtx.tiledbContext, cpath, &objectTypeEnum)
+	ret := C.tiledb_object_type(tdbCtx.tiledbContext.Get(), cpath, &objectTypeEnum)
 	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return TILEDB_INVALID, fmt.Errorf("cannot get object type from path %s: %w",
@@ -79,7 +79,7 @@ func ObjectWalk(tdbCtx *Context, path string, walkOrder WalkOrder) (*ObjectList,
 	data := pointer.Save(&objectList)
 	defer pointer.Unref(data)
 
-	ret := C._tiledb_object_walk(tdbCtx.tiledbContext, cpath,
+	ret := C._tiledb_object_walk(tdbCtx.tiledbContext.Get(), cpath,
 		C.tiledb_walk_order_t(walkOrder), unsafe.Pointer(data))
 	runtime.KeepAlive(tdbCtx)
 
@@ -108,7 +108,7 @@ func ObjectLs(tdbCtx *Context, path string) (*ObjectList, error) {
 	data := pointer.Save(&objectList)
 	defer pointer.Unref(data)
 
-	ret := C._tiledb_object_ls(tdbCtx.tiledbContext, cpath,
+	ret := C._tiledb_object_ls(tdbCtx.tiledbContext.Get(), cpath,
 		unsafe.Pointer(data))
 	runtime.KeepAlive(tdbCtx)
 
@@ -130,7 +130,7 @@ func ObjectMove(tdbCtx *Context, path string, newPath string) error {
 	defer C.free(unsafe.Pointer(cpath))
 	cnewPath := C.CString(newPath)
 	defer C.free(unsafe.Pointer(cnewPath))
-	ret := C.tiledb_object_move(tdbCtx.tiledbContext, cpath, cnewPath)
+	ret := C.tiledb_object_move(tdbCtx.tiledbContext.Get(), cpath, cnewPath)
 	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("cannot move object from %s to %s: %w", path,
@@ -148,7 +148,7 @@ func ObjectRemove(tdbCtx *Context, path string) error {
 
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
-	ret := C.tiledb_object_remove(tdbCtx.tiledbContext, cpath)
+	ret := C.tiledb_object_remove(tdbCtx.tiledbContext.Get(), cpath)
 	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("cannot delete object %s: %w", path, tdbCtx.LastError())

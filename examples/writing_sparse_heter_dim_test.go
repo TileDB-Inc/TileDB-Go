@@ -36,9 +36,9 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-// ExampleSparseHeterDimArray shows and example creation, writing and reading of
+// ExampleRunSparseHeterDimArray shows and example creation, writing and reading of
 // a sparse array using heterogeneus dimensions
-func ExampleSparseHeterDimArray() {
+func ExampleRunSparseHeterDimArray() {
 	examples_lib.RunSparseHeterDimArray()
 
 	// Output: Non-empty domain: [1.100000,1.400000], [1,4]

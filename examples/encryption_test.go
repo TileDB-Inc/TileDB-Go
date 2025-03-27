@@ -39,7 +39,7 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-func ExampleEncryptedArray() {
+func ExampleRunEncryptedArray() {
 	examples_lib.RunEncryptedArray()
 
 	// Output: [2 3 4 6 7 8]

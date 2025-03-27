@@ -40,7 +40,7 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-func ExampleReadingSparseLayouts() {
+func ExampleRunReadingSparseLayouts() {
 	examples_lib.RunReadingSparseLayouts()
 
 	// Output: Non-empty domain: [1,2], [1,4]

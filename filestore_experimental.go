@@ -20,7 +20,7 @@ func FileSize(tdbCtx *Context, arrayURI string) (int64, error) {
 	defer C.free(unsafe.Pointer(cArrayURI))
 
 	var size C.size_t
-	ret := C.tiledb_filestore_size(tdbCtx.tiledbContext, cArrayURI, &size)
+	ret := C.tiledb_filestore_size(tdbCtx.tiledbContext.Get(), cArrayURI, &size)
 	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error getting file size: %w", tdbCtx.LastError())
@@ -37,7 +37,7 @@ func ExportFile(tdbCtx *Context, filePath, arrayURI string) error {
 	cFileURI := C.CString(filePath)
 	defer C.free(unsafe.Pointer(cFileURI))
 
-	ret := C.tiledb_filestore_uri_export(tdbCtx.tiledbContext, cFileURI, cArrayURI)
+	ret := C.tiledb_filestore_uri_export(tdbCtx.tiledbContext.Get(), cFileURI, cArrayURI)
 	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error exporting file: %w", tdbCtx.LastError())
@@ -53,7 +53,7 @@ func ImportFile(tdbCtx *Context, arrayURI, filePath string, mimeType FileStoreMi
 	cFileURI := C.CString(filePath)
 	defer C.free(unsafe.Pointer(cFileURI))
 
-	ret := C.tiledb_filestore_uri_import(tdbCtx.tiledbContext, cArrayURI, cFileURI, C.tiledb_mime_type_t(mimeType))
+	ret := C.tiledb_filestore_uri_import(tdbCtx.tiledbContext.Get(), cArrayURI, cFileURI, C.tiledb_mime_type_t(mimeType))
 	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error importing file: %w", tdbCtx.LastError())
@@ -164,15 +164,14 @@ func NewArraySchemaForFile(tdbCtx *Context, filePath string) (*ArraySchema, erro
 		defer C.free(unsafe.Pointer(fileURI))
 	}
 
-	arraySchema := ArraySchema{context: tdbCtx}
-	ret := C.tiledb_filestore_schema_create(tdbCtx.tiledbContext, fileURI, &arraySchema.tiledbArraySchema)
+	var arraySchemaPtr *C.tiledb_array_schema_t
+	ret := C.tiledb_filestore_schema_create(tdbCtx.tiledbContext.Get(), fileURI, &arraySchemaPtr)
 	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating schema: %w", tdbCtx.LastError())
 	}
-	freeOnGC(&arraySchema)
 
-	return &arraySchema, nil
+	return newArraySchemaFromHandle(tdbCtx, newArraySchemaHandle(arraySchemaPtr)), nil
 }
 
 // bufferExport reads len(p) bytes into p starting at array offset off
@@ -183,7 +182,7 @@ func bufferExport(tdbCtx *Context, uri *C.char, off int64, p []byte) error {
 		return nil
 	}
 
-	ret := C.tiledb_filestore_buffer_export(tdbCtx.tiledbContext, uri, C.size_t(off), slicePtr(p), C.size_t(len(p)))
+	ret := C.tiledb_filestore_buffer_export(tdbCtx.tiledbContext.Get(), uri, C.size_t(off), slicePtr(p), C.size_t(len(p)))
 	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error exporting buffer data: %w", tdbCtx.LastError())
@@ -199,7 +198,7 @@ func bufferImport(tdbCtx *Context, uri *C.char, data []byte, mimeType FileStoreM
 		return errors.New("error importing buffer data: empty data")
 	}
 
-	ret := C.tiledb_filestore_buffer_import(tdbCtx.tiledbContext, uri, slicePtr(data), C.size_t(len(data)), C.tiledb_mime_type_t(mimeType))
+	ret := C.tiledb_filestore_buffer_import(tdbCtx.tiledbContext.Get(), uri, slicePtr(data), C.size_t(len(data)), C.tiledb_mime_type_t(mimeType))
 	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error importing buffer data: %w", tdbCtx.LastError())

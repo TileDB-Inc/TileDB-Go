@@ -39,7 +39,7 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-func ExampleWritingSparseMultiple() {
+func ExampleRunWritingSparseMultiple() {
 	examples_lib.RunWritingSparseMultiple()
 
 	// Output: Cell (1, 1) has data 1

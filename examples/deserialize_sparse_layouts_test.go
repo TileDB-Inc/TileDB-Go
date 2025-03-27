@@ -34,7 +34,7 @@ package examples
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
 // ToDo: Add proper test for deserialization
-func ExampleDeserializeSparseLayouts() {
+func ExampleRunDeserializeSparseLayouts() {
 	examples_lib.RunDeserializeSparseLayouts()
 
 	// Output: [1 2]

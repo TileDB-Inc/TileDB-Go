@@ -39,8 +39,8 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-// ExampleVacuumSparseArray shows ysage of array vacuum function
-func ExampleVacuumSparseArray() {
+// ExampleRunVacuumSparseArray shows ysage of array vacuum function
+func ExampleRunVacuumSparseArray() {
 	examples_lib.RunVacuumSparseArray()
 
 	// Output: Estimated query size in bytes for attribute 'a': 12

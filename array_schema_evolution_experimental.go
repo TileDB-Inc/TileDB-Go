@@ -13,25 +13,42 @@ import (
 	"unsafe"
 )
 
+type arraySchemaEvolutionHandle struct{ *capiHandle }
+
+func freeCapiArraySchemaEvolution(c unsafe.Pointer) {
+	C.tiledb_array_schema_evolution_free((**C.tiledb_array_schema_evolution_t)(unsafe.Pointer(&c)))
+}
+
+func newArraySchemaEvolutionHandle(ptr *C.tiledb_array_schema_evolution_t) arraySchemaEvolutionHandle {
+	return arraySchemaEvolutionHandle{newCapiHandle(unsafe.Pointer(ptr), freeCapiArraySchemaEvolution)}
+}
+
+func (x arraySchemaEvolutionHandle) Get() *C.tiledb_array_schema_evolution_t {
+	return (*C.tiledb_array_schema_evolution_t)(x.capiHandle.Get())
+}
+
 type ArraySchemaEvolution struct {
-	tiledbArraySchemaEvolution *C.tiledb_array_schema_evolution_t
+	tiledbArraySchemaEvolution arraySchemaEvolutionHandle
 	context                    *Context
+}
+
+func newArraySchemaEvolutionFromHandle(context *Context, handle arraySchemaEvolutionHandle) *ArraySchemaEvolution {
+	return &ArraySchemaEvolution{tiledbArraySchemaEvolution: handle, context: context}
 }
 
 // NewArraySchemaEvolution creates a TileDB schema evolution object.
 func NewArraySchemaEvolution(tdbCtx *Context) (*ArraySchemaEvolution, error) {
-	arraySchemaEvolution := ArraySchemaEvolution{context: tdbCtx}
+	var arraySchemaEvolutionPtr *C.tiledb_array_schema_evolution_t
 	ret := C.tiledb_array_schema_evolution_alloc(
-		arraySchemaEvolution.context.tiledbContext,
-		&arraySchemaEvolution.tiledbArraySchemaEvolution)
+		tdbCtx.tiledbContext.Get(),
+		&arraySchemaEvolutionPtr)
 	runtime.KeepAlive(tdbCtx)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error creating tiledb arraySchemaEvolution: %w",
-			arraySchemaEvolution.context.LastError())
+			tdbCtx.LastError())
 	}
-	freeOnGC(&arraySchemaEvolution)
 
-	return &arraySchemaEvolution, nil
+	return newArraySchemaEvolutionFromHandle(tdbCtx, newArraySchemaEvolutionHandle(arraySchemaEvolutionPtr)), nil
 }
 
 // Free releases the internal TileDB core data that was allocated on the C heap.
@@ -40,9 +57,7 @@ func NewArraySchemaEvolution(tdbCtx *Context) (*ArraySchemaEvolution, error) {
 // can safely be called many times on the same object; if it has already
 // been freed, it will not be freed again.
 func (ase *ArraySchemaEvolution) Free() {
-	if ase.tiledbArraySchemaEvolution != nil {
-		C.tiledb_array_schema_evolution_free(&ase.tiledbArraySchemaEvolution)
-	}
+	ase.tiledbArraySchemaEvolution.Free()
 }
 
 // Context exposes the internal TileDB context used to initialize the array schema evolution
@@ -58,8 +73,8 @@ func (ase *ArraySchemaEvolution) AddAttribute(attribute *Attribute) error {
 	}
 
 	ret := C.tiledb_array_schema_evolution_add_attribute(
-		ase.context.tiledbContext, ase.tiledbArraySchemaEvolution,
-		attribute.tiledbAttribute)
+		ase.context.tiledbContext.Get(), ase.tiledbArraySchemaEvolution.Get(),
+		attribute.tiledbAttribute.Get())
 	runtime.KeepAlive(ase)
 	runtime.KeepAlive(attribute)
 	if ret != C.TILEDB_OK {
@@ -77,7 +92,7 @@ func (ase *ArraySchemaEvolution) DropAttribute(name string) error {
 	defer C.free(unsafe.Pointer(cname))
 
 	ret := C.tiledb_array_schema_evolution_drop_attribute(
-		ase.context.tiledbContext, ase.tiledbArraySchemaEvolution, cname)
+		ase.context.tiledbContext.Get(), ase.tiledbArraySchemaEvolution.Get(), cname)
 	runtime.KeepAlive(ase)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error dropping tiledb attribute: %w",
@@ -92,8 +107,8 @@ func (ase *ArraySchemaEvolution) Evolve(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
 
-	ret := C.tiledb_array_evolve(ase.context.tiledbContext, curi,
-		ase.tiledbArraySchemaEvolution)
+	ret := C.tiledb_array_evolve(ase.context.tiledbContext.Get(), curi,
+		ase.tiledbArraySchemaEvolution.Get())
 	runtime.KeepAlive(ase)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error evolving schema for array %s: %w", uri,
