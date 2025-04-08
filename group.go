@@ -50,6 +50,7 @@ func CreateGroup(tdbCtx *Context, uri string) error {
 }
 
 // Create creates a new TileDB group.
+// Deprecated: Use CreateGroup instead.
 func (g *Group) Create() error {
 	return CreateGroup(g.context, g.uri)
 }

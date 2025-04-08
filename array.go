@@ -222,6 +222,7 @@ func CreateArray(tdbCtx *Context, uri string, arraySchema *ArraySchema) error {
 }
 
 // Create creates a new TileDB array given an input schema.
+// Deprecated: Use CreateArray instead.
 func (a *Array) Create(arraySchema *ArraySchema) error {
 	return CreateArray(a.context, a.uri, arraySchema)
 }
@@ -250,6 +251,7 @@ func ConsolidateArray(tdbCtx *Context, uri string, config *Config) error {
 // Consolidate consolidates the fragments of the array into a single fragment.
 // You must first finalize all queries to the array before consolidation can
 // begin (as consolidation temporarily acquires an exclusive lock on the array).
+// Deprecated: Use ConsolidateArray instead.
 func (a *Array) Consolidate(config *Config) error {
 	return ConsolidateArray(a.context, a.uri, config)
 }
@@ -274,6 +276,7 @@ func VacuumArray(tdbCtx *Context, uri string, config *Config) error {
 }
 
 // Vacuum cleans up the array, such as consolidated fragments and array metadata.
+// Deprecated: Use VacuumArray instead.
 func (a *Array) Vacuum(config *Config) error {
 	return VacuumArray(a.context, a.uri, config)
 }
