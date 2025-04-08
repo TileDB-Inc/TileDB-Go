@@ -12,55 +12,71 @@ import (
 	"unsafe"
 )
 
+type queryConditionHandle struct{ *capiHandle }
+
+func freeCapiQueryCondition(c unsafe.Pointer) {
+	C.tiledb_query_condition_free((**C.tiledb_query_condition_t)(unsafe.Pointer(&c)))
+}
+
+func newQueryConditionHandle(ptr *C.tiledb_query_condition_t) queryConditionHandle {
+	return queryConditionHandle{newCapiHandle(unsafe.Pointer(ptr), freeCapiQueryCondition)}
+}
+
+func (x queryConditionHandle) Get() *C.tiledb_query_condition_t {
+	return (*C.tiledb_query_condition_t)(x.capiHandle.Get())
+}
+
 // QueryCondition defines a condition used for a query.
 type QueryCondition struct {
 	context *Context
-	cond    *C.tiledb_query_condition_t
+	cond    queryConditionHandle
+}
+
+func newQueryConditionFromHandle(tdbCtx *Context, handle queryConditionHandle) *QueryCondition {
+	return &QueryCondition{context: tdbCtx, cond: handle}
 }
 
 // NewQueryCondition allocates and initializes a new query condition.
 func NewQueryCondition(tdbCtx *Context, attributeName string, op QueryConditionOp, value interface{}) (*QueryCondition, error) {
-	qc := QueryCondition{context: tdbCtx}
-	if ret := C.tiledb_query_condition_alloc(qc.context.tiledbContext, &qc.cond); ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error allocating tiledb query condition: %w", qc.context.LastError())
+	var qcPtr *C.tiledb_query_condition_t
+	if ret := C.tiledb_query_condition_alloc(tdbCtx.tiledbContext.Get(), &qcPtr); ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error allocating tiledb query condition: %w", tdbCtx.LastError())
 	}
 	runtime.KeepAlive(tdbCtx)
-	freeOnGC(&qc)
 
+	qc := newQueryConditionFromHandle(tdbCtx, newQueryConditionHandle(qcPtr))
 	if err := qc.init(attributeName, value, op); err != nil {
 		return nil, err
 	}
 
-	return &qc, nil
+	return qc, nil
 }
 
 // NewQueryConditionCombination combines two query conditions to create a new query condition. The underlying conditions
 // are unchanged.
 func NewQueryConditionCombination(tdbCtx *Context, left *QueryCondition, op QueryConditionCombinationOp, right *QueryCondition) (*QueryCondition, error) {
-	qc := QueryCondition{context: tdbCtx}
-	if ret := C.tiledb_query_condition_combine(qc.context.tiledbContext, left.cond, right.cond, C.tiledb_query_condition_combination_op_t(op), &qc.cond); ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error allocating tiledb query condition: %w", qc.context.LastError())
+	var qcPtr *C.tiledb_query_condition_t
+	if ret := C.tiledb_query_condition_combine(tdbCtx.tiledbContext.Get(), left.cond.Get(), right.cond.Get(), C.tiledb_query_condition_combination_op_t(op), &qcPtr); ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error allocating tiledb query condition: %w", tdbCtx.LastError())
 	}
 	runtime.KeepAlive(tdbCtx)
 	runtime.KeepAlive(left)
 	runtime.KeepAlive(right)
-	freeOnGC(&qc)
 
-	return &qc, nil
+	return newQueryConditionFromHandle(tdbCtx, newQueryConditionHandle(qcPtr)), nil
 }
 
 // NewQueryConditionNegated returns the negation of the query condition. The initial condition
 // is unchanged.
 func NewQueryConditionNegated(tdbCtx *Context, qc *QueryCondition) (*QueryCondition, error) {
-	nqc := QueryCondition{context: tdbCtx}
-	if ret := C.tiledb_query_condition_negate(qc.context.tiledbContext, qc.cond, &nqc.cond); ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error allocating tiledb query condition: %w", qc.context.LastError())
+	var nqcPtr *C.tiledb_query_condition_t
+	if ret := C.tiledb_query_condition_negate(qc.context.tiledbContext.Get(), qc.cond.Get(), &nqcPtr); ret != C.TILEDB_OK {
+		return nil, fmt.Errorf("error allocating tiledb query condition: %w", tdbCtx.LastError())
 	}
-	freeOnGC(&nqc)
 	runtime.KeepAlive(tdbCtx)
 	runtime.KeepAlive(qc)
 
-	return &nqc, nil
+	return newQueryConditionFromHandle(tdbCtx, newQueryConditionHandle(nqcPtr)), nil
 }
 
 // Free releases the internal TileDB core data that was allocated on the C heap.
@@ -69,9 +85,7 @@ func NewQueryConditionNegated(tdbCtx *Context, qc *QueryCondition) (*QueryCondit
 // can safely be called many times on the same object; if it has already
 // been freed, it will not be freed again.
 func (qc *QueryCondition) Free() {
-	if qc.cond != nil {
-		C.tiledb_query_condition_free(&qc.cond)
-	}
+	qc.cond.Free()
 }
 
 // Context exposes the internal TileDB context used to initialize the query condition
@@ -155,8 +169,8 @@ func qcInitInternal(qc *QueryCondition, attributeName string, valuePtr unsafe.Po
 	cname := C.CString(attributeName)
 	defer C.free(unsafe.Pointer(cname))
 	ret := C.tiledb_query_condition_init(
-		qc.context.tiledbContext,
-		qc.cond,
+		qc.context.tiledbContext.Get(),
+		qc.cond.Get(),
 		cname,
 		valuePtr,
 		C.uint64_t(valueSize),

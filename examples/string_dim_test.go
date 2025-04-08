@@ -36,9 +36,9 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-// ExampleStringDimArray shows an example of creation, writing and reading of a
+// ExampleRunStringDimArray shows an example of creation, writing and reading of a
 // sparse array with string dim
-func ExampleStringDimArray() {
+func ExampleRunStringDimArray() {
 	examples_lib.RunStringDimArray()
 
 	// Output: NonEmptyDomain Dimension Name: d

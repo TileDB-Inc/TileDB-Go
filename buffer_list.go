@@ -9,26 +9,43 @@ import (
 	"fmt"
 	"io"
 	"runtime"
+	"unsafe"
 )
+
+type bufferListHandle struct{ *capiHandle }
+
+func freeCapiBufferList(c unsafe.Pointer) {
+	C.tiledb_buffer_list_free((**C.tiledb_buffer_list_t)(unsafe.Pointer(&c)))
+}
+
+func newBufferListHandle(ptr *C.tiledb_buffer_list_t) bufferListHandle {
+	return bufferListHandle{newCapiHandle(unsafe.Pointer(ptr), freeCapiBufferList)}
+}
+
+func (x bufferListHandle) Get() *C.tiledb_buffer_list_t {
+	return (*C.tiledb_buffer_list_t)(x.capiHandle.Get())
+}
 
 // BufferList A list of TileDB BufferList objects
 type BufferList struct {
-	tiledbBufferList *C.tiledb_buffer_list_t
+	tiledbBufferList bufferListHandle
 	context          *Context
+}
+
+func newBufferListFromHandle(context *Context, handle bufferListHandle) *BufferList {
+	return &BufferList{tiledbBufferList: handle, context: context}
 }
 
 // NewBufferList Allocs a new buffer list
 func NewBufferList(context *Context) (*BufferList, error) {
-	bufferList := BufferList{context: context}
-
-	ret := C.tiledb_buffer_list_alloc(bufferList.context.tiledbContext, &bufferList.tiledbBufferList)
+	var bufferListPtr *C.tiledb_buffer_list_t
+	ret := C.tiledb_buffer_list_alloc(context.tiledbContext.Get(), &bufferListPtr)
 	runtime.KeepAlive(context)
 	if ret != C.TILEDB_OK {
-		return nil, fmt.Errorf("error creating tiledb buffer list: %w", bufferList.context.LastError())
+		return nil, fmt.Errorf("error creating tiledb buffer list: %w", context.LastError())
 	}
-	freeOnGC(&bufferList)
 
-	return &bufferList, nil
+	return newBufferListFromHandle(context, newBufferListHandle(bufferListPtr)), nil
 }
 
 // Free releases the internal TileDB core data that was allocated on the C heap.
@@ -37,9 +54,7 @@ func NewBufferList(context *Context) (*BufferList, error) {
 // can safely be called many times on the same object; if it has already
 // been freed, it will not be freed again.
 func (b *BufferList) Free() {
-	if b.tiledbBufferList != nil {
-		C.tiledb_buffer_list_free(&b.tiledbBufferList)
-	}
+	b.tiledbBufferList.Free()
 }
 
 // Context exposes the internal TileDB context used to initialize the buffer list.
@@ -80,7 +95,7 @@ var _ io.WriterTo = (*BufferList)(nil)
 // NumBuffers returns number of buffers in the list.
 func (b *BufferList) NumBuffers() (uint64, error) {
 	var numBuffers C.uint64_t
-	ret := C.tiledb_buffer_list_get_num_buffers(b.context.tiledbContext, b.tiledbBufferList, &numBuffers)
+	ret := C.tiledb_buffer_list_get_num_buffers(b.context.tiledbContext.Get(), b.tiledbBufferList.Get(), &numBuffers)
 	runtime.KeepAlive(b)
 
 	if ret != C.TILEDB_OK {
@@ -92,22 +107,20 @@ func (b *BufferList) NumBuffers() (uint64, error) {
 
 // GetBuffer returns a Buffer at the given index in the list.
 func (b *BufferList) GetBuffer(bufferIndex uint) (*Buffer, error) {
-	buffer := Buffer{context: b.context}
-
-	ret := C.tiledb_buffer_list_get_buffer(b.context.tiledbContext, b.tiledbBufferList, C.uint64_t(bufferIndex), &buffer.tiledbBuffer)
+	var bufferPtr *C.tiledb_buffer_t
+	ret := C.tiledb_buffer_list_get_buffer(b.context.tiledbContext.Get(), b.tiledbBufferList.Get(), C.uint64_t(bufferIndex), &bufferPtr)
 	runtime.KeepAlive(b)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb buffer index %d from buffer list: %w", bufferIndex, b.context.LastError())
 	}
-	freeOnGC(&buffer)
 
-	return &buffer, nil
+	return newBufferFromHandle(b.context, newBufferHandle(bufferPtr)), nil
 }
 
 // TotalSize returns the total number of bytes in the buffers in the list.
 func (b *BufferList) TotalSize() (uint64, error) {
 	var totalSize C.uint64_t
-	ret := C.tiledb_buffer_list_get_total_size(b.context.tiledbContext, b.tiledbBufferList, &totalSize)
+	ret := C.tiledb_buffer_list_get_total_size(b.context.tiledbContext.Get(), b.tiledbBufferList.Get(), &totalSize)
 	runtime.KeepAlive(b)
 
 	if ret != C.TILEDB_OK {
@@ -121,15 +134,13 @@ func (b *BufferList) TotalSize() (uint64, error) {
 //
 // Deprecated: Use WriteTo instead for increased performance.
 func (b *BufferList) Flatten() (*Buffer, error) {
-	buffer := Buffer{context: b.context}
-
-	ret := C.tiledb_buffer_list_flatten(b.context.tiledbContext, b.tiledbBufferList, &buffer.tiledbBuffer)
+	var bufferPtr *C.tiledb_buffer_t
+	ret := C.tiledb_buffer_list_flatten(b.context.tiledbContext.Get(), b.tiledbBufferList.Get(), &bufferPtr)
 	runtime.KeepAlive(b)
 
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting tiledb bufferList num buffers: %w", b.context.LastError())
 	}
-	freeOnGC(&buffer)
 
-	return &buffer, nil
+	return newBufferFromHandle(b.context, newBufferHandle(bufferPtr)), nil
 }

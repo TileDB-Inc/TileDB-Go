@@ -10,9 +10,9 @@ on:
 
 env:
   # The version of TileDB to test against.
-  CORE_VERSION: "2.27.0"
+  CORE_VERSION: "2.27.2"
   # The abbreviated git commit hash to use.
-  CORE_HASH: "2862c30"
+  CORE_HASH: "1757013"
 
 jobs:
   golangci:
@@ -37,7 +37,7 @@ jobs:
     strategy:
       matrix:
         # Will be checking following versions
-        go: ["1.22", "1.23"]
+        go: ["1.22", "1.23", "1.24"]
     steps:
 
     # Checks out repository
@@ -74,7 +74,7 @@ jobs:
     strategy:
       matrix:
         # Will be checking following versions
-        go: ["1.22", "1.23"]
+        go: ["1.22", "1.23", "1.24"]
     steps:
     # Checks out repository
     - uses: actions/checkout@v4
@@ -113,7 +113,7 @@ jobs:
     strategy:
       matrix:
         # Will be checking following versions
-        go: ["1.22", "1.23"]
+        go: ["1.22", "1.23", "1.24"]
     steps:
     # Checks out repository
     - uses: actions/checkout@v4

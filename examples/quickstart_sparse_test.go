@@ -40,9 +40,9 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-// ExampleSparseArray shows and example creation, writing and reading of a
+// ExampleRunSparseArray shows and example creation, writing and reading of a
 // sparse array
-func ExampleSparseArray() {
+func ExampleRunSparseArray() {
 	examples_lib.RunSparseArray()
 
 	// Output: Estimated query size in bytes for attribute 'a': 12

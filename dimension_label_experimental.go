@@ -13,9 +13,27 @@ import (
 	"unsafe"
 )
 
+type dimensionLabelHandle struct{ *capiHandle }
+
+func freeCapiDimensionLabel(c unsafe.Pointer) {
+	C.tiledb_dimension_label_free((**C.tiledb_dimension_label_t)(unsafe.Pointer(&c)))
+}
+
+func newDimensionLabelHandle(ptr *C.tiledb_dimension_label_t) dimensionLabelHandle {
+	return dimensionLabelHandle{newCapiHandle(unsafe.Pointer(ptr), freeCapiDimensionLabel)}
+}
+
+func (x dimensionLabelHandle) Get() *C.tiledb_dimension_label_t {
+	return (*C.tiledb_dimension_label_t)(x.capiHandle.Get())
+}
+
 type DimensionLabel struct {
-	tiledbDimensionLabel *C.tiledb_dimension_label_t
+	tiledbDimensionLabel dimensionLabelHandle
 	context              *Context
+}
+
+func newDimensionLabelFromHandle(context *Context, handle dimensionLabelHandle) *DimensionLabel {
+	return &DimensionLabel{tiledbDimensionLabel: handle, context: context}
 }
 
 // Free releases the internal TileDB core data that was allocated on the C heap.
@@ -24,15 +42,13 @@ type DimensionLabel struct {
 // can safely be called many times on the same object; if it has already
 // been freed, it will not be freed again.
 func (d *DimensionLabel) Free() {
-	if d.tiledbDimensionLabel != nil {
-		C.tiledb_dimension_label_free(&d.tiledbDimensionLabel)
-	}
+	d.tiledbDimensionLabel.Free()
 }
 
 // DimensionIndex returns the index of the dimension the dimension label provides labels for.
 func (d *DimensionLabel) DimensionIndex() (uint32, error) {
 	var dimensionIndex C.uint32_t
-	ret := C.tiledb_dimension_label_get_dimension_index(d.context.tiledbContext, d.tiledbDimensionLabel, &dimensionIndex)
+	ret := C.tiledb_dimension_label_get_dimension_index(d.context.tiledbContext.Get(), d.tiledbDimensionLabel.Get(), &dimensionIndex)
 	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error fetching dimension index for dimension label: %w", d.context.LastError())
@@ -44,7 +60,7 @@ func (d *DimensionLabel) DimensionIndex() (uint32, error) {
 // AttributeName returns the name of the attribute the label data is stored under.
 func (d *DimensionLabel) AttributeName() (string, error) {
 	var cLabelAttrName *C.char // d must be kept alive while cLabelAttrName is being accessed.
-	ret := C.tiledb_dimension_label_get_label_attr_name(d.context.tiledbContext, d.tiledbDimensionLabel, &cLabelAttrName)
+	ret := C.tiledb_dimension_label_get_label_attr_name(d.context.tiledbContext.Get(), d.tiledbDimensionLabel.Get(), &cLabelAttrName)
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("error getting dimension label attribute name: %w", d.context.LastError())
 	}
@@ -58,7 +74,7 @@ func (d *DimensionLabel) AttributeName() (string, error) {
 // For variable-sized labels the result is TILEDB_VAR_NUM.
 func (d *DimensionLabel) CellValNum() (uint32, error) {
 	var labelCellValNum C.uint32_t
-	ret := C.tiledb_dimension_label_get_label_cell_val_num(d.context.tiledbContext, d.tiledbDimensionLabel, &labelCellValNum)
+	ret := C.tiledb_dimension_label_get_label_cell_val_num(d.context.tiledbContext.Get(), d.tiledbDimensionLabel.Get(), &labelCellValNum)
 	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error fetching cell val num for dimension label: %w", d.context.LastError())
@@ -70,7 +86,7 @@ func (d *DimensionLabel) CellValNum() (uint32, error) {
 // Order returns the order of the labels on the dimension label.
 func (d *DimensionLabel) Order() (DataOrder, error) {
 	var labelOrder C.tiledb_data_order_t
-	ret := C.tiledb_dimension_label_get_label_order(d.context.tiledbContext, d.tiledbDimensionLabel, &labelOrder)
+	ret := C.tiledb_dimension_label_get_label_order(d.context.tiledbContext.Get(), d.tiledbDimensionLabel.Get(), &labelOrder)
 	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error fetching label order for dimension label: %w", d.context.LastError())
@@ -82,7 +98,7 @@ func (d *DimensionLabel) Order() (DataOrder, error) {
 // Type returns the underlying Datatype for the dimension label.
 func (d *DimensionLabel) Type() (Datatype, error) {
 	var dataType C.tiledb_datatype_t
-	ret := C.tiledb_dimension_label_get_label_type(d.context.tiledbContext, d.tiledbDimensionLabel, &dataType)
+	ret := C.tiledb_dimension_label_get_label_type(d.context.tiledbContext.Get(), d.tiledbDimensionLabel.Get(), &dataType)
 	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error fetching dimension label type: %w", d.context.LastError())
@@ -94,7 +110,7 @@ func (d *DimensionLabel) Type() (Datatype, error) {
 // Name returns the name for the dimension label.
 func (d *DimensionLabel) Name() (string, error) {
 	var cLabelName *C.char // d must be kept alive while cLabelName is being accessed.
-	ret := C.tiledb_dimension_label_get_name(d.context.tiledbContext, d.tiledbDimensionLabel, &cLabelName)
+	ret := C.tiledb_dimension_label_get_name(d.context.tiledbContext.Get(), d.tiledbDimensionLabel.Get(), &cLabelName)
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("error getting dimension label name: %w", d.context.LastError())
 	}
@@ -107,7 +123,7 @@ func (d *DimensionLabel) Name() (string, error) {
 // Uri Returns the Uri for the dimension label array.
 func (d *DimensionLabel) URI() (string, error) {
 	var cLabelUri *C.char // d must be kept alive while cLabelUri is being accessed.
-	ret := C.tiledb_dimension_label_get_uri(d.context.tiledbContext, d.tiledbDimensionLabel, &cLabelUri)
+	ret := C.tiledb_dimension_label_get_uri(d.context.tiledbContext.Get(), d.tiledbDimensionLabel.Get(), &cLabelUri)
 	if ret != C.TILEDB_OK {
 		return "", fmt.Errorf("error getting dimension label URI: %w", d.context.LastError())
 	}
@@ -120,7 +136,7 @@ func (d *DimensionLabel) URI() (string, error) {
 // AddDimensionLabel adds a dimension label to the array schema.
 func (a *ArraySchema) AddDimensionLabel(dimIndex uint32, name string, order DataOrder, labelType Datatype) error {
 	cLabelName := C.CString(name)
-	ret := C.tiledb_array_schema_add_dimension_label(a.context.tiledbContext, a.tiledbArraySchema,
+	ret := C.tiledb_array_schema_add_dimension_label(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(),
 		C.uint32_t(dimIndex), cLabelName, C.tiledb_data_order_t(order), C.tiledb_datatype_t(labelType))
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
@@ -132,32 +148,30 @@ func (a *ArraySchema) AddDimensionLabel(dimIndex uint32, name string, order Data
 
 // DimensionLabelFromName retrieves a dimension label from an array schema with the requested index.
 func (a *ArraySchema) DimensionLabelFromIndex(labelIdx uint64) (*DimensionLabel, error) {
-	dimLabel := DimensionLabel{context: a.context}
-	ret := C.tiledb_array_schema_get_dimension_label_from_index(a.context.tiledbContext, a.tiledbArraySchema,
-		C.uint64_t(labelIdx), &dimLabel.tiledbDimensionLabel)
+	var dimLabelPtr *C.tiledb_dimension_label_t
+	ret := C.tiledb_array_schema_get_dimension_label_from_index(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(),
+		C.uint64_t(labelIdx), &dimLabelPtr)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting dimension label '%d' for ArraySchema: %w", labelIdx, a.context.LastError())
 	}
 
-	freeOnGC(&dimLabel)
-	return &dimLabel, nil
+	return newDimensionLabelFromHandle(a.context, newDimensionLabelHandle(dimLabelPtr)), nil
 }
 
 // DimensionLabelFromName retrieves a dimension label from an array schema with the requested name.
 func (a *ArraySchema) DimensionLabelFromName(name string) (*DimensionLabel, error) {
 	cAttrName := C.CString(name)
 	defer C.free(unsafe.Pointer(cAttrName))
-	dimLabel := DimensionLabel{context: a.context}
-	ret := C.tiledb_array_schema_get_dimension_label_from_name(a.context.tiledbContext, a.tiledbArraySchema,
-		cAttrName, &dimLabel.tiledbDimensionLabel)
+	var dimLabelPtr *C.tiledb_dimension_label_t
+	ret := C.tiledb_array_schema_get_dimension_label_from_name(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(),
+		cAttrName, &dimLabelPtr)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return nil, fmt.Errorf("error getting dimension label '%s' for ArraySchema: %w", name, a.context.LastError())
 	}
 
-	freeOnGC(&dimLabel)
-	return &dimLabel, nil
+	return newDimensionLabelFromHandle(a.context, newDimensionLabelHandle(dimLabelPtr)), nil
 }
 
 // HasDimensionLabel checks whether the array schema has a dimension label of the given name.
@@ -166,7 +180,7 @@ func (a *ArraySchema) HasDimensionLabel(name string) (bool, error) {
 	defer C.free(unsafe.Pointer(cLabelName))
 
 	var hasLabel C.int32_t
-	ret := C.tiledb_array_schema_has_dimension_label(a.context.tiledbContext, a.tiledbArraySchema,
+	ret := C.tiledb_array_schema_has_dimension_label(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(),
 		cLabelName, &hasLabel)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
@@ -180,7 +194,7 @@ func (a *ArraySchema) HasDimensionLabel(name string) (bool, error) {
 func (a *ArraySchema) DimensionLabelsNum() (uint64, error) {
 	var labelNum C.uint64_t
 
-	ret := C.tiledb_array_schema_get_dimension_label_num(a.context.tiledbContext, a.tiledbArraySchema, &labelNum)
+	ret := C.tiledb_array_schema_get_dimension_label_num(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), &labelNum)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error fetching dimension label number: %w", a.context.LastError())
@@ -194,8 +208,8 @@ func (a *ArraySchema) SetDimensionLabelFilterList(name string, filterList Filter
 	cName := C.CString(name)
 	defer C.free(unsafe.Pointer(cName))
 
-	ret := C.tiledb_array_schema_set_dimension_label_filter_list(a.context.tiledbContext, a.tiledbArraySchema,
-		cName, filterList.tiledbFilterList)
+	ret := C.tiledb_array_schema_set_dimension_label_filter_list(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(),
+		cName, filterList.tiledbFilterList.Get())
 	runtime.KeepAlive(a)
 	runtime.KeepAlive(filterList)
 	if ret != C.TILEDB_OK {
@@ -246,7 +260,7 @@ func (a *ArraySchema) SetDimensionLabelTileExtent(labelName string, dimType Data
 			dimType.String())
 	}
 
-	ret := C.tiledb_array_schema_set_dimension_label_tile_extent(a.context.tiledbContext, a.tiledbArraySchema,
+	ret := C.tiledb_array_schema_set_dimension_label_tile_extent(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(),
 		cName, C.tiledb_datatype_t(dimType), cExtent)
 	runtime.KeepAlive(a)
 	// cExtent is being kept alive by passing it to cgo call.
@@ -286,7 +300,7 @@ func (sa *Subarray) GetDimensionLabelRangeNum(labelName string) (uint64, error) 
 	cLabelName := C.CString(labelName)
 	defer C.free(unsafe.Pointer(cLabelName))
 
-	ret := C.tiledb_subarray_get_label_range_num(sa.context.tiledbContext, sa.subarray, cLabelName, &rangeNum)
+	ret := C.tiledb_subarray_get_label_range_num(sa.context.tiledbContext.Get(), sa.subarray.Get(), cLabelName, &rangeNum)
 	runtime.KeepAlive(sa)
 	if ret != C.TILEDB_OK {
 		return 0, fmt.Errorf("error retrieving subarray label range num: %w", sa.context.LastError())
@@ -313,12 +327,12 @@ func (sa *Subarray) AddDimensionLabelRange(labelName string, r Range) error {
 	if isVar {
 		startSlice := []byte(r.start.(string))
 		endSlice := []byte(r.end.(string))
-		ret = C.tiledb_subarray_add_label_range_var(sa.context.tiledbContext, sa.subarray, cLabelName,
+		ret = C.tiledb_subarray_add_label_range_var(sa.context.tiledbContext.Get(), sa.subarray.Get(), cLabelName,
 			slicePtr(startSlice), C.uint64_t(len(startSlice)), slicePtr(endSlice), C.uint64_t(len(endSlice)))
 	} else {
 		startValue := addressableValue(r.start)
 		endValue := addressableValue(r.end)
-		ret = C.tiledb_subarray_add_label_range(sa.context.tiledbContext, sa.subarray, cLabelName,
+		ret = C.tiledb_subarray_add_label_range(sa.context.tiledbContext.Get(), sa.subarray.Get(), cLabelName,
 			startValue.UnsafePointer(), endValue.UnsafePointer(), nil)
 	}
 	runtime.KeepAlive(sa)
@@ -344,7 +358,7 @@ func (sa *Subarray) GetDimensionLabelRange(labelName string, rangeNum uint64) (R
 	var ret C.int32_t
 	if isVar {
 		var startSize, endSize uint64
-		ret = C.tiledb_subarray_get_label_range_var_size(sa.context.tiledbContext, sa.subarray, cLabelName, C.uint64_t(rangeNum),
+		ret = C.tiledb_subarray_get_label_range_var_size(sa.context.tiledbContext.Get(), sa.subarray.Get(), cLabelName, C.uint64_t(rangeNum),
 			(*C.uint64_t)(unsafe.Pointer(&startSize)), (*C.uint64_t)(unsafe.Pointer(&endSize)))
 		if ret == C.TILEDB_OK {
 			var sp, ep unsafe.Pointer
@@ -357,7 +371,7 @@ func (sa *Subarray) GetDimensionLabelRange(labelName string, rangeNum uint64) (R
 				endData = make([]byte, int(endSize))
 				ep = slicePtr(endData)
 			}
-			ret = C.tiledb_subarray_get_label_range_var(sa.context.tiledbContext, sa.subarray,
+			ret = C.tiledb_subarray_get_label_range_var(sa.context.tiledbContext.Get(), sa.subarray.Get(),
 				cLabelName, C.uint64_t(rangeNum), sp, ep)
 			if ret == C.TILEDB_OK {
 				r.start = string(startData)
@@ -366,7 +380,7 @@ func (sa *Subarray) GetDimensionLabelRange(labelName string, rangeNum uint64) (R
 		}
 	} else {
 		var startPointer, endPointer, stridePointer unsafe.Pointer
-		ret = C.tiledb_subarray_get_label_range(sa.context.tiledbContext, sa.subarray,
+		ret = C.tiledb_subarray_get_label_range(sa.context.tiledbContext.Get(), sa.subarray.Get(),
 			cLabelName, C.uint64_t(rangeNum), &startPointer, &endPointer, &stridePointer)
 		typ := dt.ReflectType()
 		if ret == C.TILEDB_OK {

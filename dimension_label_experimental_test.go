@@ -57,7 +57,7 @@ func TestDimensionLabelQuery(t *testing.T) {
 	require.NoError(t, err)
 	sa, err = array.NewSubarray()
 	require.NoError(t, err)
-	require.NoError(t, sa.AddDimensionLabelRange("d0_label0", MakeRange[float64](0, 0.2)))
+	require.NoError(t, sa.AddDimensionLabelRange("d0_label0", MakeRange(0, 0.2)))
 	require.NoError(t, sa.AddDimensionLabelRange("d1_label0", MakeRange[float32](-0.4, -0.2)))
 	require.NoError(t, q.SetSubarray(sa))
 	for i := range vBuffer {

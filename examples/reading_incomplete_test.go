@@ -38,7 +38,7 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-func ExampleReadingIncompleteArray() {
+func ExampleRunReadingIncompleteArray() {
 	examples_lib.RunReadingIncompleteArray()
 
 	// Output: Printing results...

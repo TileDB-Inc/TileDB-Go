@@ -40,9 +40,9 @@ package examples
 
 import "github.com/TileDB-Inc/TileDB-Go/examples_lib"
 
-// ExampleRange shows an example of creation, writing of a dense array
+// ExampleRunRange shows an example of creation, writing of a dense array
 // and usage of range functions
-func ExampleRange() {
+func ExampleRunRange() {
 	examples_lib.RunRange()
 
 	// Error adding query range: [TileDB::Dimension] Error: Cannot add range to dimension; Lower range bound 1065353216 cannot be larger than the higher bound 4
