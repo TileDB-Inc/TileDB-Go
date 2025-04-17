@@ -221,7 +221,7 @@ func (a *Array) Close() error {
 	return nil
 }
 
-// Create creates a new TileDB array given a context, URI and schema.
+// CreateArray creates a new TileDB array given a context, URI and schema.
 func CreateArray(tdbCtx *Context, uri string, arraySchema *ArraySchema) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))

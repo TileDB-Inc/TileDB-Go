@@ -53,7 +53,7 @@ func NewGroup(tdbCtx *Context, uri string) (*Group, error) {
 	return newGroupFromHandle(tdbCtx, uri, newGroupHandle(groupPtr)), nil
 }
 
-// Create creates a new TileDB group given a context and URI.
+// CreateGroup creates a new TileDB group given a context and URI.
 func CreateGroup(tdbCtx *Context, uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))
