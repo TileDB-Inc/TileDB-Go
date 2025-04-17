@@ -39,6 +39,19 @@ func newGroupFromHandle(context *Context, uri string, group groupHandle) *Group 
 	return &Group{group: group, uri: uri, context: context}
 }
 
+// CreateGroup creates a new TileDB group given a context and URI.
+func CreateGroup(tdbCtx *Context, uri string) error {
+	curi := C.CString(uri)
+	defer C.free(unsafe.Pointer(curi))
+
+	ret := C.tiledb_group_create(tdbCtx.tiledbContext.Get(), curi)
+	runtime.KeepAlive(tdbCtx)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error in creating group: %w", tdbCtx.LastError())
+	}
+	return nil
+}
+
 // NewGroup allocates an embedded group.
 func NewGroup(tdbCtx *Context, uri string) (*Group, error) {
 	curi := C.CString(uri)
@@ -51,19 +64,6 @@ func NewGroup(tdbCtx *Context, uri string) (*Group, error) {
 	}
 
 	return newGroupFromHandle(tdbCtx, uri, newGroupHandle(groupPtr)), nil
-}
-
-// CreateGroup creates a new TileDB group given a context and URI.
-func CreateGroup(tdbCtx *Context, uri string) error {
-	curi := C.CString(uri)
-	defer C.free(unsafe.Pointer(curi))
-
-	ret := C.tiledb_group_create(tdbCtx.tiledbContext.Get(), curi)
-	runtime.KeepAlive(tdbCtx)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error in creating group: %w", tdbCtx.LastError())
-	}
-	return nil
 }
 
 // Create creates a new TileDB group.

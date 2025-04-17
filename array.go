@@ -69,6 +69,59 @@ func newArrayFromHandle(tdbCtx *Context, arrayHandle arrayHandle) *Array {
 	return &Array{context: tdbCtx, tiledbArray: arrayHandle}
 }
 
+// ConsolidateArray consolidates the fragments of an array into a single fragment.
+// You must first finalize all queries to the array before consolidation can
+// begin (as consolidation temporarily acquires an exclusive lock on the array).
+func ConsolidateArray(tdbCtx *Context, uri string, config *Config) error {
+	if config == nil {
+		return errors.New("Config must not be nil for Consolidate")
+	}
+
+	curi := C.CString(uri)
+	defer C.free(unsafe.Pointer(curi))
+	ret := C.tiledb_array_consolidate(tdbCtx.tiledbContext.Get(), curi, config.tiledbConfig.Get())
+	runtime.KeepAlive(tdbCtx)
+	runtime.KeepAlive(config)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error consolidating tiledb array: %w", tdbCtx.LastError())
+	}
+
+	runtime.KeepAlive(config)
+	return nil
+}
+
+// CreateArray creates a new TileDB array given a context, URI and schema.
+func CreateArray(tdbCtx *Context, uri string, arraySchema *ArraySchema) error {
+	curi := C.CString(uri)
+	defer C.free(unsafe.Pointer(curi))
+	ret := C.tiledb_array_create(tdbCtx.tiledbContext.Get(), curi, arraySchema.tiledbArraySchema.Get())
+	runtime.KeepAlive(tdbCtx)
+	runtime.KeepAlive(arraySchema)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error creating tiledb array: %w", tdbCtx.LastError())
+	}
+	return nil
+}
+
+// VacuumArray cleans up an array, such as consolidated fragments and array metadata.
+func VacuumArray(tdbCtx *Context, uri string, config *Config) error {
+	if config == nil {
+		return errors.New("Config must not be nil for Vacuum")
+	}
+
+	curi := C.CString(uri)
+	defer C.free(unsafe.Pointer(curi))
+	ret := C.tiledb_array_vacuum(tdbCtx.tiledbContext.Get(), curi, config.tiledbConfig.Get())
+	runtime.KeepAlive(tdbCtx)
+	runtime.KeepAlive(config)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error vacuuming tiledb array: %w", tdbCtx.LastError())
+	}
+
+	runtime.KeepAlive(config)
+	return nil
+}
+
 // NewArray allocates a new array.
 // If the provided Context is nil, a default context is allocated and used.
 func NewArray(tdbCtx *Context, uri string) (*Array, error) {
@@ -221,44 +274,10 @@ func (a *Array) Close() error {
 	return nil
 }
 
-// CreateArray creates a new TileDB array given a context, URI and schema.
-func CreateArray(tdbCtx *Context, uri string, arraySchema *ArraySchema) error {
-	curi := C.CString(uri)
-	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_array_create(tdbCtx.tiledbContext.Get(), curi, arraySchema.tiledbArraySchema.Get())
-	runtime.KeepAlive(tdbCtx)
-	runtime.KeepAlive(arraySchema)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error creating tiledb array: %w", tdbCtx.LastError())
-	}
-	return nil
-}
-
 // Create creates a new TileDB array given an input schema.
 // Deprecated: Use CreateArray instead.
 func (a *Array) Create(arraySchema *ArraySchema) error {
 	return CreateArray(a.context, a.uri, arraySchema)
-}
-
-// ConsolidateArray consolidates the fragments of an array into a single fragment.
-// You must first finalize all queries to the array before consolidation can
-// begin (as consolidation temporarily acquires an exclusive lock on the array).
-func ConsolidateArray(tdbCtx *Context, uri string, config *Config) error {
-	if config == nil {
-		return errors.New("Config must not be nil for Consolidate")
-	}
-
-	curi := C.CString(uri)
-	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_array_consolidate(tdbCtx.tiledbContext.Get(), curi, config.tiledbConfig.Get())
-	runtime.KeepAlive(tdbCtx)
-	runtime.KeepAlive(config)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error consolidating tiledb array: %w", tdbCtx.LastError())
-	}
-
-	runtime.KeepAlive(config)
-	return nil
 }
 
 // Consolidate consolidates the fragments of the array into a single fragment.
@@ -267,25 +286,6 @@ func ConsolidateArray(tdbCtx *Context, uri string, config *Config) error {
 // Deprecated: Use ConsolidateArray instead.
 func (a *Array) Consolidate(config *Config) error {
 	return ConsolidateArray(a.context, a.uri, config)
-}
-
-// VacuumArray cleans up an array, such as consolidated fragments and array metadata.
-func VacuumArray(tdbCtx *Context, uri string, config *Config) error {
-	if config == nil {
-		return errors.New("Config must not be nil for Vacuum")
-	}
-
-	curi := C.CString(uri)
-	defer C.free(unsafe.Pointer(curi))
-	ret := C.tiledb_array_vacuum(tdbCtx.tiledbContext.Get(), curi, config.tiledbConfig.Get())
-	runtime.KeepAlive(tdbCtx)
-	runtime.KeepAlive(config)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error vacuuming tiledb array: %w", tdbCtx.LastError())
-	}
-
-	runtime.KeepAlive(config)
-	return nil
 }
 
 // Vacuum cleans up the array, such as consolidated fragments and array metadata.
