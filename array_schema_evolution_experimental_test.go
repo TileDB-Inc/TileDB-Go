@@ -51,13 +51,7 @@ func TestArraySchemaEvolution(t *testing.T) {
 	// tmpArrayPath is the array URI
 	tmpArrayPath := t.TempDir()
 
-	array, err := NewArray(context, tmpArrayPath)
-	require.NoError(t, err)
-	assert.NotNil(t, array)
-
-	require.NoError(t, array.Create(arraySchema))
-
-	require.NoError(t, array.Close())
+	require.NoError(t, CreateArray(context, tmpArrayPath, arraySchema))
 
 	arraySchemaEvolution, err := NewArraySchemaEvolution(context)
 	require.NoError(t, err)
@@ -99,7 +93,7 @@ func TestArraySchemaEvolution(t *testing.T) {
 	// Prepare the array for reading
 	arr, err := NewArray(ctx, tmpArrayPath)
 	require.NoError(t, err)
-	defer array.Free()
+	defer arr.Free()
 
 	require.NoError(t, arr.Open(TILEDB_READ))
 

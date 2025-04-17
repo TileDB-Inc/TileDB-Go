@@ -45,14 +45,8 @@ func createArrayMetadataArray(dir string) {
 	err = schema.AddAttributes(a)
 	checkError(err)
 
-	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, dir)
+	err = tiledb.CreateArray(ctx, dir, schema)
 	checkError(err)
-
-	err = array.Create(schema)
-	checkError(err)
-
-	array.Free()
 }
 
 func writeArrayMetadata(dir string) {
@@ -165,7 +159,7 @@ func readArrayMetadata(dir string) {
 	err = config.Set("sm.consolidation.mode", "array_meta")
 	checkError(err)
 
-	err = array.Consolidate(config)
+	err = tiledb.ConsolidateArray(ctx, dir, config)
 	checkError(err)
 
 	metadataMap, err := array.GetMetadataMap()

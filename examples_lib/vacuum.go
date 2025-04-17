@@ -43,11 +43,7 @@ func createVacuumSparseArray(dir string) {
 	checkError(err)
 
 	// Create the (empty) array on disk.
-	array, err := tiledb.NewArray(ctx, dir)
-	checkError(err)
-	defer array.Free()
-
-	err = array.Create(schema)
+	err = tiledb.CreateArray(ctx, dir, schema)
 	checkError(err)
 }
 
@@ -200,7 +196,7 @@ func consolidateVacuum(dir string) {
 	err = config.Set("sm.consolidation.buffer_size", "8")
 	checkError(err)
 
-	err = array.Consolidate(config)
+	err = tiledb.ConsolidateArray(ctx, dir, config)
 	checkError(err)
 
 	numOfFragments = numFragments(dir)

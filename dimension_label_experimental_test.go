@@ -15,11 +15,11 @@ func TestDimensionLabelQuery(t *testing.T) {
 
 	// create the array
 	uri := t.TempDir()
-	array, err := NewArray(tdbCtx, uri)
-	require.NoError(t, err)
-	require.NoError(t, array.Create(schema))
+	require.NoError(t, CreateArray(tdbCtx, uri, schema))
 
 	// initialize the labels
+	array, err := NewArray(tdbCtx, uri)
+	require.NoError(t, err)
 	require.NoError(t, array.Open(TILEDB_WRITE))
 
 	q, err := NewQuery(tdbCtx, array)
@@ -83,9 +83,7 @@ func TestDimensionLabelSchema(t *testing.T) {
 
 	// create the array with the schema and read it back to verify the value
 	uri := t.TempDir()
-	memArray, err := NewArray(tdbCtx, uri)
-	require.NoError(t, err)
-	require.NoError(t, memArray.Create(schema))
+	require.NoError(t, CreateArray(tdbCtx, uri, schema))
 
 	diskArray, err := NewArray(tdbCtx, uri)
 	require.NoError(t, err)
