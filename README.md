@@ -12,9 +12,7 @@ free'ing of C heap allocated structures.
 ## Quick Links
 
 - GoDoc API documentation: [https://pkg.go.dev/github.com/TileDB-Inc/TileDB-Go](https://pkg.go.dev/github.com/TileDB-Inc/TileDB-Go)
-- Full Installation Docs: [https://docs.tiledb.com/main/how-to/installation](https://docs.tiledb.com/main/how-to/installation)
-- Quick Install: [https://docs.tiledb.com/main/how-to/installation/quick-install](https://docs.tiledb.com/main/how-to/installation/quick-install)
-- Full developer documentation for all APIs and integrations: [https://docs.tiledb.com](https://docs.tiledb.com)
+- Full developer documentation for all APIs and integrations: [https://cloud.tiledb.com/academy](https://cloud.tiledb.com/academy)
 
 ## Installation
 
@@ -26,9 +24,7 @@ Currently the following platforms are supported:
 -   macOS (OSX)
 
 ### Prerequisites
-This package requires the TileDB shared library be installed and on the system path. See the
-[official TileDB installation instructions](https://docs.tiledb.com/main/how-to/installation)
-for installation methods. TileDB must be compiled with serialization support enabled.
+This package requires the TileDB shared library be installed and on the system path. Visit the [TileDB GitHub repository](https://github.com/TileDB-Inc/TileDB/blob/main/BUILDING_FROM_SOURCE.md).
 
 ### Environment setup
 
