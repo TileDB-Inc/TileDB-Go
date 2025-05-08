@@ -151,6 +151,7 @@ func NewArray(tdbCtx *Context, uri string) (*Array, error) {
 // can safely be called many times on the same object; if it has already
 // been freed, it will not be freed again.
 func (a *Array) Free() {
+	a.Close()
 	a.tiledbArray.Free()
 }
 
@@ -159,7 +160,7 @@ func (a *Array) Context() *Context {
 	return a.context
 }
 
-// ArrayOpenOptions defines the flexible parameters in which arrays can be opened with.
+// ArrayOpenOption defines the flexible parameters in which arrays can be opened with.
 type ArrayOpenOption func(tdbArray *Array) error
 
 // WithEndTime sets the subsequent Open call to use the given time
