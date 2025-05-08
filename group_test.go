@@ -74,20 +74,51 @@ func TestGroups_Metadata(t *testing.T) {
 	require.NoError(t, group.Close())
 
 	// =========================================================================
+	// Add metadata at a specific timestamp
+	tempGroup, err := NewGroup(tdbCtx, group.uri)
+	require.NoError(t, err)
+	// Set the group open end timestamp for tempGroup.
+	require.NoError(t, setConfigForWrite(tempGroup, 1))
+	require.NoError(t, tempGroup.Open(TILEDB_WRITE))
+	futureKey, futureValue := "future_key", "future_value"
+	require.NoError(t, tempGroup.PutMetadata(futureKey, futureValue))
+	// Typically deferred, but explicitly called here to ensure we close prior to freeing the group.
+	tempGroup.Free()
+
+	// =========================================================================
 	// Verify it is added
 	require.NoError(t, group.Open(TILEDB_READ))
 	num, err := group.GetMetadataNum()
 	require.NoError(t, err)
 	assert.EqualValues(t, uint64(1), num)
+	// The future_metadata should not exist at this timestamp.
+	dType, valNum, val, err := group.GetMetadata(futureKey)
+	require.Error(t, err)
+	require.EqualValues(t, 0, valNum)
 
-	dType, _, val, err := group.GetMetadata("key")
+	dType, valNum, val, err = group.GetMetadata("key")
 	require.NoError(t, err)
 	assert.EqualValues(t, dType, TILEDB_STRING_UTF8)
 	assert.EqualValues(t, val, "value")
+	assert.EqualValues(t, valNum, len("value"))
 	require.NoError(t, group.Close())
 
 	// =========================================================================
-	// Remove it
+	// Verify metadata exists at a specific timestamp
+	require.NoError(t, setConfigForWrite(group, 1))
+	require.NoError(t, group.Open(TILEDB_READ))
+	num, err = group.GetMetadataNum()
+	require.NoError(t, err)
+	// Both metadata keys should exist at this timestamp.
+	assert.EqualValues(t, uint64(2), num)
+
+	dType, valNum, val, err = group.GetMetadata(futureKey)
+	require.NoError(t, err)
+	require.EqualValues(t, len(futureValue), valNum)
+	require.NoError(t, group.Close())
+
+	// =========================================================================
+	// Remove one metadata field
 	require.NoError(t, setConfigForWrite(group, 1))
 	require.NoError(t, group.Open(TILEDB_WRITE))
 	err = group.DeleteMetadata("key")
@@ -97,7 +128,8 @@ func TestGroups_Metadata(t *testing.T) {
 	require.NoError(t, group.Open(TILEDB_READ))
 	num, err = group.GetMetadataNum()
 	require.NoError(t, err)
-	assert.EqualValues(t, uint64(0), num)
+	// One field should still remain.
+	assert.EqualValues(t, uint64(1), num)
 	require.NoError(t, group.Close())
 }
 

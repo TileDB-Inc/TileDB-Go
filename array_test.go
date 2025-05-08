@@ -409,6 +409,53 @@ func TestArray_Metadata(t *testing.T) {
 		assert.EqualValues(t, 1, valNum)
 		assert.Equal(t, "", value.(string))
 	})
+
+	t.Run("timestamp", func(t *testing.T) {
+		a, err := newTestArray(t)
+		require.NoError(t, err)
+		timestamp := uint64(time.Now().UnixMilli())
+		require.NoError(t, a.OpenWithOptions(TILEDB_WRITE, WithEndTimestamp(timestamp)))
+		pastKey, pastValue := "past_key", "past_value"
+		require.NoError(t, a.PutMetadata(pastKey, pastValue))
+		require.NoError(t, a.Close())
+
+		// Add some metadata in the future
+		tempArray, err := NewArray(nil, a.uri)
+		futureTimestamp := uint64(time.Date(time.Now().Year()+1, 1, 1, 0, 0, 0, 0, time.UTC).UnixMilli())
+		require.NoError(t, tempArray.OpenWithOptions(TILEDB_WRITE, WithEndTimestamp(futureTimestamp)))
+		futureKey, futureValue := "future_key", "future_value"
+		require.NoError(t, tempArray.PutMetadata(futureKey, futureValue))
+		// Typically deferred, but explicitly called here to ensure we close prior to freeing the array.
+		tempArray.Free()
+
+		// Make sure the metadata is available at the initial timestamp.
+		require.NoError(t, a.OpenWithOptions(TILEDB_READ, WithEndTimestamp(timestamp)))
+		num, err := a.GetMetadataNum()
+		require.EqualValues(t, 1, num)
+		dataType, valNum, value, err := a.GetMetadata(pastKey)
+		require.NoError(t, err)
+		assert.Equal(t, TILEDB_STRING_UTF8, dataType)
+		assert.EqualValues(t, len(pastValue), valNum)
+		assert.Equal(t, pastValue, value.(string))
+		require.NoError(t, a.Close())
+
+		// Make sure both metadata fields are available at the future timestamp.
+		require.NoError(t, a.OpenWithOptions(TILEDB_READ, WithEndTimestamp(futureTimestamp)))
+		num, err = a.GetMetadataNum()
+		require.EqualValues(t, 2, num)
+		dataType, valNum, value, err = a.GetMetadata(pastKey)
+		require.NoError(t, err)
+		assert.Equal(t, TILEDB_STRING_UTF8, dataType)
+		assert.EqualValues(t, len(pastValue), valNum)
+		assert.Equal(t, pastValue, value.(string))
+
+		dataType, valNum, value, err = a.GetMetadata(futureKey)
+		require.NoError(t, err)
+		assert.Equal(t, TILEDB_STRING_UTF8, dataType)
+		assert.EqualValues(t, len(futureValue), valNum)
+		assert.Equal(t, futureValue, value.(string))
+		require.NoError(t, a.Close())
+	})
 }
 
 func TestDeleteFragments(t *testing.T) {

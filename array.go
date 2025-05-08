@@ -159,7 +159,7 @@ func (a *Array) Context() *Context {
 	return a.context
 }
 
-// ArrayOpenOptions defines the flexible parameters in which arrays can be opened with.
+// ArrayOpenOption defines the flexible parameters in which arrays can be opened with.
 type ArrayOpenOption func(tdbArray *Array) error
 
 // WithEndTime sets the subsequent Open call to use the given time
