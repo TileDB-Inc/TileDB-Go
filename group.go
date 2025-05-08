@@ -82,6 +82,7 @@ func (g *Group) Open(queryType QueryType) error {
 }
 
 func (g *Group) Free() {
+	g.Close()
 	g.group.Free()
 }
 

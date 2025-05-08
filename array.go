@@ -151,6 +151,7 @@ func NewArray(tdbCtx *Context, uri string) (*Array, error) {
 // can safely be called many times on the same object; if it has already
 // been freed, it will not be freed again.
 func (a *Array) Free() {
+	a.Close()
 	a.tiledbArray.Free()
 }
 
