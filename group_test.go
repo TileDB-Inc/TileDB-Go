@@ -92,11 +92,11 @@ func TestGroups_Metadata(t *testing.T) {
 	require.NoError(t, err)
 	assert.EqualValues(t, uint64(1), num)
 	// The future_metadata should not exist at this timestamp.
-	dType, valNum, val, err := group.GetMetadata(futureKey)
+	_, valNum, _, err := group.GetMetadata(futureKey)
 	require.Error(t, err)
 	require.EqualValues(t, 0, valNum)
 
-	dType, valNum, val, err = group.GetMetadata("key")
+	dType, valNum, val, err := group.GetMetadata("key")
 	require.NoError(t, err)
 	assert.EqualValues(t, dType, TILEDB_STRING_UTF8)
 	assert.EqualValues(t, val, "value")
@@ -114,6 +114,8 @@ func TestGroups_Metadata(t *testing.T) {
 
 	dType, valNum, val, err = group.GetMetadata(futureKey)
 	require.NoError(t, err)
+	require.EqualValues(t, dType, TILEDB_STRING_UTF8)
+	require.EqualValues(t, val, val.(string))
 	require.EqualValues(t, len(futureValue), valNum)
 	require.NoError(t, group.Close())
 

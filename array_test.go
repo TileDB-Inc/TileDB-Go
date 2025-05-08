@@ -421,6 +421,7 @@ func TestArray_Metadata(t *testing.T) {
 
 		// Add some metadata in the future
 		tempArray, err := NewArray(nil, a.uri)
+		require.NoError(t, err)
 		futureTimestamp := uint64(time.Date(time.Now().Year()+1, 1, 1, 0, 0, 0, 0, time.UTC).UnixMilli())
 		require.NoError(t, tempArray.OpenWithOptions(TILEDB_WRITE, WithEndTimestamp(futureTimestamp)))
 		futureKey, futureValue := "future_key", "future_value"
@@ -431,6 +432,7 @@ func TestArray_Metadata(t *testing.T) {
 		// Make sure the metadata is available at the initial timestamp.
 		require.NoError(t, a.OpenWithOptions(TILEDB_READ, WithEndTimestamp(timestamp)))
 		num, err := a.GetMetadataNum()
+		require.NoError(t, err)
 		require.EqualValues(t, 1, num)
 		dataType, valNum, value, err := a.GetMetadata(pastKey)
 		require.NoError(t, err)
@@ -442,6 +444,7 @@ func TestArray_Metadata(t *testing.T) {
 		// Make sure both metadata fields are available at the future timestamp.
 		require.NoError(t, a.OpenWithOptions(TILEDB_READ, WithEndTimestamp(futureTimestamp)))
 		num, err = a.GetMetadataNum()
+		require.NoError(t, err)
 		require.EqualValues(t, 2, num)
 		dataType, valNum, value, err = a.GetMetadata(pastKey)
 		require.NoError(t, err)
