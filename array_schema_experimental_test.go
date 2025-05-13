@@ -19,6 +19,7 @@ func TestArraySchemaAtTime(t *testing.T) {
 	// Cannot create array schema at timestamp 0.
 	arraySchema, err := NewArraySchemaAtTimestamp(context, TILEDB_DENSE, 0)
 	require.Error(t, err)
+	require.Nil(t, arraySchema)
 
 	createTime := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 	arraySchema, err = NewArraySchemaAtTime(context, TILEDB_DENSE, createTime)
