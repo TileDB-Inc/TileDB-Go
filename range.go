@@ -47,7 +47,7 @@ func ExtractRange[T DimensionType](r Range) ([]T, error) {
 }
 
 // Endpoints returns the endpoint of the range. This is useful
-// to print the range or serialize it, without infering the type first.
+// to print the range or serialize it, without inferring the type first.
 func (r Range) Endpoints() (start, end any) {
 	return r.start, r.end
 }

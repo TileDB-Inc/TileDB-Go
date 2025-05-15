@@ -456,7 +456,7 @@ func (v *VFS) Sync(fh *VFSfh) error {
 	return nil
 }
 
-// Touch touches a file, i.e., creates a new empty file.
+// Touch touches a file, i.e., creates a new empty file. Existing files will not be overwritten.
 func (v *VFS) Touch(uri string) error {
 	curi := C.CString(uri)
 	defer C.free(unsafe.Pointer(curi))

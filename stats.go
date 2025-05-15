@@ -150,3 +150,13 @@ func StatsRaw() (string, error) {
 
 	return s, nil
 }
+
+// StatsIsEnabled returns whether stats are enabled or not
+func StatsIsEnabled() (bool, error) {
+	var isEnabled C.uint8_t
+	ret := C.tiledb_stats_is_enabled(&isEnabled)
+	if ret != C.TILEDB_OK {
+		return false, errors.New("error checking if stats is enabled")
+	}
+	return isEnabled > 0, nil
+}
