@@ -60,9 +60,17 @@ func TestStats(t *testing.T) {
 
 // Test statistics
 func TestStatsRaw(t *testing.T) {
-	// Enable statistics
-	err := StatsEnable()
+	// Check statistics are not enabled
+	isEnabled, err := StatsIsEnabled()
 	require.NoError(t, err)
+	require.EqualValues(t, false, isEnabled)
+
+	// Enable statistics
+	err = StatsEnable()
+	require.NoError(t, err)
+	isEnabled, err = StatsIsEnabled()
+	require.NoError(t, err)
+	require.EqualValues(t, true, isEnabled)
 
 	// Reset all internal counters to 0
 	require.NoError(t, StatsReset())

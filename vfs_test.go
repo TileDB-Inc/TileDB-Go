@@ -55,14 +55,21 @@ func TestVFS(t *testing.T) {
 
 	// Copy file
 	require.NoError(t, vfs.CopyFile(tmpFilePath, dstTmpFilePath))
-	_, err = os.Stat(dstTmpFilePath)
+	srcStat, err := os.Stat(tmpFilePath)
 	require.NoError(t, err)
-	if err == nil {
-		os.Remove(dstTmpFilePath)
-	}
+	dstStat, err := os.Stat(dstTmpFilePath)
+	require.NoError(t, err)
+	require.EqualValues(t, srcStat.Size(), dstStat.Size())
 
-	// Remove File
+	// Touch should not overwrite existing files.
+	require.NoError(t, vfs.Touch(dstTmpFilePath))
+	dstStatTouch, err := os.Stat(dstTmpFilePath)
+	require.NoError(t, err)
+	require.EqualValues(t, dstStat.Size(), dstStatTouch.Size())
+
+	// Remove Files
 	require.NoError(t, vfs.RemoveFile(tmpFilePath))
+	require.NoError(t, vfs.RemoveFile(dstTmpFilePath))
 
 	// Remove directory
 	require.NoError(t, vfs.RemoveDir(tmpPath))

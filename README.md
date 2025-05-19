@@ -100,6 +100,8 @@ as such the below table reference which versions are compatible.
 | 0.32.0            | 2.26.X         |
 | 0.33.0            | 2.26.X         |
 | 0.34.0            | 2.27.X         |
+| 0.35.0            | 2.27.X         |
+| 0.36.0            | 2.28.X         |
 
 
 ## Deprecated Functionality
@@ -131,3 +133,16 @@ the following TileDB release.
 
 `SerializeArrayMaxBufferSizes` is removed as the underlying core method `tiledb_serialize_array_max_buffer_sizes` is deprecated in
 TileDB 2.27.0.
+
+### 0.36.0
+
+`Array.Create` is deprecated in favor of `CreateArray`.
+`Array.Consolidate` is deprecated in favor of `ConsolidateArray`.
+`Array.Vacuum` is deprecated in favor of `VacuumArray`.
+
+## Breaking Changes
+
+### 0.36.0
+
+`Free` will no longer call `Close` for `Group` and `Array` objects.
+The caller is responsible for closing the `Array` or `Group` after operations such as writing metadata or modifying group members.
