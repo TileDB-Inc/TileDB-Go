@@ -87,10 +87,12 @@ func TestGroups_Metadata(t *testing.T) {
 	require.NoError(t, group.Close())
 
 	// Verify fetching metadata with metadata map
+	require.NoError(t, group.Open(TILEDB_READ))
 	gmd, err := group.GetMetadataMap()
 	require.NoError(t, err)
 	require.Lenf(t, gmd, 1, "expected metadata map")
 	require.Equal(t, gmd["key"], "value")
+	require.NoError(t, group.Close())
 
 	// =========================================================================
 	// Remove it
