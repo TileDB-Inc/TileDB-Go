@@ -86,6 +86,12 @@ func TestGroups_Metadata(t *testing.T) {
 	assert.EqualValues(t, val, "value")
 	require.NoError(t, group.Close())
 
+	// Verify fetching metadata with metadata map
+	gmd, err := group.GetMetadataMap()
+	require.NoError(t, err)
+	require.Lenf(t, gmd, 1, "expected metadata map")
+	require.Equal(t, gmd["key"], "value")
+
 	// =========================================================================
 	// Remove it
 	require.NoError(t, setConfigForWrite(group, 1))

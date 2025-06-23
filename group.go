@@ -35,7 +35,7 @@ type Group struct {
 	context *Context
 }
 
-// Context exposes the internal TileDB context used to initialize the group.
+// Context returns the TileDB context used to initialize the group.
 func (g *Group) Context() *Context {
 	return g.context
 }
@@ -354,17 +354,13 @@ func (g *Group) GetMetadata(key string) (Datatype, uint, interface{}, error) {
 	return datatype, valueNum, value, nil
 }
 
-// GetMetadataMap returns a map[string]*GroupMetadata where key is the key of
-// each metadata added and value is an GroupMetadata struct. The map contains
-// all group metadata previously added.
+// GetMetadataMap returns a map with the group's metadata, indexed by their key.
 func (g *Group) GetMetadataMap() (map[string]*GroupMetadata, error) {
 	return g.GetMetadataMapWithValueLimit(nil)
 }
 
-// GetMetadataMapWithValueLimit returns a map[string]*GroupMetadata where key is the key of
-// each metadata added and value is an GroupMetadata struct. The map contains
-// all group metadata previously added.
-// The limit parameter limits the number of values returned if string or group.
+// GetMetadataMapWithValueLimit returns a map with the group's metadata, indexed by their key.
+// The limit parameter limits the size of values returned if string or array.
 // This is helpful for pushdown of limiting metadata. If nil, value is returned
 // in full.
 func (g *Group) GetMetadataMapWithValueLimit(limit *uint) (map[string]*GroupMetadata, error) {
