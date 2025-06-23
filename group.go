@@ -35,6 +35,11 @@ type Group struct {
 	context *Context
 }
 
+// Context exposes the internal TileDB context used to initialize the group.
+func (g *Group) Context() *Context {
+	return g.context
+}
+
 func newGroupFromHandle(context *Context, uri string, group groupHandle) *Group {
 	return &Group{group: group, uri: uri, context: context}
 }
@@ -347,6 +352,39 @@ func (g *Group) GetMetadata(key string) (Datatype, uint, interface{}, error) {
 
 	runtime.KeepAlive(g)
 	return datatype, valueNum, value, nil
+}
+
+// GetMetadataMap returns a map[string]*GroupMetadata where key is the key of
+// each metadata added and value is an GroupMetadata struct. The map contains
+// all group metadata previously added.
+func (g *Group) GetMetadataMap() (map[string]*GroupMetadata, error) {
+	return g.GetMetadataMapWithValueLimit(nil)
+}
+
+// GetMetadataMapWithValueLimit returns a map[string]*GroupMetadata where key is the key of
+// each metadata added and value is an GroupMetadata struct. The map contains
+// all group metadata previously added.
+// The limit parameter limits the number of values returned if string or group.
+// This is helpful for pushdown of limiting metadata. If nil, value is returned
+// in full.
+func (g *Group) GetMetadataMapWithValueLimit(limit *uint) (map[string]*GroupMetadata, error) {
+	metadataMap := make(map[string]*GroupMetadata)
+
+	numOfMetadata, err := g.GetMetadataNum()
+	if err != nil {
+		return nil, err
+	}
+
+	var I uint64
+	for I = 0; I < numOfMetadata; I++ {
+		arrayMetadata, err := g.GetMetadataFromIndexWithValueLimit(I, limit)
+		if err != nil {
+			return nil, err
+		}
+		metadataMap[arrayMetadata.Key] = arrayMetadata
+	}
+
+	return metadataMap, nil
 }
 
 func (g *Group) DeleteMetadata(key string) error {
