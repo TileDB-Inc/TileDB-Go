@@ -95,6 +95,7 @@ func TestGroups_Metadata(t *testing.T) {
 	require.NotNil(t, md)
 	require.Equal(t, TILEDB_STRING_UTF8, md.Datatype)
 	require.Equal(t, "value", md.Value)
+	require.NoError(t, group.Close())
 
 	// =========================================================================
 	// Remove it
