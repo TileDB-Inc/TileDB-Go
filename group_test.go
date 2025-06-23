@@ -91,8 +91,10 @@ func TestGroups_Metadata(t *testing.T) {
 	gmd, err := group.GetMetadataMap()
 	require.NoError(t, err)
 	require.Lenf(t, gmd, 1, "expected metadata map")
-	require.Equal(t, gmd["key"], "value")
-	require.NoError(t, group.Close())
+	md := gmd["key"]
+	require.NotNil(t, md)
+	require.Equal(t, TILEDB_STRING_UTF8, md.Datatype)
+	require.Equal(t, "value", md.Value)
 
 	// =========================================================================
 	// Remove it
