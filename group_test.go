@@ -86,6 +86,17 @@ func TestGroups_Metadata(t *testing.T) {
 	assert.EqualValues(t, val, "value")
 	require.NoError(t, group.Close())
 
+	// Verify fetching metadata with metadata map
+	require.NoError(t, group.Open(TILEDB_READ))
+	gmd, err := group.GetMetadataMap()
+	require.NoError(t, err)
+	require.Lenf(t, gmd, 1, "expected metadata map")
+	md := gmd["key"]
+	require.NotNil(t, md)
+	require.Equal(t, TILEDB_STRING_UTF8, md.Datatype)
+	require.Equal(t, "value", md.Value)
+	require.NoError(t, group.Close())
+
 	// =========================================================================
 	// Remove it
 	require.NoError(t, setConfigForWrite(group, 1))

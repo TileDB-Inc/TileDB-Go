@@ -154,7 +154,7 @@ func (a *Array) Free() {
 	a.tiledbArray.Free()
 }
 
-// Context exposes the internal TileDB context used to initialize the array.
+// Context returns the TileDB context used to initialize the array.
 func (a *Array) Context() *Context {
 	return a.context
 }
@@ -1151,18 +1151,14 @@ func (a *Array) GetMetadataFromIndexWithValueLimit(index uint64, limit *uint) (*
 	return &arrayMetadata, nil
 }
 
-// GetMetadataMap returns a map[string]*ArrayMetadata where key is the key of
-// each metadata added and value is an ArrayMetadata struct. The map contains
-// all array metadata previously added.
+// GetMetadataMap returns a map with the array's metadata, indexed by their key.
 func (a *Array) GetMetadataMap() (map[string]*ArrayMetadata, error) {
 	return a.GetMetadataMapWithValueLimit(nil)
 }
 
-// GetMetadataMapWithValueLimit returns a map[string]*ArrayMetadata where key is the key of
-// each metadata added and value is an ArrayMetadata struct. The map contains
-// all array metadata previously added.
-// The limit parameter limits the number of values returned if string or array.
-// This is helpful for pushdown of limitting metadata. If nil, value is returned
+// GetMetadataMapWithValueLimit returns a map with the array's metadata, indexed by their key.
+// The limit parameter limits the size of values returned if string or array.
+// This is helpful for pushdown of limiting metadata. If nil, value is returned
 // in full.
 func (a *Array) GetMetadataMapWithValueLimit(limit *uint) (map[string]*ArrayMetadata, error) {
 	metadataMap := make(map[string]*ArrayMetadata)
