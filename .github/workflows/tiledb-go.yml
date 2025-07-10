@@ -10,9 +10,10 @@ on:
 
 env:
   # The version of TileDB to test against.
-  CORE_VERSION: "2.28.0"
+  # TODO: Revert change to use fork release from shaunrd0/TileDB.
+  CORE_VERSION: "2.28-patched"
   # The abbreviated git commit hash to use.
-  CORE_HASH: "4764907"
+  CORE_HASH: "740902b"
 
 jobs:
   golangci:
