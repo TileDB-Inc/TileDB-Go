@@ -65,6 +65,26 @@ func DeserializeArraySchema(buffer *Buffer, serializationType SerializationType,
 	return newArraySchemaFromHandle(buffer.context, newArraySchemaHandle(arraySchemaPtr)), nil
 }
 
+// DeserializeArrayCreate deserializes an array create request from the given buffer.
+func DeserializeArrayCreate(buffer *Buffer, serializationType SerializationType, clientSide bool) (*ArraySchema, string, error) {
+	var cClientSide C.int32_t
+	if clientSide {
+		cClientSide = 1
+	} else {
+		cClientSide = 0
+	}
+
+	var curi *C.char
+	var arraySchemaPtr *C.tiledb_array_schema_t
+	ret := C.tiledb_deserialize_array_create(buffer.context.tiledbContext.Get(), buffer.tiledbBuffer.Get(), C.tiledb_serialization_type_t(serializationType), cClientSide, &curi, &arraySchemaPtr)
+	runtime.KeepAlive(buffer)
+	if ret != C.TILEDB_OK {
+		return nil, "", fmt.Errorf("error deserializing array creation request: %w", buffer.context.LastError())
+	}
+
+	return newArraySchemaFromHandle(buffer.context, newArraySchemaHandle(arraySchemaPtr)), C.GoString(curi), nil
+}
+
 // SerializeArraySchemaEvolution serializes the given array schema evolution and serializes the group metadata and returns a Buffer object containing the payload.
 func SerializeArraySchemaEvolutionToBuffer(arraySchemaEvolution *ArraySchemaEvolution, serializationType SerializationType, clientSide bool) (*Buffer, error) {
 	var cClientSide C.int32_t
