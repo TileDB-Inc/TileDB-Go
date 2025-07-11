@@ -1,5 +1,6 @@
 set -e -x
 # TODO: Revert change to use fork release from shaunrd0/TileDB.
+# https://linear.app/tiledb/issue/CLOUD-1043/revert-patched-core-version-used-in-tiledb-server
 git clone https://github.com/shaunrd0/TileDB.git -b ${CORE_VERSION}
 cd TileDB
 mkdir build && cd build
