@@ -145,52 +145,44 @@ func (d *Domain) HasDimension(dimName string) (bool, error) {
 	return true, nil
 }
 
-// DumpSTDOUT dumps the domain in ASCII format to stdout.
-func (d *Domain) DumpSTDOUT() error {
+// DumpToString returns the domain in ASCII format as a string.
+func (d *Domain) DumpToString() (string, error) {
 	var cStr *C.tiledb_string_t
 	ret := C.tiledb_domain_dump_str(d.context.tiledbContext.Get(), d.tiledbDomain.Get(), &cStr)
 	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error dumping domain to string: %w", d.context.LastError())
+		return "", fmt.Errorf("error dumping domain to string: %w", d.context.LastError())
 	}
 	defer C.tiledb_string_free(&cStr)
 
-	var cStrPtr *C.char
-	var cStrLen C.size_t
-	ret = C.tiledb_string_view(cStr, &cStrPtr, &cStrLen)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error getting string view for domain dump: %w", d.context.LastError())
+	goStr, err := stringHandleToString(cStr)
+	if err != nil {
+		return "", fmt.Errorf("error converting domain dump to string: %w", err)
 	}
-	goStr := C.GoStringN(cStrPtr, C.int(cStrLen))
+	return goStr, nil
+}
+
+func (d *Domain) DumpSTDOUT() error {
+	goStr, err := d.DumpToString()
+	if err != nil {
+		return err
+	}
 	fmt.Print(goStr)
 	return nil
 }
 
-// Dump dumps the domain in ASCII format to the given path.
 func (d *Domain) Dump(path string) error {
 	if _, err := os.Stat(path); err == nil {
 		return fmt.Errorf("error path already %s exists", path)
 	}
-
-	var cStr *C.tiledb_string_t
-	ret := C.tiledb_domain_dump_str(d.context.tiledbContext.Get(), d.tiledbDomain.Get(), &cStr)
-	runtime.KeepAlive(d)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error dumping domain to string: %w", d.context.LastError())
+	goStr, err := d.DumpToString()
+	if err != nil {
+		return err
 	}
-	defer C.tiledb_string_free(&cStr)
-
-	var cStrPtr *C.char
-	var cStrLen C.size_t
-	ret = C.tiledb_string_view(cStr, &cStrPtr, &cStrLen)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error getting string view for domain dump: %w", d.context.LastError())
-	}
-	goStr := C.GoStringN(cStrPtr, C.int(cStrLen))
-
-	err := os.WriteFile(path, []byte(goStr), 0644)
+	err = os.WriteFile(path, []byte(goStr), 0644)
 	if err != nil {
 		return fmt.Errorf("error writing domain dump to file %s: %w", path, err)
 	}
+
 	return nil
 }

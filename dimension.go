@@ -471,50 +471,41 @@ func extentInternal[T any](d *Dimension) (T, error) {
 	return output, nil
 }
 
-// DumpSTDOUT dumps the dimension in ASCII format to stdout.
-func (d *Dimension) DumpSTDOUT() error {
+// DumpToString returns the dimension in ASCII format as a string.
+func (d *Dimension) DumpToString() (string, error) {
 	var cStr *C.tiledb_string_t
 	ret := C.tiledb_dimension_dump_str(d.context.tiledbContext.Get(), d.tiledbDimension.Get(), &cStr)
 	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error dumping dimension to string: %w", d.context.LastError())
+		return "", fmt.Errorf("error dumping dimension to string: %w", d.context.LastError())
 	}
 	defer C.tiledb_string_free(&cStr)
 
-	var cStrPtr *C.char
-	var cStrLen C.size_t
-	ret = C.tiledb_string_view(cStr, &cStrPtr, &cStrLen)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error getting string view for dimension dump: %w", d.context.LastError())
+	goStr, err := stringHandleToString(cStr)
+	if err != nil {
+		return "", fmt.Errorf("error converting dimension dump to string: %w", err)
 	}
-	goStr := C.GoStringN(cStrPtr, C.int(cStrLen))
+	return goStr, nil
+}
+
+func (d *Dimension) DumpSTDOUT() error {
+	goStr, err := d.DumpToString()
+	if err != nil {
+		return err
+	}
 	fmt.Print(goStr)
 	return nil
 }
 
-// Dump dumps the dimension in ASCII format to the given path.
 func (d *Dimension) Dump(path string) error {
 	if _, err := os.Stat(path); err == nil {
 		return fmt.Errorf("error path already %s exists", path)
 	}
-
-	var cStr *C.tiledb_string_t
-	ret := C.tiledb_dimension_dump_str(d.context.tiledbContext.Get(), d.tiledbDimension.Get(), &cStr)
-	runtime.KeepAlive(d)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error dumping dimension to string: %w", d.context.LastError())
+	goStr, err := d.DumpToString()
+	if err != nil {
+		return err
 	}
-	defer C.tiledb_string_free(&cStr)
-
-	var cStrPtr *C.char
-	var cStrLen C.size_t
-	ret = C.tiledb_string_view(cStr, &cStrPtr, &cStrLen)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error getting string view for dimension dump: %w", d.context.LastError())
-	}
-	goStr := C.GoStringN(cStrPtr, C.int(cStrLen))
-
-	err := os.WriteFile(path, []byte(goStr), 0644)
+	err = os.WriteFile(path, []byte(goStr), 0644)
 	if err != nil {
 		return fmt.Errorf("error writing dimension dump to file %s: %w", path, err)
 	}

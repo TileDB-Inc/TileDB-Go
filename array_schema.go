@@ -446,50 +446,41 @@ func LoadArraySchema(context *Context, path string) (*ArraySchema, error) {
 	return newArraySchemaFromHandle(context, newArraySchemaHandle(arraySchemaPtr)), nil
 }
 
-// DumpSTDOUT dumps the array schema in ASCII format to stdout.
-func (a *ArraySchema) DumpSTDOUT() error {
+// DumpToString returns the array schema in ASCII format as a string.
+func (a *ArraySchema) DumpToString() (string, error) {
 	var cStr *C.tiledb_string_t
 	ret := C.tiledb_array_schema_dump_str(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), &cStr)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error dumping array schema to string: %w", a.context.LastError())
+		return "", fmt.Errorf("error dumping array schema to string: %w", a.context.LastError())
 	}
 	defer C.tiledb_string_free(&cStr)
 
-	var cStrPtr *C.char
-	var cStrLen C.size_t
-	ret = C.tiledb_string_view(cStr, &cStrPtr, &cStrLen)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error getting string view for array schema dump: %w", a.context.LastError())
+	goStr, err := stringHandleToString(cStr)
+	if err != nil {
+		return "", fmt.Errorf("error converting array schema dump to string: %w", err)
 	}
-	goStr := C.GoStringN(cStrPtr, C.int(cStrLen))
+	return goStr, nil
+}
+
+func (a *ArraySchema) DumpSTDOUT() error {
+	goStr, err := a.DumpToString()
+	if err != nil {
+		return err
+	}
 	fmt.Print(goStr)
 	return nil
 }
 
-// Dump dumps the array schema in ASCII format to the given path.
 func (a *ArraySchema) Dump(path string) error {
 	if _, err := os.Stat(path); err == nil {
 		return fmt.Errorf("error path already %s exists", path)
 	}
-
-	var cStr *C.tiledb_string_t
-	ret := C.tiledb_array_schema_dump_str(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), &cStr)
-	runtime.KeepAlive(a)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error dumping array schema to string: %w", a.context.LastError())
+	goStr, err := a.DumpToString()
+	if err != nil {
+		return err
 	}
-	defer C.tiledb_string_free(&cStr)
-
-	var cStrPtr *C.char
-	var cStrLen C.size_t
-	ret = C.tiledb_string_view(cStr, &cStrPtr, &cStrLen)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error getting string view for array schema dump: %w", a.context.LastError())
-	}
-	goStr := C.GoStringN(cStrPtr, C.int(cStrLen))
-
-	err := os.WriteFile(path, []byte(goStr), 0644)
+	err = os.WriteFile(path, []byte(goStr), 0644)
 	if err != nil {
 		return fmt.Errorf("error writing array schema dump to file %s: %w", path, err)
 	}
