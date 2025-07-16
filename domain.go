@@ -162,6 +162,7 @@ func (d *Domain) DumpToString() (string, error) {
 	return goStr, nil
 }
 
+// DumpSTDOUT dumps the domain in ASCII format to stdout.
 func (d *Domain) DumpSTDOUT() error {
 	goStr, err := d.DumpToString()
 	if err != nil {
@@ -171,6 +172,7 @@ func (d *Domain) DumpSTDOUT() error {
 	return nil
 }
 
+// Dump dumps the domain in ASCII format to the given path.
 func (d *Domain) Dump(path string) error {
 	if _, err := os.Stat(path); err == nil {
 		return fmt.Errorf("error path already %s exists", path)

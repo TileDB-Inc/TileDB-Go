@@ -488,6 +488,7 @@ func (d *Dimension) DumpToString() (string, error) {
 	return goStr, nil
 }
 
+// DumpSTDOUT dumps the dimension in ASCII format to stdout.
 func (d *Dimension) DumpSTDOUT() error {
 	goStr, err := d.DumpToString()
 	if err != nil {
@@ -497,6 +498,7 @@ func (d *Dimension) DumpSTDOUT() error {
 	return nil
 }
 
+// Dump dumps the dimension in ASCII format to the given path.
 func (d *Dimension) Dump(path string) error {
 	if _, err := os.Stat(path); err == nil {
 		return fmt.Errorf("error path already %s exists", path)

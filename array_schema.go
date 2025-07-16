@@ -463,6 +463,7 @@ func (a *ArraySchema) DumpToString() (string, error) {
 	return goStr, nil
 }
 
+// DumpSTDOUT dumps the array schema in ASCII format to stdout.
 func (a *ArraySchema) DumpSTDOUT() error {
 	goStr, err := a.DumpToString()
 	if err != nil {
@@ -472,6 +473,7 @@ func (a *ArraySchema) DumpSTDOUT() error {
 	return nil
 }
 
+// Dump dumps the array schema in ASCII format to the given path.
 func (a *ArraySchema) Dump(path string) error {
 	if _, err := os.Stat(path); err == nil {
 		return fmt.Errorf("error path already %s exists", path)
