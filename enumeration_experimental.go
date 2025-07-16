@@ -215,12 +215,22 @@ func (e *Enumeration) IsOrdered() (bool, error) {
 
 // DumpSTDOUT writes a human-readable description of the enumeration to os.Stdout.
 func (e *Enumeration) DumpSTDOUT() error {
-	ret := C.tiledb_enumeration_dump(e.context.tiledbContext.Get(), e.tiledbEnum.Get(), C.stdout)
+	var cStr *C.tiledb_string_t
+	ret := C.tiledb_enumeration_dump_str(e.context.tiledbContext.Get(), e.tiledbEnum.Get(), &cStr)
 	runtime.KeepAlive(e)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error dumping enumeration to stdout: %w", e.context.LastError())
+		return fmt.Errorf("error dumping enumeration to string: %w", e.context.LastError())
 	}
+	defer C.tiledb_string_free(&cStr)
 
+	var cStrPtr *C.char
+	var cStrLen C.size_t
+	ret = C.tiledb_string_view(cStr, &cStrPtr, &cStrLen)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error getting string view for enumeration dump: %w", e.context.LastError())
+	}
+	goStr := C.GoStringN(cStrPtr, C.int(cStrLen))
+	fmt.Print(goStr)
 	return nil
 }
 
@@ -230,21 +240,26 @@ func (e *Enumeration) Dump(path string) error {
 		return fmt.Errorf("error path already %s exists", path)
 	}
 
-	cPath := C.CString(path)
-	defer C.free(unsafe.Pointer(cPath))
-
-	cMode := C.CString("w")
-	defer C.free(unsafe.Pointer(cMode))
-
-	cFile := C.fopen(cPath, cMode)
-	defer C.fclose(cFile)
-
-	ret := C.tiledb_enumeration_dump(e.context.tiledbContext.Get(), e.tiledbEnum.Get(), cFile)
+	var cStr *C.tiledb_string_t
+	ret := C.tiledb_enumeration_dump_str(e.context.tiledbContext.Get(), e.tiledbEnum.Get(), &cStr)
 	runtime.KeepAlive(e)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error dumping enumeration to file %s: %w", path, e.context.LastError())
+		return fmt.Errorf("error dumping enumeration to string: %w", e.context.LastError())
 	}
+	defer C.tiledb_string_free(&cStr)
 
+	var cStrPtr *C.char
+	var cStrLen C.size_t
+	ret = C.tiledb_string_view(cStr, &cStrPtr, &cStrLen)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error getting string view for enumeration dump: %w", e.context.LastError())
+	}
+	goStr := C.GoStringN(cStrPtr, C.int(cStrLen))
+
+	err := os.WriteFile(path, []byte(goStr), 0644)
+	if err != nil {
+		return fmt.Errorf("error writing enumeration dump to file %s: %w", path, err)
+	}
 	return nil
 }
 

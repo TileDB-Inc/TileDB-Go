@@ -473,38 +473,50 @@ func extentInternal[T any](d *Dimension) (T, error) {
 
 // DumpSTDOUT dumps the dimension in ASCII format to stdout.
 func (d *Dimension) DumpSTDOUT() error {
-	ret := C.tiledb_dimension_dump(d.context.tiledbContext.Get(), d.tiledbDimension.Get(), C.stdout)
+	var cStr *C.tiledb_string_t
+	ret := C.tiledb_dimension_dump_str(d.context.tiledbContext.Get(), d.tiledbDimension.Get(), &cStr)
 	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error dumping dimension to stdout: %w", d.context.LastError())
+		return fmt.Errorf("error dumping dimension to string: %w", d.context.LastError())
 	}
+	defer C.tiledb_string_free(&cStr)
+
+	var cStrPtr *C.char
+	var cStrLen C.size_t
+	ret = C.tiledb_string_view(cStr, &cStrPtr, &cStrLen)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error getting string view for dimension dump: %w", d.context.LastError())
+	}
+	goStr := C.GoStringN(cStrPtr, C.int(cStrLen))
+	fmt.Print(goStr)
 	return nil
 }
 
 // Dump dumps the dimension in ASCII format to the given path.
 func (d *Dimension) Dump(path string) error {
-
 	if _, err := os.Stat(path); err == nil {
 		return fmt.Errorf("error path already %s exists", path)
 	}
 
-	// Convert to char *
-	cPath := C.CString(path)
-	defer C.free(unsafe.Pointer(cPath))
-
-	// Set mode as char*
-	cMode := C.CString("w")
-	defer C.free(unsafe.Pointer(cMode))
-
-	// Open file to get FILE*
-	cFile := C.fopen(cPath, cMode)
-	defer C.fclose(cFile)
-
-	// Dump dimension to file
-	ret := C.tiledb_dimension_dump(d.context.tiledbContext.Get(), d.tiledbDimension.Get(), cFile)
+	var cStr *C.tiledb_string_t
+	ret := C.tiledb_dimension_dump_str(d.context.tiledbContext.Get(), d.tiledbDimension.Get(), &cStr)
 	runtime.KeepAlive(d)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error dumping dimension to file %s: %w", path, d.context.LastError())
+		return fmt.Errorf("error dumping dimension to string: %w", d.context.LastError())
+	}
+	defer C.tiledb_string_free(&cStr)
+
+	var cStrPtr *C.char
+	var cStrLen C.size_t
+	ret = C.tiledb_string_view(cStr, &cStrPtr, &cStrLen)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error getting string view for dimension dump: %w", d.context.LastError())
+	}
+	goStr := C.GoStringN(cStrPtr, C.int(cStrLen))
+
+	err := os.WriteFile(path, []byte(goStr), 0644)
+	if err != nil {
+		return fmt.Errorf("error writing dimension dump to file %s: %w", path, err)
 	}
 	return nil
 }
