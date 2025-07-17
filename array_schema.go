@@ -446,40 +446,45 @@ func LoadArraySchema(context *Context, path string) (*ArraySchema, error) {
 	return newArraySchemaFromHandle(context, newArraySchemaHandle(arraySchemaPtr)), nil
 }
 
-// DumpSTDOUT dumps the array schema in ASCII format to stdout.
-func (a *ArraySchema) DumpSTDOUT() error {
-	ret := C.tiledb_array_schema_dump(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), C.stdout)
+// DumpToString returns the array schema in ASCII format as a string.
+func (a *ArraySchema) DumpToString() (string, error) {
+	var cStr *C.tiledb_string_t
+	ret := C.tiledb_array_schema_dump_str(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), &cStr)
 	runtime.KeepAlive(a)
 	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error dumping array schema to stdout: %w", a.context.LastError())
+		return "", fmt.Errorf("error dumping array schema to string: %w", a.context.LastError())
 	}
+	defer C.tiledb_string_free(&cStr)
+
+	goStr, err := stringHandleToString(cStr)
+	if err != nil {
+		return "", fmt.Errorf("error converting array schema dump to string: %w", err)
+	}
+	return goStr, nil
+}
+
+// DumpSTDOUT dumps the array schema in ASCII format to stdout.
+func (a *ArraySchema) DumpSTDOUT() error {
+	goStr, err := a.DumpToString()
+	if err != nil {
+		return err
+	}
+	fmt.Print(goStr)
 	return nil
 }
 
 // Dump dumps the array schema in ASCII format to the given path.
 func (a *ArraySchema) Dump(path string) error {
-
 	if _, err := os.Stat(path); err == nil {
 		return fmt.Errorf("error path already %s exists", path)
 	}
-
-	// Convert to char *
-	cPath := C.CString(path)
-	defer C.free(unsafe.Pointer(cPath))
-
-	// Set mode as char*
-	cMode := C.CString("w")
-	defer C.free(unsafe.Pointer(cMode))
-
-	// Open file to get FILE*
-	cFile := C.fopen(cPath, cMode)
-	defer C.fclose(cFile)
-
-	// Dump array schema to file
-	ret := C.tiledb_array_schema_dump(a.context.tiledbContext.Get(), a.tiledbArraySchema.Get(), cFile)
-	runtime.KeepAlive(a)
-	if ret != C.TILEDB_OK {
-		return fmt.Errorf("error dumping array schema to file %s: %w", path, a.context.LastError())
+	goStr, err := a.DumpToString()
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(path, []byte(goStr), 0644)
+	if err != nil {
+		return fmt.Errorf("error writing array schema dump to file %s: %w", path, err)
 	}
 	return nil
 }
