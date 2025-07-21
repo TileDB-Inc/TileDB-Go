@@ -10,11 +10,9 @@ on:
 
 env:
   # The version of TileDB to test against.
-  # TODO: Revert change to use fork release from shaunrd0/TileDB.
-  # https://linear.app/tiledb/issue/CLOUD-1043/revert-patched-core-version-used-in-tiledb-server
-  CORE_VERSION: "2.28-patched"
+  CORE_VERSION: "2.28.1-rc1"
   # The abbreviated git commit hash to use.
-  CORE_HASH: "740902b"
+  CORE_HASH: "d648231"
 
 jobs:
   golangci:
