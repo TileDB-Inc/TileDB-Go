@@ -213,30 +213,14 @@ func (e *Enumeration) IsOrdered() (bool, error) {
 	return ordered > 0, nil
 }
 
-// DumpToString returns the enumeration in ASCII format as a string.
-func (e *Enumeration) DumpToString() (string, error) {
-	var cStr *C.tiledb_string_t
-	ret := C.tiledb_enumeration_dump_str(e.context.tiledbContext.Get(), e.tiledbEnum.Get(), &cStr)
-	runtime.KeepAlive(e)
-	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("error dumping enumeration to string: %w", e.context.LastError())
-	}
-	defer C.tiledb_string_free(&cStr)
-
-	goStr, err := stringHandleToString(cStr)
-	if err != nil {
-		return "", fmt.Errorf("error converting enumeration dump to string: %w", err)
-	}
-	return goStr, nil
-}
-
 // DumpSTDOUT writes a human-readable description of the enumeration to os.Stdout.
 func (e *Enumeration) DumpSTDOUT() error {
-	goStr, err := e.DumpToString()
-	if err != nil {
-		return err
+	ret := C.tiledb_enumeration_dump(e.context.tiledbContext.Get(), e.tiledbEnum.Get(), C.stdout)
+	runtime.KeepAlive(e)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error dumping enumeration to stdout: %w", e.context.LastError())
 	}
-	fmt.Print(goStr)
+
 	return nil
 }
 
@@ -245,14 +229,22 @@ func (e *Enumeration) Dump(path string) error {
 	if _, err := os.Stat(path); err == nil {
 		return fmt.Errorf("error path already %s exists", path)
 	}
-	goStr, err := e.DumpToString()
-	if err != nil {
-		return err
+
+	cPath := C.CString(path)
+	defer C.free(unsafe.Pointer(cPath))
+
+	cMode := C.CString("w")
+	defer C.free(unsafe.Pointer(cMode))
+
+	cFile := C.fopen(cPath, cMode)
+	defer C.fclose(cFile)
+
+	ret := C.tiledb_enumeration_dump(e.context.tiledbContext.Get(), e.tiledbEnum.Get(), cFile)
+	runtime.KeepAlive(e)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error dumping enumeration to file %s: %w", path, e.context.LastError())
 	}
-	err = os.WriteFile(path, []byte(goStr), 0644)
-	if err != nil {
-		return fmt.Errorf("error writing enumeration dump to file %s: %w", path, err)
-	}
+
 	return nil
 }
 

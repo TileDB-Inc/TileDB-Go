@@ -386,45 +386,40 @@ func (a *Attribute) Type() (Datatype, error) {
 	return Datatype(attrType), nil
 }
 
-// DumpToString returns the attribute in ASCII format as a string.
-func (a *Attribute) DumpToString() (string, error) {
-	var cStr *C.tiledb_string_t
-	ret := C.tiledb_attribute_dump_str(a.context.tiledbContext.Get(), a.tiledbAttribute.Get(), &cStr)
-	runtime.KeepAlive(a)
-	if ret != C.TILEDB_OK {
-		return "", fmt.Errorf("error dumping attribute to string: %w", a.context.LastError())
-	}
-	defer C.tiledb_string_free(&cStr)
-
-	goStr, err := stringHandleToString(cStr)
-	if err != nil {
-		return "", fmt.Errorf("error converting attribute dump to string: %w", err)
-	}
-	return goStr, nil
-}
-
 // DumpSTDOUT dumps the attribute in ASCII format to stdout.
 func (a *Attribute) DumpSTDOUT() error {
-	goStr, err := a.DumpToString()
-	if err != nil {
-		return err
+	ret := C.tiledb_attribute_dump(a.context.tiledbContext.Get(), a.tiledbAttribute.Get(), C.stdout)
+	runtime.KeepAlive(a)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error dumping attribute to stdout: %w", a.context.LastError())
 	}
-	fmt.Print(goStr)
 	return nil
 }
 
 // Dump dumps the attribute in ASCII format to the given path.
 func (a *Attribute) Dump(path string) error {
+
 	if _, err := os.Stat(path); err == nil {
 		return fmt.Errorf("error path already %s exists", path)
 	}
-	goStr, err := a.DumpToString()
-	if err != nil {
-		return err
-	}
-	err = os.WriteFile(path, []byte(goStr), 0644)
-	if err != nil {
-		return fmt.Errorf("error writing attribute dump to file %s: %w", path, err)
+
+	// Convert to char *
+	cPath := C.CString(path)
+	defer C.free(unsafe.Pointer(cPath))
+
+	// Set mode as char*
+	cMode := C.CString("w")
+	defer C.free(unsafe.Pointer(cMode))
+
+	// Open file to get FILE*
+	cFile := C.fopen(cPath, cMode)
+	defer C.fclose(cFile)
+
+	// Dump attribute to file
+	ret := C.tiledb_attribute_dump(a.context.tiledbContext.Get(), a.tiledbAttribute.Get(), cFile)
+	runtime.KeepAlive(a)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error dumping attribute to file %s: %w", path, a.context.LastError())
 	}
 	return nil
 }
