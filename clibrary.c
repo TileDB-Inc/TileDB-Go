@@ -30,6 +30,15 @@ int32_t _vfs_ls_recursive(
     return ret_val;
 }
 
+int32_t _vfs_ls_recursive_v2(
+  tiledb_ctx_t* ctx,
+  tiledb_vfs_t* vfs,
+  const char* path,
+  void* data) {
+    int32_t ret_val = tiledb_vfs_ls_recursive_v2(ctx, vfs, path, vfsLsRecursiveV2, data);
+    return ret_val;
+}
+
 int32_t _tiledb_object_walk(
   tiledb_ctx_t* ctx,
   const char* path,
