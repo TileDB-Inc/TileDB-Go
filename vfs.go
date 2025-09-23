@@ -808,7 +808,7 @@ func (v *VFS) VisitRecursive(path string, callback VisitRecursiveCallback) error
 }
 
 // VisitRecursiveCallbackV2 gets called by VFS.VisitRecursiveV2. If an error is returned, visiting stops.
-type VisitRecursiveCallbackV2 = func(path string, size uint64, isDir bool) (doContinue bool, err error)
+type VisitRecursiveCallbackV2 = func(path string, size uint64, isDir bool) (err error)
 
 // visitRecursiveState contains the state of a call to VisitRecursive.
 type visitRecursiveStateV2 struct {

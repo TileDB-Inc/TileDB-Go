@@ -360,33 +360,33 @@ func TestVFSVisitRecursive(t *testing.T) {
 
 	t.Run("VisitRecursiveV2", func(t *testing.T) {
 		var fileList []string
-		err = vfs.VisitRecursiveV2(tmpPath, func(path string, size uint64, isDir bool) (bool, error) {
+		err = vfs.VisitRecursiveV2(tmpPath, func(path string, size uint64, isDir bool) error {
 			// Do not use require inside the callback because panicing might have unforeseen consequences.
 			fileExists, err := vfs.IsFile(path)
 			if err != nil {
-				return false, err
+				return err
 			}
 			if !fileExists {
 				dirExists, err := vfs.IsDir(path)
 				if err != nil {
-					return false, err
+					return err
 				}
 				if !isDir {
-					return false, fmt.Errorf("%s is neither a file or marked as a directory within the callback", path)
+					return fmt.Errorf("%s is neither a file or marked as a directory within the callback", path)
 				}
 				if !dirExists {
-					return false, fmt.Errorf("%s does not exist neither as a file nor as a directory", path)
+					return fmt.Errorf("%s does not exist neither as a file nor as a directory", path)
 				}
 			} else {
 				if isDir {
-					return false, fmt.Errorf("%s is a file but marked as a directory within the callback", path)
+					return fmt.Errorf("%s is a file but marked as a directory within the callback", path)
 				}
 				if size != 3 {
-					return false, fmt.Errorf("file %s has unexpected size (%d)", path, size)
+					return fmt.Errorf("file %s has unexpected size (%d)", path, size)
 				}
 				fileList = append(fileList, path)
 			}
-			return true, nil
+			return nil
 		})
 		require.NoError(t, err)
 		slices.Sort(fileList)
@@ -394,17 +394,20 @@ func TestVFSVisitRecursive(t *testing.T) {
 			tmpFilePath2, "file://" + tmpFilePath3}, fileList)
 
 		expectedErr := errors.New("dummy")
-		err = vfs.VisitRecursiveV2(tmpPath, func(path string, size uint64, isDir bool) (bool, error) {
-			return false, expectedErr
+		err = vfs.VisitRecursiveV2(tmpPath, func(path string, size uint64, isDir bool) error {
+			return expectedErr
 		})
 		assert.Equal(t, expectedErr, err)
 
 		count := 0
-		err = vfs.VisitRecursiveV2(tmpPath, func(path string, size uint64, isDir bool) (bool, error) {
+		err = vfs.VisitRecursiveV2(tmpPath, func(path string, size uint64, isDir bool) error {
 			count++
-			return count < 2, nil
+			if count >= 2 {
+				return expectedErr
+			}
+			return nil
 		})
-		require.NoError(t, err)
+		assert.Equal(t, expectedErr, err)
 		assert.Equal(t, 2, count)
 	})
 }
