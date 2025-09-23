@@ -783,6 +783,8 @@ func vfsLsRecursive(path *C.cchar_t, pathLen C.size_t, size C.uint64_t, data uns
 // This function returns if the listing ends, or if the callback returns false or an error.
 // Objects and directories will be traversed for local filesystems.
 // Only objects will be traversed for cloud storage backends such as S3, Azure, and GCS.
+//
+// Deprecated: Use VisitRecursiveV2 instead.
 func (v *VFS) VisitRecursive(path string, callback VisitRecursiveCallback) error {
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
