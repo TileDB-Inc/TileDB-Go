@@ -751,6 +751,8 @@ func (v *VFS) List(path string) ([]string, []string, error) {
 // VisitRecursiveCallback gets called by VFS.VisitRecursive. It returns whether visiting should
 // continue, and maybe an error to propagate to the caller. If err is not nil, visiting always
 // stops.
+//
+// Deprecated: Use VisitRecursiveCallbackV2 instead.
 type VisitRecursiveCallback = func(path string, size uint64) (doContinue bool, err error)
 
 // visitRecursiveState contains the state of a call to VisitRecursive.
