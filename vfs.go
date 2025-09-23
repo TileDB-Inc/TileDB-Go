@@ -807,9 +807,7 @@ func (v *VFS) VisitRecursive(path string, callback VisitRecursiveCallback) error
 	return state.lastError
 }
 
-// VisitRecursiveCallbackV2 gets called by VFS.VisitRecursiveV2. It returns whether visiting should
-// continue, and maybe an error to propagate to the caller. If err is not nil, visiting always
-// stops.
+// VisitRecursiveCallbackV2 gets called by VFS.VisitRecursiveV2. If an error is returned, visiting stops.
 type VisitRecursiveCallbackV2 = func(path string, size uint64, isDir bool) (doContinue bool, err error)
 
 // visitRecursiveState contains the state of a call to VisitRecursive.
@@ -827,9 +825,9 @@ func vfsLsRecursiveV2(path *C.cchar_t, pathLen C.size_t, size C.uint64_t, isDir 
 		return 0
 	}
 
-	doContinue, err := state.callback(C.GoStringN(path, C.int(pathLen)), uint64(size), isDir > 0)
+	err := state.callback(C.GoStringN(path, C.int(pathLen)), uint64(size), isDir > 0)
 
-	if err != nil || !doContinue {
+	if err != nil {
 		// Save error to return to the user.
 		state.lastError = err
 		return 0
