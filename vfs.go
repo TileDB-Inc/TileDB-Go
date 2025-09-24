@@ -751,6 +751,8 @@ func (v *VFS) List(path string) ([]string, []string, error) {
 // VisitRecursiveCallback gets called by VFS.VisitRecursive. It returns whether visiting should
 // continue, and maybe an error to propagate to the caller. If err is not nil, visiting always
 // stops.
+//
+// Deprecated: Use VisitRecursiveCallbackV2 instead.
 type VisitRecursiveCallback = func(path string, size uint64) (doContinue bool, err error)
 
 // visitRecursiveState contains the state of a call to VisitRecursive.
@@ -760,15 +762,15 @@ type visitRecursiveState struct {
 }
 
 //export vfsLsRecursive
-func vfsLsRecursive(path *C.cchar_t, path_len C.size_t, size C.uint64_t, data unsafe.Pointer) int32 {
+func vfsLsRecursive(path *C.cchar_t, pathLen C.size_t, size C.uint64_t, data unsafe.Pointer) int32 {
 	state := pointer.Restore(data).(*visitRecursiveState)
 
-	if path_len > math.MaxInt {
+	if pathLen > math.MaxInt {
 		state.lastError = errors.New("path is too long")
 		return 0
 	}
 
-	doContinue, err := state.callback(C.GoStringN(path, C.int(path_len)), uint64(size))
+	doContinue, err := state.callback(C.GoStringN(path, C.int(pathLen)), uint64(size))
 
 	if err != nil || !doContinue {
 		// Save error to return to the user.
@@ -781,6 +783,10 @@ func vfsLsRecursive(path *C.cchar_t, path_len C.size_t, size C.uint64_t, data un
 
 // VisitRecursive calls a function for every file in a path recursively.
 // This function returns if the listing ends, or if the callback returns false or an error.
+// Objects and directories will be traversed for local filesystems.
+// Only objects will be traversed for cloud storage backends such as S3, Azure, and GCS.
+//
+// Deprecated: Use VisitRecursiveV2 instead.
 func (v *VFS) VisitRecursive(path string, callback VisitRecursiveCallback) error {
 	cpath := C.CString(path)
 	defer C.free(unsafe.Pointer(cpath))
@@ -793,6 +799,58 @@ func (v *VFS) VisitRecursive(path string, callback VisitRecursiveCallback) error
 	defer pointer.Unref(data)
 
 	ret := C._vfs_ls_recursive(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), cpath, data)
+	runtime.KeepAlive(v)
+	if ret != C.TILEDB_OK {
+		return fmt.Errorf("error in recursively listing path %s: %w", path, v.context.LastError())
+	}
+
+	return state.lastError
+}
+
+// VisitRecursiveCallbackV2 gets called by VFS.VisitRecursiveV2. If an error is returned, visiting stops.
+type VisitRecursiveCallbackV2 = func(path string, size uint64, isDir bool) (err error)
+
+// visitRecursiveState contains the state of a call to VisitRecursive.
+type visitRecursiveStateV2 struct {
+	callback  VisitRecursiveCallbackV2
+	lastError error
+}
+
+//export vfsLsRecursiveV2
+func vfsLsRecursiveV2(path *C.cchar_t, pathLen C.size_t, size C.uint64_t, isDir C.uint8_t, data unsafe.Pointer) int32 {
+	state := pointer.Restore(data).(*visitRecursiveStateV2)
+
+	if pathLen > math.MaxInt {
+		state.lastError = errors.New("path is too long")
+		return 0
+	}
+
+	err := state.callback(C.GoStringN(path, C.int(pathLen)), uint64(size), isDir > 0)
+
+	if err != nil {
+		// Save error to return to the user.
+		state.lastError = err
+		return 0
+	}
+
+	return 1
+}
+
+// VisitRecursiveV2 calls a function for every file and directory in a path recursively.
+// This function returns if the listing ends, or if the callback returns false or an error.
+// Objects and directories will be traversed for all filesystems.
+func (v *VFS) VisitRecursiveV2(path string, callback VisitRecursiveCallbackV2) error {
+	cpath := C.CString(path)
+	defer C.free(unsafe.Pointer(cpath))
+
+	state := &visitRecursiveStateV2{
+		callback:  callback,
+		lastError: nil,
+	}
+	data := pointer.Save(state)
+	defer pointer.Unref(data)
+
+	ret := C._vfs_ls_recursive_v2(v.context.tiledbContext.Get(), v.tiledbVFS.Get(), cpath, data)
 	runtime.KeepAlive(v)
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error in recursively listing path %s: %w", path, v.context.LastError())
