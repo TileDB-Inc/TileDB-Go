@@ -290,6 +290,7 @@ func (g *Group) GetMemberFromIndex(index uint64) (string, string, ObjectTypeEnum
 	if cname != nil {
 		defer C.tiledb_string_free(&cname)
 
+		var err error
 		name, err = stringHandleToString(cname)
 		if err != nil {
 			return "", "", TILEDB_INVALID, err
