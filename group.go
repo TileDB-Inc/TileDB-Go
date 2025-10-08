@@ -285,14 +285,19 @@ func (g *Group) GetMemberFromIndex(index uint64) (string, string, ObjectTypeEnum
 		return "", "", TILEDB_INVALID, fmt.Errorf("error getting member by index for group: %w", g.context.LastError())
 	}
 	defer C.tiledb_string_free(&curi)
-	defer C.tiledb_string_free(&cname)
 
-	uri, err := stringHandleToString(curi)
-	if err != nil {
-		return "", "", TILEDB_INVALID, err
+	var name string
+	if cname != nil {
+		defer C.tiledb_string_free(&cname)
+
+		var err error
+		name, err = stringHandleToString(cname)
+		if err != nil {
+			return "", "", TILEDB_INVALID, err
+		}
 	}
 
-	name, err := stringHandleToString(cname)
+	uri, err := stringHandleToString(curi)
 	if err != nil {
 		return "", "", TILEDB_INVALID, err
 	}
