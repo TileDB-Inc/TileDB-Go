@@ -102,7 +102,8 @@ as such the below table reference which versions are compatible.
 | 0.34.0            | 2.27.X         |
 | 0.35.0            | 2.27.X         |
 | 0.36.0            | 2.28.X         |
-| 0.37.0            | 2.29.X         |
+| 0.37.0            | 2.28.X         |
+| 0.38.0            | 2.29.X         |
 
 
 ## Deprecated Functionality
@@ -141,7 +142,7 @@ TileDB 2.27.0.
 `Array.Consolidate` is deprecated in favor of `ConsolidateArray`.
 `Array.Vacuum` is deprecated in favor of `VacuumArray`.
 
-### 0.37.0
+### 0.38.0
 
 `VFS.VisitRecursive` is deprecated in favor of `VFS.VisitRecursiveV2`.
 `VFS.VisitRecursiveCallback` is deprecated in favor of `VFS.VisitRecursiveCallbackV2`.
