@@ -128,3 +128,13 @@ func TestContextSetTag(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, context.SetTag("key", "value"))
 }
+
+func TestDataProtocol(t *testing.T) {
+	context, err := NewContext(nil)
+	require.NoError(t, err)
+	v2, err := context.DataProtocol("s3://bucket/array")
+	require.NoError(t, err)
+	require.Equal(t, v2, TILEDB_DATA_PROTOCOL_V2)
+	// To test tiledb URIs we need to configure REST authentication.
+	// We don't have this in TileDB-Go CI currently, so these tests are excluded here.
+}

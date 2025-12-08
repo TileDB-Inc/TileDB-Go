@@ -708,3 +708,13 @@ func DataOrderFromString(name string) (DataOrder, error) {
 	}
 	return DataOrder(cDataOrder), nil
 }
+
+// DataProtocol
+type DataProtocol int8
+
+const (
+	// REST API v2 (legacy)
+	TILEDB_DATA_PROTOCOL_V2 DataProtocol = C.TILEDB_DATA_PROTOCOL_v2
+	// REST API v3 (TileDB 3.0+)
+	TILEDB_DATA_PROTOCOL_V3 DataProtocol = C.TILEDB_DATA_PROTOCOL_v3
+)
