@@ -214,3 +214,17 @@ func (c *Context) Stats() ([]byte, error) {
 
 	return []byte(s), nil
 }
+
+// DataProtocol returns the data protocol version for the given URI
+func (c *Context) DataProtocol(uri string) (DataProtocol, error) {
+	cURI := C.CString(uri)
+	defer C.free(unsafe.Pointer(cURI))
+	var protocol C.tiledb_data_protocol_t
+	ret := C.tiledb_ctx_get_data_protocol(c.tiledbContext.Get(), cURI, &protocol)
+	runtime.KeepAlive(c)
+	if ret != C.TILEDB_OK {
+		return 0, fmt.Errorf("error getting data protocol for uri %s: %w", uri, c.LastError())
+	}
+
+	return DataProtocol(protocol), nil
+}
