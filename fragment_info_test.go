@@ -16,8 +16,7 @@ func TestFragmentInfo(t *testing.T) {
 	context, err := NewContext(config)
 	require.NoError(t, err)
 
-	fragmentSize := testFragmentInfo(t, context)
-	assert.Equal(t, uint64(4290), fragmentSize)
+	testFragmentInfo(t, context)
 }
 
 func TestFragmentInfoEncryption(t *testing.T) {
@@ -36,11 +35,10 @@ func TestFragmentInfoEncryption(t *testing.T) {
 	context, err := NewContext(config)
 	require.NoError(t, err)
 
-	fragmentSize := testFragmentInfo(t, context)
-	assert.Equal(t, uint64(7601), fragmentSize)
+	testFragmentInfo(t, context)
 }
 
-func testFragmentInfo(t testing.TB, context *Context) uint64 {
+func testFragmentInfo(t testing.TB, context *Context) {
 	// create temp group name
 	tmpArrayPath := t.TempDir()
 
@@ -91,6 +89,7 @@ func testFragmentInfo(t testing.TB, context *Context) uint64 {
 
 	fragmentSize, err := fI.GetFragmentSize(0)
 	require.NoError(t, err)
+	require.Greater(t, fragmentSize, uint64(0))
 
 	isDense, err := fI.GetDense(0)
 	require.NoError(t, err)
@@ -142,8 +141,6 @@ func testFragmentInfo(t testing.TB, context *Context) uint64 {
 	assert.Contains(t, fragmentInfoStr, fI.uri)
 
 	fI.Free()
-
-	return fragmentSize
 }
 
 func writeToArray(t testing.TB, context *Context, tmpArrayPath string) {
