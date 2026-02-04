@@ -17,7 +17,12 @@ func TestFragmentInfo(t *testing.T) {
 	require.NoError(t, err)
 
 	fragmentSize := testFragmentInfo(t, context)
-	assert.Equal(t, uint64(4290), fragmentSize)
+	major, minor, _ := Version()
+	expectedSize := uint64(4290)
+	if major > 2 || (major == 2 && minor >= 31) {
+		expectedSize = 4294
+	}
+	assert.Equal(t, expectedSize, fragmentSize)
 }
 
 func TestFragmentInfoEncryption(t *testing.T) {
@@ -37,7 +42,12 @@ func TestFragmentInfoEncryption(t *testing.T) {
 	require.NoError(t, err)
 
 	fragmentSize := testFragmentInfo(t, context)
-	assert.Equal(t, uint64(7601), fragmentSize)
+	major, minor, _ := Version()
+	expectedSize := uint64(7601)
+	if major > 2 || (major == 2 && minor >= 31) {
+		expectedSize = 7605
+	}
+	assert.Equal(t, expectedSize, fragmentSize)
 }
 
 func testFragmentInfo(t testing.TB, context *Context) uint64 {
