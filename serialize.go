@@ -353,6 +353,7 @@ func DeserializeQuery(query *Query, buffer *Buffer, serializationType Serializat
 	if ret != C.TILEDB_OK {
 		return fmt.Errorf("error deserializing query: %w", query.context.LastError())
 	}
+	query.tiledbQuery.Pin(buffer)
 
 	return nil
 }
@@ -618,6 +619,7 @@ func DeserializeQueryAndArray(context *Context, buffer *Buffer, serializationTyp
 
 	array := newArrayFromHandle(context, newArrayHandle(arrayPtr))
 	query := newQueryFromHandle(context, array, newQueryHandle(queryPtr))
+	query.tiledbQuery.Pin(buffer)
 
 	return array, query, nil
 }
