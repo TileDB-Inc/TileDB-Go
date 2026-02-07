@@ -619,6 +619,7 @@ func DeserializeQueryAndArray(context *Context, buffer *Buffer, serializationTyp
 
 	array := newArrayFromHandle(context, newArrayHandle(arrayPtr))
 	query := newQueryFromHandle(context, array, newQueryHandle(queryPtr))
+	query.tiledbQuery.Pin(buffer)
 
 	return array, query, nil
 }
