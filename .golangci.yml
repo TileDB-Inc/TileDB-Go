@@ -1,3 +1,6 @@
-issues:
-  exclude-dirs:
-    - cmd
+version: "2"
+
+linters:
+  exclusions:
+    paths:
+      - cmd
