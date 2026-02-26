@@ -105,7 +105,7 @@ func write(dir string) {
 
 	// Write binary data
 	fh1, err := vfs.Open(file, tiledb.TILEDB_VFS_WRITE)
-	defer vfs.Close(fh1)
+	defer func() { checkError(vfs.Close(fh1)) }()
 	if err != nil {
 		fmt.Printf("error opening file '%s'\n", file)
 	}
@@ -119,7 +119,7 @@ func write(dir string) {
 
 	// Write binary data again - this will overwrite the previous file
 	fh2, err := vfs.Open(file, tiledb.TILEDB_VFS_WRITE)
-	defer vfs.Close(fh2)
+	defer func() { checkError(vfs.Close(fh2)) }()
 	if err != nil {
 		fmt.Printf("error opening file '%s' for write.\n", file)
 	}
@@ -133,7 +133,7 @@ func write(dir string) {
 
 	// Append binary data to existing file (this will NOT work on S3)
 	fh3, err := vfs.Open(file, tiledb.TILEDB_VFS_APPEND)
-	defer vfs.Close(fh3)
+	defer func() { checkError(vfs.Close(fh3)) }()
 	if err != nil {
 		fmt.Printf("error opening file '%s' for append.\n", file)
 	}

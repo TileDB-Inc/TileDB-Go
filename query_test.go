@@ -124,7 +124,7 @@ func ExampleNewQuery() {
 		// Handle error
 		return
 	}
-	defer os.RemoveAll(tmpArrayPath)
+	defer func() { _ = os.RemoveAll(tmpArrayPath) }()
 
 	// Create array on disk
 	err = CreateArray(context, tmpArrayPath, arraySchema)
