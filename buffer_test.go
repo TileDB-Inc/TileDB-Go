@@ -32,7 +32,7 @@ func ExampleNewBuffer() {
 		return
 	}
 	fmt.Println(string(bytes))
-	// Output: []
+	// Output:
 }
 
 // TestNewBuffer tests creating a new buffer

@@ -163,7 +163,7 @@ func read(dir string) {
 
 	// Read binary data
 	fh, err := vfs.Open(file, tiledb.TILEDB_VFS_READ)
-	defer vfs.Close(fh)
+	defer func() { checkError(vfs.Close(fh)) }()
 	if err != nil {
 		fmt.Printf("error opening file '%s'\n", file)
 	}
