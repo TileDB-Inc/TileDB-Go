@@ -132,7 +132,7 @@ func TestGetConsolidationPlan(t *testing.T) {
 	arr, err := NewArray(tdbCtx, array.uri)
 	require.NoError(t, err)
 	require.NoError(t, arr.Open(TILEDB_READ))
-	t.Cleanup(func() { arr.Close() })
+	t.Cleanup(func() { require.NoError(t, arr.Close()) })
 
 	cplan, err := GetConsolidationPlan(arr, 1)
 	require.NoError(t, err)

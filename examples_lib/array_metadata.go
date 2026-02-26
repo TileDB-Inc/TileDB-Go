@@ -59,7 +59,7 @@ func writeArrayMetadata(dir string) {
 	defer array.Free()
 	checkError(err)
 	err = array.Open(tiledb.TILEDB_WRITE)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 	checkError(err)
 
 	err = array.PutMetadata("key1", int32(25))
@@ -92,7 +92,7 @@ func readArrayMetadata(dir string) {
 	defer array.Free()
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	dataType, valueNum, value, err := array.GetMetadata("key1")
 	checkError(err)
@@ -183,7 +183,7 @@ func clearArrayMetadata(dir string) {
 
 	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	err = array.DeleteMetadata("key1")
 	checkError(err)

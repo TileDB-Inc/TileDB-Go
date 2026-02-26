@@ -341,7 +341,7 @@ func openArray(t *testing.T, arrPath string, qt QueryType) *Array {
 	arr, err := NewArray(tdbCtx, arrPath)
 	require.NoError(t, err)
 	require.NoError(t, arr.Open(qt))
-	t.Cleanup(func() { arr.Close() })
+	t.Cleanup(func() { require.NoError(t, arr.Close()) })
 	return arr
 }
 
