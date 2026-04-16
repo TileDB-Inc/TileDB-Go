@@ -58,7 +58,7 @@ func writeStringDimArray(dir string) {
 
 	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	// Prepare some data for the array
 	buffA := []int32{3, 2, 1, 4}
@@ -99,7 +99,7 @@ func readStringDimArray(dir string) {
 
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	nonEmptyDomain, isEmpty, err := array.NonEmptyDomainVarFromName("d")
 	checkError(err)

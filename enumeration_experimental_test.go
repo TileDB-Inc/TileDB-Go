@@ -130,7 +130,7 @@ func TestEnumerationAndSchema(t *testing.T) {
 	array, err := NewArray(tdbCtx, arrayPath)
 	require.NoError(t, err)
 	require.NoError(t, array.Open(TILEDB_READ))
-	t.Cleanup(func() { array.Close() })
+	t.Cleanup(func() { require.NoError(t, array.Close()) })
 
 	t.Run("FromArray", func(t *testing.T) {
 		romanEnum, err := array.GetEnumeration("romanNumerals")

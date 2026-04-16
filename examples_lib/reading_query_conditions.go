@@ -28,7 +28,7 @@ func readReadingSparseLayoutsArrayWithConditions(dir string) {
 
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	// Non-empty domain: [1,4], [1,4]
 	x, isEmpty, err := array.NonEmptyDomain()

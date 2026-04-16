@@ -70,7 +70,7 @@ func writeTimestampArray(dir string, key string, value string, timestamp uint64,
 
 	err = array.OpenWithOptions(tiledb.TILEDB_WRITE, tiledb.WithEndTimestamp(timestamp))
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
@@ -105,7 +105,7 @@ func writeTimestampArrayMeta(dir string, key string, value string, timestamp uin
 
 	err = array.OpenWithOptions(tiledb.TILEDB_WRITE, tiledb.WithEndTimestamp(timestamp))
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	fmt.Printf("Writing %s: %s\n", key, value)
 	err = array.PutMetadata(key, value)
@@ -124,7 +124,7 @@ func readTimestampArray(dir string, timestamp uint64) {
 
 	err = array.OpenWithOptions(tiledb.TILEDB_READ, tiledb.WithEndTimestamp(timestamp))
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	// Slice only rows 1, 2 and cols 2, 3, 4
 	subArray := []int32{1, 2, 2, 4}
@@ -180,7 +180,7 @@ func readTimestampArrayWithOptions(dir string, timestamp uint64) {
 
 	err = array.OpenWithOptions(tiledb.TILEDB_READ, tiledb.WithEndTimestamp(timestamp))
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	// Slice only rows 1, 2 and cols 2, 3, 4
 	subArray := []int32{1, 2, 2, 4}
