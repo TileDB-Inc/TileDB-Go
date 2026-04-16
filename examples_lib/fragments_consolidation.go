@@ -69,7 +69,7 @@ func writeFragmentsConsolidationArray1(dir string) {
 
 	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
@@ -109,7 +109,7 @@ func writeFragmentsConsolidationArray2(dir string) {
 
 	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
@@ -148,7 +148,7 @@ func writeFragmentsConsolidationArray3(dir string) {
 
 	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
@@ -196,7 +196,7 @@ func readFragmentsConsolidationArray(dir string) {
 
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	// Read the entire array
 	subarray, err := array.NewSubarray()

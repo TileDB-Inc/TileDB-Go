@@ -59,7 +59,7 @@ func writeVacuumSparseArray(dir string, buffD []int32, data []int32) {
 
 	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
@@ -92,7 +92,7 @@ func readVacuumSparseArray(dir string) {
 
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	// Prepare the query
 	query, err := tiledb.NewQuery(ctx, array)
@@ -184,7 +184,7 @@ func consolidateVacuum(dir string) {
 
 	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	numOfFragments := numFragments(dir)
 	fmt.Printf("Num of fragments after 2 writes before consolidate: %d\n", numOfFragments)

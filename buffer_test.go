@@ -31,8 +31,8 @@ func ExampleNewBuffer() {
 		// Handle error
 		return
 	}
-	fmt.Println(bytes)
-	// Output: []
+	fmt.Println(string(bytes))
+	// Output:
 }
 
 // TestNewBuffer tests creating a new buffer

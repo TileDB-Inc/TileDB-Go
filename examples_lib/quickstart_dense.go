@@ -69,7 +69,7 @@ func writeDenseArray(dir string) {
 
 	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
@@ -100,7 +100,7 @@ func readDenseArray(dir string) {
 
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	// Slice only rows 1, 2 and cols 2, 3, 4
 	subArray := []int32{1, 2, 2, 4}

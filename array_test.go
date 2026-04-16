@@ -333,7 +333,7 @@ func TestArray_Metadata(t *testing.T) {
 		assert.EqualValues(t, len(testString), valNum)
 		assert.Equal(t, testString, value.(string))
 
-		a.Close()
+		err = a.Close()
 		assert.NoError(t, err)
 	})
 
@@ -362,7 +362,7 @@ func TestArray_Metadata(t *testing.T) {
 		assert.EqualValues(t, len(testString), valNum)
 		assert.Equal(t, testString, value.(string))
 
-		a.Close()
+		err = a.Close()
 		assert.NoError(t, err)
 	})
 
@@ -391,7 +391,7 @@ func TestArray_Metadata(t *testing.T) {
 		assert.EqualValues(t, len(testString), valNum)
 		assert.Equal(t, string(testString), value.(string))
 
-		a.Close()
+		err = a.Close()
 		assert.NoError(t, err)
 	})
 

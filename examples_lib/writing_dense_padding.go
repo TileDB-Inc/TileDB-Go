@@ -68,7 +68,7 @@ func writeDensePaddingArray(dir string) {
 
 	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
@@ -109,7 +109,7 @@ func readDensePaddingArray(dir string) {
 
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	// Read the entire array
 	subArray := []int32{1, 4, 1, 4}

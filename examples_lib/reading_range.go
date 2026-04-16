@@ -69,7 +69,7 @@ func writeRearRangeArray(dir string) {
 
 	err = array.Open(tiledb.TILEDB_WRITE)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	query, err := tiledb.NewQuery(ctx, array)
 	checkError(err)
@@ -100,7 +100,7 @@ func readReadRangeArray(dir string, dimIdx uint32) {
 
 	err = array.Open(tiledb.TILEDB_READ)
 	checkError(err)
-	defer array.Close()
+	defer func() { checkError(array.Close()) }()
 
 	// Prepare the vector that will hold the result (of size 6 elements)
 	data := make([]int32, 12)
