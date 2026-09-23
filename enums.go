@@ -460,6 +460,15 @@ const (
 
 	// TILEDB_S3 S3 filesystem support
 	TILEDB_S3 FS = C.TILEDB_S3
+
+	// TILEDB_AZURE Azure filesystem support
+	TILEDB_AZURE FS = C.TILEDB_AZURE
+
+	// TILEDB_GCS Google Cloud Storage filesystem support
+	TILEDB_GCS FS = C.TILEDB_GCS
+
+	// TILEDB_MEMFS in-memory filesystem support
+	TILEDB_MEMFS FS = C.TILEDB_MEMFS
 )
 
 // Layout cell/tile layout
